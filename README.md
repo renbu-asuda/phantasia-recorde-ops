@@ -2,9 +2,16 @@
 
 ブラウザだけで遊べる自動派遣戦闘ゲームと、データ作成メーカー一式です。インストールもサーバーも不要で、Androidのローカル実行にも対応しています。
 
+## ブラウザで遊ぶ（iPhone・Android・パソコン）
+
+**https://renbu-asuda.github.io/phantasia-recorde-ops/** を開くだけで遊べます（インストール不要）。iPhoneはSafariの「ホーム画面に追加」でアプリのように起動できます。
+
+- ゲーム: https://renbu-asuda.github.io/phantasia-recorde-ops/game/index.html
+- メーカー: https://renbu-asuda.github.io/phantasia-recorde-ops/game/maker_hub.html
+
 ## ダウンロード
 
-最新版: **[fantasia_record_ops_toolkit_v1.10.0.zip](dist/fantasia_record_ops_toolkit_v1.10.0.zip)**（リンク先の「Download raw file」ボタンで保存できます）
+オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.10.0.zip](dist/fantasia_record_ops_toolkit_v1.10.0.zip)**（リンク先の「Download raw file」ボタンで保存できます）
 
 ## 遊び方
 

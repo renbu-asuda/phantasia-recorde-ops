@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PRO">
+<meta name="theme-color" content="#070b10">
+<title>ファンタジア・レコード・オプス（PRO）</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -20%,#132235 0,#081019 45%,#070b10 100%);color:#e9f0f8;font:16px/1.75 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
+main{max-width:760px;margin:auto;padding:32px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font-size:26px;letter-spacing:.06em;margin:0 0 4px}
+.lead{color:#9fb4c7;margin:0 0 24px}
+.cards{display:grid;gap:12px}
+a.card{display:block;text-decoration:none;color:inherit;border:1px solid #2c3a4b;background:linear-gradient(180deg,#111923,#0d141d);border-radius:14px;padding:18px 18px 16px}
+a.card:hover,a.card:focus-visible{border-color:#8bd8ff;outline:none}
+a.card b{display:block;font-size:19px;color:#8bd8ff}
+a.card span{color:#b9c9d8;font-size:14px}
+a.card.primary{border-color:#2ea043;background:linear-gradient(135deg,#123d22,#0d1d14)}
+a.card.primary b{color:#7ee787}
+section{margin-top:28px;border-top:1px solid #294354;padding-top:18px}
+h2{font-size:17px;margin:0 0 8px}
+ol,ul{padding-left:22px;margin:6px 0}
+li{margin:4px 0}
+.note{color:#9fb4c7;font-size:14px}
+code{background:#0c1825;border:1px solid #223244;border-radius:6px;padding:1px 6px;font-size:13px}
+footer{margin-top:28px;color:#6f8396;font-size:12px}
+</style>
+</head>
+<body>
+<main>
+  <h1>ファンタジア・レコード・オプス</h1>
+  <p class="lead">PRO / ブラウザで遊べる自動派遣戦闘ゲーム。インストール不要、スマホ（iPhone・Android）でもそのまま遊べます。</p>
+
+  <div class="cards">
+    <a class="card primary" href="game/index.html"><b>▶ ゲームを遊ぶ</b><span>部隊を編成して作戦に派遣。戦闘は自動で進みます。</span></a>
+    <a class="card" href="game/maker_hub.html"><b>✎ データを作る（メーカー）</b><span>テンプレートを選ぶだけで、ユニット・作戦・アイテムを作れます。</span></a>
+    <a class="card" href="dist/fantasia_record_ops_toolkit_v1.10.0.zip"><b>⬇ ZIPをダウンロード</b><span>オフラインで遊びたい人向け（Android・パソコン）。v1.10.0</span></a>
+  </div>
+
+  <section>
+    <h2>はじめての遊び方</h2>
+    <ol>
+      <li>「ゲームを遊ぶ」を開きます。</li>
+      <li>「01 部隊」でユニットを選び、「02 作戦」で作戦を選んで、「03 出撃確認」で派遣開始。</li>
+      <li>新要素をまとめて試すなら、ゲームの「データ管理 → 統合JSを読み込む」で <code>pro_190_feature_sample.js</code> を読み込みます（ZIPに入っています）。</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>iPhone・iPadで遊ぶときのコツ</h2>
+    <ul>
+      <li>Safariの共有ボタン →「ホーム画面に追加」で、アプリのように起動できます。</li>
+      <li>セーブはこの端末のブラウザ内に保存されます。Safariの「履歴とWebサイトデータを消去」をすると消えるので、ゲームの「データ管理 → セーブを書き出す」でバックアップしておくと安心です。</li>
+      <li>別の端末に引っ越すときは、書き出したセーブを新しい端末の「セーブを読み込む」で選びます。</li>
+      <li>メーカーで作ったJSは「ファイル」アプリに保存されます。ゲームの「データ管理」から読み込めます。</li>
+    </ul>
+  </section>
+
+  <footer>Fantasia Record Ops (PRO) Toolkit 1.10.0</footer>
+</main>
+</body>
+</html>

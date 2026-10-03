@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ファンタジア・レコード・オプス (PRO) - 1.9.0</title>
+<style>
+:root{
+  --bg:#070b10; --panel:#111923; --panel2:#172230; --line:#2c3a4b;
+  --text:#e9f0f8; --muted:#91a2b5; --good:#7ee787; --warn:#f2cc60; --bad:#ff7b72;
+  --ally:#58a6ff; --enemy:#ff7b72; --accent:#a371f7; --cyan:#56d4dd;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -20%,#132235 0,#081019 42%,#070b10 100%);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+button{font:inherit}.wrap{max-width:1180px;margin:auto;padding:14px}.topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;background:rgba(7,11,16,.93);backdrop-filter:blur(12px);padding:10px 0;border-bottom:1px solid var(--line)}
+.brand h1{font-size:20px;margin:0;letter-spacing:.08em}.brand small{color:var(--muted)}.wallet{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.credit{padding:8px 12px;border:1px solid var(--line);background:var(--panel);border-radius:10px;font-weight:800}.reset{background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.grid{display:grid;grid-template-columns:1.12fr .88fr;gap:14px;margin-top:14px}.panel{background:linear-gradient(180deg,var(--panel),#0d141d);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 10px 32px rgba(0,0,0,.22)}.panel h2{font-size:16px;margin:0 0 10px}.sub{color:var(--muted);font-size:12px;margin-bottom:10px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}.topbar{position:static}}
+.unit-list,.mission-list{display:grid;gap:9px}.unit,.mission{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:10px;transition:.16s}.unit{cursor:pointer}.unit:hover,.mission:hover{border-color:#4a627b}.unit.selected{outline:2px solid var(--ally);border-color:transparent}.unit.disabled{opacity:.52}.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.name{font-weight:850}.tag{font-size:11px;color:#cbd5e1;border:1px solid var(--line);padding:2px 7px;border-radius:999px;white-space:nowrap}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}.stat{background:#0b1119;border-radius:8px;padding:6px;text-align:center}.stat b{display:block;font-size:13px}.stat span{font-size:10px;color:var(--muted)}
+.hpbar{height:8px;border-radius:999px;background:#05080c;overflow:hidden;border:1px solid #26313f;margin-top:8px}.hpfill{height:100%;background:linear-gradient(90deg,#2ea043,#7ee787);transition:width .22s}.hpfill.mid{background:linear-gradient(90deg,#9e6a03,#f2cc60)}.hpfill.low{background:linear-gradient(90deg,#b62324,#ff7b72)}
+.weapon-title{font-size:10px;color:var(--muted);margin-top:8px}.weapon-list{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.weapon-chip{font-size:10px;border:1px solid #31445a;background:#0c1520;padding:3px 6px;border-radius:7px;color:#cad7e5}.weapon-chip.physical{border-color:#776b48}.weapon-chip.beam{border-color:#4b6f97}.weapon-chip.special{border-color:#6c5792}.weapon-chip.melee-weapon{box-shadow:inset 3px 0 0 #b782a9}.weapon-chip.ranged-weapon{box-shadow:inset 3px 0 0 #5c91b8}
+.mission{cursor:pointer}.mission.selected{outline:2px solid var(--accent);border-color:transparent}.mission .reward{color:var(--good);font-weight:800}.controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.primary{border:0;background:linear-gradient(135deg,#238636,#2ea043);color:white;font-weight:850;padding:11px 15px;border-radius:10px}.primary:disabled{opacity:.4}.secondary{border:1px solid var(--line);background:#111923;color:var(--text);padding:10px 13px;border-radius:10px}.squad{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}.chip{background:#0d141d;border:1px solid var(--line);border-radius:999px;padding:6px 9px;font-size:12px}.empty{color:var(--muted);font-size:13px;padding:8px 0}
+.battle{margin-top:14px}.battle-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.battle-controls{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.speed-select{border:1px solid var(--line);background:#111923;color:var(--text);padding:9px 10px;border-radius:10px}.battle-status{font-size:10px;color:var(--muted);border:1px solid var(--line);background:#0b121a;border-radius:999px;padding:5px 8px;min-width:76px;text-align:center}
+.arena{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 190px minmax(0,1fr);grid-template-areas:"ally command enemy";gap:10px;min-height:330px;margin-top:10px;padding:12px;border:1px solid #26384d;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,rgba(16,27,40,.95),rgba(5,10,15,.97)),repeating-linear-gradient(90deg,transparent 0 44px,rgba(88,166,255,.035) 45px 46px)}
+.arena:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(88,166,255,.05),transparent 38%,transparent 62%,rgba(255,123,114,.05));pointer-events:none}.field{position:relative;z-index:2}.ally-field{grid-area:ally}.enemy-field{grid-area:enemy}.field-title{display:flex;justify-content:space-between;font-size:12px;font-weight:850;letter-spacing:.08em;margin-bottom:8px}.ally-title{color:#8fc7ff}.enemy-title{color:#ffaaa5}.combat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.combat-card{position:relative;border:1px solid #304153;background:linear-gradient(135deg,#101a25,#0b121a);border-radius:12px;padding:9px;transition:.18s;overflow:hidden}.combat-card.enemy{background:linear-gradient(135deg,#211418,#0f1118)}.combat-card.slot-empty{min-height:92px;display:grid;place-items:center;text-align:center;border-style:dashed;opacity:.34;background:#090e14;color:var(--muted);font-size:10px;letter-spacing:.08em}.combat-card.dead{opacity:.28;filter:grayscale(1)}.combat-card.active{outline:2px solid var(--warn);transform:translateY(-2px);box-shadow:0 0 24px rgba(242,204,96,.22)}.combat-card.target{outline:2px solid var(--bad)}.combat-card.hit{animation:hitFlash .28s}.combat-top{display:flex;gap:8px;align-items:center}.unit-mark{width:36px;height:36px;display:grid;place-items:center;border-radius:9px;border:1px solid #3b526b;background:radial-gradient(circle,#22384c,#0c141e);font-weight:950;color:#9ed1ff;flex:0 0 auto}.enemy .unit-mark{border-color:#6b3b3b;background:radial-gradient(circle,#4a2525,#170d11);color:#ffaaa5}.combat-name{font-size:12px;font-weight:850}.combat-role{font-size:10px;color:var(--muted);margin-top:2px}.combat-hptext{font-size:10px;color:#b9c5d2;margin-top:5px}.active-weapon{font-size:10px;color:var(--warn);height:15px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes hitFlash{0%,100%{filter:none}50%{filter:brightness(2.2);transform:translateX(3px)}}
+.command-center{grid-area:command;position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;align-self:start;text-align:center;gap:8px;padding-top:38px;box-sizing:border-box}.turn-orb{width:76px;height:76px;flex:0 0 76px;border-radius:50%;border:1px solid #48617d;display:grid;place-items:center;background:radial-gradient(circle,#172d42,#09111a 72%);box-shadow:0 0 35px rgba(88,166,255,.12)}.turn-orb b{display:block;font-size:23px}.turn-orb span{display:block;font-size:9px;color:var(--muted);letter-spacing:.12em}.action-box{width:100%;height:128px;box-sizing:border-box;overflow:hidden;border:1px solid #33475e;background:#09121c;border-radius:11px;padding:9px;display:grid;grid-template-rows:16px 34px 30px 18px;align-content:center}.action-actor{font-size:11px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.action-weapon{font-size:13px;color:#d9c6ff;font-weight:900;margin-top:5px;display:flex;align-items:center;justify-content:center;overflow:hidden;text-overflow:ellipsis}.action-target{font-size:10px;color:var(--muted);margin-top:4px;line-height:13px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}.action-result{font-size:12px;font-weight:900;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.shot-lane{position:absolute;left:33%;right:33%;top:50%;height:3px;z-index:5;pointer-events:none;opacity:0}.shot-lane.fire{animation:shot .38s}.shot-lane:after{content:"✦";position:absolute;top:-12px;font-size:22px;color:white;text-shadow:0 0 10px currentColor}.shot-lane.ally-shot:after{left:0;color:#7fc3ff}.shot-lane.enemy-shot:after{right:0;color:#ff8f89}.shot-lane.ally-shot.fire:after{animation:flyRight .38s linear}.shot-lane.enemy-shot.fire:after{animation:flyLeft .38s linear}@keyframes shot{0%,100%{opacity:0}15%,80%{opacity:1}}@keyframes flyRight{from{left:0}to{left:calc(100% - 20px)}}@keyframes flyLeft{from{right:0}to{right:calc(100% - 20px)}}
+.damage-pop{position:absolute;z-index:12;font-size:18px;font-weight:950;color:var(--warn);text-shadow:0 2px 5px #000;animation:pop .7s ease-out forwards;pointer-events:none}@keyframes pop{0%{opacity:0;transform:translate(-50%,0) scale(.7)}20%{opacity:1;transform:translate(-50%,-8px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-38px) scale(.95)}}
+.log{height:300px;overflow:auto;background:#05080c;border:1px solid #222f3e;border-radius:12px;padding:10px;margin-top:10px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;line-height:1.62;white-space:pre-wrap}.log .turn{color:var(--ally);font-weight:850}.log .hit{color:#d4e3f5}.log .crit{color:var(--warn);font-weight:850}.log .kill{color:var(--bad);font-weight:850}.log .heal{color:var(--good)}.log .sys{color:#bd9df4}.log .weapon{color:#7bdff2;font-weight:800}.log .skill{color:#ffb7f5;font-weight:850}.result{margin-top:10px;padding:12px;border-radius:10px;border:1px solid var(--line);background:#101720;display:none}.result.show{display:block}.win{color:var(--good);font-weight:950}.lose{color:var(--bad);font-weight:950}.foot{color:var(--muted);font-size:11px;text-align:center;padding:18px 0 6px}
+@media(max-width:720px){.arena{grid-template-columns:1fr;grid-template-areas:"ally" "command" "enemy";padding:8px;gap:10px}.command-center{align-self:stretch;padding-top:0;min-height:210px}.ally-field{grid-area:ally}.enemy-field{grid-area:enemy}.combat-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.turn-orb{width:62px;height:62px;flex-basis:62px}.action-box{padding:6px;max-width:320px;height:128px;grid-template-rows:16px 34px 30px 18px}.action-weapon{font-size:11px}.combat-card{padding:7px}.combat-card.slot-empty{min-height:76px}.unit-mark{width:30px;height:30px}.combat-role{display:none}.stats{grid-template-columns:repeat(5,1fr)}.shot-lane{display:none}.battle-controls{justify-content:flex-start;width:100%}}
+
+.screen{display:none}.screen.active{display:block}
+.battle-screen-shell{max-width:1420px;margin:0 auto;padding:12px 14px 18px;min-height:100vh}
+.battle-screen-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:8px 0 10px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;background:rgba(7,11,16,.96);backdrop-filter:blur(12px)}
+.battle-screen-title h1{font-size:18px;margin:0;letter-spacing:.08em}.battle-screen-title .sub{margin:4px 0 0}
+.battle-screen-shell .arena{min-height:430px;margin-top:12px}.battle-screen-shell .log{height:34vh;min-height:220px;max-height:390px}
+.result-shell{max-width:760px;margin:0 auto;min-height:100vh;padding:28px 16px;display:flex;align-items:center;justify-content:center}
+.result-card{width:100%;background:linear-gradient(180deg,var(--panel),#0b121a);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 18px 60px rgba(0,0,0,.3)}
+.result-kicker{font-size:11px;color:var(--muted);letter-spacing:.16em}.result-title{font-size:30px;margin:6px 0 4px}.result-meta{color:var(--muted);font-size:13px}.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}.result-stat{background:#0a1119;border:1px solid #263646;border-radius:12px;padding:12px;text-align:center}.result-stat b{display:block;font-size:20px}.result-stat span{font-size:10px;color:var(--muted)}
+.result-unit-list{display:grid;gap:7px;margin-top:14px}.result-unit{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0a1119;border:1px solid #263646;border-radius:10px;padding:9px 11px}.result-unit .status{font-size:11px;color:var(--muted)}
+.result-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.result-actions .primary,.result-actions .secondary{flex:1;min-width:150px}.battle-back-result{display:none}
+.battle-back-result{width:100%;max-width:100%;min-width:0;min-height:48px;box-sizing:border-box;justify-content:center;align-items:center;white-space:normal;margin-top:12px;font-size:16px;font-weight:800}.battle-back-result-bottom{position:sticky;bottom:env(safe-area-inset-bottom,0px);z-index:30;box-shadow:0 -4px 18px #070b10}.battle-screen-head>*{min-width:0}.battle-screen-head .battle-controls{min-width:0;max-width:100%}
+@media(max-width:720px){.battle-screen-shell{padding:8px}.battle-screen-head{position:static;display:block}.battle-screen-head .battle-controls{margin-top:8px}.battle-screen-shell .arena{min-height:0}.battle-screen-shell .log{height:250px;min-height:200px}.result-shell{padding:14px}.result-card{padding:16px}.result-grid{grid-template-columns:1fr 1fr}.result-title{font-size:25px}}
+
+
+.data-tools{margin-top:10px;padding:10px;border:1px solid var(--line);background:#0b121a;border-radius:10px}
+.data-tools .controls{margin-top:7px}.data-status{font-size:11px;color:var(--muted);line-height:1.55;margin-top:7px;word-break:break-word}
+.data-status strong{color:var(--cyan)}.data-error{color:var(--bad)}.data-ok{color:var(--good)}
+
+/* 0.8.1 special skills + stability pass */
+.info-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:9px 0}.info-pill{border:1px solid #2b4055;background:#0a131d;border-radius:10px;padding:8px;text-align:center}.info-pill b{display:block;font-size:14px}.info-pill span{font-size:9px;color:var(--muted);letter-spacing:.06em}.enemy-roster{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.enemy-chip{font-size:10px;padding:4px 7px;border-radius:999px;border:1px solid #56393d;background:#1a1014;color:#ffc0bb}.calc-guide{margin-top:11px;border:1px solid #294057;background:#0a131d;border-radius:10px;overflow:hidden}.calc-guide summary{cursor:pointer;padding:9px 10px;font-size:11px;font-weight:850;color:#c7d7e8}.calc-guide .guide-body{padding:0 10px 10px;color:var(--muted);font-size:10px;line-height:1.65}.calc-guide code{color:#b8e3ff}.battle-score{display:flex;gap:6px;align-items:center}.score-box{border:1px solid var(--line);background:#0b121a;border-radius:9px;padding:6px 9px;min-width:78px;text-align:center}.score-box b{display:block;font-size:14px}.score-box span{font-size:9px;color:var(--muted)}.score-box.ally b{color:#8fc7ff}.score-box.enemy b{color:#ffaaa5}.result-analytics{margin-top:12px;border:1px solid var(--line);border-radius:11px;overflow:hidden}.result-analytics-title{padding:9px 11px;background:#101c28;font-size:12px;font-weight:900}.result-table-wrap{overflow:auto}.result-table{width:100%;border-collapse:collapse;font-size:11px;min-width:650px}.result-table th,.result-table td{padding:8px 9px;border-top:1px solid #1f3040;text-align:right}.result-table th{color:var(--muted);font-size:9px;letter-spacing:.05em;background:#0b141d}.result-table th:first-child,.result-table td:first-child{text-align:left}.result-table tr:hover td{background:#0e1924}.pack-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.pack-badge{font-size:9px;border:1px solid #31506a;border-radius:999px;padding:3px 6px;color:#bcd3e7}.unit-extra{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.unit-extra span{font-size:9px;color:#a9b9c9;background:#0a1119;border:1px solid #273747;border-radius:6px;padding:3px 5px}
+@media(max-width:700px){.info-strip{grid-template-columns:repeat(2,1fr)}.battle-score{width:100%;justify-content:center}.score-box{min-width:90px}}
+
+
+/* 0.9.0 usability / data diagnostics */
+/* 1.0.0 MGSPW-inspired formula + dual-axis weapon attributes + Schema 2 */
+/* 1.0.1 skill-based resistances for damage + attack classifications */
+/* 1.1.0 PRO branding + mission metadata + combat calculation / UI polish */
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.pack-manager{margin-top:9px;border-top:1px solid #223244;padding-top:7px}.pack-manager summary{cursor:pointer;color:#c9d7e6;font-size:11px;font-weight:850}.pack-manager-body{display:grid;gap:6px;margin-top:8px}.pack-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center;border:1px solid #273a4d;background:#08111a;border-radius:9px;padding:8px}.pack-row .pack-name{font-size:11px;font-weight:850;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pack-row .pack-meta{font-size:9px;color:var(--muted);line-height:1.45;margin-top:2px}.pack-row button{border:1px solid #5c3841;background:#29171b;color:#ffc1bd;border-radius:7px;padding:6px 8px;font-size:10px}.pack-row.base button{display:none}.diag-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.diag-pill{border:1px solid #2a4053;border-radius:8px;background:#09131c;padding:6px;text-align:center}.diag-pill b{display:block;font-size:12px}.diag-pill span{display:block;font-size:8px;color:var(--muted);margin-top:2px}.diag-pill.warn b{color:var(--warn)}.diag-pill.bad b{color:var(--bad)}
+.readiness{margin-top:8px;padding:8px 10px;border:1px solid #294154;background:#09131c;border-radius:9px;font-size:11px;color:var(--muted);line-height:1.5}.readiness.ok{border-color:#2d684c;color:#9be9ba}.readiness.warn{border-color:#6a5833;color:#f3d68a}.readiness.bad{border-color:#6b383e;color:#ffaaa5}.repair-one{margin-top:8px;background:#163522;color:#b3efc5;border:1px solid #377a4b;border-radius:7px;padding:6px 10px;cursor:pointer}.repair-one:disabled{opacity:.5;cursor:default}.result-title.draw{color:var(--warn)}
+.item-panel{margin-top:14px}.item-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:8px 0}.item-controls select{min-width:190px;max-width:100%;background:#0b1722;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}.item-list{display:grid;gap:8px}.item-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel2)}.item-row b{display:block}.item-row small{display:block;color:var(--muted);margin-top:3px}.item-row button{white-space:nowrap;border:1px solid #377a4b;border-radius:8px;padding:7px 10px;color:#c0f5ca;background:#153622}.item-row button:disabled{opacity:.5}.item-drops{color:var(--good);font-size:12px;margin-top:10px;line-height:1.6}.item-source{color:var(--muted);font-size:10px}
+.log-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:7px;border:1px solid #243648;background:#09111a;border-radius:10px}.log-tools button{border:1px solid #34495e;background:#101b27;color:#cbd9e8;border-radius:7px;padding:6px 8px;font-size:10px}.log-tools button.active{border-color:#65b8ef;background:#12324a;color:#dff3ff}.log-tools label{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px;margin-left:auto}.log-line{display:block;min-height:1.2em}.log-line.log-hidden{display:none}.log-empty{color:var(--muted);font-size:11px;padding:8px}
+@media(max-width:700px){.diag-strip{grid-template-columns:repeat(3,1fr)}.pack-row{grid-template-columns:1fr}.pack-row button{justify-self:start}.log-tools label{margin-left:0}.log-tools{position:sticky;bottom:0;z-index:8;background:#09111af2}}
+
+
+/* Task-focused navigation: all files remain standalone. */
+[hidden]{display:none!important}
+.flow-nav{display:flex;gap:6px;flex-wrap:wrap;padding:12px 0;margin:0 0 20px;border-bottom:1px solid #294354}
+.flow-btn{min-height:44px;padding:10px 16px;border:0;border-radius:8px;background:#142b3a;color:#c3d6e4;font:inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.flow-btn[aria-current="page"],.flow-btn.flow-primary{background:#8bd8ff;color:#072031;font-weight:800}
+.flow-btn:focus-visible{outline:3px solid #b4e8ff;outline-offset:3px}
+.flow-heading{font-size:24px;line-height:1.4;margin:12px 0 6px;color:#eef8ff;outline:none}
+.flow-lead{color:#a7bfce;line-height:1.7;margin:0 0 22px}
+.flow-footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:24px;padding:18px 0;border-top:1px solid #294354}
+.flow-stepbar{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0}.flow-stepbar .flow-btn{flex:1;white-space:nowrap}
+.flow-page{min-width:0;animation:flow-in .14s ease-out}
+@keyframes flow-in{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.flow-page{animation:none}}
+body.flow-layout main{display:block;max-width:1080px;margin:auto;padding:16px 24px 40px}
+body.flow-layout .side{position:static;max-height:none;overflow:visible}
+body.flow-layout .panel,body.flow-layout .card{border:0;box-shadow:none;background:transparent;border-radius:0}
+body.flow-layout .section{padding:18px 0;border:0}
+body.flow-layout .editor-head{position:static;padding:12px 0 18px;background:transparent;border-bottom:1px solid #294354}
+body.flow-layout .card{margin:0}body.flow-layout .card-title{padding:18px 0;border:0;background:transparent;font-size:19px}
+body.flow-layout .card-body{padding:0}
+body.flow-layout .statbox,body.flow-layout .preview-box,body.flow-layout .summary-box,body.flow-layout .formula-panel{border:0;background:#102330;border-radius:8px}
+body.flow-layout .unit-item,body.flow-layout .mission-item{border:0;border-bottom:1px solid #294354;border-radius:0;padding:18px 14px}
+body.flow-layout .unit-list,body.flow-layout .mission-list{max-height:none}
+body.flow-layout .topbar{position:static}body.flow-layout .brand small{font-size:11px}
+body.flow-layout .skill-card,body.flow-layout .weapon-card,body.flow-layout .drop-row{border:0;border-left:3px solid #345e77;border-radius:0}
+#baseScreen .wrap{max-width:1080px}#baseScreen .grid{display:block}
+#baseScreen .panel{border:0;box-shadow:none;background:transparent;padding:0;border-radius:0}
+#baseScreen .data-tools{border:0;border-top:1px solid #294354;background:transparent;border-radius:0;padding:20px 0}
+#baseScreen .item-panel{margin:0}#baseScreen .item-row{border:0;border-bottom:1px solid #294354;border-radius:0;background:transparent;padding:18px 4px}
+#baseScreen .unit,#baseScreen .mission{box-shadow:none;border:0;border-bottom:1px solid #294354;border-radius:0;padding:18px 12px}
+.flow-links{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.flow-links a{color:#8bd8ff}
+@media(max-width:600px){body.flow-layout main{padding:12px 16px 28px}.flow-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.flow-nav .flow-btn{padding:10px 6px}.flow-stepbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.flow-stepbar .flow-btn{font-size:12px;padding:9px 4px}.flow-heading{font-size:22px}.flow-footer .flow-btn{flex:1}body.flow-layout .editor-head{align-items:flex-start;gap:12px;flex-wrap:wrap}input,select,textarea{max-width:100%;box-sizing:border-box}}
+
+/* 1.9.0 growth, shop, research, records, story, formation */
+.unit-head{display:flex;gap:9px;align-items:center;min-width:0}.unit-thumb{width:44px;height:44px;border-radius:9px;object-fit:cover;border:1px solid var(--line);flex:0 0 44px}.growth-thumb{width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid var(--line)}
+.lv{font-size:11px;color:var(--cyan);border:1px solid #2b5566;border-radius:6px;padding:0 5px;margin-left:4px}.row-badge{border:1px solid #3a5a76;border-radius:6px;padding:0 5px}.row-badge.back{border-color:#6c5792;color:#d6c8ff}.warn-badge{color:var(--warn)}.bad-badge{color:var(--bad)}
+.unit-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:8px}.unit-actions .repair-one{margin-top:0}
+.stars{color:var(--warn);letter-spacing:1px;font-size:13px}.star-on{color:var(--warn)}.star-off{color:var(--muted)}
+.mission-detail{margin-top:8px;line-height:1.7}.preset-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}.preset-slot{display:inline-flex;gap:4px}
+.growth-head{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #294354}.growth-section{padding:14px 0;border-bottom:1px solid #294354}.growth-section h3,.panel h3{font-size:14px;margin:14px 0 8px}.growth-section .secondary{margin:4px 6px 4px 0}
+.growth-select{background:#0b1722;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px;min-width:180px;max-width:100%}.equip-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.tree-node{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:9px 0;border-top:1px dashed #294354}.tree-node.done{color:var(--good)}.tree-node small{display:block;width:100%}
+.item-row.done{opacity:.7}.record-list{display:grid;gap:4px}.record-row{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;padding:7px 0;border-bottom:1px solid #1f3142}.record-row.done{color:var(--good)}
+.toggle-line{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin-top:10px}
+.result-growth{display:grid;gap:6px;margin-top:10px;font-size:13px}.result-growth .good{color:var(--good)}.result-growth .bad{color:var(--bad)}
+.status-badges{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px}.status-badges span{font-size:9px;border:1px solid #445a70;border-radius:5px;padding:0 4px;color:#cfe0f0}
+.combat-card.back-row{opacity:.92;border-style:dashed}.unit-mark.has-image{background-size:cover;background-position:center;color:transparent}
+.shot-lane.fire{--fx-color:var(--fx)}
+.story-overlay{position:fixed;inset:0;z-index:100;background:rgba(3,6,10,.82);display:flex;align-items:flex-end;justify-content:center;padding:16px}.story-card{width:100%;max-width:760px;background:linear-gradient(180deg,#132131,#0a121b);border:1px solid #35506a;border-radius:16px;padding:18px;box-shadow:0 18px 60px rgba(0,0,0,.5)}.story-speaker{font-weight:850;color:var(--cyan);margin-top:6px;min-height:1.4em}.story-text{font-size:16px;line-height:1.8;margin:8px 0 6px;white-space:pre-wrap;min-height:3.6em}.story-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+
+</style>
+</head>
+<body>
+<section id="baseScreen" class="screen active">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand"><h1>ファンタジア・レコード・オプス</h1><small>PRO / 自動派遣戦闘 1.9.0 / MGSPW OUTER OPS inspired</small></div>
+      <div class="wallet"><div class="credit">資金 <span id="credits">0</span></div><button class="reset" id="resetBtn">初期化</button></div>
+    </div>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>1. 派遣部隊を編成</h2>
+        <div class="sub">最大8枠。部隊を選んだら戦闘は自動進行。武装は抽選ウェイトに応じてランダム使用する。数値パラメーターとOUTER OPS風の性能差を両立したPRO独自仕様。</div>
+        <div id="unitList" class="unit-list"></div>
+        <div class="controls"><button id="repairBtn" class="secondary">全機修理</button><span class="sub" style="margin:0">各ユニットの修理ボタンから1機ずつ修理できます。</span></div>
+        <div class="data-tools">
+          <div class="name" style="font-size:12px">UNIT DATA</div>
+          <div class="sub" style="margin:3px 0 0">外部JSユニットパックを読み込み。fetchは使用しない。</div>
+          <div class="controls">
+            <button id="importUnitBtn" class="secondary">ユニットJSをインポート</button>
+            <button id="clearImportedUnitsBtn" class="secondary">追加データ解除</button>
+            <input id="unitFileInput" type="file" accept=".js,text/javascript,application/javascript" multiple hidden>
+          </div>
+          <div id="unitDataStatus" class="data-status">ユニットデータ確認中...</div>
+          <details class="pack-manager"><summary>読み込み済みユニットパック管理</summary><div id="unitPackManager" class="pack-manager-body"></div></details>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>2. 作戦を選択</h2>
+        <div class="sub">勝敗は敵編成・ユニット性能・地形・勝利条件で決まります。地形は命中や機動に影響し、特殊ルール（TURN制限・援軍・出撃制限）も戦闘に反映されます。30TURNで未決着なら引き分けです。星条件を満たすと初回ボーナスがもらえます。</div>
+        <div id="missionList" class="mission-list"></div>
+        <div class="data-tools">
+          <div class="name" style="font-size:12px">MISSION DATA</div>
+          <div class="sub" style="margin:3px 0 0">外部JS作戦パックを読み込み。敵編成はユニットIDで参照する。</div>
+          <div class="controls">
+            <button id="importMissionBtn" class="secondary">作戦JSをインポート</button>
+            <button id="clearImportedMissionsBtn" class="secondary">追加作戦データ解除</button>
+            <input id="missionFileInput" type="file" accept=".js,text/javascript,application/javascript" multiple hidden>
+          </div>
+          <div id="missionDataStatus" class="data-status">作戦データ確認中...</div>
+          <details class="pack-manager"><summary>読み込み済み作戦パック管理</summary><div id="missionPackManager" class="pack-manager-body"></div></details>
+        </div>
+        <h2 style="margin-top:14px">出撃編成</h2>
+        <div id="squadView" class="squad"></div>
+        <div id="squadSummary" class="info-strip"></div>
+        <div id="missionView" class="sub">作戦未選択</div>
+        <div id="missionEnemyView" class="enemy-roster"></div>
+        <details class="calc-guide"><summary>戦闘計算の見方</summary><div class="guide-body"><b>命中率</b> = <code>70 + (ACC − 相手MOB) ÷ 10 + 武装命中補正pt</code>。通常5～95%。<br><b>基礎1HITダメージ</b> = <code>max(最低DMG, ((ATK × 武装威力%) − DEF) × 1HIT威力% × 90～110%乱数)</code>。<br>その後に<b>与ダメージ補正 → CRIT（1.5倍）→ 耐性・被ダメージ軽減</b>を適用する。最低DMGは基礎値の下限なので、耐性適用後は最低DMGを下回る場合がある。<br><b>CRIT率</b> = 基本5% + 武装CRIT補正 + スキル補正。<br>MOBは回避と行動順に使い、各TURNの行動値は <code>MOB + 0～100</code>。多段武装は1HITごとに命中判定する。<br><b>同梱歩兵の基準</b>: HP3000 / ATK500 / DEF0 / MOB500 / ACC500。E90は威力100%・命中+15pt・1～4HIT・1HIT25%・最低50DMG。</div></details>
+        <div class="controls" style="align-items:center">
+          <label for="preBattleSpeed" class="sub" style="margin:0">戦闘速度</label>
+          <select id="preBattleSpeed" class="speed-select" aria-label="派遣前の戦闘速度">
+            <option value="slow">ゆっくり</option>
+            <option value="normal" selected>標準（短縮）</option>
+            <option value="fast">速い</option>
+            <option value="turbo">高速</option>
+          </select>
+          <button id="deployBtn" class="primary" disabled>派遣開始</button><button id="clearBtn" class="secondary">編成解除</button>
+        </div>
+        <div id="deployReadiness" class="readiness">作戦と派遣部隊を選択してください。</div>
+        <div id="missionDetail" class="mission-detail sub"></div>
+        <div id="presetTools" class="preset-tools"></div>
+      </section>
+    </div>
+    <section class="panel item-panel">
+      <h2>3. 補給アイテム</h2>
+      <div class="sub">基地で1個消費し、選択した味方を回復・強化し、スキルや武装を追加できます。複合効果は表示順に適用し、どれか1つでも適用できなければ消費しません。通常の回復でもHP 0から復帰できます。</div>
+      <div class="item-controls"><label for="itemTarget">使用するユニット</label><select id="itemTarget" aria-label="アイテムの使用対象"></select></div>
+      <div id="itemNotice" class="readiness ok" role="status" hidden></div>
+      <div id="itemList" class="item-list"></div>
+      <div class="data-tools"><div class="name" style="font-size:12px">ITEM DATA</div><div class="controls"><button id="importItemBtn" class="secondary">アイテムJSをインポート</button><button id="clearImportedItemsBtn" class="secondary">追加アイテム解除</button><input id="itemFileInput" type="file" accept=".js,text/javascript,application/javascript" multiple hidden></div><div id="itemDataStatus" class="data-status"></div><details class="pack-manager"><summary>読み込み済みアイテムパック管理</summary><div id="itemPackManager" class="pack-manager-body"></div></details></div>
+    </section>
+    <section class="panel growth-panel">
+      <h2>育成</h2>
+      <div class="sub">レベル・スキルツリー・装備・パイロット・隊列を管理します。出撃や撃破で経験値が入り、レベルアップごとに能力が伸びてスキルポイントを1得ます。</div>
+      <div class="item-controls"><label for="growthTarget">ユニット</label><select id="growthTarget" aria-label="育成するユニット"></select><button id="restBtn" class="secondary" type="button">休養（1日待機）</button></div>
+      <div id="growthView" class="growth-view"></div>
+    </section>
+    <section class="panel shop-panel">
+      <h2>ショップ</h2>
+      <div class="sub">資金でアイテムを購入します。研究や作戦クリアで品ぞろえが増えます。売却は価格の半額です。</div>
+      <div id="shopList" class="item-list"></div>
+      <h3>売却</h3>
+      <div id="sellList" class="item-list"></div>
+    </section>
+    <section class="panel lab-panel">
+      <h2>研究・施設</h2>
+      <div class="sub">施設を強化すると待機中のユニットが回復・成長し、修理費も下がります。研究で新しいユニットやアイテムを解放します。</div>
+      <h3>施設</h3>
+      <div id="facilityList" class="item-list"></div>
+      <h3>研究開発</h3>
+      <div id="researchList" class="item-list"></div>
+    </section>
+    <section class="panel records-panel">
+      <h2>記録</h2>
+      <div id="recordSummary"></div>
+      <h3>作戦評価</h3>
+      <div id="missionRecords" class="record-list"></div>
+      <h3>実績</h3>
+      <div id="achievementList" class="record-list"></div>
+      <h3>敵図鑑</h3>
+      <div id="bestiary" class="record-list"></div>
+      <h3>入手アイテム</h3>
+      <div id="itemRecords" class="record-list"></div>
+    </section>
+    <div class="data-tools save-tools"><h2>セーブデータ・設定</h2><p class="sub">進行状況と追加パックをJSONファイルに書き出し、機種変更やバックアップに使えます。</p><div class="controls"><button id="exportSaveBtn" class="secondary" type="button">セーブを書き出す</button><button id="importSaveBtn" class="secondary" type="button">セーブを読み込む</button><input id="saveFileInput" type="file" accept=".json,application/json" hidden></div><label class="toggle-line"><input id="fatigueToggle" type="checkbox" checked> 疲労・負傷ルール（出撃で疲労がたまり、撃破されると数日休養が必要）</label><div id="saveStatus" class="data-status"></div></div>
+    <div class="data-tools bundle-tools"><h2>統合パック</h2><p class="sub">ユニット・作戦・アイテムをまとめたJSを一度に読み込みます。更新・解除もパック単位です。</p><div class="controls"><button id="importBundleBtn" class="secondary">統合JSを読み込む</button><input id="bundleFileInput" type="file" accept=".js,.json,text/javascript,application/javascript" multiple hidden></div><div id="bundleDataStatus" class="data-status"></div><div id="bundlePackManager" class="pack-manager-body"></div></div>
+    <div class="foot">Fantasia Record Ops (PRO) 1.9.0 / MGSPW-inspired auto deployment / Unit Pack Schema 3・Mission Schema 2・Item Schema 3・Bundle Schema 2（旧Schema読込互換）</div>
+  </div>
+</section>
+
+<section id="battleScreen" class="screen">
+  <div class="battle-screen-shell">
+    <div class="battle-screen-head">
+      <div class="battle-screen-title">
+        <h1>COMBAT OPERATION</h1>
+        <div id="battleMissionName" class="sub">作戦待機中</div>
+      </div>
+      <div class="battle-controls">
+        <div class="battle-score"><div class="score-box ally"><b id="allyAlive">0 / 0</b><span>ALLIED</span></div><div class="score-box enemy"><b id="enemyAlive">0 / 0</b><span>HOSTILE</span></div></div>
+        <span id="battleStatus" class="battle-status">STANDBY</span>
+        <select id="speedSelect" class="speed-select" aria-label="戦闘速度">
+          <option value="slow">ゆっくり</option>
+          <option value="normal" selected>標準（短縮）</option>
+          <option value="fast">速い</option>
+          <option value="turbo">高速</option>
+        </select>
+        <button id="pauseBtn" class="secondary" disabled>一時停止</button>
+        <button id="stepBtn" class="secondary" disabled>一手進む</button>
+        <button id="skipBtn" class="secondary" disabled>結果までスキップ</button>
+      </div>
+    </div>
+    <button id="returnResultBtn" class="primary battle-back-result" type="button">← 結果へ戻る</button>
+
+    <div class="arena" id="arena">
+      <div class="shot-lane" id="shotLane"></div>
+      <div class="field ally-field"><div class="field-title ally-title"><span>ALLIED</span><span>派遣部隊</span></div><div id="allyTeam" class="combat-grid"><div class="empty">未出撃</div></div></div>
+      <div class="command-center">
+        <div class="turn-orb"><div><b id="turnNumber">--</b><span>TURN</span></div></div>
+        <div class="action-box">
+          <div class="action-actor" id="actionActor">SYSTEM STANDBY</div>
+          <div class="action-weapon" id="actionWeapon">---</div>
+          <div class="action-target" id="actionTarget">作戦待機中</div>
+          <div class="action-result" id="actionResult"></div>
+        </div>
+      </div>
+      <div class="field enemy-field"><div class="field-title enemy-title"><span>HOSTILE</span><span>敵部隊</span></div><div id="enemyTeam" class="combat-grid"><div class="empty">未確認</div></div></div>
+    </div>
+
+    <div class="log-tools" id="logTools">
+      <button class="active" data-log-filter="all">全て</button><button data-log-filter="attack">攻撃</button><button data-log-filter="skill">スキル</button><button data-log-filter="turn">TURN</button><button data-log-filter="system">システム</button>
+      <label><input id="logAutoScroll" type="checkbox" checked> 自動追従</label><button id="copyLogBtn">ログをコピー</button>
+    </div>
+    <div id="battleLog" class="log"><span class="log-line sys" data-log-type="system">SYSTEM: 作戦待機中。</span></div>
+    <button id="returnResultBottomBtn" class="primary battle-back-result battle-back-result-bottom" type="button">← 結果へ戻る</button>
+  </div>
+</section>
+
+<section id="resultScreen" class="screen">
+  <div class="result-shell">
+    <div class="result-card">
+      <div class="result-kicker">OPERATION RESULT</div>
+      <div id="resultTitle" class="result-title">作戦結果</div>
+      <div id="resultMeta" class="result-meta"></div>
+      <div class="result-grid">
+        <div class="result-stat"><b id="resultReward">0</b><span>獲得資金</span></div>
+        <div class="result-stat"><b id="resultTurns">0</b><span>経過TURN</span></div>
+        <div class="result-stat"><b id="resultRepair">0</b><span>出撃部隊 修理見積</span></div>
+      </div>
+      <div id="resultUnits" class="result-unit-list"></div>
+      <div id="resultDrops" class="item-drops"></div>
+      <div id="resultGrowth" class="result-growth"></div>
+      <div class="result-analytics"><div class="result-analytics-title">COMBAT ANALYTICS</div><div class="result-table-wrap"><table class="result-table"><thead><tr><th>ユニット</th><th>行動</th><th>HIT / 射撃</th><th>命中率</th><th>与ダメ</th><th>被ダメ</th><th>撃破</th></tr></thead><tbody id="resultAnalyticsBody"></tbody></table></div></div>
+      <div class="result-actions">
+        <button id="reviewBattleBtn" class="secondary">戦闘ログを見る</button>
+        <button id="returnBaseBtn" class="primary">基地へ帰還</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="storyOverlay" class="story-overlay" role="dialog" aria-modal="true" aria-labelledby="storyTitle" hidden><div class="story-card"><div id="storyTitle" class="result-kicker"></div><div id="storySpeaker" class="story-speaker"></div><div id="storyText" class="story-text"></div><div class="story-foot"><span id="storyProgress" class="sub"></span><div class="result-actions"><button id="storySkip" class="secondary" type="button">スキップ</button><button id="storyNext" class="primary" type="button">次へ</button></div></div></div></div>
+
+<script src="shared/pro_core.js"></script>
+<script src="shared/pro_battle.js"></script>
+<script src="outer_ops_units.js" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_missions.js" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_items.js" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
+<script>
+(() => {
+'use strict';
+const C=window.PROCore,B=window.PROBattle;
+const UNIT_PACK_FORMAT = 'VAIS_OUTER_OPS_UNIT_PACK';
+const UNIT_PACK_SCHEMA = 3;
+const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3]);
+const IMPORTED_PACKS_KEY = 'vais_outer_ops_imported_unit_packs_v1';
+const MISSION_PACK_FORMAT = 'VAIS_OUTER_OPS_MISSION_PACK';
+const MISSION_PACK_SCHEMA = 2;
+const SUPPORTED_MISSION_SCHEMAS = new Set([1,2]);
+const IMPORTED_MISSION_PACKS_KEY = 'vais_outer_ops_imported_mission_packs_v1';
+const ITEM_PACK_FORMAT = 'VAIS_OUTER_OPS_ITEM_PACK';
+const ITEM_PACK_SCHEMA = 3;
+const IMPORTED_ITEM_PACKS_KEY = 'vais_outer_ops_imported_item_packs_v1';
+const IMPORTED_BUNDLE_PACKS_KEY = 'pro_imported_bundle_packs_v1';
+const GAME_VERSION = '1.9.0';
+
+function storageGet(key,fallback=null){try{const v=localStorage.getItem(key);return v===null?fallback:v;}catch(e){console.warn('localStorage read failed',e);return fallback;}}
+function storageSet(key,value){try{localStorage.setItem(key,value);return true;}catch(e){console.warn('localStorage write failed',e);return false;}}
+function storageRemove(key){try{localStorage.removeItem(key);return true;}catch(e){console.warn('localStorage remove failed',e);return false;}}
+function extractAssignedObject(text,marker){
+  const at=text.indexOf(marker);if(at<0)throw new Error(marker+' が見つかりません。');
+  const start=text.indexOf('{',at);if(start<0)throw new Error('データオブジェクト開始位置を読み取れません。');
+  let depth=0,inString=false,escape=false;
+  for(let i=start;i<text.length;i++){
+    const ch=text[i];
+    if(inString){if(escape){escape=false;continue;}if(ch==='\\'){escape=true;continue;}if(ch==='"')inString=false;continue;}
+    if(ch==='"'){inString=true;continue;}
+    if(ch==='{')depth++;
+    else if(ch==='}'){depth--;if(depth===0){const raw=text.slice(start,i+1);try{return JSON.parse(raw);}catch(e){throw new Error('データ部はJSON互換形式で記述してください。');}}}
+  }
+  throw new Error('データオブジェクト終端を読み取れません。');
+}
+function assertUniqueIds(items,label){const seen=new Set(),dups=new Set();for(const x of items){const id=String(x?.id||'');if(seen.has(id))dups.add(id);seen.add(id);}if(dups.size)throw new Error(`${label} IDが重複しています: ${[...dups].join(', ')}`);}
+
+// Filled just before the first rebuild: the loaders use constants (SKILL_TRIGGERS etc.) declared below.
+let importedUnitPacks = [];
+let importedMissionPacks = [];
+let importedItemPacks = [];
+let importedBundlePacks = [];
+let UNIT_MASTER = [];
+let BASE_UNIT_MASTER = [];
+let ENEMY_MASTER = {};
+let UNIT_INDEX = {};
+let PILOT_MASTER = {};
+let loadedUnitPacks = [];
+let MISSIONS = [];
+let loadedMissionPacks = [];
+let ITEM_MASTER = {};
+let RESEARCH_MASTER = {};
+let loadedItemPacks = [];
+
+function num(v,fallback){const n=Number(v);return Number.isFinite(n)?n:fallback;}
+function normalizeWeapon(w={}){
+  const hitsMin=Math.max(1,Math.floor(num(w.hitsMin,1)));
+  const hitsMax=Math.max(hitsMin,Math.floor(num(w.hitsMax,hitsMin)));
+  const legacy=String(w.type||'');
+  const attackType=['melee','ranged'].includes(w.attackType)?w.attackType:(legacy==='melee'?'melee':'ranged');
+  const damageType=['physical','beam','special'].includes(w.damageType)?w.damageType:({beam:'beam',ballistic:'physical',melee:'physical',bit:'special',special:'special'}[legacy]||'special');
+  const powerPct=('powerPct' in w)?num(w.powerPct,100):num(w.power,1)*100;
+  const accuracyPt=('accuracyPt' in w)?num(w.accuracyPt,0):(num(w.acc,1)-1)*70;
+  const critPt=('critPt' in w)?num(w.critPt,0):num(w.crit,0)*100;
+  const hitPowerPct=('hitPowerPct' in w)?num(w.hitPowerPct,100):num(w.hitPower,1)*100;
+  return {
+    name:String(w.name||'無名武装'), attackType, damageType,
+    powerPct:Math.max(0,powerPct), accuracyPt, critPt,
+    targetCount:Math.max(1,Math.floor(num(w.targetCount,1))),
+    weight:Math.max(.01,num(w.weight,1)), note:String(w.note||''),
+    minDamage:Math.max(0,Math.floor(num(w.minDamage,20))),
+    hitsMin, hitsMax, hitPowerPct:Math.max(0,hitPowerPct),
+    ...C.weaponExt(w,String(w.name||'武装'))
+  };
+}
+const SKILL_TRIGGERS=new Set(Object.keys(C.triggers));
+const SKILL_EFFECTS=new Set([...Object.keys(C.skillEffects),'damage_type_resist_pct','attack_type_resist_pct']);
+const RESIST_TYPES=new Set(['physical','beam','special','melee','ranged']);
+function normalizeSkill(sk={},i=0){
+  const trigger=SKILL_TRIGGERS.has(sk.trigger)?sk.trigger:'before_attack';
+  let effect=SKILL_EFFECTS.has(sk.effect)?sk.effect:'damage_up_pct';
+  let resistType=RESIST_TYPES.has(sk.resistType)?sk.resistType:null;
+  // 1.0.1 prerelease / hand-authored compatibility.
+  if(effect==='damage_type_resist_pct'){
+    effect='weapon_resist_pct';
+    resistType=resistType||(['physical','beam','special'].includes(sk.damageType)?sk.damageType:'physical');
+  }else if(effect==='attack_type_resist_pct'){
+    effect='weapon_resist_pct';
+    resistType=resistType||(['melee','ranged'].includes(sk.attackType)?sk.attackType:'melee');
+  }
+  if(effect==='weapon_resist_pct'&&!resistType)resistType='physical';
+  return {id:String(sk.id||`skill_${i+1}`),name:String(sk.name||'特殊スキル'),trigger,effect,value:num(sk.value,0),chance:clamp(num(sk.chance,100),0,100),maxUses:Math.max(0,Math.floor(num(sk.maxUses,0))),...(effect==='weapon_resist_pct'?{resistType}:{}),note:String(sk.note||''),...C.skillExt({...sk,effect},String(sk.name||'スキル'))};
+}
+function legacySkills(ability){
+  if(ability==='heavy')return [{id:'legacy_heavy',name:'重装火力',trigger:'before_attack',effect:'damage_up_pct',value:8,chance:100,maxUses:0,note:'旧ability互換'}];
+  if(ability==='regen')return [{id:'legacy_regen',name:'再生',trigger:'turn_end',effect:'heal_maxhp_pct',value:7,chance:100,maxUses:0,note:'旧ability互換'}];
+  if(ability==='cloak')return [{id:'legacy_cloak',name:'見えざる傘',trigger:'when_targeted',effect:'enemy_hit_down_pt',value:22,chance:100,maxUses:1,note:'旧ability互換'}];
+  return [];
+}
+function normalizeUnit(u={}){
+  if(!u.id||!u.name)throw new Error('unit.id と unit.name は必須です。');
+  // IDs become object keys in the save data; reserved names would hit Object.prototype.
+  if(['__proto__','constructor','prototype'].includes(String(u.id)))throw new Error(`unit.id に ${u.id} は使用できません。`);
+  const ability=String(u.ability||'');
+  const hasSkillsField=Array.isArray(u.skills);
+  let skills=hasSkillsField?u.skills.map(normalizeSkill):legacySkills(ability);
+  return {
+    id:String(u.id), name:String(u.name), mark:String(u.mark||''), pilot:String(u.pilot||''), role:String(u.role||''), tags:C.unitTags(u), ability, skills,
+    deploy:{player:u.deploy?.player!==false,enemy:!!u.deploy?.enemy},
+    hp:Math.max(1,Math.floor(num(u.hp,3000))), atk:Math.max(0,num(u.atk,500)), def:Math.max(0,num(u.def,0)),
+    mob:Math.max(0,num(u.mob,500)), acc:Math.max(0,num(u.acc,500)),
+    weapons:Array.isArray(u.weapons)&&u.weapons.length?u.weapons.map(normalizeWeapon):[normalizeWeapon({name:'標準攻撃'})],
+    ...C.unitExt(u,String(u.id))
+  };
+}
+function validatePack(pack){
+  if(!pack||typeof pack!=='object')throw new Error('ユニットパックがオブジェクトではありません。');
+  if(pack.format!==UNIT_PACK_FORMAT)throw new Error(`format が ${UNIT_PACK_FORMAT} ではありません。`);
+  if(!SUPPORTED_UNIT_SCHEMAS.has(num(pack.schemaVersion,0)))throw new Error(`schemaVersion ${pack.schemaVersion} は未対応です。`);
+  if(!pack.packId)throw new Error('packId がありません。');
+  if(!Array.isArray(pack.units))throw new Error('units 配列がありません。');
+  const units=pack.units.map(normalizeUnit);assertUniqueIds(units,'unit');
+  for(const u of units){assertUniqueIds(u.skills||[],`${u.id} の skill`);}
+  const pilots=C.pilotList(pack.pilots);
+  return {format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),units,...(pilots.length?{pilots}:{})};
+}
+function extractPackFromJs(text){return validatePack(extractAssignedObject(text,'VAIS_UNIT_PACK'));}
+function loadImportedUnitPacks(){
+  try{
+    const raw=JSON.parse(storageGet(IMPORTED_PACKS_KEY,'[]')||'[]');if(!Array.isArray(raw))return [];
+    const ok=[];for(const p of raw){try{ok.push(validatePack(p));}catch(e){console.warn('Ignored invalid stored unit pack',e);}}return ok;
+  }catch(e){console.warn('Stored unit packs could not be read',e);return [];}
+}
+function saveImportedUnitPacks(list=importedUnitPacks){return storageSet(IMPORTED_PACKS_KEY,JSON.stringify(list));}
+function normalizeItem(item){return C.item(item);}
+function validateItemPack(pack){return C.itemPack(pack);}
+function validateBundlePack(raw){
+  const bundle=C.bundlePack(raw),meta={packId:'bundle:'+bundle.packId,packName:bundle.packName,_bundle:true};
+  const unitPack=validatePack({...meta,format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,units:bundle.units,pilots:bundle.pilots});
+  const units=unitPack.units;
+  const missions=validateMissionPack({...meta,format:MISSION_PACK_FORMAT,schemaVersion:MISSION_PACK_SCHEMA,missions:bundle.missions}).missions;
+  const itemPack=validateItemPack({...meta,format:ITEM_PACK_FORMAT,schemaVersion:ITEM_PACK_SCHEMA,items:bundle.items,research:bundle.research});
+  const items=itemPack.items;
+  const enemyIds=new Set(units.filter(u=>u.deploy.enemy).map(u=>u.id)),unitIds=new Set(units.map(u=>u.id)),itemIds=new Set(items.map(i=>i.id));
+  for(const mission of missions){
+    for(const id of C.missionEnemyIds(mission))if(!enemyIds.has(id))throw new Error(`${mission.id}: 統合パック内の敵ユニットが不足: ${id}`);
+    for(const drop of mission.drops)if(!itemIds.has(drop.itemId))throw new Error(`${mission.id}: 統合パック内のドロップアイテムが不足: ${drop.itemId}`);
+    if(mission.objective?.type==='escort'&&!unitIds.has(mission.objective.escortUnitId))throw new Error(`${mission.id}: 統合パック内の護衛対象が不足: ${mission.objective.escortUnitId}`);
+  }
+  return {...bundle,units,missions,items,...(unitPack.pilots?{pilots:unitPack.pilots}:{}),...(itemPack.research?{research:itemPack.research}:{})};
+}
+function extractBundlePackFromJs(text){return validateBundlePack(C.parse(text,'VAIS_BUNDLE_PACK'));}
+function loadImportedBundlePacks(){try{const raw=JSON.parse(storageGet(IMPORTED_BUNDLE_PACKS_KEY,'[]')||'[]');return Array.isArray(raw)?raw.flatMap(p=>{try{return [validateBundlePack(p)];}catch(e){console.warn('Ignored invalid stored bundle pack',e);return [];}}):[];}catch(e){console.warn('Stored bundle packs could not be read',e);return [];}}
+function bundleComponent(bundle,key,schema,format){const extra=key==='units'&&bundle.pilots?{pilots:bundle.pilots}:key==='items'&&bundle.research?{research:bundle.research}:{};return {_bundle:true,format,schemaVersion:schema,packId:'bundle:'+bundle.packId,packName:bundle.packName,[key]:bundle[key],...extra};}
+function extractItemPackFromJs(text){return validateItemPack(extractAssignedObject(text,'VAIS_ITEM_PACK'));}
+function loadImportedItemPacks(){try{const raw=JSON.parse(storageGet(IMPORTED_ITEM_PACKS_KEY,'[]')||'[]');return Array.isArray(raw)?raw.flatMap(p=>{try{return [validateItemPack(p)];}catch(e){console.warn('Ignored invalid item pack',e);return [];}}):[];}catch(e){console.warn('Stored item packs could not be read',e);return [];}}
+function saveImportedItemPacks(list=importedItemPacks){return storageSet(IMPORTED_ITEM_PACKS_KEY,JSON.stringify(list));}
+function rebuildItemMaster(){
+  const packs=[];if(window.VAIS_ITEM_PACK){try{packs.push({...validateItemPack(window.VAIS_ITEM_PACK),_base:true});}catch(e){console.warn('Base item pack error',e);}}
+  packs.push(...importedItemPacks);packs.push(...importedBundlePacks.map(b=>bundleComponent(b,'items',ITEM_PACK_SCHEMA,ITEM_PACK_FORMAT)));
+  ITEM_MASTER=Object.create(null);RESEARCH_MASTER=Object.create(null);
+  for(const pack of packs){for(const item of pack.items)ITEM_MASTER[item.id]={...item,_packId:pack.packId,_packName:pack.packName};for(const r of pack.research||[])RESEARCH_MASTER[r.id]={...r,_packName:pack.packName};}
+  loadedItemPacks=packs;
+}
+function normalizeDrop(d={}){
+  if(!/^[a-zA-Z0-9_-]+$/.test(String(d.itemId||''))||['__proto__','constructor','prototype'].includes(String(d.itemId)))throw new Error('drops.itemId は英数字・_・-で指定してください。');
+  const chanceValue=Number(d.chance),minValue=Number(d.min),maxValue=Number(d.max);
+  if(!Number.isFinite(chanceValue)||chanceValue<0||chanceValue>100||!Number.isInteger(minValue)||minValue<1||!Number.isInteger(maxValue)||maxValue<minValue||maxValue>999)throw new Error(`${d.itemId}: drops は chance 0～100 / min 1以上 / max 999以下で、min <= max にしてください。`);
+  return {itemId:String(d.itemId),chance:chanceValue,min:minValue,max:maxValue};
+}
+function normalizeMission(m={}){
+  if(!m.id||!m.name)throw new Error('mission.id と mission.name は必須です。');
+  const enemies=Array.isArray(m.enemies)?m.enemies.map(String).filter(Boolean):[];
+  return {
+    id:String(m.id), name:String(m.name), diff:String(m.diff||'C'), reward:Math.max(0,Math.floor(num(m.reward,0))),
+    desc:String(m.desc||''), enemies, maxDeploy:Math.max(1,Math.min(8,Math.floor(num(m.maxDeploy,8)))),
+    terrain:String(m.terrain||'標準'), rules:Array.isArray(m.rules)?m.rules.map(r=>C.rule(r,String(m.id))):[],
+    tags:Array.isArray(m.tags)?m.tags.map(String):[],drops:Array.isArray(m.drops)?m.drops.map(normalizeDrop):[],
+    ...C.missionExt(m,String(m.id))
+  };
+}
+function validateMissionPack(pack){
+  if(!pack||typeof pack!=='object')throw new Error('作戦パックがオブジェクトではありません。');
+  if(pack.format!==MISSION_PACK_FORMAT)throw new Error(`format が ${MISSION_PACK_FORMAT} ではありません。`);
+  if(!SUPPORTED_MISSION_SCHEMAS.has(num(pack.schemaVersion,0)))throw new Error(`schemaVersion ${pack.schemaVersion} は未対応です。`);
+  if(!pack.packId)throw new Error('packId がありません。');
+  if(!Array.isArray(pack.missions))throw new Error('missions 配列がありません。');
+  const missions=pack.missions.map(normalizeMission);assertUniqueIds(missions,'mission');
+  return {format:MISSION_PACK_FORMAT,schemaVersion:MISSION_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),missions};
+}
+function extractMissionPackFromJs(text){return validateMissionPack(extractAssignedObject(text,'VAIS_MISSION_PACK'));}
+function loadImportedMissionPacks(){
+  try{
+    const raw=JSON.parse(storageGet(IMPORTED_MISSION_PACKS_KEY,'[]')||'[]');if(!Array.isArray(raw))return [];
+    const ok=[];for(const p of raw){try{ok.push(validateMissionPack(p));}catch(e){console.warn('Ignored invalid stored mission pack',e);}}return ok;
+  }catch(e){console.warn('Stored mission packs could not be read',e);return [];}
+}
+function saveImportedMissionPacks(list=importedMissionPacks){return storageSet(IMPORTED_MISSION_PACKS_KEY,JSON.stringify(list));}
+function rebuildMissionMaster(){
+  const packs=[];
+  if(window.VAIS_MISSION_PACK){try{packs.push({...validateMissionPack(window.VAIS_MISSION_PACK),_base:true});}catch(e){console.warn('Base mission pack error',e);}}
+  packs.push(...importedMissionPacks,...importedBundlePacks.map(b=>bundleComponent(b,'missions',MISSION_PACK_SCHEMA,MISSION_PACK_FORMAT)));
+  const merged=new Map();
+  for(const pack of packs)for(const mission of pack.missions)merged.set(mission.id,{...mission,_packId:pack.packId,_packName:pack.packName});
+  MISSIONS=[...merged.values()];
+  loadedMissionPacks=packs;
+}
+function rebuildUnitMasters(){
+  const packs=[];
+  if(window.VAIS_UNIT_PACK){try{packs.push({...validatePack(window.VAIS_UNIT_PACK),_base:true});}catch(e){console.warn('Base unit pack error',e);}}
+  packs.push(...importedUnitPacks,...importedBundlePacks.map(b=>bundleComponent(b,'units',UNIT_PACK_SCHEMA,UNIT_PACK_FORMAT)));
+  const merged=new Map(),pilots=new Map();
+  for(const pack of packs){for(const unit of pack.units)merged.set(unit.id,{...unit,_packId:pack.packId,_packName:pack.packName});for(const p of pack.pilots||[])pilots.set(p.id,{...p,_packName:pack.packName});}
+  const units=[...merged.values()];
+  BASE_UNIT_MASTER=units.filter(u=>u.deploy.player);
+  UNIT_MASTER=BASE_UNIT_MASTER.map(u=>({...u}));
+  ENEMY_MASTER=Object.fromEntries(units.filter(u=>u.deploy.enemy).map(u=>[u.id,u]));
+  UNIT_INDEX=Object.fromEntries(units.map(u=>[u.id,u]));
+  PILOT_MASTER=Object.fromEntries(pilots);
+  loadedUnitPacks=packs;
+}
+function unitDataStatus(){
+  const el=document.getElementById('unitDataStatus');if(!el)return;
+  const baseOk=!!window.VAIS_UNIT_PACK;
+  const total=new Set([...UNIT_MASTER.map(u=>u.id),...Object.keys(ENEMY_MASTER)]).size;
+  const names=loadedUnitPacks.map(p=>`${p.packName} (${p.units.length})`).join(' / ');
+  el.innerHTML=`<span class="${baseOk?'data-ok':'data-error'}">基本JS: ${baseOk?'読込済み':'未読込'}</span> / <strong>${total} units</strong> / パイロット ${Object.keys(PILOT_MASTER).length} / 追加パック ${importedUnitPacks.length}${names?`<br>${esc(names)}`:''}${!baseOk?'<br>同梱の outer_ops_units.js を「ユニットJSをインポート」から選べばスマホでも読み込めます。':''}`;
+}
+function missionDataStatus(){
+  const el=document.getElementById('missionDataStatus');if(!el)return;
+  const baseOk=!!window.VAIS_MISSION_PACK;
+  const names=loadedMissionPacks.map(p=>`${p.packName} (${p.missions.length})`).join(' / ');
+  el.innerHTML=`<span class="${baseOk?'data-ok':'data-error'}">基本JS: ${baseOk?'読込済み':'未読込'}</span> / <strong>${MISSIONS.length} missions</strong> / 追加パック ${importedMissionPacks.length}${names?`<br>${esc(names)}`:''}${!baseOk?'<br>同梱の outer_ops_missions.js を「作戦JSをインポート」から選べばスマホでも読み込めます。':''}`;
+}
+
+function crossPackDuplicates(packs,key){
+  const seen=new Map(),dups=new Map();
+  for(const p of packs)for(const item of p[key]||[]){const id=String(item.id||'');if(!id)continue;if(!seen.has(id))seen.set(id,[]);seen.get(id).push(p.packName||p.packId);}
+  for(const [id,names] of seen)if(names.length>1)dups.set(id,names);return dups;
+}
+function missingMissionUnitRefs(){const out=new Set();for(const m of MISSIONS)for(const id of C.missionEnemyIds(m))if(!ENEMY_MASTER[id])out.add(id);return out;}
+function renderPackManagers(){renderUnitPackManager();renderMissionPackManager();}
+function renderUnitPackManager(){
+  const el=document.getElementById('unitPackManager');if(!el)return;const dups=crossPackDuplicates(loadedUnitPacks,'units'),missing=missingMissionUnitRefs();
+  let html=`<div class="diag-strip"><div class="diag-pill"><b>${loadedUnitPacks.length}</b><span>PACKS</span></div><div class="diag-pill ${dups.size?'warn':''}"><b>${dups.size}</b><span>ID上書き</span></div><div class="diag-pill ${missing.size?'bad':''}"><b>${missing.size}</b><span>敵参照不足</span></div></div>`;
+  html+=loadedUnitPacks.map(p=>{const imported=!p._base&&!p._bundle;const hit=[...dups.keys()].filter(id=>(p.units||[]).some(u=>u.id===id));return `<div class="pack-row ${imported?'':'base'}"><div><div class="pack-name">${esc(p.packName||p.packId)}</div><div class="pack-meta">${esc(p.packId)} / ${p.units.length} units${p.pilots?.length?` / パイロット ${p.pilots.length}`:''}${hit.length?` / 上書き対象 ${esc(hit.slice(0,4).join(', '))}${hit.length>4?'…':''}`:''}</div></div>${imported?`<button data-remove-unit-pack="${esc(p.packId)}">解除</button>`:(p._bundle?'<span class="pack-meta">統合パックで管理</span>':'')}</div>`;}).join('');
+  if(!loadedUnitPacks.length)html+='<div class="log-empty">読み込み済みパックなし</div>';el.innerHTML=html;
+  el.querySelectorAll('[data-remove-unit-pack]').forEach(b=>b.onclick=()=>removeImportedUnitPack(b.dataset.removeUnitPack));
+}
+function renderMissionPackManager(){
+  const el=document.getElementById('missionPackManager');if(!el)return;const dups=crossPackDuplicates(loadedMissionPacks,'missions'),unavailable=MISSIONS.filter(m=>!missionAvailable(m)).length;
+  let html=`<div class="diag-strip"><div class="diag-pill"><b>${loadedMissionPacks.length}</b><span>PACKS</span></div><div class="diag-pill ${dups.size?'warn':''}"><b>${dups.size}</b><span>ID上書き</span></div><div class="diag-pill ${unavailable?'bad':''}"><b>${unavailable}</b><span>出撃不可</span></div></div>`;
+  html+=loadedMissionPacks.map(p=>{const imported=!p._base&&!p._bundle;const hit=[...dups.keys()].filter(id=>(p.missions||[]).some(m=>m.id===id));return `<div class="pack-row ${imported?'':'base'}"><div><div class="pack-name">${esc(p.packName||p.packId)}</div><div class="pack-meta">${esc(p.packId)} / ${p.missions.length} missions${hit.length?` / 上書き対象 ${esc(hit.slice(0,4).join(', '))}${hit.length>4?'…':''}`:''}</div></div>${imported?`<button data-remove-mission-pack="${esc(p.packId)}">解除</button>`:(p._bundle?'<span class="pack-meta">統合パックで管理</span>':'')}</div>`;}).join('');
+  if(!loadedMissionPacks.length)html+='<div class="log-empty">読み込み済みパックなし</div>';el.innerHTML=html;
+  el.querySelectorAll('[data-remove-mission-pack]').forEach(b=>b.onclick=()=>removeImportedMissionPack(b.dataset.removeMissionPack));
+}
+function removeImportedUnitPack(packId){if(battleRunning)return;const p=importedUnitPacks.find(x=>x.packId===packId);if(!p)return;if(!confirm(`ユニットパック「${p.packName}」を解除しますか？`))return;const next=importedUnitPacks.filter(x=>x.packId!==packId);if(!saveImportedUnitPacks(next)){alert(STORAGE_FAIL_MESSAGE);return;}importedUnitPacks=next;rebuildUnitMasters();selected=selected.filter(id=>UNIT_MASTER.some(u=>u.id===id));ensureUnitState();save();render();}
+function removeImportedMissionPack(packId){if(battleRunning)return;const p=importedMissionPacks.find(x=>x.packId===packId);if(!p)return;if(!confirm(`作戦パック「${p.packName}」を解除しますか？`))return;const next=importedMissionPacks.filter(x=>x.packId!==packId);if(!saveImportedMissionPacks(next)){alert(STORAGE_FAIL_MESSAGE);return;}importedMissionPacks=next;rebuildMissionMaster();if(selectedMission&&!MISSIONS.some(m=>m.id===selectedMission))selectedMission=null;render();}
+function updateDeployReadiness(m){
+  const el=document.getElementById('deployReadiness');if(!el)return;let text='',cls='readiness';
+  const problem=m&&missionAvailable(m)?(missionLockReason(m)||deployProblem(m,selected)):'';
+  if(battleRunning){text='戦闘進行中。';cls+=' warn';}
+  else if(!m){text='作戦を選択してください。';cls+=' bad';}
+  else if(!missionAvailable(m)){const miss=[...new Set(C.missionEnemyIds(m).filter(id=>!ENEMY_MASTER[id]))];text=`敵ユニットデータ不足: ${miss.join(', ')||'編成エラー'}`;cls+=' bad';}
+  else if(!selected.length){text=`味方を1～${m.maxDeploy}機選択してください。`;cls+=' bad';}
+  else if(selected.length>m.maxDeploy){text=`出撃上限超過: ${selected.length} / ${m.maxDeploy}機`;cls+=' warn';}
+  else if(problem){text=problem;cls+=' bad';}
+  else{text=`出撃準備OK: ${selected.length} / ${m.maxDeploy}機 ・ ${m.name}`;cls+=' ok';}
+  el.className=cls;el.textContent=text;
+}
+
+importedUnitPacks = loadImportedUnitPacks();
+importedMissionPacks = loadImportedMissionPacks();
+importedItemPacks = loadImportedItemPacks();
+importedBundlePacks = loadImportedBundlePacks();
+rebuildUnitMasters();
+rebuildMissionMaster();
+rebuildItemMaster();
+
+const SAVE_KEY = 'vais_outer_ops_save_v1';
+const LEGACY_SAVE_KEYS = ['vais_outer_ops_proto_v03'];
+const MAX_SLOTS = 8;
+const SPEED_DELAY = {slow:700, normal:240, fast:100, turbo:20};
+const STATS = ['hp','atk','def','mob','acc'];
+const MAX_LEVEL = 50, EQUIP_SLOTS = 2, FATIGUE_SORTIE = 20, FATIGUE_REST = 25, FATIGUE_TIRED = 50, FATIGUE_EXHAUSTED = 80, INJURY_BATTLES = 2;
+const FACILITIES = {
+  med:{name:'医務室',desc:lv=>lv?`待機中の「生身」ユニットが1日ごとにHP ${lv*10}% 回復${lv>=2?'・負傷が早く治る':''}`:'未建設',cost:[3000,8000,20000]},
+  hangar:{name:'整備場',desc:lv=>lv?`修理費 -${lv*15}% ／ 待機中の生身以外のユニットがHP ${lv*5}% 回復`:'未建設',cost:[3000,8000,20000]},
+  training:{name:'訓練所',desc:lv=>lv?`待機中のユニットが出撃経験値の ${lv*20}% を獲得`:'未建設',cost:[2500,7000,18000]}
+};
+const ACHIEVEMENTS = [
+  {id:'first_win',name:'初勝利',desc:'作戦に1回勝利',reward:300,check:s=>s.records.wins>=1},
+  {id:'wins_10',name:'歴戦',desc:'作戦に10回勝利',reward:1000,check:s=>s.records.wins>=10},
+  {id:'wins_50',name:'百戦錬磨',desc:'作戦に50回勝利',reward:5000,check:s=>s.records.wins>=50},
+  {id:'kills_50',name:'撃破50',desc:'敵を累計50体撃破',reward:500,check:s=>s.records.kills>=50},
+  {id:'kills_300',name:'撃破300',desc:'敵を累計300体撃破',reward:3000,check:s=>s.records.kills>=300},
+  {id:'star_3',name:'完璧な作戦',desc:'いずれかの作戦で星3つを獲得',reward:1000,check:s=>Object.values(s.missions).some(m=>m.stars.length&&m.stars.every(Boolean))},
+  {id:'level_10',name:'ベテラン',desc:'ユニットがLv10に到達',reward:1000,check:s=>Object.values(s.levels).some(l=>l.lv>=10)},
+  {id:'level_30',name:'エース',desc:'ユニットがLv30に到達',reward:5000,check:s=>Object.values(s.levels).some(l=>l.lv>=30)},
+  {id:'research_1',name:'技術開発',desc:'研究を1つ完了',reward:500,check:s=>s.research.length>=1},
+  {id:'research_5',name:'技術革新',desc:'研究を5つ完了',reward:2000,check:s=>s.research.length>=5},
+  {id:'shopper',name:'お得意様',desc:'ショップで10回購入',reward:500,check:s=>s.records.purchases>=10},
+  {id:'facility_max',name:'基地拡張',desc:'いずれかの施設をLv3にする',reward:2000,check:s=>Object.values(s.facilities).some(v=>v>=3)},
+  {id:'recruit_1',name:'新しい仲間',desc:'ユニットが加入',reward:500,check:s=>s.recruited.length>=1},
+  {id:'collector',name:'収集家',desc:'10種類のアイテムを入手',reward:1000,check:s=>Object.keys(s.records.itemsFound).length>=10}
+];
+// Declared before loadState() runs: the save loader depends on these.
+const RESERVED=['__proto__','constructor','prototype'];
+const safeKey=k=>typeof k==='string'&&k.length>0&&!RESERVED.includes(k);
+let state = loadState(), selected = [], selectedMission = null, battleRunning = false;
+let battleControl = {speed:'normal', paused:false, stepTokens:0, gateResolve:null, skip:false};
+let visualState = {activeId:null,targetIds:[],weaponById:{}};
+let battleStats = {};
+let logFilter='all',logAutoScroll=true;
+let activeBattle=null,currentMission=null,lastNotice='',growthTargetId=null;
+
+function plainObject(raw){return raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};}
+function mapEntries(raw,fn){const out={};for(const [k,v] of Object.entries(plainObject(raw))){if(!safeKey(k))continue;const r=fn(v,k);if(r!==undefined)out[k]=r;}return out;}
+function intIn(v,min,max,fallback){const n=Math.floor(num(v,fallback));return Math.max(min,Math.min(max,n));}
+function idArray(raw,max=999){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&C.safeId(x)))].slice(0,max):[];}
+function stringArray(raw,max=16){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&x.trim()).map(x=>x.trim().slice(0,32)))].slice(0,max):[];}
+function freshRecords(){return {battles:0,wins:0,losses:0,draws:0,kills:0,purchases:0,enemyKills:{},enemyNames:{},itemsFound:{},itemNames:{}};}
+function freshExtState(){return {levels:{},equip:{},pilots:{},tree:{},tagMods:{},sortieBuffs:{},itemUses:{},fatigue:{},injury:{},rows:{},recruited:[],research:[],facilities:{med:0,hangar:0,training:0},missions:{},records:freshRecords(),achievements:[],presets:[],settings:{fatigue:true},day:0};}
+function defaultState(){return {credits:2500,units:Object.fromEntries(BASE_UNIT_MASTER.map(u=>[u.id,{hp:u.hp}])),items:{"item-0001":1},upgrades:{},grants:{},...freshExtState()};}
+function normalizeExtState(saved){
+  const r=plainObject(saved.records),base=freshRecords();
+  return {
+    levels:mapEntries(saved.levels,v=>({lv:intIn(v?.lv,1,MAX_LEVEL,1),exp:intIn(v?.exp,0,1e9,0),sp:intIn(v?.sp,0,9999,0)})),
+    equip:mapEntries(saved.equip,v=>Array.isArray(v)?Array.from({length:EQUIP_SLOTS},(_,i)=>typeof v[i]==='string'&&C.safeId(v[i])?v[i]:null):undefined),
+    pilots:mapEntries(saved.pilots,v=>typeof v==='string'&&C.safeId(v)?v:undefined),
+    tree:mapEntries(saved.tree,v=>idArray(v,64)),
+    tagMods:mapEntries(saved.tagMods,v=>({add:stringArray(v?.add),remove:stringArray(v?.remove)})),
+    sortieBuffs:mapEntries(saved.sortieBuffs,v=>Array.isArray(v)?v.filter(b=>['atk','def','mob','acc'].includes(b?.stat)).slice(0,4).map(b=>({stat:b.stat,value:intIn(b.value,1,500,1)})):undefined),
+    itemUses:mapEntries(saved.itemUses,v=>mapEntries(v,n=>intIn(n,0,1e6,0))),
+    fatigue:mapEntries(saved.fatigue,v=>intIn(v,0,100,0)),
+    injury:mapEntries(saved.injury,v=>{const n=intIn(v,0,99,0);return n||undefined;}),
+    rows:mapEntries(saved.rows,v=>v==='back'?'back':v==='front'?'front':undefined),
+    recruited:idArray(saved.recruited),research:idArray(saved.research),
+    facilities:Object.fromEntries(Object.keys(FACILITIES).map(k=>[k,intIn(saved.facilities?.[k],0,3,0)])),
+    missions:mapEntries(saved.missions,v=>({clears:intIn(v?.clears,0,1e9,0),best:intIn(v?.best,0,999,0),stars:Array.from({length:3},(_,i)=>!!v?.stars?.[i])})),
+    records:{...base,...Object.fromEntries(['battles','wins','losses','draws','kills','purchases'].map(k=>[k,intIn(r[k],0,1e12,0)])),enemyKills:mapEntries(r.enemyKills,v=>intIn(v,0,1e12,0)),enemyNames:mapEntries(r.enemyNames,v=>String(v).slice(0,60)),itemsFound:mapEntries(r.itemsFound,v=>intIn(v,0,1e12,0)),itemNames:mapEntries(r.itemNames,v=>String(v).slice(0,60))},
+    achievements:idArray(saved.achievements),
+    presets:Array.isArray(saved.presets)?saved.presets.slice(0,3).map((p,i)=>p&&typeof p==='object'?{name:String(p.name||`プリセット${i+1}`).slice(0,30),selected:idArray(p.selected,MAX_SLOTS),rows:mapEntries(p.rows,v=>v==='back'?'back':'front')}:null):[],
+    settings:{fatigue:saved.settings?.fatigue!==false},
+    day:intIn(saved.day,0,1e9,0)
+  };
+}
+function normalizeState(saved,base=defaultState()){
+  saved=plainObject(saved);
+  const inventory=saved.items&&typeof saved.items==='object'&&!Array.isArray(saved.items)?saved.items:base.items;
+  const items=Object.fromEntries(Object.entries(inventory).filter(([id])=>/^[a-zA-Z0-9_-]+$/.test(id)&&!RESERVED.includes(id)).map(([id,count])=>[id,Math.max(0,Math.floor(num(count,0)))]));
+  return {credits:Math.max(0,num(saved.credits,base.credits)),units:{...base.units,...mapEntries(saved.units,v=>v&&typeof v==='object'?{hp:num(v.hp,0)}:undefined)},items,upgrades:normalizeUpgrades(saved.upgrades),grants:normalizeGrants(saved.grants),...normalizeExtState(saved)};
+}
+function loadState(){
+  const base=defaultState();
+  try{
+    let raw=storageGet(SAVE_KEY,null),fromLegacy=false;
+    if(raw===null){for(const key of LEGACY_SAVE_KEYS){raw=storageGet(key,null);if(raw!==null){fromLegacy=true;break;}}}
+    const out=normalizeState(JSON.parse(raw||'null')||{},base);
+    if(fromLegacy)storageSet(SAVE_KEY,JSON.stringify(out));return out;
+  }catch(e){console.warn('Save data could not be read',e);return base;}
+}
+function normalizeUpgrades(raw){return Object.fromEntries(Object.entries(raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{}).filter(([id])=>!RESERVED.includes(id)).map(([id,stats])=>[id,Object.fromEntries(['hp','atk','def','mob','acc'].map(k=>[k,Math.max(0,Math.floor(num(stats?.[k],0)))]))]));}
+function normalizeGrants(raw){const out=Object.create(null);if(!raw||typeof raw!=='object')return out;for(const [id,g] of Object.entries(raw)){if(RESERVED.includes(id))continue;const skills=[],weapons=[];for(const x of (Array.isArray(g?.skills)?g.skills:[])){try{const sk=C.skill(x);if(!skills.some(y=>y.id===sk.id))skills.push(sk);}catch(e){}}for(const x of (Array.isArray(g?.weapons)?g.weapons:[])){try{const w=C.weapon(x);if(!weapons.some(y=>y.name===w.name))weapons.push(w);}catch(e){}}out[id]={skills,weapons};}return out;}
+
+// ---- derived unit stats: base + upgrades + level + equipment + pilot + skill tree ----
+function baseUnit(id){return BASE_UNIT_MASTER.find(u=>u.id===id)||null;}
+function levelInfo(id){return state.levels[id]||{lv:1,exp:0,sp:0};}
+function levelOf(id){return levelInfo(id).lv;}
+function expToNext(lv){return 100*lv;}
+function growthOf(u){if(u.growth)return {hp:u.growth.hp||0,atk:u.growth.atk||0,def:u.growth.def||0,mob:u.growth.mob||0,acc:u.growth.acc||0};return {hp:Math.max(1,Math.round(u.hp*.04)),atk:Math.round(u.atk*.03),def:Math.round(u.def*.03),mob:Math.round(u.mob*.02),acc:Math.round(u.acc*.02)};}
+function isRecruited(u){return !u.recruit?.locked||state.recruited.includes(u.id);}
+function equippedItems(id){return (state.equip[id]||[]).map(x=>x&&ITEM_MASTER[x]).filter(i=>i?.equip);}
+function pilotFor(id){return PILOT_MASTER[state.pilots[id]]||null;}
+function treeSkills(u){const got=new Set(state.tree[u.id]||[]);return (u.skillTree||[]).filter(n=>got.has(n.id)).map(n=>n.skill);}
+function tagsWithMods(u){const m=state.tagMods[u.id];let tags=[...(u.tags||[])];if(m){tags=tags.filter(t=>!m.remove.includes(t));for(const t of m.add)if(!tags.includes(t))tags.push(t);}return tags;}
+function dedupe(list,key){const seen=new Set();return list.filter(x=>{const k=key(x);if(seen.has(k))return false;seen.add(k);return true;});}
+function applyUnitUpgrades(){
+  state.upgrades=normalizeUpgrades(state.upgrades);state.grants=normalizeGrants(state.grants);
+  UNIT_MASTER=BASE_UNIT_MASTER.filter(isRecruited).map(u=>{
+    const bonuses=Object.hasOwn(state.upgrades,u.id)?state.upgrades[u.id]:{},g=state.grants[u.id]||{skills:[],weapons:[]};
+    const lv=levelOf(u.id),growth=growthOf(u),eq=equippedItems(u.id),pilot=pilotFor(u.id),tags=tagsWithMods(u),stats={};
+    for(const k of STATS){let v=u[k]+(bonuses[k]||0)+(growth[k]||0)*(lv-1);for(const i of eq)v+=i.equip.stats[k]||0;if(pilot)v+=pilot.stats[k]||0;stats[k]=k==='hp'?Math.max(1,v):Math.max(0,v);}
+    if(pilot?.aptitude?.pct&&pilot.aptitude.tags.some(t=>tags.includes(t)))for(const k of ['atk','mob','acc'])stats[k]=Math.round(stats[k]*(1+pilot.aptitude.pct/100));
+    const skills=dedupe([...u.skills,...g.skills,...treeSkills(u),...eq.flatMap(i=>i.equip.skills),...(pilot?.skills||[])],x=>x.id);
+    const weapons=dedupe([...u.weapons,...g.weapons,...eq.flatMap(i=>i.equip.weapons)],x=>x.name);
+    return {...u,...stats,tags,skills,weapons,level:lv,...(pilot?{pilotId:pilot.id,pilot:pilot.name}:{})};
+  });
+}
+function ensureUnitState(){
+  applyUnitUpgrades();
+  if(!state.units)state.units={};
+  UNIT_MASTER.forEach(u=>{
+    if(!state.units[u.id])state.units[u.id]={hp:u.hp};
+    state.units[u.id].hp=clamp(num(state.units[u.id].hp,u.hp),0,u.hp);
+  });
+}
+let saveFailureWarned=false;
+// Warn once per failure streak so a full storage is never mistaken for saved progress.
+function save(){const ok=storageSet(SAVE_KEY,JSON.stringify(state));if(ok)saveFailureWarned=false;else if(!saveFailureWarned){saveFailureWarned=true;alert('セーブデータを保存できませんでした。端末の空き容量やブラウザの設定を確認してください。\nこのまま閉じると直前の進行が失われます。');}return ok;}
+const STORAGE_FAIL_MESSAGE='保存できませんでした。変更は適用していません。端末の空き容量やブラウザの設定を確認してください。';
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));} function rand(min,max){return Math.random()*(max-min)+min;} function chance(p){return Math.random()<p;}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
+function hpClass(r){return r>.55?'':r>.25?'mid':'low';}
+function pct(v){return Math.round(v*1000)/10;}
+function baseHitRate(acc,mob,accuracyPt=0){return clamp((70+(acc-mob)/10+accuracyPt)/100,.05,.95);}
+function initBattleStat(u){battleStats[u.combatId]={name:u.name,side:u.side,actions:0,shots:0,hits:0,damage:0,damageTaken:0,kills:0};}
+function statFor(u){return battleStats[u.combatId]||(initBattleStat(u),battleStats[u.combatId]);}
+function updateAliveScore(allies,enemies){const a=document.getElementById('allyAlive'),e=document.getElementById('enemyAlive');if(a)a.textContent=`${allies.filter(x=>x.alive).length} / ${allies.length}`;if(e)e.textContent=`${enemies.filter(x=>x.alive).length} / ${enemies.length}`;}
+function weaponClass(w){return `${['physical','beam','special'].includes(w.damageType)?w.damageType:'special'} ${w.attackType==='melee'?'melee-weapon':'ranged-weapon'}`;}
+const damageTypeLabel=B.damageTypeLabel,attackTypeLabel=B.attackTypeLabel,resistTypeLabel=B.resistTypeLabel,weaponMatchesResist=B.weaponMatchesResist,weaponTypeLabel=B.weaponTypeLabel;
+function outerGrade(v){return v<300?'E':v<450?'D':v<600?'C':v<750?'B':v<900?'A':'S';}
+
+// ---- 1.9 rules: fatigue, injury, recruitment, missions ----
+function fatigueOn(){return state.settings.fatigue!==false;}
+function fatigueOf(id){return state.fatigue[id]||0;}
+function injuryOf(id){return state.injury[id]||0;}
+function sortieBlock(id){if(!fatigueOn())return '';if(injuryOf(id)>0)return `負傷中（あと${injuryOf(id)}日）`;if(fatigueOf(id)>=FATIGUE_EXHAUSTED)return `疲労困憊（疲労${fatigueOf(id)}）`;return '';}
+function canSortie(id){return (state.units[id]?.hp??0)>0&&!sortieBlock(id);}
+function repairRate(){return .16*(1-.15*state.facilities.hangar);}
+function repairCost(missing){return Math.ceil(Math.max(0,missing)*repairRate());}
+function today(){return new Date().getDay();}
+function missionRecord(id){return state.missions[id]||(state.missions[id]={clears:0,best:0,stars:[false,false,false]});}
+function missionCleared(id){return (state.missions[id]?.clears||0)>0;}
+function missionLockReason(m){
+  const r=m.requires;
+  if(r?.missions){const miss=r.missions.filter(id=>!missionCleared(id));if(miss.length)return '前提作戦が未クリア: '+miss.map(id=>MISSIONS.find(x=>x.id===id)?.name||id).join('・');}
+  if(r?.items){const miss=r.items.filter(id=>!((state.items[id]||0)>0));if(miss.length)return '必要なキーアイテム: '+miss.map(id=>ITEM_MASTER[id]?.name||id).join('・');}
+  if(m.days?.length&&!m.days.includes(today()))return '出撃できる曜日: '+m.days.map(d=>C.days[d]).join('・');
+  return '';
+}
+function deployRules(m){const tagRule=(m.rules||[]).find(r=>r&&r.type==='deploy_tags');const ban=C.terrainMods(m).banTags||[];return {tagRule,ban};}
+function deployProblem(m,ids){
+  const {tagRule,ban}=deployRules(m);
+  for(const id of ids){const u=UNIT_MASTER.find(x=>x.id===id);if(!u)return '出撃できないユニットが含まれています。';
+    const block=sortieBlock(id);if(block)return `${u.name}: ${block}`;
+    if(m.requires?.minLevel&&levelOf(id)<m.requires.minLevel)return `${u.name}: Lv${m.requires.minLevel}以上が必要`;
+    const banned=ban.filter(t=>u.tags.includes(t));if(banned.length)return `${u.name}: 地形「${m.terrain}」では「${banned.join('・')}」は出撃不可`;
+    if(tagRule){const ok=C.checkRequirements(tagRule,u);if(!ok.ok)return `${u.name}: 出撃制限 ${ok.reason}`;}
+  }
+  return '';
+}
+function rankValue(diff){const d=String(diff||'').toUpperCase().trim(),base={E:1,D:2,C:3,B:4,A:5,S:6}[d[0]];if(!base)return 3;const extraS=d.startsWith('S')?(d.match(/^S+/)[0].length-1):0;return base+extraS+(d.includes('+')?.5:0);}
+function missionExp(m){return m.exp??Math.round(15*rankValue(m.diff));}
+function enemyExp(key){const e=ENEMY_MASTER[key];if(!e)return 0;return e.exp??Math.round(e.hp/150+e.atk/40);}
+function addExp(id,gain){
+  if(!(gain>0))return 0;const info={...levelInfo(id)};const u=baseUnit(id);let ups=0;info.exp+=Math.round(gain);
+  while(info.lv<MAX_LEVEL&&info.exp>=expToNext(info.lv)){info.exp-=expToNext(info.lv);info.lv++;info.sp++;ups++;if(u&&state.units[id])state.units[id].hp+=growthOf(u).hp;}
+  if(info.lv>=MAX_LEVEL)info.exp=0;state.levels[id]=info;return ups;
+}
+function recordItem(id,count){const item=ITEM_MASTER[id];state.records.itemsFound[id]=(state.records.itemsFound[id]||0)+count;if(item)state.records.itemNames[id]=item.name;}
+function checkAchievements(){const got=[];for(const a of ACHIEVEMENTS)if(!state.achievements.includes(a.id)&&a.check(state)){state.achievements.push(a.id);state.credits+=a.reward;got.push(a);}return got;}
+function passDay(deployed=new Set(),baseExp=0){
+  const L=state.facilities;
+  for(const u of UNIT_MASTER){if(deployed.has(u.id))continue;
+    if(fatigueOn()){state.fatigue[u.id]=Math.max(0,fatigueOf(u.id)-FATIGUE_REST);if(!state.fatigue[u.id])delete state.fatigue[u.id];if(injuryOf(u.id)>0){const left=Math.max(0,injuryOf(u.id)-1-(L.med>=2?1:0));if(left)state.injury[u.id]=left;else delete state.injury[u.id];}}
+    const cur=state.units[u.id],healPct=u.tags.includes('生身')?L.med*10:L.hangar*5;
+    if(cur&&healPct&&cur.hp>0&&cur.hp<u.hp)cur.hp=Math.min(u.hp,cur.hp+Math.ceil(u.hp*healPct/100));
+    if(L.training&&baseExp)addExp(u.id,Math.round(baseExp*.2*L.training));
+  }
+}
+
+function showScreen(name){
+  const ids=['baseScreen','battleScreen','resultScreen'];
+  // Only completed-battle log review offers a route back to the result.
+  for(const id of ['returnResultBtn','returnResultBottomBtn']){
+    const returnResult=document.getElementById(id);
+    if(returnResult)returnResult.style.display=name==='battle'&&!battleRunning?'inline-flex':'none';
+  }
+  ids.forEach(id=>document.getElementById(id)?.classList.toggle('active',id===name+'Screen'));
+  try{window.scrollTo({top:0,behavior:'instant'});}catch(e){window.scrollTo(0,0);}
+}
+function renderResultScreen(outcome,mission,gained,repairEstimate,allies,turns){
+  document.getElementById('resultTitle').textContent=outcome==='win'?'MISSION COMPLETE':outcome==='draw'?'DRAW / 時間切れ':'MISSION FAILED';
+  document.getElementById('resultTitle').className='result-title '+(outcome==='win'?'win':outcome==='draw'?'draw':'lose');
+  document.getElementById('resultMeta').textContent=`${mission.name} / RANK ${mission.diff}${outcome==='draw'?' / 30TURNで決着なし':''}`;
+  document.getElementById('resultReward').textContent=gained.toLocaleString();
+  document.getElementById('resultTurns').textContent=turns;
+  document.getElementById('resultRepair').textContent=repairEstimate.toLocaleString();
+  document.getElementById('resultUnits').innerHTML=allies.map(u=>{
+    const hp=Math.max(0,Math.round(u.currentHp)),ratio=hp/u.maxHp,status=hp<=0?'大破':ratio<.3?'重損':ratio<.7?'損傷':'健在';
+    return `<div class="result-unit"><div><b>${esc(u.name)}</b><span>${status} / HP ${hp} / ${u.maxHp}</span></div><div class="result-mini-hp"><i class="${hpClass(ratio)}" style="width:${ratio*100}%"></i></div></div>`;
+  }).join('');
+  const rows=allies.map(u=>battleStats[u.combatId]).filter(Boolean);
+  document.getElementById('resultAnalyticsBody').innerHTML=rows.map(s=>{
+    const hitRate=s.shots?pct(s.hits/s.shots)+'%':'-';
+    return `<tr><td>${esc(s.name)}</td><td>${s.actions}</td><td>${s.hits} / ${s.shots}</td><td>${hitRate}</td><td>${Math.round(s.damage).toLocaleString()}</td><td>${Math.round(s.damageTaken).toLocaleString()}</td><td>${s.kills}</td></tr>`;
+  }).join('')||'<tr><td colspan="7">記録なし</td></tr>';
+}
+
+function render(){
+  ensureUnitState();selected=selected.filter(id=>UNIT_MASTER.some(u=>u.id===id)&&canSortie(id));document.getElementById('credits').textContent=state.credits.toLocaleString(); renderUnits(); renderMissions(); renderSquad(); renderItems(); unitDataStatus(); missionDataStatus();itemDataStatus();
+  const activeMission=MISSIONS.find(m=>m.id===selectedMission);
+  document.getElementById('deployBtn').disabled=battleRunning||selected.length===0||!activeMission||selected.length>activeMission.maxDeploy||!missionAvailable(activeMission)||!!missionLockReason(activeMission)||!!deployProblem(activeMission,selected); document.getElementById('repairBtn').disabled=battleRunning;
+  renderPackManagers();renderItemPackManager();renderBundlePackManager();updateDeployReadiness(activeMission);updateBattleControls();
+  renderGrowth();renderShop();renderLab();renderRecords();renderPresets();renderSaveTools();renderMissionDetail(activeMission);
+  const notice=document.getElementById('itemNotice');if(notice){notice.hidden=!lastNotice;notice.textContent=lastNotice;}
+}
+function itemEffectText(item){return C.itemSummary(item)+(item.requires?' / '+C.requirementText(item.requires):'');}
+// Preview the whole transaction on copies. Nothing is consumed on any failure.
+function planItem(item,u){
+ if(!item||!u)return {ok:false,reason:'対象ユニットがありません'};
+ if(item.key&&!C.itemEffects(item).length)return {ok:false,reason:'キーアイテム（作戦の出撃条件に使います）'};
+ if(item.equip&&!C.itemEffects(item).length)return {ok:false,reason:'装備品：「育成」で装備します'};
+ const eligibility=C.checkRequirements(item.requires,u);if(!eligibility.ok)return eligibility;
+ if(item.limitPerUnit&&(state.itemUses[u.id]?.[item.id]||0)>=item.limitPerUnit)return {ok:false,reason:`このユニットには使用できません（1体${item.limitPerUnit}回まで・使用済み）`};
+ const copy=C.clone(u),bonuses={...(state.upgrades[u.id]||{})},grants=C.clone(state.grants[u.id]||{skills:[],weapons:[]});
+ const tagMods=C.clone(state.tagMods[u.id]||{add:[],remove:[]}),sortie=C.clone(state.sortieBuffs[u.id]||[]),level={...levelInfo(u.id)},recruits=[],loot=[];
+ let hp=state.units[u.id].hp,credits=state.credits,expGain=0,tags=[...copy.tags];
+ function addStat(k,v){if(!Number.isSafeInteger(v)||v<=0||!Number.isFinite(copy[k]+v)||copy[k]+v>Number.MAX_SAFE_INTEGER)throw new Error('能力値が上限を超えます');copy[k]+=v;bonuses[k]=(bonuses[k]||0)+v;if(k==='hp')hp+=v;}
+ try{for(const raw of C.itemEffects(item)){const e=C.effect(raw);switch(e.type){
+ case 'heal_hp_flat':case 'heal_hp_pct':case 'heal_hp_full':
+  if(hp>=copy.hp)throw new Error('HPが満タンです');hp=Math.min(copy.hp,hp+(e.type==='heal_hp_full'?copy.hp:e.type==='heal_hp_pct'?Math.ceil(copy.hp*e.value/100):e.value));break;
+ case 'revive_hp_pct':if(hp>0)throw new Error('撃破されたユニット専用です');hp=Math.max(1,Math.ceil(copy.hp*e.value/100));break;
+ case 'stat_up_flat':addStat(e.stat,e.value);break;
+ case 'stat_up_pct':addStat(e.stat,Math.max(1,Math.ceil(copy[e.stat]*e.value/100)));break;
+ case 'all_stats_up_flat':for(const k of ['hp','atk','def','mob','acc'])addStat(k,e.value);break;
+ case 'add_skill':if(copy.skills.some(x=>x.id===e.skill.id))throw new Error('同じIDのスキルを習得済みです');grants.skills.push(e.skill);copy.skills.push(e.skill);break;
+ case 'add_weapon':if(copy.weapons.some(x=>x.name===e.weapon.name))throw new Error('同名の武装を装備済みです');grants.weapons.push(e.weapon);copy.weapons.push(e.weapon);break;
+ case 'credits_gain':if(credits+e.value>Number.MAX_SAFE_INTEGER)throw new Error('資金が上限を超えます');credits+=e.value;break;
+ case 'add_tag':if(tags.includes(e.tag))throw new Error(`タグ「${e.tag}」は既にあります`);if(tags.length>=16)throw new Error('タグは16個までです');tags.push(e.tag);if(tagMods.remove.includes(e.tag))tagMods.remove=tagMods.remove.filter(t=>t!==e.tag);else tagMods.add.push(e.tag);copy.tags=[...tags];break;
+ case 'remove_tag':if(!tags.includes(e.tag))throw new Error(`タグ「${e.tag}」を持っていません`);tags=tags.filter(t=>t!==e.tag);if(tagMods.add.includes(e.tag))tagMods.add=tagMods.add.filter(t=>t!==e.tag);else tagMods.remove.push(e.tag);copy.tags=[...tags];break;
+ case 'sortie_buff':{const i=sortie.findIndex(b=>b.stat===e.stat);if(i>=0){if(sortie[i].value>=e.value)throw new Error('同じ能力の出撃バフが既にあります');sortie[i]={stat:e.stat,value:e.value};}else sortie.push({stat:e.stat,value:e.value});break;}
+ case 'loot_box':loot.push(e.table);break;
+ case 'remove_skill':{const before=grants.skills.length;grants.skills=e.skillId?grants.skills.filter(s=>s.id!==e.skillId):[];if(grants.skills.length===before)throw new Error('外せる習得スキルがありません');break;}
+ case 'remove_weapon':{const before=grants.weapons.length;grants.weapons=e.name?grants.weapons.filter(w=>w.name!==e.name):[];if(grants.weapons.length===before)throw new Error('外せる追加武装がありません');break;}
+ case 'recruit_unit':{const t=baseUnit(e.unitId);if(!t)throw new Error('加入するユニットのデータが未読込です');if(!t.recruit?.locked||state.recruited.includes(t.id)||recruits.includes(t.id))throw new Error(`${t.name}は既に部隊にいます`);recruits.push(t.id);break;}
+ case 'exp_gain':if(level.lv>=MAX_LEVEL)throw new Error('最大レベルです');expGain+=e.value;break;
+ case 'skill_point':level.sp+=e.value;break;
+ }}return {ok:true,hp,credits,bonuses,grants,unit:copy,tagMods,sortie,level,expGain,recruits,loot};}catch(err){return {ok:false,reason:err.message};}
+}
+function rollLoot(table){const total=table.reduce((s,r)=>s+r.weight,0);let r=Math.random()*total;for(const row of table){r-=row.weight;if(r<0||row===table[table.length-1]){const n=row.min+Math.floor(Math.random()*(row.max-row.min+1));return {itemId:row.itemId,count:n};}}return null;}
+function commitPlan(item,u,plan,first){
+ state.units[u.id].hp=plan.hp;if(first)state.credits=plan.credits;
+ Object.defineProperty(state.upgrades,u.id,{value:plan.bonuses,writable:true,enumerable:true,configurable:true});
+ Object.defineProperty(state.grants,u.id,{value:plan.grants,writable:true,enumerable:true,configurable:true});
+ if(plan.tagMods.add.length||plan.tagMods.remove.length)state.tagMods[u.id]=plan.tagMods;else delete state.tagMods[u.id];
+ if(plan.sortie.length)state.sortieBuffs[u.id]=plan.sortie;else delete state.sortieBuffs[u.id];
+ const before=levelInfo(u.id);if(plan.level.sp!==before.sp||plan.level.lv!==before.lv||plan.level.exp!==before.exp||state.levels[u.id])state.levels[u.id]=plan.level;
+ const notes=[];
+ if(plan.expGain){const ups=addExp(u.id,plan.expGain);if(ups)notes.push(`${u.name} Lv${levelOf(u.id)}にアップ`);}
+ if(item.limitPerUnit){state.itemUses[u.id]=state.itemUses[u.id]||{};state.itemUses[u.id][item.id]=(state.itemUses[u.id][item.id]||0)+1;}
+ if(first){for(const id of plan.recruits){state.recruited.push(id);notes.push(`${baseUnit(id)?.name||id} が加入`);}for(const table of plan.loot){const got=rollLoot(table);if(got){state.items[got.itemId]=(state.items[got.itemId]||0)+got.count;recordItem(got.itemId,got.count);notes.push(`箱から ${ITEM_MASTER[got.itemId]?.name||got.itemId} ×${got.count}`);}}}
+ return notes;
+}
+function renderItems(){
+  const target=document.getElementById('itemTarget'),previous=target.value;
+  target.innerHTML=UNIT_MASTER.map(u=>{const hp=state.units[u.id]?.hp??u.hp;return `<option value="${esc(u.id)}">${esc(u.name)}${u.tags?.length?' ['+esc(u.tags.join('・'))+']':''} / Lv${u.level||1} / HP ${Math.round(hp).toLocaleString()} / ${u.hp.toLocaleString()}</option>`;}).join('');
+  if(UNIT_MASTER.some(u=>u.id===previous))target.value=previous;
+  const targetUnit=UNIT_MASTER.find(u=>u.id===target.value);
+  const el=document.getElementById('itemList');el.innerHTML='';
+  const entries=Object.entries(state.items||{}).filter(([,count])=>count>0);
+  if(!entries.length){el.innerHTML='<div class="sub">所持アイテムはありません。作戦成功時のドロップやショップで入手できます。</div>';return;}
+  for(const [id,count] of entries){const item=ITEM_MASTER[id],row=document.createElement('div');row.className='item-row';const party=item?.scope==='party';const preview=party?(UNIT_MASTER.map(u=>planItem(item,u)).find(p=>p.ok)||planItem(item,targetUnit)):planItem(item,targetUnit);row.innerHTML=`<div><b>${esc(item?.name||id)} ×${count.toLocaleString()}</b>${item?.price?`<small>売値 ${Math.floor(item.price/2).toLocaleString()}</small>`:''}<small>${item?esc(itemEffectText(item)):'定義パック未読込：使用不可'}${item?.desc?' / '+esc(item.desc):''}</small>${!preview.ok?`<small>${esc(preview.reason)}</small>`:party?'<small>部隊全員のうち使用できるユニットに効果</small>':''}</div><button ${!preview.ok||battleRunning?'disabled':''}>使用</button>`;row.querySelector('button').onclick=()=>useItem(id,target.value);el.appendChild(row);}
+}
+function useItem(id,targetId){
+ if(battleRunning)return false;ensureUnitState();const item=ITEM_MASTER[id],count=state.items?.[id]||0;if(!item||count<=0)return false;
+ const targets=item.scope==='party'?UNIT_MASTER:[UNIT_MASTER.find(x=>x.id===targetId)].filter(Boolean);if(!targets.length)return false;
+ const plans=targets.map(u=>[u,planItem(item,u)]).filter(([,p])=>p.ok);if(!plans.length)return false;
+ const notes=[];plans.forEach(([u,p],i)=>notes.push(...commitPlan(item,u,p,i===0)));
+ state.items[id]=count-1;notes.push(...checkAchievements().map(a=>`実績「${a.name}」 +${a.reward}`));lastNotice=notes.length?`${item.name}: ${notes.join(' / ')}`:'';ensureUnitState();save();render();return true;
+}
+function itemDataStatus(){const base=!!window.VAIS_ITEM_PACK,missing=[...new Set(MISSIONS.flatMap(m=>(m.drops||[]).map(d=>d.itemId)).filter(id=>!ITEM_MASTER[id]))];document.getElementById('itemDataStatus').innerHTML=`基本JS: ${base?'読込済み':'未読込'} / ${Object.keys(ITEM_MASTER).length} items / 研究 ${Object.keys(RESEARCH_MASTER).length} / 追加パック ${importedItemPacks.length}${missing.length?`<br>⚠ 作戦のドロップ参照不足: ${esc(missing.join(', '))}`:''}${!base?'<br>同梱 outer_ops_items.js を手動でインポートできます。':''}`;}
+function renderItemPackManager(){const el=document.getElementById('itemPackManager');el.innerHTML=loadedItemPacks.map(p=>`<div class="pack-row ${p._base?'base':''}"><div><div class="pack-name">${esc(p.packName)}</div><div class="pack-meta">${esc(p.packId)} / ${p.items.length} items${p.research?.length?` / 研究 ${p.research.length}`:''}</div></div>${p._bundle?'<span class="pack-meta">統合パックで管理</span>':p._base?'':`<button data-remove-item-pack="${esc(p.packId)}">解除</button>`}</div>`).join('')||'<div class="log-empty">読み込み済みパックなし</div>';el.querySelectorAll('[data-remove-item-pack]').forEach(b=>b.onclick=()=>removeImportedItemPack(b.dataset.removeItemPack));}
+function removeImportedItemPack(packId){if(battleRunning)return;const p=importedItemPacks.find(x=>x.packId===packId);if(!p||!confirm(`アイテムパック「${p.packName}」を解除しますか？\n所持数は残り、再読込すると使用できます。`))return;const next=importedItemPacks.filter(x=>x.packId!==packId);if(!saveImportedItemPacks(next)){alert(STORAGE_FAIL_MESSAGE);return;}importedItemPacks=next;rebuildItemMaster();render();}
+function rollMissionDrops(mission){const found=[];for(const drop of mission.drops||[]){const item=ITEM_MASTER[drop.itemId];if(!item){log(`DROP SKIPPED: 未読込アイテム ${esc(drop.itemId)}`,'sys');continue;}if(!chance(drop.chance/100))continue;const count=drop.min+Math.floor(Math.random()*(drop.max-drop.min+1));state.items[item.id]=(state.items[item.id]||0)+count;recordItem(item.id,count);found.push({id:item.id,name:item.name,count});log(`ITEM GET: ${esc(item.name)} ×${count}`,'sys');}return found;}
+function unitThumb(u,cls='unit-thumb'){return u.image?`<img class="${cls}" src="${esc(u.image)}" alt="">`:'';}
+function renderUnits(){
+  const el=document.getElementById('unitList');el.innerHTML='';
+  if(!UNIT_MASTER.length){el.innerHTML='<div class="empty">味方ユニットデータがありません。</div>';return;}
+  UNIT_MASTER.forEach(u=>{const cur=state.units[u.id]?.hp??u.hp,ratio=cur/u.hp,block=sortieBlock(u.id),d=document.createElement('div');d.className='unit'+(selected.includes(u.id)?' selected':'')+(cur<=0||block?' disabled':'');
+    const baseVsStd=baseHitRate(u.acc,700,0);
+    const cost=repairCost(u.hp-cur),row=state.rows[u.id]||u.row||'front',info=levelInfo(u.id),fat=fatigueOf(u.id);
+    d.innerHTML=`<div class="row"><div class="unit-head">${unitThumb(u)}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub" style="margin:2px 0">${esc(u.role||'')} ${u.pilot?`/ ${esc(u.pilot)}`:''}</div></div></div><span class="tag">${esc(u._packName||'CORE')}</span></div><div class="stats"><div class="stat"><b>${Math.ceil(cur)}</b><span>HP</span></div><div class="stat"><b>${u.atk}</b><span>ATK ${outerGrade(u.atk)}</span></div><div class="stat"><b>${u.def}</b><span>DEF ${outerGrade(u.def)}</span></div><div class="stat"><b>${u.mob}</b><span>MOB ${outerGrade(u.mob)}</span></div><div class="stat"><b>${u.acc}</b><span>ACC ${outerGrade(u.acc)}</span></div></div><div class="hpbar"><div class="hpfill ${hpClass(ratio)}" style="width:${ratio*100}%"></div></div><div class="unit-extra"><span class="row-badge ${row}">${row==='back'?'後衛':'前衛'}</span>${fatigueOn()&&fat?`<span class="${fat>=FATIGUE_TIRED?'warn-badge':''}">疲労 ${fat}</span>`:''}${block?`<span class="bad-badge">${esc(block)}</span>`:''}<span>タグ ${esc(u.tags?.join('・')||'なし')}</span><span>武装 ${u.weapons.length}</span>${Object.entries(state.upgrades?.[u.id]||{}).filter(([,v])=>v>0).map(([k,v])=>`<span>強化 ${k==='hp'?'最大HP':k.toUpperCase()} +${v}</span>`).join('')}<span>標準MOB700へ基礎命中 ${pct(baseVsStd)}%</span>${u.skills?.length?`<span>SKILL ${esc(u.skills.map(x=>x.name).join(' / '))}</span>`:(u.ability?`<span>${esc(u.ability)}</span>`:'')}</div><div class="weapon-title">WEAPONS</div><div class="weapon-list">${u.weapons.map(w=>`<span class="weapon-chip ${weaponClass(w)}">${esc(w.name)} / ${weaponTypeLabel(w)}${w.usesPerBattle?` / ${w.usesPerBattle}回`:''}${w.cooldown?` / 待機${w.cooldown}`:''}</span>`).join('')}</div><div class="unit-actions"><button class="row-toggle secondary" ${battleRunning?'disabled':''}>${row==='back'?'前衛にする':'後衛にする'}</button>${cost?`<button class="repair-one" ${battleRunning||state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}${state.credits<cost?'（資金不足）':''}</button>`:''}</div>`;
+    d.onclick=()=>{if(battleRunning||cur<=0||block)return;if(selected.includes(u.id))selected=selected.filter(x=>x!==u.id);else{const m=MISSIONS.find(x=>x.id===selectedMission),limit=m?m.maxDeploy:MAX_SLOTS;if(selected.length<Math.min(MAX_SLOTS,limit))selected.push(u.id);}render();};
+    d.querySelector('.repair-one')?.addEventListener('click',e=>{e.stopPropagation();repairUnit(u.id);});
+    d.querySelector('.row-toggle')?.addEventListener('click',e=>{e.stopPropagation();setRow(u.id,row==='back'?'front':'back');});
+    el.appendChild(d);
+  });
+}
+function missionAvailable(m){if(!m||!m.enemies.length||m.enemies.length>MAX_SLOTS)return false;if(!C.missionEnemyIds(m).every(id=>!!ENEMY_MASTER[id]))return false;if(m.objective?.type==='escort'&&!UNIT_INDEX[m.objective.escortUnitId])return false;return true;}
+function objectiveText(m){const ob=m.objective;if(!ob||ob.type==='annihilate')return m.waves?.length?`殲滅（全${m.waves.length+1}波）`:'殲滅';if(ob.type==='boss')return `ボス撃破（${ENEMY_MASTER[m.enemies[ob.bossIndex||0]]?.name||'指定の敵'}）`;if(ob.type==='defense')return `防衛（${ob.turns}TURN耐える）`;if(ob.type==='escort')return `護衛（${UNIT_INDEX[ob.escortUnitId]?.name||ob.escortUnitId}を守る）`;if(ob.type==='chain')return `連戦（全${(m.waves?.length||0)+1}波）`;return C.objectives[ob.type]||ob.type;}
+function ruleTexts(m){return (m.rules||[]).map(r=>{if(typeof r==='string')return r;if(r.type==='turn_limit')return `${r.value}TURN以内に勝利しないと敗北`;if(r.type==='reinforce')return `${r.turn}TURN目に援軍 ${r.enemies.map(id=>ENEMY_MASTER[id]?.name||id).join('・')}`;if(r.type==='deploy_tags')return '出撃制限 '+C.requirementText(r);return r.name||r.type||'特殊ルール';});}
+function terrainText(m){const t=C.terrainMods(m),parts=[];if(t.meleeHitPt)parts.push(`近接命中${t.meleeHitPt>0?'+':''}${t.meleeHitPt}`);if(t.rangedHitPt)parts.push(`射撃命中${t.rangedHitPt>0?'+':''}${t.rangedHitPt}`);if(t.mobPct)parts.push(`MOB${t.mobPct>0?'+':''}${t.mobPct}%`);if(t.banTags?.length)parts.push(`「${t.banTags.join('・')}」出撃不可`);return parts.length?`${m.terrain}（${parts.join(' / ')}）`:m.terrain;}
+function starMarks(m){const rec=state.missions[m.id],stars=C.missionStars(m);return stars.map((s,i)=>rec?.stars[i]?'★':'☆').join('');}
+function renderMissions(){const el=document.getElementById('missionList');el.innerHTML='';if(!MISSIONS.length){el.innerHTML='<div class="empty">作戦データがありません。</div>';return;}MISSIONS.forEach(m=>{const available=missionAvailable(m),lock=available?missionLockReason(m):'',enemyNames=m.enemies.map(id=>ENEMY_MASTER[id]?.name||id),tagText=m.tags?.length?m.tags.join(' / '):'なし',rules=ruleTexts(m),dropText=(m.drops||[]).map(d=>`${ITEM_MASTER[d.itemId]?.name||d.itemId} ${d.chance}% ×${d.min}${d.max>d.min?'～'+d.max:''}`).join(' / '),rec=state.missions[m.id];const d=document.createElement('div');d.className='mission'+(selectedMission===m.id?' selected':'')+(available&&!lock?'':' disabled');d.innerHTML=`<div class="row"><div class="name">${esc(m.name)} <span class="stars" title="${esc(C.missionStars(m).map(C.starText).join(' / '))}">${starMarks(m)}</span></div><span class="tag">RANK ${esc(m.diff)}</span></div><div class="sub" style="margin:5px 0">${esc(m.desc)}${available?'':' / 必要な敵ユニットデータが不足'}${lock?` / 🔒 ${esc(lock)}`:''}</div><div class="enemy-roster">${enemyNames.map(n=>`<span class="enemy-chip">${esc(n)}</span>`).join('')}</div><div class="unit-extra"><span>勝利条件 ${esc(objectiveText(m))}</span><span>地形 ${esc(terrainText(m))}</span><span>出撃上限 ${m.maxDeploy}</span>${m.days?.length?`<span>曜日 ${m.days.map(x=>C.days[x]).join('・')}</span>`:''}<span>タグ ${esc(tagText)}</span><span>特殊 ${esc(rules.join(' / ')||'なし')}</span><span>ドロップ ${esc(dropText||'なし')}（勝利時）</span>${rec?.clears?`<span>クリア ${rec.clears}回 / 最短 ${rec.best}TURN</span>`:''}${m.story?'<span>ストーリーあり</span>':''}</div><div class="row" style="margin-top:7px"><span>敵 ${m.enemies.length}機${m.waves?.length?` + ${m.waves.length}波`:''}</span><span class="reward">報酬 ${m.reward.toLocaleString()}</span></div>`;d.onclick=()=>{if(!battleRunning&&available&&!lock){selectedMission=m.id;if(selected.length>m.maxDeploy)selected=selected.slice(0,m.maxDeploy);render();}};el.appendChild(d);});}
+function renderSquad(){
+  const s=document.getElementById('squadView');const selectedUnits=selected.map(id=>UNIT_MASTER.find(u=>u.id===id)).filter(Boolean);
+  const slots=Array.from({length:MAX_SLOTS},(_,i)=>selectedUnits[i]?`<span class="chip">${i+1}. ${esc(selectedUnits[i].name)} ${(state.rows[selectedUnits[i].id]||selectedUnits[i].row||'front')==='back'?'〔後〕':'〔前〕'}</span>`:`<span class="chip" style="opacity:.38">${i+1}. EMPTY</span>`);s.innerHTML=slots.join('');
+  const totalHp=selectedUnits.reduce((n,u)=>n+(state.units[u.id]?.hp??u.hp),0),avgAcc=selectedUnits.length?Math.round(selectedUnits.reduce((n,u)=>n+u.acc,0)/selectedUnits.length):0,avgMob=selectedUnits.length?Math.round(selectedUnits.reduce((n,u)=>n+u.mob,0)/selectedUnits.length):0,weaponCount=selectedUnits.reduce((n,u)=>n+u.weapons.length,0);
+  const m=MISSIONS.find(x=>x.id===selectedMission),deployLimit=m?m.maxDeploy:MAX_SLOTS;
+  document.getElementById('squadSummary').innerHTML=`<div class="info-pill"><b>${selectedUnits.length} / ${deployLimit}</b><span>編成数 / 出撃上限</span></div><div class="info-pill"><b>${Math.round(totalHp).toLocaleString()}</b><span>総HP</span></div><div class="info-pill"><b>${avgAcc} / ${avgMob}</b><span>平均 ACC / MOB</span></div><div class="info-pill"><b>${weaponCount}</b><span>総武装数</span></div>`;
+  document.getElementById('missionView').textContent=m?`選択作戦: ${m.name} / 地形 ${m.terrain} / 敵${Math.min(m.enemies.length,MAX_SLOTS)}機 / 出撃上限 ${m.maxDeploy} / 報酬 ${m.reward}`:'作戦未選択';
+  document.getElementById('missionEnemyView').innerHTML=m?m.enemies.map((id,i)=>`<span class="enemy-chip">${esc(ENEMY_MASTER[id]?.name||id)}${m.enemyRows?.[i]==='back'?'〔後〕':''}</span>`).join(''):'';
+}
+
+function repairAll(){let cost=0;UNIT_MASTER.forEach(u=>{const cur=state.units[u.id]?.hp??u.hp;cost+=repairCost(u.hp-cur);});if(cost<=0){alert('修理が必要な機体はない。');return;}if(state.credits<cost){alert(`資金不足。必要資金: ${cost}`);return;}if(!confirm(`全機を修理します。\n必要資金: ${cost}`))return;state.credits-=cost;UNIT_MASTER.forEach(u=>state.units[u.id]={hp:u.hp});save();render();}
+function repairUnit(id){if(battleRunning)return;const u=UNIT_MASTER.find(x=>x.id===id);if(!u)return;const cost=repairCost(u.hp-(state.units[id]?.hp??u.hp));if(!cost||state.credits<cost)return;if(!confirm(`${u.name}を修理します。\n必要資金: ${cost}`))return;state.credits-=cost;state.units[id]={hp:u.hp};save();render();}
+function makeAlly(id){const m=UNIT_MASTER.find(u=>u.id===id);if(!m)throw new Error('味方ユニットデータ不足: '+id);const hp=state.units[id]?.hp??m.hp;if(hp<=0)throw new Error('HP 0のユニットは修理が必要です: '+id);
+  const u={...m,side:'ally',currentHp:hp,maxHp:m.hp,alive:true,skillUses:{},combatId:'a_'+id,row:state.rows[id]||m.row||'front'};
+  if(fatigueOn()&&fatigueOf(id)>=FATIGUE_TIRED){for(const k of ['atk','mob','acc'])u[k]=Math.round(u[k]*.9);u.tired=true;}
+  const buffs=state.sortieBuffs[id]||[];if(buffs.length){B.prepare(u);u.status.buffs.push(...buffs.map(b=>({stat:b.stat,pct:b.value,turns:999,src:'sortie:'+b.stat})));}
+  return u;}
+function makeEnemy(key,i){const m=ENEMY_MASTER[key];if(!m)throw new Error('敵ユニットデータ不足: '+key);return {...m,id:`${key}_${i}`,key,side:'enemy',currentHp:m.hp,maxHp:m.hp,alive:true,skillUses:{},combatId:`e_${key}_${i}`,row:currentMission?.enemyRows?.[i]||m.row||'front'};}
+
+function logTypeFor(html,cls){if(cls==='turn')return'turn';if(String(html).includes('[SKILL')||String(html).includes('[STUN')||String(html).includes('[再行動')||String(html).includes('[炎上'))return'skill';if(cls==='sys')return'system';return'attack';}
+function applyLogFilter(){const el=document.getElementById('battleLog');if(!el)return;el.querySelectorAll('.log-line').forEach(line=>line.classList.toggle('log-hidden',logFilter!=='all'&&line.dataset.logType!==logFilter));document.querySelectorAll('[data-log-filter]').forEach(b=>b.classList.toggle('active',b.dataset.logFilter===logFilter));if(logAutoScroll)el.scrollTop=el.scrollHeight;}
+function log(html,cls=''){const el=document.getElementById('battleLog'),line=document.createElement('span');line.className=`log-line ${cls}`;line.dataset.logType=logTypeFor(html,cls);line.innerHTML=html;el.appendChild(line);if(logFilter!=='all')line.classList.toggle('log-hidden',line.dataset.logType!==logFilter);if(logAutoScroll&&!battleControl.skip)el.scrollTop=el.scrollHeight;}
+async function copyBattleLog(){const text=[...document.querySelectorAll('#battleLog .log-line')].map(x=>x.textContent).join('\n');try{await navigator.clipboard.writeText(text);alert('戦闘ログをコピーしました。');}catch(e){const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();alert('戦闘ログをコピーしました。');}}
+function markText(u){const custom=String(u.mark||'').trim();if(custom)return Array.from(custom).slice(0,3).join('');const name=String(u.name||'UNIT').trim();const ascii=name.match(/[A-Za-z0-9]+/);if(ascii)return ascii[0].slice(0,2).toUpperCase();return Array.from(name).slice(0,2).join('')||'U';}
+function statusBadges(u){const s=u.status;if(!s)return '';const out=[];if(s.shield>0)out.push(`盾${s.shield}`);if(s.stun>0)out.push('スタン');if(s.burn)out.push('炎上');if(s.taunt)out.push('挑発');for(const b of s.buffs||[])if(!String(b.src).startsWith('sortie:'))out.push(`${b.stat.toUpperCase()}${b.pct>0?'↑':'↓'}`);return out.length?`<div class="status-badges">${out.map(x=>`<span>${esc(x)}</span>`).join('')}</div>`:'';}
+function renderCombatants(allies,enemies){
+  const order=arr=>arr.length>MAX_SLOTS?[...arr.filter(u=>u.alive),...arr.filter(u=>!u.alive)]:arr;
+  const renderSide=(arr,side)=>{const shown=order(arr).slice(0,MAX_SLOTS).map((u,i)=>{const ratio=Math.max(0,u.currentHp/u.maxHp),weapon=visualState.weaponById[u.combatId]||'';return `<div class="combat-card ${u.side==='enemy'?'enemy':''} ${u.alive?'':'dead'} ${visualState.activeId===u.combatId?'active':''} ${visualState.targetIds.includes(u.combatId)?'target':''} ${u.row==='back'?'back-row':''}" id="card_${u.combatId}"><div class="combat-top"><div class="unit-mark${u.image?' has-image':''}"${u.image?` style="background-image:url('${esc(u.image)}')"`:''}>${u.image?'':markText(u)}</div><div style="min-width:0"><div class="combat-name">${i+1}. ${esc(u.name)}</div><div class="combat-role">${u.row==='back'?'後衛 ':''}${esc(u.role||'')}</div></div></div><div class="combat-hptext">HP ${Math.max(0,Math.ceil(u.currentHp))} / ${u.maxHp}</div><div class="hpbar"><div class="hpfill ${hpClass(ratio)}" style="width:${ratio*100}%"></div></div>${statusBadges(u)}<div class="active-weapon">${weapon?`▶ ${esc(weapon)}`:'&nbsp;'}</div></div>`;});for(let i=shown.length;i<MAX_SLOTS;i++)shown.push(`<div class="combat-card slot-empty ${side==='enemy'?'enemy':''}">SLOT ${String(i+1).padStart(2,'0')}<br>EMPTY</div>`);return shown.join('');};
+  if(battleControl.skip&&battleRunning)return;
+  document.getElementById('allyTeam').innerHTML=renderSide(allies,'ally');document.getElementById('enemyTeam').innerHTML=renderSide(enemies,'enemy');updateAliveScore(allies,enemies);
+}
+function setAction(attacker,weapon,targets,result=''){document.getElementById('actionActor').textContent=attacker?attacker.name:'SYSTEM';document.getElementById('actionWeapon').textContent=weapon?`${weapon.name} / ${weaponTypeLabel(weapon)}`:'---';document.getElementById('actionTarget').textContent=targets?.length?`TARGET: ${targets.map(t=>t.name).join(' / ')}`:'---';document.getElementById('actionResult').textContent=result;}
+function fireLane(side,weapon){if(battleControl.skip)return;const lane=document.getElementById('shotLane');lane.className=`shot-lane ${side==='ally'?'ally-shot':'enemy-shot'} fire`;if(lane.style?.setProperty)lane.style.setProperty('--fx',weapon?.fxColor||'');setTimeout(()=>{lane.className='shot-lane';},Math.max(100,Math.min(520,currentDelay()*.7)));}
+function popDamage(target,dmg,crit=false,hits=1,weapon=null){if(battleControl.skip)return;const card=document.getElementById('card_'+target.combatId),arena=document.getElementById('arena');if(!card||!arena)return;card.classList.add('hit');setTimeout(()=>card.classList.remove('hit'),280);const cr=card.getBoundingClientRect(),ar=arena.getBoundingClientRect(),p=document.createElement('div');p.className='damage-pop';p.textContent=(hits>1?hits+' HIT ':'')+(crit?'CRIT ':'')+dmg;if(weapon?.fxColor)p.style.color=weapon.fxColor;p.style.left=(cr.left-ar.left+cr.width/2)+'px';p.style.top=(cr.top-ar.top+18)+'px';arena.appendChild(p);setTimeout(()=>p.remove(),760);}
+
+function currentDelay(){return SPEED_DELAY[battleControl.speed]||SPEED_DELAY.normal;}
+function updateBattleControls(){
+  const speed=document.getElementById('speedSelect'),preSpeed=document.getElementById('preBattleSpeed'),pause=document.getElementById('pauseBtn'),step=document.getElementById('stepBtn'),skip=document.getElementById('skipBtn'),status=document.getElementById('battleStatus');
+  if(speed&&speed.value!==battleControl.speed)speed.value=battleControl.speed;
+  if(preSpeed&&preSpeed.value!==battleControl.speed)preSpeed.value=battleControl.speed;
+  if(pause){pause.disabled=!battleRunning;pause.textContent=battleControl.paused?'自動再開':'一時停止';}
+  if(step)step.disabled=!battleRunning;
+  if(skip)skip.disabled=!battleRunning||battleControl.skip;
+  if(status)status.textContent=!battleRunning?'STANDBY':battleControl.skip?'SKIP':battleControl.paused?'PAUSED':'AUTO';
+}
+function wakeGate(){if(battleControl.gateResolve){const r=battleControl.gateResolve;battleControl.gateResolve=null;r();}}
+async function actionGate(){
+  if(!battleControl.paused||battleControl.skip)return;
+  if(battleControl.stepTokens>0){battleControl.stepTokens--;updateBattleControls();return;}
+  await new Promise(resolve=>{battleControl.gateResolve=resolve;});
+  if(battleControl.stepTokens>0)battleControl.stepTokens--;
+  updateBattleControls();
+}
+
+// ---- combat: the rules live in shared/pro_battle.js; these wrappers keep the game's hooks and older entry points. ----
+function battleHooks(allies,enemies){return {
+  log:(h,c)=>log(h,c),logSkill:(u,sk,d)=>logSkill(u,sk,d),render:()=>renderCombatants(allies,enemies),
+  actionStart:async(attacker,weapon,targets)=>{visualState.activeId=attacker.combatId;visualState.targetIds=targets.map(t=>t.combatId);visualState.weaponById[attacker.combatId]=weapon.name;renderCombatants(allies,enemies);setAction(attacker,weapon,targets,'FIRING');fireLane(attacker.side,weapon);await wait(.55);},
+  actionEnd:async(attacker,weapon,targets,summary)=>{setAction(attacker,weapon,targets,summary);await wait(.45);visualState.activeId=null;visualState.targetIds=[];delete visualState.weaponById[attacker.combatId];renderCombatants(allies,enemies);},
+  popDamage:(t,d,c,h,w)=>popDamage(t,d,c,h,w),wait:s=>wait(s),gate:()=>actionGate(),
+  turnStart:async t=>{document.getElementById('turnNumber').textContent=t;log(`\nTURN ${t}`,'turn');},
+  makeEnemy:(k,i)=>makeEnemy(k,i),spawned:()=>{renderCombatants(allies,enemies);updateAliveScore(allies,enemies);}
+};}
+function ctxFor(allies,enemies){if(activeBattle&&activeBattle.allies===allies&&activeBattle.enemies===enemies)return activeBattle;return B.createContext({allies,enemies,mission:currentMission,stats:battleStats,hooks:battleHooks(allies,enemies),enemyDefs:ENEMY_MASTER,unitDefs:UNIT_INDEX});}
+function looseCtx(units){return activeBattle||ctxFor(units.filter(u=>u.side!=='enemy'),units.filter(u=>u.side==='enemy'));}
+function chooseWeapon(attacker){return B.chooseWeapon(looseCtx([attacker]),attacker);}
+function chooseTargets(opponents,count){return B.chooseTargets(looseCtx(opponents),{},opponents,count,null);}
+function skillUses(u,id){return u.skillUses?.[id]||0;}
+function logSkill(u,sk,detail=''){log(`<span class="skill">[SKILL ${esc(sk.name)}]</span> ${esc(u.name)}${detail?` : ${esc(detail)}`:''}`,'sys');}
+function triggerSkills(u,trigger,ctx={}){return B.triggerSkills(ctx.allies&&ctx.enemies?ctxFor(ctx.allies,ctx.enemies):looseCtx([u]),u,trigger,ctx);}
+function triggerRoundSkills(units,trigger){B.triggerRoundSkills(looseCtx(units),units,trigger);}
+async function resolveWeapon(attacker,weapon,targets,allies,enemies){return B.resolveWeapon(ctxFor(allies,enemies),attacker,weapon,targets);}
+async function attack(attacker,allies,enemies){return B.attack(ctxFor(allies,enemies),attacker);}
+function wait(scale=1){if(battleControl.skip)return Promise.resolve();return new Promise(r=>setTimeout(r,currentDelay()*scale));}
+
+function evaluateStars(m,result,roster){const win=result.outcome==='win',maxHp=roster.reduce((s,u)=>s+u.maxHp,0),hp=roster.reduce((s,u)=>s+Math.max(0,u.currentHp),0);return C.missionStars(m).map(s=>win&&(s.type==='clear'||(s.type==='no_loss'&&roster.every(u=>u.alive))||(s.type==='turns_le'&&result.turns<=s.value)||(s.type==='hp_ge'&&maxHp>0&&hp/maxHp*100>=s.value)));}
+function afterBattle(m,ctx,result,roster){
+  const win=result.outcome==='win',report={exp:[],levelUps:[],stars:[],newStars:0,starCredits:0,recruits:[],achievements:[],injured:[]};
+  const rec=state.records;rec.battles++;rec[win?'wins':result.outcome==='draw'?'draws':'losses']++;
+  for(const k of ctx.killLog)if(k.killerSide==='ally'&&k.victimSide==='enemy'){rec.kills++;rec.enemyKills[k.victimKey]=(rec.enemyKills[k.victimKey]||0)+1;rec.enemyNames[k.victimKey]=k.victimName;}
+  const base=missionExp(m),mult=win?1:.5;
+  for(const u of roster){let gain=Math.round(base*mult*(u.alive?1:.5));for(const k of ctx.killLog)if(k.killer===u.combatId&&k.victimSide==='enemy')gain+=enemyExp(k.victimKey);const ups=addExp(u.id,gain);report.exp.push({name:u.name,gain});if(ups)report.levelUps.push({name:u.name,lv:levelOf(u.id)});}
+  const deployed=new Set(roster.map(u=>u.id));passDay(deployed,base);
+  if(fatigueOn())for(const u of roster){state.fatigue[u.id]=clamp(fatigueOf(u.id)+FATIGUE_SORTIE+(u.alive?0:10),0,100);if(!u.alive){state.injury[u.id]=INJURY_BATTLES;report.injured.push(u.name);}}
+  for(const u of roster)delete state.sortieBuffs[u.id];
+  if(win){
+    const mr=missionRecord(m.id);mr.clears++;mr.best=mr.best?Math.min(mr.best,result.turns):result.turns;
+    report.stars=evaluateStars(m,result,roster);report.stars.forEach((ok,i)=>{if(ok&&!mr.stars[i]){mr.stars[i]=true;report.newStars++;}});
+    report.starCredits=report.newStars*(m.starReward??Math.round(m.reward*.2));state.credits+=report.starCredits;
+    for(const u of BASE_UNIT_MASTER)if(u.recruit?.locked&&u.recruit.missionId===m.id&&!state.recruited.includes(u.id)){state.recruited.push(u.id);report.recruits.push(u.name);}
+  }
+  state.day++;ensureUnitState();report.achievements=checkAchievements();
+  return report;
+}
+function renderResultExtras(report,m){
+  const el=document.getElementById('resultGrowth');if(!el)return;
+  const stars=C.missionStars(m);
+  const parts=[];
+  if(report.stars.length)parts.push(`<div><b>評価</b> ${stars.map((s,i)=>`<span class="${report.stars[i]?'star-on':'star-off'}">${report.stars[i]?'★':'☆'} ${esc(C.starText(s))}</span>`).join(' ')}${report.newStars?`<br>初獲得の星 ${report.newStars}個 / ボーナス ${report.starCredits.toLocaleString()}`:''}</div>`);
+  if(report.exp.length)parts.push(`<div><b>経験値</b> ${report.exp.map(x=>`${esc(x.name)} +${x.gain}`).join(' / ')}</div>`);
+  if(report.levelUps.length)parts.push(`<div class="good"><b>レベルアップ</b> ${report.levelUps.map(x=>`${esc(x.name)} → Lv${x.lv}`).join(' / ')}</div>`);
+  if(report.recruits.length)parts.push(`<div class="good"><b>加入</b> ${report.recruits.map(esc).join(' / ')}</div>`);
+  if(report.injured.length)parts.push(`<div class="bad"><b>負傷</b> ${report.injured.map(esc).join(' / ')}（${INJURY_BATTLES}日休養が必要）</div>`);
+  if(report.achievements.length)parts.push(`<div class="good"><b>実績解除</b> ${report.achievements.map(a=>`${esc(a.name)} +${a.reward.toLocaleString()}`).join(' / ')}</div>`);
+  el.innerHTML=parts.join('');
+}
+async function deploy(){
+  if(battleRunning||!selected.length||!selectedMission)return;
+  const selectedMissionData=MISSIONS.find(m=>m.id===selectedMission);if(!missionAvailable(selectedMissionData)){alert('この作戦に必要な敵ユニットデータがありません。');return;}
+  const lock=missionLockReason(selectedMissionData);if(lock){alert('出撃できません: '+lock);return;}
+  if(selected.length>selectedMissionData.maxDeploy||selected.some(id=>!UNIT_MASTER.some(u=>u.id===id&&(state.units[id]?.hp??0)>0))){alert('出撃上限または出撃可能なユニットを確認してください。');render();return;}
+  const problem=deployProblem(selectedMissionData,selected);if(problem){alert(problem);render();return;}
+  battleRunning=true;battleControl.paused=false;battleControl.stepTokens=0;battleControl.skip=false;
+  // Any exception must release battleRunning; otherwise every base action stays locked until reload.
+  const snapshot=JSON.stringify(state);let committed=false;
+  try{
+  const mission=selectedMissionData;
+  if(mission.story?.before?.length)await showStory(`${mission.name} / 作戦前`,mission.story.before);
+  document.getElementById('returnResultBtn').style.display='none';
+  render();
+  document.getElementById('battleLog').innerHTML='';applyLogFilter();
+  document.getElementById('turnNumber').textContent='1';
+  currentMission=mission;
+  const allies=selected.slice(0,Math.min(MAX_SLOTS,mission.maxDeploy)).map(makeAlly);
+  if(mission.objective?.type==='escort'){const d=UNIT_INDEX[mission.objective.escortUnitId];allies.push(B.combatant(d,'ally','escort_'+d.id,{escort:true,row:'back',name:d.name+'（護衛対象）'}));}
+  const enemies=mission.enemies.slice(0,MAX_SLOTS).map((k,i)=>makeEnemy(k,i));
+  battleStats={};[...allies,...enemies].forEach(initBattleStat);updateAliveScore(allies,enemies);
+  document.getElementById('battleMissionName').textContent=`${mission.name} / RANK ${mission.diff} / ${objectiveText(mission)}`;
+  showScreen('battle');
+  visualState={activeId:null,targetIds:[],weaponById:{}};renderCombatants(allies,enemies);setAction(null,null,[],mission.name);log(`OPERATION START: ${esc(mission.name)} / 勝利条件: ${esc(objectiveText(mission))}`,'sys');
+  for(const t of ruleTexts(mission))log(`RULE: ${esc(t)}`,'sys');
+  const ctx=B.createContext({allies,enemies,mission,stats:battleStats,hooks:battleHooks(allies,enemies),enemyDefs:ENEMY_MASTER,unitDefs:UNIT_INDEX});activeBattle=ctx;
+  const result=await B.runBattle(ctx);activeBattle=null;
+  const turns=result.turns,outcome=result.outcome,win=outcome==='win',draw=outcome==='draw',roster=allies.filter(u=>!u.escort);
+  roster.forEach(u=>{state.units[u.id].hp=Math.max(0,Math.round(u.currentHp));});
+  const gained=win?mission.reward:Math.round(mission.reward*(draw?0.25:0.12));state.credits+=gained;
+  const drops=win?rollMissionDrops(mission):[];
+  const report=afterBattle(mission,ctx,result,roster);
+  const reason=!win&&!draw&&result.limit&&result.timeUp?'TURN制限':!win&&allies.some(u=>u.escort&&!u.alive)?'護衛対象撃破':'';
+  log(`${win?'MISSION COMPLETE':draw?'DRAW / 30TURN LIMIT':'MISSION FAILED'}${reason?` (${reason})`:''} / ${win?'報酬':'回収資金'} ${gained}`,'sys');committed=true;save();
+  const repairEstimate=roster.reduce((sum,u)=>sum+repairCost(Math.max(0,u.maxHp-u.currentHp)),0);
+  setAction(null,null,[],win?'MISSION COMPLETE':draw?'DRAW / 30TURN LIMIT':'MISSION FAILED');
+  battleRunning=false;battleControl.paused=false;battleControl.stepTokens=0;wakeGate();render();
+  renderCombatants(allies,enemies);
+  renderResultScreen(outcome,mission,gained,repairEstimate,roster,turns);
+  if(reason)document.getElementById('resultMeta').textContent+=` / ${reason}`;
+  document.getElementById('resultDrops').textContent=win?(drops.length?`獲得アイテム: ${drops.map(d=>`${d.name} ×${d.count}`).join(' / ')}`:'獲得アイテム: なし'):'アイテムドロップは作戦成功時のみ';
+  renderResultExtras(report,mission);
+  if(win&&mission.story?.after?.length)await showStory(`${mission.name} / 作戦後`,mission.story.after);
+  await new Promise(r=>setTimeout(r,battleControl.skip?0:650));
+  showScreen('result');
+  }catch(err){
+    console.error('Battle aborted',err);const message=String(err?.message||err);activeBattle=null;
+    // Before the result is committed, roll back so a crashed battle costs nothing.
+    if(!committed)state=JSON.parse(snapshot);
+    battleRunning=false;battleControl.paused=false;battleControl.stepTokens=0;wakeGate();
+    try{log(`SYSTEM ERROR: ${esc(message)} / 作戦を中断しました`,'sys');}catch(e){}
+    try{render();}catch(e){console.error(e);}
+    showScreen(committed?'result':'base');
+    alert(`戦闘中にエラーが発生したため作戦を中断しました。${committed?'':'\nHP・資金・アイテムは出撃前の状態のままです。'}\n${message}`);
+  }
+}
+function currentUnitIdsExcluding(packIds=new Set()){const ids=new Set();for(const p of loadedUnitPacks){if(packIds.has(p.packId))continue;for(const u of p.units)ids.add(u.id);}return ids;}
+function currentMissionIdsExcluding(packIds=new Set()){const ids=new Set();for(const p of loadedMissionPacks){if(packIds.has(p.packId))continue;for(const m of p.missions)ids.add(m.id);}return ids;}
+function unitImportSummary(packs){const replacing=new Set(packs.map(p=>p.packId).filter(id=>importedUnitPacks.some(x=>x.packId===id))),base=currentUnitIdsExcluding(replacing),incoming=new Set();let add=0,overwrite=0,internal=0;for(const p of packs)for(const u of p.units){if(incoming.has(u.id))internal++;incoming.add(u.id);if(base.has(u.id))overwrite++;else add++;}return {add,overwrite,internal,replacing:[...replacing]};}
+function missionImportSummary(packs){const replacing=new Set(packs.map(p=>p.packId).filter(id=>importedMissionPacks.some(x=>x.packId===id))),base=currentMissionIdsExcluding(replacing),incoming=new Set();let add=0,overwrite=0,internal=0;for(const p of packs)for(const m of p.missions){if(incoming.has(m.id))internal++;incoming.add(m.id);if(base.has(m.id))overwrite++;else add++;}return {add,overwrite,internal,replacing:[...replacing]};}
+async function importUnitFiles(fileList){
+  if(battleRunning)return;const files=[...fileList];if(!files.length)return;const parsed=[],errors=[];
+  for(const file of files){try{parsed.push({file,pack:extractPackFromJs(await file.text())});}catch(e){errors.push(`${file.name}: ${e.message}`);}}
+  if(!parsed.length){if(errors.length)alert(`読込失敗:\n${errors.join('\n')}`);return;}
+  const sum=unitImportSummary(parsed.map(x=>x.pack));const detail=parsed.map(x=>`・${x.pack.packName} (${x.pack.units.length} units)`).join('\n');
+  const msg=`ユニットパックを適用しますか？\n\n${detail}\n\n追加候補: ${sum.add}\n既存ID上書き候補: ${sum.overwrite}\n同じpackIdの更新: ${sum.replacing.length}${errors.length?`\n\n読込失敗 ${errors.length}件は除外されます。`:''}`;
+  if(!confirm(msg))return;
+  const next=[...importedUnitPacks];for(const {pack} of parsed){const idx=next.findIndex(p=>p.packId===pack.packId);if(idx>=0)next[idx]=pack;else next.push(pack);}
+  if(!saveImportedUnitPacks(next)){alert(STORAGE_FAIL_MESSAGE);return;}
+  importedUnitPacks=next;rebuildUnitMasters();selected=selected.filter(id=>UNIT_MASTER.some(u=>u.id===id));ensureUnitState();save();render();
+  if(errors.length)alert(`${parsed.length}パック適用。\n\n読込失敗:\n${errors.join('\n')}`);
+}
+async function importMissionFiles(fileList){
+  if(battleRunning)return;const files=[...fileList];if(!files.length)return;const parsed=[],errors=[];
+  for(const file of files){try{parsed.push({file,pack:extractMissionPackFromJs(await file.text())});}catch(e){errors.push(`${file.name}: ${e.message}`);}}
+  if(!parsed.length){if(errors.length)alert(`読込失敗:\n${errors.join('\n')}`);return;}
+  const sum=missionImportSummary(parsed.map(x=>x.pack));const detail=parsed.map(x=>`・${x.pack.packName} (${x.pack.missions.length} missions)`).join('\n');
+  const msg=`作戦パックを適用しますか？\n\n${detail}\n\n追加候補: ${sum.add}\n既存ID上書き候補: ${sum.overwrite}\n同じpackIdの更新: ${sum.replacing.length}${errors.length?`\n\n読込失敗 ${errors.length}件は除外されます。`:''}`;
+  if(!confirm(msg))return;
+  const next=[...importedMissionPacks];for(const {pack} of parsed){const idx=next.findIndex(p=>p.packId===pack.packId);if(idx>=0)next[idx]=pack;else next.push(pack);}
+  if(!saveImportedMissionPacks(next)){alert(STORAGE_FAIL_MESSAGE);return;}
+  importedMissionPacks=next;rebuildMissionMaster();if(selectedMission&&!MISSIONS.some(m=>m.id===selectedMission))selectedMission=null;render();
+  if(errors.length)alert(`${parsed.length}作戦パック適用。\n\n読込失敗:\n${errors.join('\n')}`);
+}
+async function importItemFiles(fileList){
+  if(battleRunning)return;const files=[...fileList];if(!files.length)return;const parsed=[],errors=[];
+  for(const file of files){try{parsed.push({file,pack:extractItemPackFromJs(await file.text())});}catch(e){errors.push(`${file.name}: ${e.message}`);}}
+  if(!parsed.length){if(errors.length)alert(`読込失敗:\n${errors.join('\n')}`);return;}
+  const names=parsed.map(x=>`・${x.pack.packName} (${x.pack.items.length} items)`).join('\n');
+  if(!confirm(`アイテムパックを適用しますか？\n${names}\n同じpackIdは更新され、同じアイテムIDは後のパックが優先されます。${errors.length?`\n読込失敗 ${errors.length}件は除外。`:''}`))return;
+  const next=[...importedItemPacks];for(const {pack} of parsed){const i=next.findIndex(p=>p.packId===pack.packId);if(i>=0)next[i]=pack;else next.push(pack);}
+  if(!saveImportedItemPacks(next)){alert(STORAGE_FAIL_MESSAGE);return;}
+  importedItemPacks=next;rebuildItemMaster();render();if(errors.length)alert(`読込失敗:\n${errors.join('\n')}`);
+}
+function renderBundlePackManager(){
+  const el=document.getElementById('bundlePackManager'),status=document.getElementById('bundleDataStatus');if(!el||!status)return;
+  status.textContent=`読込済み: ${importedBundlePacks.length}パック`;
+  el.innerHTML=importedBundlePacks.map(p=>`<div class="pack-row"><div><div class="pack-name">${esc(p.packName)}</div><div class="pack-meta">${esc(p.packId)} / ユニット ${p.units.length}・作戦 ${p.missions.length}・アイテム ${p.items.length}</div></div><button data-remove-bundle="${esc(p.packId)}">解除</button></div>`).join('')||'<div class="sub">追加パックなし</div>';
+  el.querySelectorAll('[data-remove-bundle]').forEach(b=>b.onclick=()=>removeImportedBundlePack(b.dataset.removeBundle));
+}
+function refreshBundleMasters(){rebuildUnitMasters();rebuildItemMaster();rebuildMissionMaster();selected=selected.filter(id=>UNIT_MASTER.some(u=>u.id===id));if(selectedMission&&!MISSIONS.some(m=>m.id===selectedMission))selectedMission=null;ensureUnitState();render();}
+function removeImportedBundlePack(packId){
+  if(battleRunning)return;const pack=importedBundlePacks.find(x=>x.packId===packId);if(!pack||!confirm(`統合パック「${pack.packName}」を解除しますか？`))return;
+  const next=importedBundlePacks.filter(x=>x.packId!==packId);if(!storageSet(IMPORTED_BUNDLE_PACKS_KEY,JSON.stringify(next))){alert(STORAGE_FAIL_MESSAGE);return;}importedBundlePacks=next;refreshBundleMasters();
+}
+async function importBundleFiles(files){
+  if(battleRunning)return;const parsed=[],errors=[];
+  for(const file of files){try{parsed.push(extractBundlePackFromJs(await file.text()));}catch(e){errors.push(`${file.name}: ${e.message}`);}}
+  if(errors.length){alert(`統合パックの読込に失敗しました。変更は適用していません。\n${errors.join('\n')}`);return;}
+  if(!parsed.length)return;
+  const duplicates=new Set();for(const p of parsed){if(duplicates.has(p.packId)){alert('同じ統合パックIDが複数ファイルにあります: '+p.packId);return;}duplicates.add(p.packId);}
+  const description=parsed.map(p=>`${p.packName}: ユニット${p.units.length}・作戦${p.missions.length}・アイテム${p.items.length}`).join('\n');
+  if(!confirm(`統合パックを適用しますか？\n${description}\n同じパックIDは更新されます。`))return;
+  const next=[...importedBundlePacks];for(const pack of parsed){const i=next.findIndex(x=>x.packId===pack.packId);if(i>=0)next[i]=pack;else next.push(pack);}
+  if(!storageSet(IMPORTED_BUNDLE_PACKS_KEY,JSON.stringify(next))){alert(STORAGE_FAIL_MESSAGE);return;}
+  importedBundlePacks=next;refreshBundleMasters();
+}
+function clearImportedItemPacks(){if(battleRunning||!importedItemPacks.length)return;if(!confirm('追加アイテムパックを解除しますか？\n所持数は残ります。'))return;if(!storageRemove(IMPORTED_ITEM_PACKS_KEY)){alert(STORAGE_FAIL_MESSAGE);return;}importedItemPacks=[];rebuildItemMaster();render();}
+function clearImportedMissionPacks(){
+  if(battleRunning||!importedMissionPacks.length)return;
+  if(!confirm('手動インポートした追加作戦データを解除しますか？\n基本の outer_ops_missions.js は残ります。'))return;
+  if(!storageRemove(IMPORTED_MISSION_PACKS_KEY)){alert(STORAGE_FAIL_MESSAGE);return;}importedMissionPacks=[];rebuildMissionMaster();if(selectedMission&&!MISSIONS.some(m=>m.id===selectedMission))selectedMission=null;render();
+}
+
+function clearImportedUnitPacks(){
+  if(battleRunning||!importedUnitPacks.length)return;
+  if(!confirm('手動インポートした追加ユニットデータを解除しますか？\n基本の outer_ops_units.js は残ります。'))return;
+  if(!storageRemove(IMPORTED_PACKS_KEY)){alert(STORAGE_FAIL_MESSAGE);return;}importedUnitPacks=[];rebuildUnitMasters();
+  selected=selected.filter(id=>UNIT_MASTER.some(u=>u.id===id));ensureUnitState();save();render();
+}
+
+
+// ---- 1.9 base systems: growth, shop, research, facilities, records, presets, save files, story ----
+function commitChange(message=''){lastNotice=message;ensureUnitState();save();render();return true;}
+function setRow(id,row){if(battleRunning||!UNIT_MASTER.some(u=>u.id===id))return false;state.rows[id]=row==='back'?'back':'front';return commitChange();}
+function restDay(){
+  if(battleRunning)return false;passDay(new Set(),10);state.day++;
+  const got=checkAchievements();return commitChange(`1日休養しました。疲労・負傷が回復し、施設の効果が適用されました。${got.length?' 実績: '+got.map(a=>a.name).join('・'):''}`);
+}
+function unlockTreeNode(unitId,nodeId){
+  if(battleRunning)return false;const u=baseUnit(unitId),node=u?.skillTree?.find(n=>n.id===nodeId);if(!u||!node||!isRecruited(u))return false;
+  const got=state.tree[unitId]||[],info=levelInfo(unitId);if(got.includes(nodeId))return false;
+  if(info.lv<node.minLevel){lastNotice=`Lv${node.minLevel}以上が必要です`;render();return false;}
+  if(node.requires.some(r=>!got.includes(r))){lastNotice='前提ノードを先に解放してください';render();return false;}
+  if(info.sp<node.cost){lastNotice='スキルポイントが足りません';render();return false;}
+  state.levels[unitId]={...info,sp:info.sp-node.cost};state.tree[unitId]=[...got,nodeId];
+  return commitChange(`${u.name} がスキル「${node.skill.name}」を習得`);
+}
+function resetTree(unitId){
+  if(battleRunning)return false;const u=baseUnit(unitId),got=state.tree[unitId]||[];if(!u||!got.length)return false;
+  const refund=got.reduce((s,id)=>s+(u.skillTree?.find(n=>n.id===id)?.cost||0),0),info=levelInfo(unitId);
+  state.levels[unitId]={...info,sp:info.sp+refund};delete state.tree[unitId];return commitChange(`${u.name} のスキルツリーをリセット（SP ${refund} 返却）`);
+}
+function equipItem(unitId,slot,itemId){
+  if(battleRunning)return false;const u=UNIT_MASTER.find(x=>x.id===unitId);if(!u||slot<0||slot>=EQUIP_SLOTS)return false;
+  const slots=[...(state.equip[unitId]||Array(EQUIP_SLOTS).fill(null))];
+  if(itemId){const item=ITEM_MASTER[itemId];if(!item?.equip||(state.items[itemId]||0)<=0)return false;const ok=C.checkRequirements(item.requires,u);if(!ok.ok){lastNotice=ok.reason;render();return false;}state.items[itemId]--;}
+  const old=slots[slot];if(old)state.items[old]=(state.items[old]||0)+1;
+  slots[slot]=itemId||null;if(slots.some(Boolean))state.equip[unitId]=slots;else delete state.equip[unitId];
+  return commitChange(itemId?`${u.name} に ${ITEM_MASTER[itemId].name} を装備`:`${u.name} の装備を外しました`);
+}
+function assignPilot(unitId,pilotId){
+  if(battleRunning)return false;const u=UNIT_MASTER.find(x=>x.id===unitId);if(!u)return false;
+  if(pilotId&&!PILOT_MASTER[pilotId])return false;
+  for(const [k,v] of Object.entries(state.pilots))if(v===pilotId)delete state.pilots[k];
+  if(pilotId)state.pilots[unitId]=pilotId;else delete state.pilots[unitId];
+  return commitChange(pilotId?`${u.name} に ${PILOT_MASTER[pilotId].name} が搭乗`:`${u.name} のパイロットを降ろしました`);
+}
+function shopAvailable(i){
+  if(!i?.price)return false;
+  if(i.shop?.requiresResearch&&!state.research.includes(i.shop.requiresResearch))return false;
+  if(i.shop?.requiresMission&&!missionCleared(i.shop.requiresMission))return false;
+  const gates=Object.values(RESEARCH_MASTER).filter(r=>r.unlock.items.includes(i.id));
+  return !gates.length||gates.some(r=>state.research.includes(r.id));
+}
+function buyItem(id,count=1){
+  if(battleRunning)return false;const item=ITEM_MASTER[id];if(!shopAvailable(item))return false;const n=Math.max(1,Math.floor(count)),cost=item.price*n;
+  if(state.credits<cost){lastNotice='資金が足りません';render();return false;}
+  state.credits-=cost;state.items[id]=(state.items[id]||0)+n;recordItem(id,n);state.records.purchases++;
+  const got=checkAchievements();return commitChange(`${item.name} ×${n} を購入（-${cost.toLocaleString()}）${got.length?' 実績: '+got.map(a=>a.name).join('・'):''}`);
+}
+function sellItem(id,count=1){
+  if(battleRunning)return false;const item=ITEM_MASTER[id],have=state.items[id]||0,n=Math.min(have,Math.max(1,Math.floor(count)));if(!item?.price||n<=0)return false;
+  const value=Math.floor(item.price/2)*n;state.items[id]=have-n;state.credits+=value;return commitChange(`${item.name} ×${n} を売却（+${value.toLocaleString()}）`);
+}
+function researchStatus(r){if(state.research.includes(r.id))return 'done';if(r.requires.some(q=>!state.research.includes(q)))return 'locked';return 'open';}
+function researchCostText(r){return [r.cost.credits?`資金 ${r.cost.credits.toLocaleString()}`:'',...Object.entries(r.cost.items).map(([id,n])=>`${ITEM_MASTER[id]?.name||id} ×${n}（所持${state.items[id]||0}）`)].filter(Boolean).join(' / ')||'無料';}
+function doResearch(id){
+  if(battleRunning)return false;const r=RESEARCH_MASTER[id];if(!r||researchStatus(r)!=='open')return false;
+  if(state.credits<r.cost.credits||Object.entries(r.cost.items).some(([k,n])=>(state.items[k]||0)<n)){lastNotice='研究に必要な資金・素材が足りません';render();return false;}
+  state.credits-=r.cost.credits;for(const [k,n] of Object.entries(r.cost.items))state.items[k]-=n;
+  state.research.push(r.id);const notes=[];
+  for(const uid of r.unlock.units)if(!state.recruited.includes(uid)){state.recruited.push(uid);notes.push(`${baseUnit(uid)?.name||uid} が加入`);}
+  for(const [k,n] of Object.entries(r.unlock.grantItems)){state.items[k]=(state.items[k]||0)+n;recordItem(k,n);notes.push(`${ITEM_MASTER[k]?.name||k} ×${n}`);}
+  if(r.unlock.items.length)notes.push('ショップに '+r.unlock.items.map(k=>ITEM_MASTER[k]?.name||k).join('・')+' が追加');
+  notes.push(...checkAchievements().map(a=>`実績「${a.name}」`));
+  return commitChange(`研究「${r.name}」完了${notes.length?'：'+notes.join(' / '):''}`);
+}
+function upgradeFacility(key){
+  if(battleRunning||!FACILITIES[key])return false;const lv=state.facilities[key];if(lv>=3)return false;const cost=FACILITIES[key].cost[lv];
+  if(state.credits<cost){lastNotice='資金が足りません';render();return false;}
+  state.credits-=cost;state.facilities[key]=lv+1;const got=checkAchievements();
+  return commitChange(`${FACILITIES[key].name}をLv${lv+1}に強化（-${cost.toLocaleString()}）${got.length?' 実績: '+got.map(a=>a.name).join('・'):''}`);
+}
+function savePreset(i){if(battleRunning||i<0||i>2)return false;state.presets[i]={name:`プリセット${i+1}`,selected:[...selected],rows:Object.fromEntries(selected.map(id=>[id,state.rows[id]||baseUnit(id)?.row||'front']))};return commitChange(`プリセット${i+1}に保存（${selected.length}機）`);}
+function loadPreset(i){
+  if(battleRunning)return false;const p=state.presets[i];if(!p)return false;
+  for(const [id,row] of Object.entries(p.rows))if(UNIT_MASTER.some(u=>u.id===id))state.rows[id]=row;
+  const m=MISSIONS.find(x=>x.id===selectedMission),limit=Math.min(MAX_SLOTS,m?m.maxDeploy:MAX_SLOTS);
+  const usable=p.selected.filter(id=>UNIT_MASTER.some(u=>u.id===id)&&canSortie(id));selected=usable.slice(0,limit);
+  return commitChange(`プリセット${i+1}を読み込み（${selected.length}機${usable.length<p.selected.length?`・出撃できない${p.selected.length-usable.length}機を除外`:''}）`);
+}
+function exportSaveData(){return {format:'PRO_SAVE',version:1,game:GAME_VERSION,exportedAt:new Date().toISOString(),state,packs:{units:importedUnitPacks,missions:importedMissionPacks,items:importedItemPacks,bundles:importedBundlePacks}};}
+function importSaveData(data){
+  if(!data||data.format!=='PRO_SAVE')throw new Error('PROのセーブデータではありません');
+  const packs=plainObject(data.packs),list=k=>Array.isArray(packs[k])?packs[k]:[];
+  const units=list('units').map(validatePack),missions=list('missions').map(validateMissionPack),items=list('items').map(validateItemPack),bundles=list('bundles').map(validateBundlePack);
+  const writes=[[IMPORTED_PACKS_KEY,units],[IMPORTED_MISSION_PACKS_KEY,missions],[IMPORTED_ITEM_PACKS_KEY,items],[IMPORTED_BUNDLE_PACKS_KEY,bundles]];
+  const previous=[...writes.map(([k])=>[k,storageGet(k,null)]),[SAVE_KEY,storageGet(SAVE_KEY,null)]];
+  const restore=()=>{for(const [k,v] of previous){if(v===null)storageRemove(k);else storageSet(k,v);}};
+  for(const [k,v] of writes)if(!storageSet(k,JSON.stringify(v))){restore();throw new Error(STORAGE_FAIL_MESSAGE);}
+  importedUnitPacks=units;importedMissionPacks=missions;importedItemPacks=items;importedBundlePacks=bundles;
+  rebuildUnitMasters();rebuildMissionMaster();rebuildItemMaster();
+  const next=normalizeState(data.state||{});
+  if(!storageSet(SAVE_KEY,JSON.stringify(next))){restore();importedUnitPacks=loadImportedUnitPacks();importedMissionPacks=loadImportedMissionPacks();importedItemPacks=loadImportedItemPacks();importedBundlePacks=loadImportedBundlePacks();rebuildUnitMasters();rebuildMissionMaster();rebuildItemMaster();throw new Error(STORAGE_FAIL_MESSAGE);}
+  state=next;selected=[];selectedMission=null;ensureUnitState();return true;
+}
+function downloadText(name,text,type='application/json'){const blob=new Blob([text],{type:type+';charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
+function showStory(title,lines){return new Promise(resolve=>{
+  const o=document.getElementById('storyOverlay');if(!o||!lines?.length){resolve();return;}
+  let i=0;const draw=()=>{document.getElementById('storyTitle').textContent=title;document.getElementById('storySpeaker').textContent=lines[i].speaker||'';document.getElementById('storyText').textContent=lines[i].text;document.getElementById('storyNext').textContent=i>=lines.length-1?'閉じる':'次へ';document.getElementById('storyProgress').textContent=`${i+1} / ${lines.length}`;};
+  const close=()=>{o.hidden=true;resolve();};
+  document.getElementById('storyNext').onclick=()=>{i++;if(i>=lines.length)close();else draw();};document.getElementById('storySkip').onclick=close;
+  o.hidden=false;draw();document.getElementById('storyNext').focus?.();
+});}
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}
+function actionButton(text,fn,disabled=false,cls='secondary'){const b=el('button',cls,text);b.type='button';b.disabled=disabled||battleRunning;b.onclick=fn;return b;}
+function renderGrowth(){
+  const view=document.getElementById('growthView'),select=document.getElementById('growthTarget');if(!view||!select)return;
+  if(!UNIT_MASTER.length){view.textContent='ユニットがいません。';select.innerHTML='';return;}
+  if(!UNIT_MASTER.some(u=>u.id===growthTargetId))growthTargetId=UNIT_MASTER[0].id;
+  select.innerHTML=UNIT_MASTER.map(u=>`<option value="${esc(u.id)}">${esc(u.name)} / Lv${u.level}</option>`).join('');select.value=growthTargetId;
+  const u=UNIT_MASTER.find(x=>x.id===growthTargetId),base=baseUnit(u.id),info=levelInfo(u.id),growth=growthOf(base);view.replaceChildren();
+  const head=el('div','growth-head');head.innerHTML=`${unitThumb(u,'growth-thumb')}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub">EXP ${info.lv>=MAX_LEVEL?'MAX':`${info.exp} / ${expToNext(info.lv)}`} ／ スキルポイント ${info.sp} ／ 疲労 ${fatigueOf(u.id)}${injuryOf(u.id)?` ／ 負傷 あと${injuryOf(u.id)}日`:''}</div><div class="sub">HP ${u.hp} / ATK ${u.atk} / DEF ${u.def} / MOB ${u.mob} / ACC ${u.acc}（レベル成長: HP+${growth.hp} ATK+${growth.atk} DEF+${growth.def} MOB+${growth.mob} ACC+${growth.acc}）</div><div class="sub">タグ ${esc(u.tags.join('・')||'なし')}</div></div>`;view.append(head);
+  const rowBox=el('div','growth-section');rowBox.append(el('h3','','隊列'),el('p','sub','前衛は狙われやすく、後衛は前衛がいる間は近接攻撃を受けません。'));const row=state.rows[u.id]||u.row||'front';rowBox.append(actionButton(row==='front'?'✓ 前衛':'前衛',()=>setRow(u.id,'front'),row==='front'),actionButton(row==='back'?'✓ 後衛':'後衛',()=>setRow(u.id,'back'),row==='back'));view.append(rowBox);
+  const pilotBox=el('div','growth-section');pilotBox.append(el('h3','','パイロット'));const pilots=Object.values(PILOT_MASTER);
+  if(!pilots.length)pilotBox.append(el('p','sub','パイロットデータがありません（ユニットパックの pilots で追加できます）。'));
+  else{const sel=el('select','growth-select');sel.setAttribute('aria-label','パイロット');sel.innerHTML='<option value="">搭乗なし</option>'+pilots.map(p=>{const at=Object.entries(state.pilots).find(([,v])=>v===p.id);const where=at&&at[0]!==u.id?`（${UNIT_MASTER.find(x=>x.id===at[0])?.name||at[0]}に搭乗中）`:'';return `<option value="${esc(p.id)}">${esc(p.name)}${where}</option>`;}).join('');sel.value=state.pilots[u.id]||'';sel.disabled=battleRunning;sel.onchange=()=>assignPilot(u.id,sel.value);pilotBox.append(sel);
+    const p=pilotFor(u.id);if(p)pilotBox.append(el('p','sub',`補正 ${Object.entries(p.stats).map(([k,v])=>`${k.toUpperCase()}+${v}`).join(' ')||'なし'}${p.aptitude?.pct?` ／ 適性「${p.aptitude.tags.join('・')}」でATK・MOB・ACC +${p.aptitude.pct}%${p.aptitude.tags.some(t=>u.tags.includes(t))?'（適用中）':'（対象外）'}`:''}${p.skills.length?' ／ スキル '+p.skills.map(s=>s.name).join('・'):''}`));}
+  view.append(pilotBox);
+  const eqBox=el('div','growth-section');eqBox.append(el('h3','',`装備（${EQUIP_SLOTS}枠）`));const slots=state.equip[u.id]||[];const owned=Object.entries(state.items).filter(([id,n])=>n>0&&ITEM_MASTER[id]?.equip);
+  for(let i=0;i<EQUIP_SLOTS;i++){const line=el('div','equip-line'),cur=slots[i]&&ITEM_MASTER[slots[i]];line.append(el('span','',`スロット${i+1}: ${cur?cur.name+' ／ '+C.itemSummary(cur):'なし'}`));const sel=el('select','growth-select');sel.setAttribute('aria-label',`装備スロット${i+1}`);sel.innerHTML='<option value="">— 選択 —</option>'+owned.map(([id,n])=>`<option value="${esc(id)}">${esc(ITEM_MASTER[id].name)} ×${n}</option>`).join('');sel.disabled=battleRunning||!owned.length;sel.onchange=()=>{if(sel.value)equipItem(u.id,i,sel.value);};line.append(sel);if(cur)line.append(actionButton('外す',()=>equipItem(u.id,i,null)));eqBox.append(line);}
+  if(!owned.length)eqBox.append(el('p','sub','所持している装備品はありません。'));view.append(eqBox);
+  const treeBox=el('div','growth-section');treeBox.append(el('h3','','スキルツリー'));const tree=base.skillTree||[],got=state.tree[u.id]||[];
+  if(!tree.length)treeBox.append(el('p','sub','このユニットにはスキルツリーがありません。'));
+  for(const n of tree){const done=got.includes(n.id),reqOk=n.requires.every(r=>got.includes(r)),line=el('div','tree-node'+(done?' done':''));line.append(el('div','',`${done?'✓ ':''}${n.skill.name}（SP ${n.cost} / Lv${n.minLevel}${n.requires.length?' / 前提 '+n.requires.map(r=>tree.find(x=>x.id===r)?.skill.name||r).join('・'):''}）`),el('small','sub',C.skillText(n.skill)));if(!done)line.append(actionButton('解放',()=>unlockTreeNode(u.id,n.id),!reqOk||info.sp<n.cost||info.lv<n.minLevel));treeBox.append(line);}
+  if(got.length)treeBox.append(actionButton('ツリーをリセット（SP返却）',()=>{if(confirm('スキルツリーをリセットしますか？'))resetTree(u.id);}));
+  view.append(treeBox);
+  const skillBox=el('div','growth-section');skillBox.append(el('h3','','所持スキル'));for(const s of u.skills)skillBox.append(el('div','sub',`${s.name}: ${C.skillText(s)}${s.chance<100?` / 発動率${s.chance}%`:''}`));if(!u.skills.length)skillBox.append(el('p','sub','なし'));view.append(skillBox);
+}
+function renderShop(){
+  const list=document.getElementById('shopList'),sell=document.getElementById('sellList');if(!list||!sell)return;
+  const goods=Object.values(ITEM_MASTER).filter(shopAvailable);list.replaceChildren();
+  if(!goods.length)list.append(el('p','sub','販売中のアイテムはありません（アイテムに price を設定すると並びます）。'));
+  for(const i of goods){const row=el('div','item-row');const info=el('div');info.append(el('b','',`${i.name} ／ ${i.price.toLocaleString()}`),el('small','',itemEffectText(i)+(i.desc?' / '+i.desc:'')+` ／ 所持 ${state.items[i.id]||0}`));row.append(info,actionButton('購入',()=>buyItem(i.id,1),state.credits<i.price),actionButton('×5',()=>buyItem(i.id,5),state.credits<i.price*5));list.append(row);}
+  sell.replaceChildren();const owned=Object.entries(state.items).filter(([id,n])=>n>0&&ITEM_MASTER[id]?.price);
+  if(!owned.length)sell.append(el('p','sub','売却できるアイテムはありません。'));
+  for(const [id,n] of owned){const i=ITEM_MASTER[id],row=el('div','item-row');const info=el('div');info.append(el('b','',`${i.name} ×${n}`),el('small','',`売値 ${Math.floor(i.price/2).toLocaleString()}`));row.append(info,actionButton('1個売る',()=>sellItem(id,1)));sell.append(row);}
+}
+function renderLab(){
+  const fac=document.getElementById('facilityList'),res=document.getElementById('researchList');if(!fac||!res)return;
+  fac.replaceChildren();for(const [key,f] of Object.entries(FACILITIES)){const lv=state.facilities[key],row=el('div','item-row'),info=el('div');info.append(el('b','',`${f.name} Lv${lv}`),el('small','',f.desc(lv)),...(lv<3?[el('small','',`次: ${f.desc(lv+1)}`)]:[]));row.append(info,lv<3?actionButton(`強化 ${f.cost[lv].toLocaleString()}`,()=>upgradeFacility(key),state.credits<f.cost[lv]):el('span','tag','MAX'));fac.append(row);}
+  res.replaceChildren();const all=Object.values(RESEARCH_MASTER);if(!all.length)res.append(el('p','sub','研究データがありません（アイテムパックの research で追加できます）。'));
+  for(const r of all){const st=researchStatus(r),row=el('div','item-row'+(st==='done'?' done':'')),info=el('div');const unlock=[...r.unlock.units.map(id=>`加入: ${UNIT_INDEX[id]?.name||id}`),...r.unlock.items.map(id=>`販売: ${ITEM_MASTER[id]?.name||id}`),...Object.entries(r.unlock.grantItems).map(([id,n])=>`支給: ${ITEM_MASTER[id]?.name||id} ×${n}`)].join(' / ');info.append(el('b','',`${st==='done'?'✓ ':st==='locked'?'🔒 ':''}${r.name}`),el('small','',`${r.desc?r.desc+' ／ ':''}費用 ${researchCostText(r)}${unlock?' ／ '+unlock:''}${st==='locked'?' ／ 前提: '+r.requires.map(q=>RESEARCH_MASTER[q]?.name||q).join('・'):''}`));row.append(info);if(st==='open')row.append(actionButton('研究する',()=>doResearch(r.id)));res.append(row);}
+}
+function renderRecords(){
+  const sum=document.getElementById('recordSummary');if(!sum)return;const r=state.records;
+  sum.innerHTML=`<div class="info-strip"><div class="info-pill"><b>${r.battles}</b><span>出撃</span></div><div class="info-pill"><b>${r.wins} / ${r.draws} / ${r.losses}</b><span>勝 / 分 / 敗</span></div><div class="info-pill"><b>${r.kills}</b><span>撃破</span></div><div class="info-pill"><b>${state.day}</b><span>経過日数</span></div></div>`;
+  document.getElementById('missionRecords').innerHTML=MISSIONS.map(m=>{const rec=state.missions[m.id];return `<div class="record-row"><span>${esc(m.name)}</span><span class="stars">${starMarks(m)}</span><span class="sub">${rec?.clears?`クリア${rec.clears}回 / 最短${rec.best}TURN`:'未クリア'}</span></div>`;}).join('')||'<p class="sub">作戦がありません。</p>';
+  document.getElementById('achievementList').innerHTML=ACHIEVEMENTS.map(a=>{const got=state.achievements.includes(a.id);return `<div class="record-row ${got?'done':''}"><span>${got?'🏆':'・'} ${esc(a.name)}</span><span class="sub">${esc(a.desc)} / 報酬 ${a.reward.toLocaleString()}</span></div>`;}).join('');
+  const kills=Object.entries(r.enemyKills).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('bestiary').innerHTML=kills.map(([k,n])=>`<div class="record-row"><span>${esc(r.enemyNames[k]||ENEMY_MASTER[k]?.name||k)}</span><span class="sub">撃破 ${n}</span></div>`).join('')||'<p class="sub">まだ敵を撃破していません。</p>';
+  const items=Object.entries(r.itemsFound).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('itemRecords').innerHTML=items.map(([k,n])=>`<div class="record-row"><span>${esc(r.itemNames[k]||ITEM_MASTER[k]?.name||k)}</span><span class="sub">入手 ${n}</span></div>`).join('')||'<p class="sub">まだアイテムを入手していません。</p>';
+}
+function renderPresets(){
+  const box=document.getElementById('presetTools');if(!box)return;box.replaceChildren();box.append(el('span','sub','編成プリセット'));
+  for(let i=0;i<3;i++){const p=state.presets[i];const g=el('span','preset-slot');g.append(actionButton(`読込${i+1}${p?`（${p.selected.length}機）`:''}`,()=>loadPreset(i),!p),actionButton(`保存${i+1}`,()=>savePreset(i),!selected.length));box.append(g);}
+}
+function renderSaveTools(){const t=document.getElementById('fatigueToggle');if(t)t.checked=fatigueOn();const s=document.getElementById('saveStatus');if(s)s.textContent=`経過 ${state.day}日 / ユニット ${UNIT_MASTER.length} / 所持アイテム ${Object.values(state.items).filter(n=>n>0).length}種 / 実績 ${state.achievements.length}/${ACHIEVEMENTS.length}`;}
+function renderMissionDetail(m){
+  const box=document.getElementById('missionDetail');if(!box)return;if(!m){box.textContent='';return;}
+  const lines=[`勝利条件: ${objectiveText(m)}`,`地形: ${terrainText(m)}`,...ruleTexts(m).map(t=>'ルール: '+t),`星条件: ${C.missionStars(m).map(C.starText).join(' / ')}`];
+  if(m.requires?.minLevel)lines.push(`出撃にはLv${m.requires.minLevel}以上が必要`);
+  if(m.objective?.type==='escort')lines.push(`護衛対象「${UNIT_INDEX[m.objective.escortUnitId]?.name||m.objective.escortUnitId}」が自動で同行します（撃破されると敗北）`);
+  box.innerHTML=lines.map(x=>`<div>${esc(x)}</div>`).join('');
+}
+document.getElementById('deployBtn').onclick=deploy;
+document.getElementById('clearBtn').onclick=()=>{if(!battleRunning){selected=[];render();}};
+document.getElementById('repairBtn').onclick=repairAll;
+document.getElementById('importBundleBtn').onclick=()=>document.getElementById('bundleFileInput').click();
+document.getElementById('bundleFileInput').onchange=async e=>{await importBundleFiles(e.target.files);e.target.value='';};
+document.getElementById('importUnitBtn').onclick=()=>document.getElementById('unitFileInput').click();
+document.getElementById('unitFileInput').onchange=async e=>{await importUnitFiles(e.target.files);e.target.value='';};
+document.getElementById('clearImportedUnitsBtn').onclick=clearImportedUnitPacks;
+document.getElementById('importMissionBtn').onclick=()=>document.getElementById('missionFileInput').click();
+document.getElementById('missionFileInput').onchange=async e=>{await importMissionFiles(e.target.files);e.target.value='';};
+document.getElementById('clearImportedMissionsBtn').onclick=clearImportedMissionPacks;
+document.getElementById('importItemBtn').onclick=()=>document.getElementById('itemFileInput').click();
+document.getElementById('itemFileInput').onchange=async e=>{await importItemFiles(e.target.files);e.target.value='';};
+document.getElementById('clearImportedItemsBtn').onclick=clearImportedItemPacks;
+document.getElementById('itemTarget').onchange=renderItems;
+document.getElementById('preBattleSpeed').onchange=e=>{battleControl.speed=e.target.value;updateBattleControls();};
+document.getElementById('speedSelect').onchange=e=>{battleControl.speed=e.target.value;updateBattleControls();};
+document.getElementById('pauseBtn').onclick=()=>{if(!battleRunning)return;battleControl.paused=!battleControl.paused;if(!battleControl.paused){battleControl.stepTokens=0;wakeGate();}updateBattleControls();};
+document.getElementById('stepBtn').onclick=()=>{if(!battleRunning)return;battleControl.paused=true;battleControl.stepTokens++;wakeGate();updateBattleControls();};
+document.getElementById('reviewBattleBtn').onclick=()=>showScreen('battle');
+document.getElementById('returnResultBtn').onclick=()=>showScreen('result');
+document.getElementById('returnResultBottomBtn').onclick=()=>showScreen('result');
+document.getElementById('returnBaseBtn').onclick=()=>{showScreen('base');document.getElementById('returnResultBtn').style.display='none';document.getElementById('turnNumber').textContent='--';setAction(null,null,[],'部隊と作戦を選択');render();};
+document.getElementById('copyLogBtn').onclick=copyBattleLog;
+document.getElementById('logAutoScroll').onchange=e=>{logAutoScroll=!!e.target.checked;if(logAutoScroll){const el=document.getElementById('battleLog');el.scrollTop=el.scrollHeight;}};
+document.querySelectorAll('[data-log-filter]').forEach(b=>b.onclick=()=>{logFilter=b.dataset.logFilter;applyLogFilter();});
+document.getElementById('resetBtn').onclick=()=>{if(battleRunning)return;if(confirm('セーブデータを初期化しますか？')){storageRemove(SAVE_KEY);LEGACY_SAVE_KEYS.forEach(storageRemove);state=defaultState();selected=[];selectedMission=null;render();document.getElementById('battleLog').innerHTML='<span class="log-line sys" data-log-type="system">SYSTEM: 初期化しました。</span>';applyLogFilter();document.getElementById('turnNumber').textContent='--';setAction(null,null,[],'初期化しました');}};
+document.getElementById('skipBtn').onclick=()=>{if(!battleRunning)return;battleControl.skip=true;battleControl.paused=false;battleControl.stepTokens=0;wakeGate();updateBattleControls();};
+document.getElementById('growthTarget').onchange=e=>{growthTargetId=e.target.value;renderGrowth();};
+document.getElementById('restBtn').onclick=()=>{if(confirm('1日休養しますか？\n出撃せずに疲労・負傷を回復し、施設の効果を受けます。'))restDay();};
+document.getElementById('fatigueToggle').onchange=e=>{state.settings.fatigue=!!e.target.checked;commitChange(state.settings.fatigue?'疲労・負傷ルールをONにしました':'疲労・負傷ルールをOFFにしました');};
+document.getElementById('exportSaveBtn').onclick=()=>{const d=new Date(),stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;downloadText(`pro_save_${stamp}.json`,JSON.stringify(exportSaveData()));lastNotice='セーブデータを書き出しました';render();};
+document.getElementById('importSaveBtn').onclick=()=>document.getElementById('saveFileInput').click();
+document.getElementById('saveFileInput').onchange=async e=>{const f=e.target.files?.[0];e.target.value='';if(!f||battleRunning)return;try{const data=JSON.parse(await f.text());if(!confirm(`セーブデータを読み込みますか？\n現在の進行と追加パックは置き換わります。\n書き出し日時: ${data?.exportedAt||'不明'}`))return;importSaveData(data);lastNotice='セーブデータを読み込みました';render();}catch(err){alert('読み込めませんでした: '+err.message);}};
+showScreen('base');
+ensureUnitState();
+render();
+})();
+</script>
+<script>
+
+(()=>{'use strict';
+
+const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text)e.textContent=text;return e;};
+const button=(text,fn)=>{const b=el('button','flow-btn',text);b.type='button';b.onclick=fn;return b;};
+const heading=(text)=>{const h=el('h1','flow-heading',text);h.tabIndex=-1;return h;};
+const focusPage=(page)=>{const h=page.querySelector('h1,h2,.card-title');if(h){h.tabIndex=-1;h.focus({preventScroll:true});}window.scrollTo({top:0,behavior:'instant'});};
+const links=()=>{const box=el('div','flow-links');[['index.html','ゲーム'],['unit_maker.html','Unit Maker'],['mission_maker.html','Mission Maker'],['item_maker.html','Item Maker'],['combined_maker.html','統合メーカー'],['maker_hub.html','メーカー入口']].forEach(([href,t])=>{const a=el('a','',t);a.href=href;a.target='_blank';a.rel='noopener';box.append(a);});return box;};
+
+const wrap=document.querySelector('#baseScreen .wrap'),grid=wrap.querySelector('.grid'),panels=[...grid.children],units=panels[0],missions=panels[1],items=wrap.querySelector('.item-panel'),growth=wrap.querySelector('.growth-panel'),shop=wrap.querySelector('.shop-panel'),lab=wrap.querySelector('.lab-panel'),records=wrap.querySelector('.records-panel');
+const data=el('section','flow-page panel'),review=el('section','flow-page panel'),nav=el('nav','flow-nav');nav.setAttribute('aria-label','基地画面');
+data.append(heading('データ管理'),el('p','flow-lead','ユニット・作戦・アイテムのパックを追加・管理します。'));
+wrap.querySelectorAll('.data-tools').forEach(e=>data.append(e));data.append(links());
+const reset=document.getElementById('resetBtn');if(reset)data.append(reset);
+const start=[...missions.children].find(e=>e.tagName==='H2'&&e.textContent.includes('出撃編成'));
+let node=start;while(node){const next=node.nextSibling;review.append(node);node=next;}
+review.prepend(heading('出撃前の確認'),el('p','flow-lead','味方の状態と敵編成を確認し、準備が整ったら派遣を開始してください。'));
+units.querySelector('h2').textContent='派遣部隊を編成';missions.querySelector('h2').textContent='作戦を選択';items.querySelector('h2').textContent='補給・強化アイテム';
+const views={units,missions,review,items,growth,shop,lab,records,data};Object.values(views).forEach(e=>e.classList.add('flow-page'));
+grid.before(nav);grid.append(review,growth,shop,lab,records,data);
+const buttons={};[['units','01 部隊'],['missions','02 作戦'],['review','03 出撃確認'],['items','アイテム'],['growth','育成'],['shop','ショップ'],['lab','研究・施設'],['records','記録'],['data','データ管理']].forEach(([id,t])=>{buttons[id]=button(t,()=>show(id));nav.append(buttons[id]);});
+function show(id,focus=true){Object.entries(views).forEach(([k,e])=>e.hidden=k!==id);Object.entries(buttons).forEach(([k,b])=>{if(k===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(focus)focusPage(views[id]);}
+function footer(page,choices){const f=el('div','flow-footer');choices.forEach(([id,t])=>f.append(button(t,()=>show(id))));page.append(f);}
+footer(units,[['items','補給・強化へ'],['missions','作戦選択へ →']]);footer(missions,[['units','← 部隊編成へ'],['review','出撃確認へ →']]);footer(review,[['units','部隊を変更'],['missions','作戦を変更']]);footer(items,[['units','← 部隊編成へ'],['growth','育成へ']]);footer(growth,[['units','← 部隊編成へ'],['items','アイテムへ']]);footer(shop,[['items','アイテムへ'],['lab','研究・施設へ']]);footer(lab,[['shop','ショップへ'],['growth','育成へ']]);
+show('units',false);
+})();
+
+</script>
+</body>
+</html>
