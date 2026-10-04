@@ -9,9 +9,15 @@
 - ゲーム: https://renbu-asuda.github.io/phantasia-recorde-ops/game/index.html
 - メーカー: https://renbu-asuda.github.io/phantasia-recorde-ops/game/maker_hub.html
 
+
+### LINEで送るとき・画面が窮屈なとき
+
+- LINEで送るときは `https://renbu-asuda.github.io/phantasia-recorde-ops/?openExternalBrowser=1` を送ってください（LINEの中のブラウザではなく、標準ブラウザで開きます。LINEの中ではZIPのダウンロードができません）。
+- ブラウザに「PC版サイト」の機能がなくても、ゲームやメーカーの上にある「🖥 PC表示」ボタンで広い画面にできます。
+
 ## ダウンロード
 
-オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.10.4.zip](dist/fantasia_record_ops_toolkit_v1.10.4.zip)**（リンク先の「Download raw file」ボタンで保存できます）
+オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.10.5.zip](dist/fantasia_record_ops_toolkit_v1.10.5.zip)**（リンク先の「Download raw file」ボタンで保存できます）
 
 ## 遊び方
 
@@ -37,6 +43,7 @@
 
 ## 更新履歴（抜粋）
 
+- **1.10.5**: 「🖥 PC表示」ボタン（PC版サイト機能のないブラウザでも広い画面に）。LINEの中のブラウザで開いたときに、標準ブラウザで開き直す案内
 - **1.10.4**: 修正。メーカーのタブが出ない問題（Androidのローカルサーバー系アプリなどで共通ファイルが読めなかった）。メーカーを index.html と同じ場所に戻し、読み込みチェックとキャッシュ対策を追加
 - **1.10.3 追補**: 拡張パック「ブラック・ブレット」を統合パックに更新（ユニット27体・原作1～7巻の作戦10本・アイテム・研究。`game/expansion_packs/black_bullet_bundle_PRO.js`）
 - **1.10.3**: ファイル整理（メーカーは `makers/`、サンプルは `samples/`、拡張パックは `expansion_packs/`、説明書類は `docs/`）。基本データを最新形式で作り直し（パイロット・要パイロット機体・作戦7本・ショップ・研究など）

@@ -1,3 +1,11 @@
+PRO Toolkit 1.10.5
+
+- 「🖥 PC表示」ボタンを追加（ゲーム・メーカー5つ・メーカー入口）。ブラウザに「PC版サイト」の機能がなくても、パソコン向けの広い画面（幅1280）で表示できます。
+  設定は全ページ共通で保存され、「📱 スマホ表示」で元に戻せます。
+- LINEの中のブラウザで開いたときは、上部に案内と「ブラウザで開き直す」ボタンを表示します（LINEの中ではZIPのダウンロードができず、セーブも普段のブラウザとは別になるため）。
+  LINEで送るときは、URLの末尾に ?openExternalBrowser=1 を付けると相手の標準ブラウザで開きます（例: https://renbu-asuda.github.io/phantasia-recorde-ops/?openExternalBrowser=1）。
+- テスト: tests/test_view_mode.cjs を追加。全20本PASS。
+
 PRO Toolkit 1.10.4（修正）
 
 - 修正: 統合メーカーなどで上のタブ・「かんたん／詳細」・ボタンの色が出ない問題。

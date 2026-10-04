@@ -3,6 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script data-pro-view>/* 1.10.5: PC表示切り替え（ブラウザのPC版表示がなくても使える）とLINE内ブラウザの案内。共通JSに頼らない */(function(){var K='pro_view_mode',mode='mobile';try{mode=localStorage.getItem(K)==='pc'?'pc':'mobile';}catch(e){}if(window.__PRO_VIEW_FORCE)mode=window.__PRO_VIEW_FORCE;
+var meta=document.querySelector('meta[name=viewport]');if(meta&&mode==='pc')meta.setAttribute('content','width=1280');
+function set(m){try{localStorage.setItem(K,m);}catch(e){window.__PRO_VIEW_FORCE=m;}if(meta)meta.setAttribute('content',m==='pc'?'width=1280':'width=device-width,initial-scale=1');try{location.reload();}catch(e){}}
+var line=/ Line\//.test(navigator.userAgent||'');
+function externalUrl(){var u=location.href.replace(/#.*$/,'');return u+(u.indexOf('?')<0?'?':'&')+'openExternalBrowser=1';}
+window.PROView={mode:mode,set:set,isLine:line,externalUrl:externalUrl};
+function ui(){var slot=document.getElementById('viewModeSlot');if(slot&&!slot.firstChild){var b=document.createElement('button');b.type='button';b.className='view-mode-btn';b.textContent=mode==='pc'?'📱 スマホ表示':'🖥 PC表示';b.title=mode==='pc'?'スマホ向けの表示に戻す':'画面を広く使うPC向けの表示にする';b.setAttribute('style','font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid #3d5a73;background:#10202e;color:#cfe6f5;cursor:pointer;white-space:nowrap');b.onclick=function(){set(mode==='pc'?'mobile':'pc');};slot.appendChild(b);}
+if(line&&!document.getElementById('proLineNotice')){var d=document.createElement('div');d.id='proLineNotice';d.setAttribute('role','note');d.setAttribute('style','margin:10px;padding:12px 14px;border:2px solid #f0c040;border-radius:10px;background:#2e2610;color:#fff3cf;font:14px/1.7 system-ui,sans-serif');var t=document.createElement('div');t.textContent='LINEの中のブラウザで開いています。ここではZIPのダウンロードができず、セーブも普段のブラウザとは別になります。';var a=document.createElement('a');a.href=externalUrl();a.textContent='▶ ブラウザで開き直す';a.setAttribute('style','display:inline-block;margin-top:6px;padding:6px 12px;border-radius:8px;background:#f0c040;color:#2a2000;font-weight:bold;text-decoration:none');d.appendChild(t);d.appendChild(a);document.body.insertBefore(d,document.body.firstChild);}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ui);else ui();})();</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="PRO">
 <meta name="theme-color" content="#070b10">
@@ -31,14 +40,14 @@ footer{margin-top:28px;color:#6f8396;font-size:12px}
 </style>
 </head>
 <body>
-<main>
+<main><div style="text-align:right"><span id="viewModeSlot"></span></div>
   <h1>ファンタジア・レコード・オプス</h1>
   <p class="lead">PRO / ブラウザで遊べる自動派遣戦闘ゲーム。インストール不要、スマホ（iPhone・Android）でもそのまま遊べます。</p>
 
   <div class="cards">
     <a class="card primary" href="game/index.html"><b>▶ ゲームを遊ぶ</b><span>部隊を編成して作戦に派遣。戦闘は自動で進みます。</span></a>
     <a class="card" href="game/maker_hub.html"><b>✎ データを作る（メーカー）</b><span>テンプレートを選ぶだけで、ユニット・作戦・アイテムを作れます。</span></a>
-    <a class="card" href="dist/fantasia_record_ops_toolkit_v1.10.4.zip"><b>⬇ ZIPをダウンロード</b><span>オフラインで遊びたい人向け（Android・パソコン）。v1.10.4</span></a>
+    <a class="card" href="dist/fantasia_record_ops_toolkit_v1.10.5.zip"><b>⬇ ZIPをダウンロード</b><span>オフラインで遊びたい人向け（Android・パソコン）。v1.10.5</span></a>
   </div>
 
   <section>
@@ -48,6 +57,19 @@ footer{margin-top:28px;color:#6f8396;font-size:12px}
       <li>「01 部隊」でユニットを選び、「02 作戦」で作戦を選んで、「03 出撃確認」で派遣開始。</li>
       <li>新要素をまとめて試すなら、ゲームの「データ管理 → 統合JSを読み込む」で <code>samples/pro_190_feature_sample.js</code> を読み込みます（ZIPに入っています）。武装の追加効果（1.10.1）は <code>samples/pro_1101_weapon_effects_sample.js</code>、パイロットとユニットの統合（1.10.2）は <code>samples/pro_1102_pilot_sample.js</code> で試せます。</li>
     </ol>
+  </section>
+
+  <section>
+    <h2>LINEで友だち・家族に送るとき</h2>
+    <p class="note">LINEで普通のリンクを送ると、LINEの中のブラウザで開くため、ZIPのダウンロードができません（セーブも普段のブラウザとは別になります）。下のリンクを送ると、相手のスマホの標準ブラウザで開きます。</p>
+    <p><code id="shareUrl">https://renbu-asuda.github.io/phantasia-recorde-ops/?openExternalBrowser=1</code></p>
+    <p><button type="button" id="copyShare" style="font-size:14px;padding:6px 14px;border-radius:8px;border:1px solid #2ea043;background:#123d22;color:#7ee787">リンクをコピー</button> <span id="copyDone" class="note"></span></p>
+    <script>document.getElementById('copyShare').onclick=function(){var t=document.getElementById('shareUrl').textContent,d=document.getElementById('copyDone');function ok(){d.textContent='コピーしました。LINEに貼り付けて送ってください。';}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,function(){d.textContent='長押しでコピーしてください。';});}else{d.textContent='長押しでコピーしてください。';}};</script>
+  </section>
+
+  <section>
+    <h2>画面が窮屈なとき（PC表示）</h2>
+    <p class="note">右上の「🖥 PC表示」を押すと、ブラウザに「PC版サイト」の機能がなくても、パソコン向けの広い画面で表示できます。ゲームやメーカーの画面の上にも同じボタンがあります。戻すときは「📱 スマホ表示」。</p>
   </section>
 
   <section>
@@ -65,7 +87,7 @@ footer{margin-top:28px;color:#6f8396;font-size:12px}
     <p class="note">このゲームとツールは、AIを使って制作しています。プログラム・データ・説明文の多くはAIが生成し、作者が確認・調整して公開しています。1.8.4 以降の改修は、AIコーディングアシスタント「Claude Code」（Anthropic）で行いました。不具合が残っている可能性があるので、見つけたら教えてください。</p>
   </section>
 
-  <footer>Fantasia Record Ops (PRO) Toolkit 1.10.4 ・ AIを使って制作</footer>
+  <footer>Fantasia Record Ops (PRO) Toolkit 1.10.5 ・ AIを使って制作</footer>
 </main>
 </body>
 </html>

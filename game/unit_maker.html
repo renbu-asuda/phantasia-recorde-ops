@@ -3,7 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ファンタジア・レコード・オプス (PRO) Unit Maker 1.14.1</title>
+<script data-pro-view>/* 1.10.5: PC表示切り替え（ブラウザのPC版表示がなくても使える）とLINE内ブラウザの案内。共通JSに頼らない */(function(){var K='pro_view_mode',mode='mobile';try{mode=localStorage.getItem(K)==='pc'?'pc':'mobile';}catch(e){}if(window.__PRO_VIEW_FORCE)mode=window.__PRO_VIEW_FORCE;
+var meta=document.querySelector('meta[name=viewport]');if(meta&&mode==='pc')meta.setAttribute('content','width=1280');
+function set(m){try{localStorage.setItem(K,m);}catch(e){window.__PRO_VIEW_FORCE=m;}if(meta)meta.setAttribute('content',m==='pc'?'width=1280':'width=device-width,initial-scale=1');try{location.reload();}catch(e){}}
+var line=/ Line\//.test(navigator.userAgent||'');
+function externalUrl(){var u=location.href.replace(/#.*$/,'');return u+(u.indexOf('?')<0?'?':'&')+'openExternalBrowser=1';}
+window.PROView={mode:mode,set:set,isLine:line,externalUrl:externalUrl};
+function ui(){var slot=document.getElementById('viewModeSlot');if(slot&&!slot.firstChild){var b=document.createElement('button');b.type='button';b.className='view-mode-btn';b.textContent=mode==='pc'?'📱 スマホ表示':'🖥 PC表示';b.title=mode==='pc'?'スマホ向けの表示に戻す':'画面を広く使うPC向けの表示にする';b.setAttribute('style','font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid #3d5a73;background:#10202e;color:#cfe6f5;cursor:pointer;white-space:nowrap');b.onclick=function(){set(mode==='pc'?'mobile':'pc');};slot.appendChild(b);}
+if(line&&!document.getElementById('proLineNotice')){var d=document.createElement('div');d.id='proLineNotice';d.setAttribute('role','note');d.setAttribute('style','margin:10px;padding:12px 14px;border:2px solid #f0c040;border-radius:10px;background:#2e2610;color:#fff3cf;font:14px/1.7 system-ui,sans-serif');var t=document.createElement('div');t.textContent='LINEの中のブラウザで開いています。ここではZIPのダウンロードができず、セーブも普段のブラウザとは別になります。';var a=document.createElement('a');a.href=externalUrl();a.textContent='▶ ブラウザで開き直す';a.setAttribute('style','display:inline-block;margin-top:6px;padding:6px 12px;border-radius:8px;background:#f0c040;color:#2a2000;font-weight:bold;text-decoration:none');d.appendChild(t);d.appendChild(a);document.body.insertBefore(d,document.body.firstChild);}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ui);else ui();})();</script>
+<title>ファンタジア・レコード・オプス (PRO) Unit Maker 1.14.2</title>
 <style>
 :root{
   --bg:#071019;--panel:#0d1823;--panel2:#101f2d;--line:#24384a;--text:#e8f0f7;--muted:#91a3b4;
@@ -51,16 +60,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 
 </style>
-<link rel="stylesheet" href="shared/maker.css?v=1.10.4">
-<script src="shared/pro_core.js?v=1.10.4"></script>
-<script src="shared/maker_core.js?v=1.10.4"></script>
-<script src="shared/pro_battle.js?v=1.10.4"></script>
-<script src="shared/pro_templates.js?v=1.10.4"></script>
-<script src="shared/pro_editor.js?v=1.10.4"></script>
+<link rel="stylesheet" href="shared/maker.css?v=1.10.5">
+<script src="shared/pro_core.js?v=1.10.5"></script>
+<script src="shared/maker_core.js?v=1.10.5"></script>
+<script src="shared/pro_battle.js?v=1.10.5"></script>
+<script src="shared/pro_templates.js?v=1.10.5"></script>
+<script src="shared/pro_editor.js?v=1.10.5"></script>
 </head>
 <body>
 <header class="topbar"><div class="toprow">
-  <div class="brand">PRO <span style="color:var(--accent)">UNIT MAKER</span><small>v1.14.1 / テンプレートで作れる・強さの目安つき・武装の追加効果・パイロットもユニット / Game 1.10.4</small><div id="modeBox"></div></div>
+  <div class="brand">PRO <span style="color:var(--accent)">UNIT MAKER</span><small>v1.14.2 / テンプレートで作れる・強さの目安つき・武装の追加効果・パイロットもユニット / Game 1.10.5</small><div id="modeBox"></div><span id="viewModeSlot" style="display:inline-block;margin-top:4px"></span></div>
   <div class="actions">
     <label class="btn ghost">ユニット/統合JSを読み込む<input id="importFile" type="file" accept=".js,text/javascript" hidden></label>
     <button class="btn" id="newPackBtn">新規パック</button>

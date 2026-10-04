@@ -1,3 +1,11 @@
+PRO Toolkit 1.10.5 検証報告
+
+全20テストPASS（tests/test_view_mode.cjs を追加）。
+- test_view_mode.cjs: 全6ページで viewport の直後に表示切り替えがあること、未設定はスマホ表示、PC表示で width=1280、ボタンで保存・再読み込み、
+  LINEのユーザーエージェントでのみ案内が出て、開き直すURLに openExternalBrowser=1 が付くこと（既存のクエリがあれば & で追加、#は除去）。
+- 実ブラウザ（Chromium, Galaxy S9+ エミュレーション）: ゲームでPC表示 → 表示幅1280 → 統合メーカーも同じ設定で表示（タブ6つ）→ スマホ表示に戻る。
+  LINEのユーザーエージェントで公開トップページとゲームに案内が出ることを確認。コンソールエラーなし。
+
 PRO Toolkit 1.10.4 検証報告
 
 全19テストPASS（tests/test_boot_guard.cjs を追加）。
