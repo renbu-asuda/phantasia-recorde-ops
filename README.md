@@ -7,11 +7,11 @@
 **https://renbu-asuda.github.io/phantasia-recorde-ops/** を開くだけで遊べます（インストール不要）。iPhoneはSafariの「ホーム画面に追加」でアプリのように起動できます。
 
 - ゲーム: https://renbu-asuda.github.io/phantasia-recorde-ops/game/index.html
-- メーカー: https://renbu-asuda.github.io/phantasia-recorde-ops/game/makers/maker_hub.html
+- メーカー: https://renbu-asuda.github.io/phantasia-recorde-ops/game/maker_hub.html
 
 ## ダウンロード
 
-オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.10.3.zip](dist/fantasia_record_ops_toolkit_v1.10.3.zip)**（リンク先の「Download raw file」ボタンで保存できます）
+オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.10.4.zip](dist/fantasia_record_ops_toolkit_v1.10.4.zip)**（リンク先の「Download raw file」ボタンで保存できます）
 
 ## 遊び方
 
@@ -21,7 +21,7 @@
 
 ## データを作る
 
-1. `makers/maker_hub.html` を開き、「はじめての方へ」の手順に沿って**統合メーカー**を使います。
+1. `maker_hub.html` を開き、「はじめての方へ」の手順に沿って**統合メーカー**を使います。
 2. 「ユニット」「ミッション」「アイテム」のタブで「テンプレートから作る」を押し、種類と強さを選んで名前を付けます。
 3. 「統合JSを書き出す」→ ゲームの「データ管理 → 統合JSを読み込む」で遊べます。
 
@@ -37,6 +37,7 @@
 
 ## 更新履歴（抜粋）
 
+- **1.10.4**: 修正。メーカーのタブが出ない問題（Androidのローカルサーバー系アプリなどで共通ファイルが読めなかった）。メーカーを index.html と同じ場所に戻し、読み込みチェックとキャッシュ対策を追加
 - **1.10.3 追補**: 拡張パック「ブラック・ブレット」を統合パックに更新（ユニット27体・原作1～7巻の作戦10本・アイテム・研究。`game/expansion_packs/black_bullet_bundle_PRO.js`）
 - **1.10.3**: ファイル整理（メーカーは `makers/`、サンプルは `samples/`、拡張パックは `expansion_packs/`、説明書類は `docs/`）。基本データを最新形式で作り直し（パイロット・要パイロット機体・作戦7本・ショップ・研究など）
 - **1.10.2**: パイロットとユニットの統合。パイロットもユニットとして出撃でき、機体に乗ると補正（レベルで成長）。「パイロットが必要な機体」と「生身のユニット」を作り分け可能（サンプル: `game/samples/pro_1102_pilot_sample.js`）
