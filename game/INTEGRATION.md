@@ -1,3 +1,40 @@
+# Toolkit 1.10.1 武装の追加効果（追加分）
+
+武装に `effects`（省略可・0～4個）を追加しました。使った武装は `weaponIsExtended` が true になり、ユニットは Unit Schema 3（アイテムの `add_weapon`・装備品の武装は Item Schema 3）で出力されます。
+
+```json
+{"name": "アーマーブレイカー", "attackType": "ranged", "damageType": "physical", "powerPct": 180, "...": "...",
+ "effects": [
+   {"timing": "before", "effect": "tag_damage_up_pct", "value": 30, "tag": "装甲車"},
+   {"timing": "after",  "effect": "def_down_pct", "value": 20, "when": "hit", "duration": 2, "chance": 100}
+ ]}
+```
+
+| 項目 | 内容 |
+|---|---|
+| `timing` | `before`（使用前＝ダメージ計算の前）／`after`（使用後＝攻撃の後）。必須 |
+| `effect` | 下の表から。タイミングに合わない組み合わせはエラー |
+| `value` | 効果の大きさ（0以上。`drain_pct` / `recoil_pct` は0～100） |
+| `chance` | 発動率 0～100（省略=100） |
+| `target` | `targets`（この攻撃の対象全員）/ `self` / `allies` / `weakest_ally` / `enemies` / `opponent` / `random_enemy`。省略時は弱体効果なら `targets`、それ以外は `self` |
+| `when` | 使用後だけ。`always`（省略）/ `hit` / `crit` / `kill`。`hit`・`crit` で `targets` を狙う効果は、命中した（クリティカルを受けた）相手だけにかかる |
+| `duration` | 持続TURN 1～99（バフ・デバフ・挑発・炎上。スタンは行動不能回数）。省略=2（スタンは1） |
+| `cond` | スキルと同じ追加条件 `{type, value|tag}` |
+| `tag` | `tag_damage_up_pct` の特効タグ（必須） |
+
+| 効果 | 使用前 | 使用後 |
+|---|---|---|
+| `damage_up_pct` / `hit_up_pt` / `crit_up_pt` / `def_pierce_pct` / `tag_damage_up_pct`（その攻撃だけの修正） | ○ | × |
+| `atk/def/mob/acc_up_pct`・`atk/def/mob/acc_down_pct`・`stun`・`burn`・`shield`・`heal_maxhp_pct`・`heal_flat`・`taunt`・`extra_action` | ○ | ○ |
+| `drain_pct`（与ダメージの%回復）/ `recoil_pct`（最大HPの%を自分に。HP1未満にならない） | × | ○ |
+
+- 発動は1回の攻撃につき1回、反撃（`opts.counter`）では発動しません。使用前のバフ・デバフはその攻撃のダメージ計算に反映されます。
+- API: `PROCore.weaponEffect(raw)` / `weaponEffectText(e)` / `weaponEffectsText(weapon)` / `weaponEffectsAllowed` / `weaponEffectTargets` / `weaponWhen` / `weaponEffectLabels`（2.1.0）。
+  `PROBattle.weaponEffects(ctx, unit, weapon, timing, info)`（1.1.0。`damagePreview` は発動率100%・条件なしの使用前効果を見込む）。
+  `PROEditor.weaponEffectFields()` / `WEAPON_EFFECT_PRESETS`、`weaponExtFields()` に `effects` リスト（1.2.0）。
+
+---
+
 # Toolkit 1.10.0 メーカー補助API（追加分）
 
 データ形式は1.9.0から変更ありません。メーカーの使いやすさのための共通機能を追加しました。

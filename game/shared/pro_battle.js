@@ -1,4 +1,4 @@
-/* PRO battle engine 1.0.0 — shared by the game and the makers' simulator. Plain script, file:// compatible.
+/* PRO battle engine 1.1.0 — shared by the game and the makers' simulator. Plain script, file:// compatible.
  * Pure combat rules: no DOM access. Presentation happens through ctx.hooks; randomness through ctx.rng. */
 (function(root){'use strict';
 const C=root.PROCore;
@@ -57,6 +57,7 @@ function skillTargets(ctx,u,sk,info){
   case 'weakest_ally':{let best=null;for(const x of own)if(!best||x.currentHp/x.maxHp<best.currentHp/best.maxHp)best=x;return best?[best]:[];}
   case 'enemies':return opp;
   case 'random_enemy':{const t=pickRandom(ctx,opp);return t?[t]:[];}
+  case 'targets':return (info.targets||[]).filter(alive);
   case 'opponent':{const o=info.opponent;if(o&&o.alive&&o.side!==u.side)return [o];if(o&&o.alive&&!hostile)return [o];const t=hostile?pickRandom(ctx,opp):null;return t?[t]:[];}}
   return [];
 }
@@ -125,6 +126,34 @@ function chooseTargets(ctx,attacker,opponents,count,weapon){
   return out;
 }
 
+// ---- weapon effects (1.10.1): fire once per action, before damage or after the attack ----
+function emptyMods(){return {damageMult:1,hitAdd:0,critAdd:0,defPierce:0,tagBonus:[]};}
+function weaponEffects(ctx,u,weapon,timing,info={}){
+  const result=emptyMods(),list=weapon?.effects;if(!u.alive||!Array.isArray(list)||!list.length)return result;
+  list.forEach((e,i)=>{
+    if(e.timing!==timing||!u.alive)return;
+    if(timing==='after'){const w=e.when||'always';if(w==='hit'&&!(info.hits>0))return;if(w==='crit'&&!(info.crits>0))return;if(w==='kill'&&!(info.kills>0))return;}
+    const sk={id:'w:'+weapon.name+':'+i,name:weapon.name,weaponEffect:true,effect:e.effect,value:num(e.value,0),chance:e.chance??100,maxUses:0,cond:e.cond,tag:e.tag,duration:e.duration,target:e.target||(C.HOSTILE_EFFECTS.includes(e.effect)?'targets':'self')};
+    // "When hit / crit" effects aimed at this attack's targets only reach the targets that were hit / critted.
+    const einfo=timing==='after'&&(e.when==='hit'||e.when==='crit')?{...info,targets:e.when==='hit'?info.hitTargets||info.targets:info.critTargets||info.targets}:info;
+    if(!skillReady(ctx,u,sk,einfo))return;
+    let detail='';const v=sk.value;
+    switch(e.effect){
+    case 'damage_up_pct':result.damageMult*=Math.max(0,1+v/100);detail=`与ダメージ +${v}%`;break;
+    case 'hit_up_pt':result.hitAdd+=v/100;detail=`命中 +${v}pt`;break;
+    case 'crit_up_pt':result.critAdd+=v/100;detail=`CRIT +${v}pt`;break;
+    case 'def_pierce_pct':result.defPierce+=v;detail=`DEF貫通 ${v}%`;break;
+    case 'tag_damage_up_pct':if(sk.tag&&(info.targets||[]).some(t=>tagsOf(t).includes(sk.tag))){result.tagBonus.push({tag:sk.tag,pct:v});detail=`対「${sk.tag}」 +${v}%`;}break;
+    case 'drain_pct':{const amount=Math.round((info.damage||0)*v/100);if(amount>0&&u.currentHp<u.maxHp){const before=u.currentHp;u.currentHp=Math.min(u.maxHp,u.currentHp+amount);const h=Math.round(u.currentHp-before);if(h>0)detail=`${h} HP吸収`;}break;}
+    case 'recoil_pct':{const dmg=Math.max(1,Math.round(u.maxHp*v/100));if(v>0&&u.currentHp>1){const before=u.currentHp;u.currentHp=Math.max(1,u.currentHp-dmg);statFor(ctx,u).damageTaken+=before-u.currentHp;detail=`反動 ${before-u.currentHp} ダメージ`;}break;}
+    default:detail=applyEvent(ctx,u,sk,einfo);
+    }
+    if(detail)ctx.hooks.logSkill(u,sk,detail);
+  });
+  return result;
+}
+function mergeMods(a,b){return {...a,damageMult:a.damageMult*b.damageMult,hitAdd:a.hitAdd+b.hitAdd,critAdd:a.critAdd+b.critAdd,defPierce:a.defPierce+b.defPierce,tagBonus:[...a.tagBonus,...b.tagBonus]};}
+
 // ---- resolution ----
 function handleDeath(ctx,u,killer){
   triggerSkills(ctx,u,'on_death',{opponent:killer});
@@ -140,7 +169,8 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
   await H.actionStart(attacker,weapon,targets,opts);
   let actionHits=0,actionDmg=0,killCount=0,actionCrits=0,lastKilled=null,lastCritTarget=null;
   const attackerStat=statFor(ctx,attacker);if(!opts.counter){attackerStat.actions++;markWeaponUsed(ctx,attacker,weapon);}
-  const attackMods=opts.counter?{damageMult:1,hitAdd:0,critAdd:0,defPierce:0,tagBonus:[]}:triggerSkills(ctx,attacker,'before_attack',{weapon,targets,allies:ctx.allies,enemies:ctx.enemies,opponent:targets[0]});
+  let attackMods=opts.counter?emptyMods():triggerSkills(ctx,attacker,'before_attack',{weapon,targets,allies:ctx.allies,enemies:ctx.enemies,opponent:targets[0]});
+  if(!opts.counter&&weapon.effects?.length)attackMods=mergeMods(attackMods,weaponEffects(ctx,attacker,weapon,'before',{weapon,targets,opponent:targets[0]}));
   const terrainHit=(weapon.attackType==='melee'?ctx.terrain.meleeHitPt:ctx.terrain.rangedHitPt)||0;
   const targetResults=[];
   for(const target of targets){
@@ -178,6 +208,7 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
   const summary=actionHits?`${actionHits} HIT / ${actionDmg} TOTAL DMG${killCount?` / ${killCount} DOWN`:''}${absorbedTotal?` / バリア吸収 ${absorbedTotal}`:''}`:`0 HIT / MISS`;
   H.log(`<span class="weapon">[${opts.counter?'反撃 ':''}${esc(weapon.name)} / ${esc(weaponTypeLabel(weapon))}]</span> ${esc(attacker.name)} → ${targetNames} : ${summary}`,actionCrits?'crit':'hit');
   if(targetResults.length>1){for(const r of targetResults){H.log(`　${esc(r.target.name)} : ${r.hits} HIT / ${r.damage} DMG${r.down?' / DOWN':''}`,r.down?'kill':'hit');}}
+  if(!opts.counter&&weapon.effects?.length)weaponEffects(ctx,attacker,weapon,'after',{weapon,targets,hitTargets:targetResults.filter(r=>r.hits>0).map(r=>r.target),critTargets:targetResults.filter(r=>r.crits>0).map(r=>r.target),hits:actionHits,damage:actionDmg,crits:actionCrits,kills:killCount,opponent:targets.find(t=>t.alive)||targets[0]});
   if(!opts.counter){
     triggerSkills(ctx,attacker,'after_attack',{weapon,targets,hits:actionHits,damage:actionDmg,opponent:targets[0]});
     if(killCount>0)triggerSkills(ctx,attacker,'on_kill',{kills:killCount,weapon,opponent:lastKilled});
@@ -273,11 +304,14 @@ async function simulate(o){
 function damagePreview(att,weapon,def,mission){
   const ctx=createContext({allies:[prepare({...att,side:'ally',currentHp:att.hp,maxHp:att.hp,alive:true})],enemies:[prepare({...def,side:'enemy',currentHp:def.hp,maxHp:def.hp,alive:true})],mission});
   const a=ctx.allies[0],d=ctx.enemies[0],terrainHit=(weapon.attackType==='melee'?ctx.terrain.meleeHitPt:ctx.terrain.rangedHitPt)||0;
-  const hit=baseHitRate(eff(ctx,a,'acc'),eff(ctx,d,'mob'),weapon.accuracyPt+terrainHit),crit=clamp(.05+weapon.critPt/100,.01,.5);
-  const defv=eff(ctx,d,'def')*(1-clamp(num(weapon.defPiercePct,0),0,100)/100),core=(eff(ctx,a,'atk')*(weapon.powerPct/100)-defv)*(weapon.hitPowerPct/100);
+  // Weapon effects used before the attack are counted when they always fire (100%, no condition).
+  const sure=(weapon.effects||[]).filter(e=>e.timing==='before'&&(e.chance??100)>=100&&!e.cond);
+  const m=sure.length?weaponEffects(ctx,a,{...weapon,effects:sure},'before',{weapon,targets:[d],opponent:d}):emptyMods();let tagMult=1;for(const b of m.tagBonus)if(tagsOf(d).includes(b.tag))tagMult*=Math.max(0,1+b.pct/100);
+  const hit=clamp(baseHitRate(eff(ctx,a,'acc'),eff(ctx,d,'mob'),weapon.accuracyPt+terrainHit)+m.hitAdd,.05,.95),crit=clamp(.05+weapon.critPt/100+m.critAdd,.01,.5);
+  const defv=eff(ctx,d,'def')*(1-clamp(num(weapon.defPiercePct,0)+m.defPierce,0,100)/100),core=(eff(ctx,a,'atk')*(weapon.powerPct/100)-defv)*(weapon.hitPowerPct/100)*m.damageMult*tagMult;
   const per=[.9,1,1.1].map(f=>Math.max(weapon.minDamage,core*f));const avgHit=per[1]*(1+.5*crit);
   const avgHits=(weapon.hitsMin+weapon.hitsMax)/2*hit,expected=avgHit*avgHits;
   return {hitRate:hit,critRate:crit,perHitMin:Math.round(per[0]),perHitAvg:Math.round(per[1]),perHitMax:Math.round(per[2]),critHit:Math.round(per[1]*1.5),avgHits,expected:Math.round(expected),actionsToKill:expected>0?Math.ceil(d.hp/expected):Infinity,terrainHit};
 }
-root.PROBattle=Object.freeze({version:'1.0.0',MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+root.PROBattle=Object.freeze({version:'1.1.0',weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);

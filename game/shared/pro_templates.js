@@ -1,4 +1,4 @@
-/* PRO maker templates 1.0.0 — ready-made units, skills, weapons, items, missions, pilots and research.
+/* PRO maker templates 1.1.0 — ready-made units, skills, weapons, items, missions, pilots and research.
  * Every template produces data that passes PROCore validation (tests/test_maker_friendly.cjs). */
 (function(root){'use strict';
 const C=root.PROCore;
@@ -17,7 +17,15 @@ const weapons=[
   {key:'autocannon',label:'機関砲',desc:'車両用の連射砲。2～4発。',weapon:W({name:'機関砲',accuracyPt:10,hitsMin:2,hitsMax:4,hitPowerPct:30})},
   {key:'maingun',label:'主砲',desc:'一撃が重い主砲。DEFを40%無視。撃った次のTURNは使えない。',weapon:W({name:'主砲',powerPct:220,accuracyPt:0,critPt:5,weight:2,minDamage:100,cooldown:1,defPiercePct:40,fxColor:'#ffd23c'})},
   {key:'beamrifle',label:'ビームライフル',desc:'ビーム属性の主力武器。1～2発。',weapon:W({name:'ビームライフル',damageType:'beam',powerPct:130,critPt:5,hitsMin:1,hitsMax:2,hitPowerPct:70,minDamage:80,fxColor:'#5ad8ff'})},
-  {key:'missile',label:'ミサイル',desc:'最大4体を同時に狙う特殊弾。1戦闘に3回まで。',weapon:W({name:'ミサイル',damageType:'special',powerPct:110,accuracyPt:5,targetCount:4,hitPowerPct:60,minDamage:40,usesPerBattle:3,fxColor:'#ff4fd8'})}
+  {key:'missile',label:'ミサイル',desc:'最大4体を同時に狙う特殊弾。1戦闘に3回まで。',weapon:W({name:'ミサイル',damageType:'special',powerPct:110,accuracyPt:5,targetCount:4,hitPowerPct:60,minDamage:40,usesPerBattle:3,fxColor:'#ff4fd8'})},
+  // 1.10.1: weapons with effects before / after use.
+  {key:'chargecannon',label:'チャージ砲',desc:'撃つ前にATK+30%で力をため、撃った後に反動で最大HPの5%を受ける。',weapon:W({name:'チャージ砲',damageType:'beam',powerPct:150,accuracyPt:5,weight:.7,minDamage:80,cooldown:1,fxColor:'#7fd6ff',effects:[{timing:'before',effect:'atk_up_pct',value:30,duration:1},{timing:'after',effect:'recoil_pct',value:5}]})},
+  {key:'armorbreaker',label:'アーマーブレイカー',desc:'当たると相手のDEFを20%下げる（2TURN）。装甲車に+30%。',weapon:W({name:'アーマーブレイカー',powerPct:180,accuracyPt:5,weight:.8,minDamage:80,usesPerBattle:3,fxColor:'#ffb347',effects:[{timing:'before',effect:'tag_damage_up_pct',value:30,tag:'装甲車'},{timing:'after',effect:'def_down_pct',value:20,when:'hit',duration:2}]})},
+  {key:'shocklance',label:'ショックランス',desc:'近接の電撃槍。当たると30%の確率で相手をスタン。',weapon:W({name:'ショックランス',attackType:'melee',damageType:'special',powerPct:110,accuracyPt:15,hitsMin:1,hitsMax:2,hitPowerPct:60,minDamage:50,fxColor:'#c9a0ff',effects:[{timing:'after',effect:'stun',value:0,when:'hit',chance:30}]})},
+  {key:'napalm',label:'ナパーム弾',desc:'最大3体を攻撃し、当たった敵を炎上させる（毎TURN 80・3TURN）。1戦闘2回まで。',weapon:W({name:'ナパーム弾',damageType:'special',powerPct:90,accuracyPt:0,targetCount:3,weight:.6,hitPowerPct:70,minDamage:40,usesPerBattle:2,fxColor:'#ff6a2a',effects:[{timing:'after',effect:'burn',value:80,when:'hit',duration:3}]})},
+  {key:'drainblade',label:'ドレインブレード',desc:'近接の連撃。与えたダメージの30%を回復する。',weapon:W({name:'ドレインブレード',attackType:'melee',powerPct:90,accuracyPt:15,critPt:5,hitsMin:2,hitsMax:3,hitPowerPct:45,minDamage:30,fxColor:'#ff4f6d',effects:[{timing:'after',effect:'drain_pct',value:30}]})},
+  {key:'commandflag',label:'指揮用信号弾',desc:'攻撃のあと、味方全体のACCを15%上げる（2TURN）。',weapon:W({name:'指揮用信号弾',powerPct:60,accuracyPt:10,weight:.5,minDamage:30,cooldown:2,fxColor:'#9cff6a',effects:[{timing:'after',effect:'acc_up_pct',value:15,target:'allies',duration:2}]})},
+  {key:'focusrifle',label:'集中狙撃銃',desc:'撃つ前に命中+20pt・CRIT+10pt。撃破したら再行動。',weapon:W({name:'集中狙撃銃',powerPct:150,accuracyPt:15,critPt:10,minDamage:80,fxColor:'#e8f06a',effects:[{timing:'before',effect:'hit_up_pt',value:20},{timing:'before',effect:'crit_up_pt',value:10},{timing:'after',effect:'extra_action',value:0,when:'kill'}]})}
 ];
 // ---- skills ----
 const S=(o)=>({chance:100,maxUses:0,note:'',...o});
@@ -51,12 +59,12 @@ const units=[
   {key:'assault',label:'突撃兵',desc:'前に出て近接で戦う。HPが減ると強くなる。',role:'突撃兵',mark:'AST',tags:['歩兵','生身'],stats:[3300,560,30,560,480],weapons:['knife','smg'],skills:['laststand']},
   {key:'sniper',label:'狙撃兵',desc:'後衛から弱った敵を狙い撃つ。',role:'狙撃兵',mark:'SNP',tags:['歩兵','生身'],stats:[2600,600,0,480,650],weapons:['sniper','handgun'],skills:['aim'],row:'back',ai:{target:'lowest_hp'}},
   {key:'medic',label:'衛生兵',desc:'後衛から味方を回復する。',role:'衛生兵',mark:'MED',tags:['歩兵','生身','衛生兵'],stats:[3000,420,0,520,520],weapons:['smg'],skills:['firstaid'],row:'back'},
-  {key:'heavy',label:'重装兵',desc:'硬くてロケットで装甲を撃ち抜く。',role:'重装兵',mark:'HVY',tags:['歩兵','生身'],stats:[4200,560,150,380,480],weapons:['smg','rocket'],skills:['ironwall']},
+  {key:'heavy',label:'重装兵',desc:'硬くてロケットで装甲を撃ち抜く。',role:'重装兵',mark:'HVY',tags:['歩兵','生身'],stats:[4200,560,150,380,480],weapons:['smg','armorbreaker'],skills:['ironwall']},
   {key:'scout',label:'偵察兵',desc:'素早く回避し、かわすと反撃する。',role:'偵察兵',mark:'SCT',tags:['歩兵','生身','偵察'],stats:[2800,500,0,760,600],weapons:['knife','handgun'],skills:['evadecounter']},
   {key:'apc',label:'装甲車',desc:'高い耐久で味方の盾になる。',role:'装甲車',mark:'APC',tags:['装甲車','機械'],stats:[7000,600,300,350,480],weapons:['autocannon','grenade'],skills:['taunt','counter']},
   {key:'tank',label:'戦車',desc:'重装甲と主砲の大火力。',role:'戦車',mark:'TNK',tags:['戦車','装甲車','機械'],stats:[9000,800,450,300,500],weapons:['maingun','autocannon'],skills:['physresist']},
   {key:'drone',label:'ドローン',desc:'機動力が高く、ミサイルで複数を攻撃。',role:'ドローン',mark:'DRN',tags:['機械','飛行'],stats:[2000,450,0,700,550],weapons:['missile','smg'],skills:['dodge']},
-  {key:'commander',label:'指揮官機（ボス向け）',desc:'バリアと激昂を持つ大型機。作戦のボスに。',role:'指揮官機',mark:'CMD',tags:['機械','指揮官'],stats:[12000,850,250,520,600],weapons:['beamrifle','missile'],skills:['barrier','rage','jamming'],row:'back'}
+  {key:'commander',label:'指揮官機（ボス向け）',desc:'バリアと激昂を持つ大型機。作戦のボスに。',role:'指揮官機',mark:'CMD',tags:['機械','指揮官'],stats:[12000,850,250,520,600],weapons:['beamrifle','missile','napalm'],skills:['barrier','rage','jamming'],row:'back'}
 ];
 const tiers=[
   {key:'weak',label:'弱い',desc:'序盤の雑魚敵向け（能力×0.8）',hp:.8,other:.8},
@@ -90,6 +98,7 @@ const items=[
   {key:'skillbook',label:'スキル教本',desc:'スキル「精密射撃」を習得。',make:()=>I({name:'スキル教本：精密射撃',desc:'スキル「精密射撃」を習得する。',effect:{type:'add_skill',skill:skillByKey('aim')}})},
   {key:'weaponkit',label:'武装キット',desc:'武装「グレネード」を追加。',make:()=>I({name:'武装キット：グレネード',desc:'武装「グレネード」を追加する。',effect:{type:'add_weapon',weapon:weaponByKey('grenade')}})},
   {key:'money',label:'資金袋',desc:'使うと資金+1000。',make:()=>I({name:'資金袋',desc:'資金を1000得る。',effect:{type:'credits_gain',value:1000}})},
+  {key:'weaponkit_fx',label:'武装キット：チャージ砲',desc:'追加効果付きの武装「チャージ砲」を追加。',make:()=>I({name:'武装キット：チャージ砲',desc:'撃つ前にATKが上がる武装「チャージ砲」を追加する。',effect:{type:'add_weapon',weapon:weaponByKey('chargecannon')}})},
   {key:'equip_atk',label:'装備：攻撃アクセサリ',desc:'装備中ATK+40。',make:()=>I({name:'攻撃アクセサリ',desc:'装備中ATK+40。',equip:{slot:'accessory',stats:{atk:40},skills:[],weapons:[]},price:1500})},
   {key:'equip_def',label:'装備：防御アクセサリ',desc:'装備中DEF+60・最大HP+300。',make:()=>I({name:'防御アクセサリ',desc:'装備中DEF+60・最大HP+300。',equip:{slot:'accessory',stats:{def:60,hp:300},skills:[],weapons:[]},price:1500})},
   {key:'equip_acc',label:'装備：照準器',desc:'装備中ACC+40。',make:()=>I({name:'照準器',desc:'装備中ACC+40。',equip:{slot:'accessory',stats:{acc:40},skills:[],weapons:[]},price:1500})},
@@ -134,5 +143,5 @@ const research=[
 ];
 function makeResearch(key,name,ctx={},existingIds=[]){const t=research.find(x=>x.key===key)||research[0];return {id:autoId('research',existingIds),...t.make(ctx),...(name?{name}:{})};}
 function makeTreeNode(skillKey,existingIds=[]){return {id:autoId('node',existingIds),cost:1,minLevel:1,requires:[],skill:skillByKey(skillKey)};}
-root.PROTemplates=Object.freeze({version:'1.0.0',weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
+root.PROTemplates=Object.freeze({version:'1.1.0',weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
 })(window);

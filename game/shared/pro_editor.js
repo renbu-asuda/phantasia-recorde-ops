@@ -1,4 +1,4 @@
-/* PRO maker editor 1.1.0 — schema-driven forms, easy/expert mode, reference pickers, plain-language
+/* PRO maker editor 1.2.0 — schema-driven forms, easy/expert mode, reference pickers, plain-language
  * descriptions, strength and difficulty estimates, friendly validation, simulator and damage calculator.
  * Uses only element properties and on* handlers so it also runs in the lightweight test DOM. */
 (function(root){'use strict';
@@ -54,11 +54,11 @@ function form(container,obj,fields,onChange,opts={}){
     case 'skill':{const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));parent.append(box);if(!obj[k])obj[k]=newSkill();form(box,obj[k],skillFields(),()=>changed(),opts);return;}
     case 'list':{
       const box=el('fieldset','pro-group pro-list');box.append(el('legend',undefined,f.label));parent.append(box);help(box,f);const arr=Array.isArray(obj[k])?obj[k]:[];
-      arr.forEach((item,i)=>{const row=el('div','pro-list-item'),head=el('div','pro-list-head');head.append(el('b',undefined,f.itemLabel?f.itemLabel(item,i):`${i+1}`));
+      arr.forEach((item,i)=>{const row=el('div','pro-list-item'),head=el('div','pro-list-head'),title=el('b',undefined,f.itemLabel?f.itemLabel(item,i):`${i+1}`);head.append(title);const itemChanged=()=>{if(f.itemLabel)title.textContent=f.itemLabel(item,i);changed();};
         const up=btn('↑',()=>{[arr[i-1],arr[i]]=[arr[i],arr[i-1]];redraw();changed();});up.disabled=i===0;up.setAttribute('aria-label','上へ');
         const down=btn('↓',()=>{[arr[i+1],arr[i]]=[arr[i],arr[i+1]];redraw();changed();});down.disabled=i===arr.length-1;down.setAttribute('aria-label','下へ');
         head.append(up,down,btn('削除',()=>{arr.splice(i,1);if(!arr.length)delete obj[k];redraw();changed();},'flow-btn danger'));row.append(head);
-        if(f.itemType==='skill')form(row,item,skillFields(),()=>changed(),opts);else form(row,item,typeof f.fields==='function'?f.fields(item):f.fields,()=>changed(),opts);box.append(row);});
+        if(f.itemType==='skill')form(row,item,skillFields(),itemChanged,opts);else form(row,item,typeof f.fields==='function'?f.fields(item):f.fields,itemChanged,opts);box.append(row);});
       const add=btn('＋ '+(f.addLabel||'追加'),()=>{const a=Array.isArray(obj[k])?obj[k]:(obj[k]=[]);if(f.max&&a.length>=f.max)return;a.push(f.factory?f.factory():{});redraw();changed();});add.disabled=!!f.max&&arr.length>=f.max;box.append(add);
       if(f.presets&&f.presets.length){const s=el('select');s.setAttribute('aria-label',f.label+'のテンプレート');for(const [v,t] of [['','テンプレートから追加…'],...f.presets.map((p,i)=>[String(i),p.label])]){const o=el('option',undefined,t);o.value=v;s.append(o);}s.disabled=!!f.max&&arr.length>=f.max;s.onchange=()=>{if(s.value==='')return;const a=Array.isArray(obj[k])?obj[k]:(obj[k]=[]);a.push(f.presets[Number(s.value)].make(obj,a));redraw();changed();};box.append(s);}
       return;}
@@ -112,7 +112,35 @@ function weaponExtFields(){return [
   {key:'usesPerBattle',label:'1戦闘の使用回数（空欄=無制限）',type:'number',min:0,max:99,advanced:true},
   {key:'cooldown',label:'使用後に待つTURN数（空欄=なし）',type:'number',min:0,max:99,advanced:true},
   {key:'defPiercePct',label:'DEF貫通 %',type:'number',min:0,max:100,advanced:true},
-  {key:'fxColor',label:'演出色（#RRGGBB）',type:'text',placeholder:'#ffaa33',advanced:true}
+  {key:'fxColor',label:'演出色（#RRGGBB）',type:'text',placeholder:'#ffaa33',advanced:true},
+  {key:'effects',label:'追加効果（武装を使う前・使った後に発動）',type:'list',max:C.WEAPON_EFFECT_MAX,wide:true,fields:weaponEffectFields,factory:()=>({timing:'after',effect:'def_down_pct',value:15,when:'hit'}),presets:WEAPON_EFFECT_PRESETS.map(([label,e])=>({label,make:()=>C.clone(e)})),addLabel:'白紙の追加効果を追加',itemLabel:(e,i)=>{try{return `効果${i+1}: ${C.weaponEffectText(C.weaponEffect(e))}`;}catch(x){return `効果${i+1}`;}},help:'使用前の効果はこの攻撃のダメージにも反映されます。使用後の効果は攻撃が終わってから発動します（反撃では発動しません）。'}
+];}
+const WEAPON_EFFECT_PRESETS=[
+  ['使用前：自分のATK+20%（2TURN）',{timing:'before',effect:'atk_up_pct',value:20,duration:2}],
+  ['使用前：命中+15pt（この攻撃だけ）',{timing:'before',effect:'hit_up_pt',value:15}],
+  ['使用前：相手のDEF-20%（この攻撃から効く）',{timing:'before',effect:'def_down_pct',value:20,duration:2}],
+  ['使用前：「装甲車」へのダメージ+30%',{timing:'before',effect:'tag_damage_up_pct',value:30,tag:'装甲車'}],
+  ['命中したら相手のDEF-15%（装甲破壊）',{timing:'after',effect:'def_down_pct',value:15,when:'hit',duration:2}],
+  ['命中したら30%の確率でスタン',{timing:'after',effect:'stun',value:0,when:'hit',chance:30}],
+  ['命中したら炎上（毎TURN 80・3TURN）',{timing:'after',effect:'burn',value:80,when:'hit',duration:3}],
+  ['命中したら相手のACC-20%',{timing:'after',effect:'acc_down_pct',value:20,when:'hit',duration:2}],
+  ['使用後：与ダメージの30%を吸収',{timing:'after',effect:'drain_pct',value:30}],
+  ['使用後：反動（最大HPの5%ダメージ）',{timing:'after',effect:'recoil_pct',value:5}],
+  ['撃破したら再行動',{timing:'after',effect:'extra_action',value:0,when:'kill'}],
+  ['使用後：自分にバリア200',{timing:'after',effect:'shield',value:200}],
+  ['使用後：味方全体のATK+10%（2TURN）',{timing:'after',effect:'atk_up_pct',value:10,target:'allies',duration:2}]
+];
+const WEAPON_OWN_EFFECTS=[...C.WEAPON_BEFORE_ONLY,...C.WEAPON_AFTER_ONLY,'extra_action'];
+function weaponEffectFields(){return [
+  {key:'timing',label:'タイミング',type:'select',choices:{before:'使用前（ダメージ計算の前）',after:'使用後（攻撃が終わった後）'},rerender:true,onSet:o=>{if(!C.weaponEffectsAllowed[o.timing].includes(o.effect))o.effect=C.weaponEffectsAllowed[o.timing][0];if(o.timing!=='after')delete o.when;}},
+  {key:'effect',label:'何が起きる？',type:'select',choices:o=>Object.fromEntries((C.weaponEffectsAllowed[o.timing]||[]).map(x=>[x,C.weaponEffectLabels[x]])),rerender:true,onSet:o=>{if(o.effect==='tag_damage_up_pct'&&!o.tag)o.tag='装甲車';if(WEAPON_OWN_EFFECTS.includes(o.effect))delete o.target;}},
+  {key:'value',label:'効果の大きさ',type:'number',min:0,keep:true,show:o=>!['stun','extra_action'].includes(o.effect)},
+  {key:'when',label:'発動のきっかけ',type:'select',empty:'いつでも',choices:{hit:C.weaponWhen.hit,crit:C.weaponWhen.crit,kill:C.weaponWhen.kill},show:o=>o.timing==='after'},
+  {key:'chance',label:'発動率 %（空欄=100%）',type:'number',min:0,max:100},
+  {key:'target',label:'効果対象',type:'select',empty:'自動（弱体はこの攻撃の対象、強化・回復は自分）',choices:C.weaponEffectTargets,show:o=>!WEAPON_OWN_EFFECTS.includes(o.effect)},
+  {key:'duration',label:'持続TURN（スタンは行動不能回数）',type:'number',min:1,max:99,show:o=>C.DURATION_EFFECTS.includes(o.effect)},
+  {key:'tag',label:'特効タグ（このタグを持つ敵へのダメージが上がる）',type:'text',show:o=>o.effect==='tag_damage_up_pct'},
+  skillExtFields().find(f=>f.key==='cond')
 ];}
 function weaponFields(){return [
   {key:'name',label:'武装名',type:'text',keep:true},{key:'attackType',label:'攻撃方式',type:'select',choices:{melee:'近接',ranged:'射撃'}},{key:'damageType',label:'属性',type:'select',choices:{physical:'物理',beam:'ビーム',special:'特殊'}},
@@ -180,7 +208,7 @@ function effectFields(type){switch(type){
   case 'skill_point':return [{key:'value',label:'スキルポイント',type:'number',min:1,keep:true}];}return [];}
 
 // Lenient extraction for maker drafts: keep 1.9 fields even when not yet valid so the user can fix them.
-const UNIT_EXT_KEYS=['image','ai','row','growth','exp','skillTree','recruit'],SKILL_EXT_KEYS=['cond','target','duration','tag'],WEAPON_EXT_KEYS=['usesPerBattle','cooldown','defPiercePct','fxColor'],MISSION_EXT_KEYS=['enemyRows','objective','waves','terrainMods','requires','story','stars','starReward','days','exp'],ITEM_EXT_KEYS=['price','limitPerUnit','scope','equip','key','shop'];
+const UNIT_EXT_KEYS=['image','ai','row','growth','exp','skillTree','recruit'],SKILL_EXT_KEYS=['cond','target','duration','tag'],WEAPON_EXT_KEYS=['usesPerBattle','cooldown','defPiercePct','fxColor','effects'],MISSION_EXT_KEYS=['enemyRows','objective','waves','terrainMods','requires','story','stars','starReward','days','exp'],ITEM_EXT_KEYS=['price','limitPerUnit','scope','equip','key','shop'];
 function pick(o,keys){const out={};for(const k of keys)if(o&&o[k]!==undefined&&o[k]!==null&&o[k]!=='')out[k]=C.clone(o[k]);return out;}
 
 // ---- simulator and damage calculator ----
@@ -232,11 +260,11 @@ function describeSkill(s){
   return `${TRIGGER_TEXT[s.trigger]||s.trigger}、${cond}${body}${extras.length?`（${extras.join('・')}）`:''}。`;
 }
 const STANDARD=Object.freeze({id:'standard',name:'標準歩兵',tags:['歩兵','生身'],hp:3000,atk:500,def:0,mob:500,acc:500,skills:[],weapons:[C.weapon(C.weaponDefaults)],deploy:{player:true,enemy:true}});
-function describeWeapon(w,unit){try{const a=battleUnit(unit||STANDARD),ww=C.weapon(w),r=B.damagePreview(a,ww,STANDARD);const parts=[`標準的な敵（HP3000）に命中率${Math.round(r.hitRate*100)}%、1回の攻撃で平均${r.expected}ダメージ（撃破まで約${Number.isFinite(r.actionsToKill)?r.actionsToKill:'∞'}回）`];if(ww.targetCount>1)parts.push(`最大${ww.targetCount}体を同時に攻撃`);if(ww.attackType==='melee')parts.push('近接（前衛がいる間は後衛に届かない）');if(ww.usesPerBattle)parts.push(`1戦闘${ww.usesPerBattle}回まで`);if(ww.cooldown)parts.push(`撃った後${ww.cooldown}TURN待つ`);if(ww.defPiercePct)parts.push(`DEFを${ww.defPiercePct}%無視`);return parts.join('。')+'。';}catch(e){return '武装の設定を確認してください: '+e.message;}}
+function describeWeapon(w,unit){try{const a=battleUnit(unit||STANDARD),ww=C.weapon(w),r=B.damagePreview(a,ww,STANDARD);const parts=[`標準的な敵（HP3000）に命中率${Math.round(r.hitRate*100)}%、1回の攻撃で平均${r.expected}ダメージ（撃破まで約${Number.isFinite(r.actionsToKill)?r.actionsToKill:'∞'}回）`];if(ww.targetCount>1)parts.push(`最大${ww.targetCount}体を同時に攻撃`);if(ww.attackType==='melee')parts.push('近接（前衛がいる間は後衛に届かない）');if(ww.usesPerBattle)parts.push(`1戦闘${ww.usesPerBattle}回まで`);if(ww.cooldown)parts.push(`撃った後${ww.cooldown}TURN待つ`);if(ww.defPiercePct)parts.push(`DEFを${ww.defPiercePct}%無視`);for(const t of C.weaponEffectsText(ww))parts.push(t);return parts.join('。')+'。';}catch(e){return '武装の設定を確認してください: '+e.message;}}
 // Strength relative to the standard infantry: damage per action × actions it survives.
 function unitPower(u){
   const a=battleUnit(u);const ws=a.weapons,total=ws.reduce((s,w)=>s+Math.max(.01,w.weight),0);
-  let dmg=0;for(const w of ws)dmg+=B.damagePreview(a,w,STANDARD).expected*Math.min(w.targetCount,3)*(Math.max(.01,w.weight)/total);
+  let dmg=0;for(const w of ws)dmg+=B.damagePreview(a,w,STANDARD).expected*Math.min(w.targetCount,3)*(Math.max(.01,w.weight)/total)*(1+.04*Math.min(4,w.effects?.length||0));
   const taken=Math.max(1,B.damagePreview(STANDARD,STANDARD.weapons[0],a).expected);
   return dmg*(a.hp/taken);
 }
@@ -261,6 +289,7 @@ const FRIENDLY=[
   [/IDは英数字|IDのIDは英数字|ID・名前が必要|IDが空|ID重複|IDが重複/,'IDに問題があります（空欄・重複・使えない文字）。','「IDを自動修正」ボタンを押すと、自動で付け直します。'],
   [/名前がありません|名前が空|表示名が空/,'名前が入っていません。','名前を入力してください。'],
   [/発動条件と効果の組み合わせ|組み合わせが未対応/,'スキルの「いつ発動する？」と「何が起きる？」の組み合わせが使えません。','「何が起きる？」を選び直してください（選べる効果だけが表示されます）。'],
+  [/追加効果は|このタイミングでは使えない|タイミングは使用前|発動のきっかけ|効果対象が不正/,'武装の追加効果の設定が使えない組み合わせです。','追加効果の「タイミング」と「何が起きる？」を選び直してください（選べる効果だけが表示されます）。'],
   [/特効タグ/,'タグ特効スキルに対象のタグがありません。','「特効タグ」に「装甲車」などのタグを入れてください。'],
   [/敵ユニットが不足|敵出撃可能|敵として登場|敵使用/,'作戦の敵が見つからないか、「敵として登場」がOFFになっています。','ユニットの「敵として登場可」をONにするか、敵ユニットのデータを読み込んでください。'],
   [/ドロップアイテムが不足|ドロップアイテム「|アイテムJS未読込/,'ドロップに設定したアイテムが見つかりません。','同じパックにアイテムを作るか、アイテムJSを読み込んでください。'],
@@ -317,5 +346,5 @@ function refsFrom(src){const label=x=>`${x.name||x.id}（${x.id}）`;return (kin
   switch(kind){case 'units':return units.map(u=>[u.id,label(u)]);case 'enemies':return units.filter(u=>u.deploy?.enemy).map(u=>[u.id,label(u)]);case 'players':return units.filter(u=>u.deploy?.player!==false).map(u=>[u.id,label(u)]);case 'lockedUnits':{const l=units.filter(u=>u.recruit?.locked);return (l.length?l:units.filter(u=>u.deploy?.player!==false)).map(u=>[u.id,label(u)]);}
   case 'missions':return missions.map(m=>[m.id,label(m)]);case 'items':return items.map(i=>[i.id,label(i)]);case 'keyItems':{const k=items.filter(i=>i.key);return (k.length?k:items).map(i=>[i.id,label(i)]);}case 'pricedItems':{const p=items.filter(i=>i.price);return (p.length?p:items).map(i=>[i.id,label(i)]);}
   case 'research':return research.map(r=>[r.id,label(r)]);case 'nodes':{const nodes=src.nodes?.()||[];return nodes.filter(n=>n.id!==obj?.id).map(n=>[n.id,`${n.skill?.name||n.id}（${n.id}）`]);}}return null;};}
-root.PROEditor=Object.freeze({version:'1.1.0',mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
+root.PROEditor=Object.freeze({version:'1.2.0',weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
 })(window);

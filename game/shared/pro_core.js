@@ -1,5 +1,6 @@
-/* PRO shared data contract 2.0.0 — plain script, file:// compatible.
+/* PRO shared data contract 2.1.0 — plain script, file:// compatible.
  * 1.9.0 adds Unit Schema 3 / Item Schema 3 / Mission Schema 2 / Bundle Schema 2 fields.
+ * 1.10.1 adds weapon effects (before / after use) to Unit Schema 3.
  * Packs that use none of the new fields keep their previous schema number so older games still read them. */
 (function(root){'use strict';
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -57,8 +58,43 @@ function skill(s){need(s&&safeId(s.id)&&String(s.name||'').trim(),'スキルID�
 function skillIsExtended(s){return !!s&&(!LEGACY_TRIGGERS.includes(s.trigger)||!LEGACY_EFFECTS.includes(s.effect)||['cond','target','duration','tag'].some(k=>has(s,k)));}
 // ---- weapons ----
 const weaponDefaults={"name":"E90","attackType":"ranged","damageType":"physical","note":"","powerPct":100,"accuracyPt":15,"critPt":0,"targetCount":1,"weight":1,"minDamage":50,"hitsMin":1,"hitsMax":4,"hitPowerPct":25};
-function weaponExt(w,label='武装'){const o={};if(has(w,'usesPerBattle')){const v=number(w.usesPerBattle,label+' 1戦の使用回数',0,99,true);if(v)o.usesPerBattle=v;}if(has(w,'cooldown')){const v=number(w.cooldown,label+' 再使用待ちTURN',0,99,true);if(v)o.cooldown=v;}if(has(w,'defPiercePct')){const v=number(w.defPiercePct,label+' DEF貫通%',0,100);if(v)o.defPiercePct=v;}if(has(w,'fxColor')){need(/^#[0-9a-fA-F]{6}$/.test(w.fxColor),label+': 演出色は #RRGGBB で指定してください');o.fxColor=w.fxColor;}return o;}
-function weaponIsExtended(w){return !!w&&['usesPerBattle','cooldown','defPiercePct','fxColor'].some(k=>has(w,k)&&w[k]!==0);}
+// ---- weapon effects (1.10.1) ----
+const weaponTimings={before:'使用前',after:'使用後'};
+const WEAPON_BEFORE_ONLY=['damage_up_pct','hit_up_pt','crit_up_pt','def_pierce_pct','tag_damage_up_pct'];
+const WEAPON_AFTER_ONLY=['drain_pct','recoil_pct'];
+const weaponEffectsAllowed={before:[...WEAPON_BEFORE_ONLY,...EVENT_EFFECTS],after:[...EVENT_EFFECTS,...WEAPON_AFTER_ONLY]};
+const weaponEffectTargets={targets:'この攻撃の対象全員',...skillTargets};
+const weaponWhen={always:'いつでも',hit:'1発以上命中したとき',crit:'クリティカルが出たとき',kill:'撃破したとき'};
+const WEAPON_EFFECT_MAX=4;
+const weaponEffectLabels={...skillEffects,drain_pct:'HP吸収（与ダメージの %）',recoil_pct:'反動（最大HPの %）'};
+function weaponEffect(e,label='追加効果'){
+  need(e&&typeof e==='object'&&!Array.isArray(e),label+': 形式が不正です');
+  need(Object.hasOwn(weaponTimings,e.timing),label+': タイミングは使用前（before）か使用後（after）で指定してください');
+  need(weaponEffectsAllowed[e.timing].includes(e.effect),label+': このタイミングでは使えない効果です（'+(weaponEffectLabels[e.effect]||e.effect)+'）');
+  const o={timing:e.timing,effect:e.effect,value:number(e.value??0,label+' 効果値',0,e.effect==='recoil_pct'||e.effect==='drain_pct'?100:1000000)};
+  const c=number(e.chance??100,label+' 発動率',0,100);if(c!==100)o.chance=c;
+  if(has(e,'target')){need(Object.hasOwn(weaponEffectTargets,e.target),label+': 効果対象が不正です');o.target=e.target;}
+  if(has(e,'when')){need(e.timing==='after',label+': 発動のきっかけ（when）は使用後の効果だけに指定できます');need(Object.hasOwn(weaponWhen,e.when),label+': 発動のきっかけが不正です');if(e.when!=='always')o.when=e.when;}
+  if(has(e,'duration'))o.duration=number(e.duration,label+' 持続TURN',1,99,true);
+  const ext=skillExt({cond:e.cond,tag:e.tag,effect:e.effect},label);if(ext.cond)o.cond=ext.cond;if(ext.tag)o.tag=ext.tag;
+  return o;
+}
+function weaponEffectHostile(e){return HOSTILE_EFFECTS.includes(e.effect);}
+function weaponEffectText(e){
+  const v=e.value,lab={damage_up_pct:`与ダメージ+${v}%`,hit_up_pt:`命中+${v}pt`,crit_up_pt:`CRIT+${v}pt`,def_pierce_pct:`DEF貫通${v}%`,tag_damage_up_pct:`対「${e.tag}」ダメージ+${v}%`,drain_pct:`与ダメージの${v}%を吸収`,recoil_pct:`反動で最大HPの${v}%ダメージ`,heal_maxhp_pct:`最大HPの${v}%回復`,heal_flat:`HP${v}回復`,shield:`バリア${v}`,extra_action:'再行動',taunt:`挑発（狙われ率+${v}%）`,stun:'スタン',burn:`炎上（毎TURN${v}）`};
+  let body=lab[e.effect];if(!body){const m=/^(atk|def|mob|acc)_(up|down)_pct$/.exec(e.effect);body=m?`${m[1].toUpperCase()}${m[2]==='up'?'+':'-'}${v}%`:(weaponEffectLabels[e.effect]||e.effect);}
+  const own=WEAPON_BEFORE_ONLY.includes(e.effect)||WEAPON_AFTER_ONLY.includes(e.effect)||e.effect==='extra_action';
+  const tk=e.target||(weaponEffectHostile(e)?'targets':'self');
+  const tg=own?'':tk==='targets'&&e.timing==='after'&&e.when==='hit'?'命中した相手':tk==='targets'&&e.timing==='after'&&e.when==='crit'?'クリティカルを受けた相手':weaponEffectTargets[tk];
+  const dur=DURATION_EFFECTS.includes(e.effect)?`（${e.duration||(e.effect==='stun'?1:2)}TURN）`:'';
+  const when=e.timing==='after'&&e.when&&e.when!=='always'?weaponWhen[e.when].replace('とき','ら')+'、':'';
+  const cond=e.cond?'['+conditions[e.cond.type].replace('値',e.cond.value??'').replace('指定タグ','「'+(e.cond.tag||'')+'」')+'] ':'';
+  const ch=e.chance!==undefined&&e.chance<100?`${e.chance}%の確率で`:'';
+  return `${weaponTimings[e.timing]}: ${cond}${when}${ch}${tg?tg+'の':''}${body}${dur}`;
+}
+function weaponEffectsText(w){return (w?.effects||[]).map(weaponEffectText);}
+function weaponExt(w,label='武装'){const o={};if(has(w,'usesPerBattle')){const v=number(w.usesPerBattle,label+' 1戦の使用回数',0,99,true);if(v)o.usesPerBattle=v;}if(has(w,'cooldown')){const v=number(w.cooldown,label+' 再使用待ちTURN',0,99,true);if(v)o.cooldown=v;}if(has(w,'defPiercePct')){const v=number(w.defPiercePct,label+' DEF貫通%',0,100);if(v)o.defPiercePct=v;}if(has(w,'fxColor')){need(/^#[0-9a-fA-F]{6}$/.test(w.fxColor),label+': 演出色は #RRGGBB で指定してください');o.fxColor=w.fxColor;}if(has(w,'effects')){need(Array.isArray(w.effects)&&w.effects.length<=WEAPON_EFFECT_MAX,label+': 追加効果は'+WEAPON_EFFECT_MAX+'個までです');const list=w.effects.map((e,i)=>weaponEffect(e,label+' 追加効果'+(i+1)));if(list.length)o.effects=list;}return o;}
+function weaponIsExtended(w){return !!w&&(['usesPerBattle','cooldown','defPiercePct','fxColor'].some(k=>has(w,k)&&w[k]!==0)||(Array.isArray(w.effects)&&w.effects.length>0));}
 function weapon(raw){need(raw&&String(raw.name||'').trim(),'武装名が必要です');const w={...weaponDefaults,...raw};need(['melee','ranged'].includes(w.attackType)&&['physical','beam','special'].includes(w.damageType),'武装分類が不正です');const o={name:String(w.name),attackType:w.attackType,damageType:w.damageType,note:String(w.note||'')};for(const k of ['powerPct','accuracyPt','critPt','targetCount','weight','minDamage','hitsMin','hitsMax','hitPowerPct']){const limits={accuracyPt:[-100,100],critPt:[-100,100],targetCount:[1,8,true],weight:[.01,100000],hitsMin:[1,100,true],hitsMax:[1,100,true]};o[k]=number(w[k],k,...(limits[k]||[0,1000000]));}need(o.hitsMax>=o.hitsMin,'最大HIT数は最小HIT数以上にしてください');Object.assign(o,weaponExt(raw,o.name));return o;}
 // ---- units ----
 const IMAGE_MAX=400000;
@@ -181,5 +217,5 @@ function effectText(e){const v=e.value;switch(e.type){case 'heal_hp_flat':return
 function itemSummary(i){const parts=itemEffects(i).map(effectText);if(i.equip){const s=Object.entries(i.equip.stats||{}).map(([k,v])=>`${stats[k]}+${v}`);parts.push('装備: '+[...s,...(i.equip.skills||[]).map(x=>'「'+x.name+'」'),...(i.equip.weapons||[]).map(x=>'武装「'+x.name+'」')].join(' / '));}if(i.key)parts.push('キーアイテム');if(i.scope==='party')parts.push('部隊全体');if(i.limitPerUnit)parts.push(`1体${i.limitPerUnit}回まで`);return parts.join(' ／ ');}
 function skillText(s){const c=s.cond?' ['+conditions[s.cond.type].replace('値',s.cond.value??'').replace('指定タグ','「'+(s.cond.tag||'')+'」')+']':'';const t=s.target?' → '+skillTargets[s.target]:'';const d=s.duration?` ${s.duration}TURN`:'';return `${triggers[s.trigger]||s.trigger}${c}: ${skillEffects[s.effect]||s.effect} ${s.value}${s.effect==='tag_damage_up_pct'?'（対「'+s.tag+'」）':''}${t}${d}`;}
 function serialize(marker,p){return '/* PRO data pack */\nwindow.'+marker+' = '+JSON.stringify(p,null,2)+';\n';}
-root.PROCore=Object.freeze({version:'2.0.0',clone,stats,STAT_KEYS,triggers,skillEffects,allowed,conditions,skillTargets,DURATION_EFFECTS,TARGETED_EFFECTS,HOSTILE_EFFECTS,effects,aiTargets,rows,objectives,ruleTypes,starTypes,days,TERRAINS,safeId,parse,skill,skillExt,skillIsExtended,weapon,weaponExt,weaponIsExtended,weaponDefaults,unitExt,unitIsExtended,pilot,pilotList,image,effect,item,itemExt,itemIsExtended,itemPack,itemEffects,itemSummary,effectText,skillText,research,researchList,serialize,tagList,parseTags,unitTags,requirements,checkRequirements,requirementText,missionExt,missionIsExtended,missionStars,starText,terrainMods,missionEnemyIds,rule,BUNDLE_FORMAT,BUNDLE_SCHEMA,bundlePack,unitSchemaFor,missionSchemaFor});
+root.PROCore=Object.freeze({version:'2.1.0',weaponTimings,weaponEffectLabels,weaponEffectsAllowed,weaponEffectTargets,weaponWhen,WEAPON_BEFORE_ONLY,WEAPON_AFTER_ONLY,WEAPON_EFFECT_MAX,weaponEffect,weaponEffectHostile,weaponEffectText,weaponEffectsText,clone,stats,STAT_KEYS,triggers,skillEffects,allowed,conditions,skillTargets,DURATION_EFFECTS,TARGETED_EFFECTS,HOSTILE_EFFECTS,effects,aiTargets,rows,objectives,ruleTypes,starTypes,days,TERRAINS,safeId,parse,skill,skillExt,skillIsExtended,weapon,weaponExt,weaponIsExtended,weaponDefaults,unitExt,unitIsExtended,pilot,pilotList,image,effect,item,itemExt,itemIsExtended,itemPack,itemEffects,itemSummary,effectText,skillText,research,researchList,serialize,tagList,parseTags,unitTags,requirements,checkRequirements,requirementText,missionExt,missionIsExtended,missionStars,starText,terrainMods,missionEnemyIds,rule,BUNDLE_FORMAT,BUNDLE_SCHEMA,bundlePack,unitSchemaFor,missionSchemaFor});
 })(window);

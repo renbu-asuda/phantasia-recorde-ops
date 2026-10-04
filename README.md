@@ -11,7 +11,7 @@
 
 ## ダウンロード
 
-オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.10.0.zip](dist/fantasia_record_ops_toolkit_v1.10.0.zip)**（リンク先の「Download raw file」ボタンで保存できます）
+オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.10.1.zip](dist/fantasia_record_ops_toolkit_v1.10.1.zip)**（リンク先の「Download raw file」ボタンで保存できます）
 
 ## 遊び方
 
@@ -37,6 +37,7 @@
 
 ## 更新履歴（抜粋）
 
+- **1.10.1**: 武装の追加効果。武装を使う前・使った後に、自分のATKアップ・相手のDEFダウン・スタン・炎上・HP吸収・反動・撃破で再行動などを発動（サンプル: `game/pro_1101_weapon_effects_sample.js`）
 - **1.10.0**: メーカーのかんたんモード、テンプレート作成、ID自動付与、強さ・難易度の目安、わかりやすいエラー表示
 - **1.9.0**: 新スキル・状態異常・隊列・地形・勝利条件、レベル・スキルツリー・装備・パイロット、ショップ・研究・施設・実績・ストーリー、セーブの書き出し
 - **1.8.4**: スキル付きユニットの追加パックが再起動で消える不具合などを修正
