@@ -1,4 +1,4 @@
-/* PRO maker editor 1.2.0 — schema-driven forms, easy/expert mode, reference pickers, plain-language
+/* PRO maker editor 1.3.0 — schema-driven forms, easy/expert mode, reference pickers, plain-language
  * descriptions, strength and difficulty estimates, friendly validation, simulator and damage calculator.
  * Uses only element properties and on* handlers so it also runs in the lightweight test DOM. */
 (function(root){'use strict';
@@ -152,6 +152,10 @@ function unitExtFields(){return [
   {key:'row',label:'標準の隊列',type:'select',empty:'前衛（標準）',choices:{back:'後衛'},help:'前衛は狙われやすく、後衛は前衛がいる間は近接攻撃を受けません。'},
   {key:'recruit',label:'加入条件',type:'object',emptyWhen:o=>!o.locked,fields:[{key:'locked',label:'最初は部隊にいない（作戦クリア・アイテム・研究で加入）',type:'check',rerender:true},{key:'missionId',label:'この作戦をクリアすると加入（任意）',type:'ref',ref:'missions',empty:'（作戦クリアでは加入しない）',show:o=>o.locked},{key:'note',label:'加入条件のメモ',type:'text',show:o=>o.locked,advanced:true}]},
   {key:'skillTree',label:'スキルツリー（レベルアップで得るSPで解放）',type:'list',max:32,addLabel:'白紙のノードを追加',presets:(T()?.skills||[]).map(t=>({label:`${t.label}：${t.desc}`,make:(o,a)=>{const n=T().makeTreeNode(t.key,(a||[]).map(x=>x.id));n.cost=Math.min(3,1+Math.floor(a.length/2));n.minLevel=1+a.length*2;return n;}})),itemLabel:(n,i)=>`ノード${i+1}: ${n.skill?.name||''}`,factory:()=>({id:'node_'+rid(),cost:1,minLevel:1,requires:[],skill:newSkill()}),fields:[{key:'cost',label:'必要SP',type:'number',min:0,keep:true},{key:'minLevel',label:'必要レベル',type:'number',min:1,keep:true},{key:'requires',label:'先に解放が必要なノード',type:'ref',ref:'nodes',multi:true,keepEmptyArray:true},{key:'skill',label:'習得スキル',type:'skill'},{key:'id',label:'ノードID',type:'text',advanced:true}]},
+  {key:'crew',label:'パイロット',type:'select',empty:C.crews.optional+'（標準）',choices:{none:C.crews.none,required:C.crews.required},rerender:true,onSet:o=>{if(o.crew==='required')delete o.pilotProfile;},help:'「パイロットが必要」にすると、パイロットが乗っていないと出撃できません（敵として出るときは不要）。'},
+  {key:'pilotProfile',label:'パイロットとして乗る',type:'object',toggle:'このユニットはパイロットとして他のユニット（機体）に乗れる',show:o=>o.crew!=='required',factory:()=>({stats:{acc:20},skills:[],growthPct:2}),help:'自分で出撃することも、機体に乗って補正を与えることもできます。乗っている間は機体と一緒に経験値・疲労・負傷を受けます。',fields:[
+    ...pilotFields().filter(f=>['stats','aptitude','skills'].includes(f.key)),
+    {key:'growthPct',label:'補正の成長 %（パイロットLvが1上がるごと。空欄=2）',type:'number',min:0,max:20,advanced:true}]},
   {key:'ai',label:'AIの狙い方',type:'object',advanced:true,emptyWhen:o=>!o.target,fields:[{key:'target',label:'狙い方',type:'select',empty:'ランダム（標準）',choices:{lowest_hp:C.aiTargets.lowest_hp,highest_atk:C.aiTargets.highest_atk,tag:C.aiTargets.tag},rerender:true},{key:'tag',label:'優先するタグ',type:'text',show:o=>o.target==='tag'}]},
   {key:'growth',label:'レベルアップ時の成長値（すべて空欄なら自動）',type:'statmap',advanced:true},
   {key:'exp',label:'敵として撃破された時の経験値（空欄なら自動）',type:'number',min:0,advanced:true}
@@ -208,7 +212,7 @@ function effectFields(type){switch(type){
   case 'skill_point':return [{key:'value',label:'スキルポイント',type:'number',min:1,keep:true}];}return [];}
 
 // Lenient extraction for maker drafts: keep 1.9 fields even when not yet valid so the user can fix them.
-const UNIT_EXT_KEYS=['image','ai','row','growth','exp','skillTree','recruit'],SKILL_EXT_KEYS=['cond','target','duration','tag'],WEAPON_EXT_KEYS=['usesPerBattle','cooldown','defPiercePct','fxColor','effects'],MISSION_EXT_KEYS=['enemyRows','objective','waves','terrainMods','requires','story','stars','starReward','days','exp'],ITEM_EXT_KEYS=['price','limitPerUnit','scope','equip','key','shop'];
+const UNIT_EXT_KEYS=['image','ai','row','growth','exp','skillTree','recruit','crew','pilotProfile'],SKILL_EXT_KEYS=['cond','target','duration','tag'],WEAPON_EXT_KEYS=['usesPerBattle','cooldown','defPiercePct','fxColor','effects'],MISSION_EXT_KEYS=['enemyRows','objective','waves','terrainMods','requires','story','stars','starReward','days','exp'],ITEM_EXT_KEYS=['price','limitPerUnit','scope','equip','key','shop'];
 function pick(o,keys){const out={};for(const k of keys)if(o&&o[k]!==undefined&&o[k]!==null&&o[k]!=='')out[k]=C.clone(o[k]);return out;}
 
 // ---- simulator and damage calculator ----
@@ -346,5 +350,5 @@ function refsFrom(src){const label=x=>`${x.name||x.id}（${x.id}）`;return (kin
   switch(kind){case 'units':return units.map(u=>[u.id,label(u)]);case 'enemies':return units.filter(u=>u.deploy?.enemy).map(u=>[u.id,label(u)]);case 'players':return units.filter(u=>u.deploy?.player!==false).map(u=>[u.id,label(u)]);case 'lockedUnits':{const l=units.filter(u=>u.recruit?.locked);return (l.length?l:units.filter(u=>u.deploy?.player!==false)).map(u=>[u.id,label(u)]);}
   case 'missions':return missions.map(m=>[m.id,label(m)]);case 'items':return items.map(i=>[i.id,label(i)]);case 'keyItems':{const k=items.filter(i=>i.key);return (k.length?k:items).map(i=>[i.id,label(i)]);}case 'pricedItems':{const p=items.filter(i=>i.price);return (p.length?p:items).map(i=>[i.id,label(i)]);}
   case 'research':return research.map(r=>[r.id,label(r)]);case 'nodes':{const nodes=src.nodes?.()||[];return nodes.filter(n=>n.id!==obj?.id).map(n=>[n.id,`${n.skill?.name||n.id}（${n.id}）`]);}}return null;};}
-root.PROEditor=Object.freeze({version:'1.2.0',weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
+root.PROEditor=Object.freeze({version:'1.3.0',weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
 })(window);

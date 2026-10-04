@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>ファンタジア・レコード・オプス (PRO) - 1.10.1</title>
+<title>ファンタジア・レコード・オプス (PRO) - 1.10.2</title>
 <style>
 :root{
   --bg:#070b10; --panel:#111923; --panel2:#172230; --line:#2c3a4b;
@@ -18,7 +18,7 @@ button{font:inherit}.wrap{max-width:1180px;margin:auto;padding:14px}.topbar{disp
 @media(max-width:860px){.grid{grid-template-columns:1fr}.topbar{position:static}}
 .unit-list,.mission-list{display:grid;gap:9px}.unit,.mission{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:10px;transition:.16s}.unit{cursor:pointer}.unit:hover,.mission:hover{border-color:#4a627b}.unit.selected{outline:2px solid var(--ally);border-color:transparent}.unit.disabled{opacity:.52}.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.name{font-weight:850}.tag{font-size:11px;color:#cbd5e1;border:1px solid var(--line);padding:2px 7px;border-radius:999px;white-space:nowrap}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}.stat{background:#0b1119;border-radius:8px;padding:6px;text-align:center}.stat b{display:block;font-size:13px}.stat span{font-size:10px;color:var(--muted)}
 .hpbar{height:8px;border-radius:999px;background:#05080c;overflow:hidden;border:1px solid #26313f;margin-top:8px}.hpfill{height:100%;background:linear-gradient(90deg,#2ea043,#7ee787);transition:width .22s}.hpfill.mid{background:linear-gradient(90deg,#9e6a03,#f2cc60)}.hpfill.low{background:linear-gradient(90deg,#b62324,#ff7b72)}
-.weapon-fx{font-size:10px;color:#c9b7ff;margin-top:5px;line-height:1.5}.weapon-fx b{color:#e6dcff;font-weight:600}.weapon-title{font-size:10px;color:var(--muted);margin-top:8px}.weapon-list{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.weapon-chip{font-size:10px;border:1px solid #31445a;background:#0c1520;padding:3px 6px;border-radius:7px;color:#cad7e5}.weapon-chip.physical{border-color:#776b48}.weapon-chip.beam{border-color:#4b6f97}.weapon-chip.special{border-color:#6c5792}.weapon-chip.melee-weapon{box-shadow:inset 3px 0 0 #b782a9}.weapon-chip.ranged-weapon{box-shadow:inset 3px 0 0 #5c91b8}
+.crew-badge{font-size:10px;border:1px solid #6a5a2a;color:#ffd77a;border-radius:6px;padding:0 5px;margin-left:4px}.crew-badge.pilot{border-color:#2a5a6a;color:#8bd8ff}.weapon-fx{font-size:10px;color:#c9b7ff;margin-top:5px;line-height:1.5}.weapon-fx b{color:#e6dcff;font-weight:600}.weapon-title{font-size:10px;color:var(--muted);margin-top:8px}.weapon-list{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.weapon-chip{font-size:10px;border:1px solid #31445a;background:#0c1520;padding:3px 6px;border-radius:7px;color:#cad7e5}.weapon-chip.physical{border-color:#776b48}.weapon-chip.beam{border-color:#4b6f97}.weapon-chip.special{border-color:#6c5792}.weapon-chip.melee-weapon{box-shadow:inset 3px 0 0 #b782a9}.weapon-chip.ranged-weapon{box-shadow:inset 3px 0 0 #5c91b8}
 .mission{cursor:pointer}.mission.selected{outline:2px solid var(--accent);border-color:transparent}.mission .reward{color:var(--good);font-weight:800}.controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.primary{border:0;background:linear-gradient(135deg,#238636,#2ea043);color:white;font-weight:850;padding:11px 15px;border-radius:10px}.primary:disabled{opacity:.4}.secondary{border:1px solid var(--line);background:#111923;color:var(--text);padding:10px 13px;border-radius:10px}.squad{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}.chip{background:#0d141d;border:1px solid var(--line);border-radius:999px;padding:6px 9px;font-size:12px}.empty{color:var(--muted);font-size:13px;padding:8px 0}
 .battle{margin-top:14px}.battle-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.battle-controls{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.speed-select{border:1px solid var(--line);background:#111923;color:var(--text);padding:9px 10px;border-radius:10px}.battle-status{font-size:10px;color:var(--muted);border:1px solid var(--line);background:#0b121a;border-radius:999px;padding:5px 8px;min-width:76px;text-align:center}
 .arena{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 190px minmax(0,1fr);grid-template-areas:"ally command enemy";gap:10px;min-height:330px;margin-top:10px;padding:12px;border:1px solid #26384d;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,rgba(16,27,40,.95),rgba(5,10,15,.97)),repeating-linear-gradient(90deg,transparent 0 44px,rgba(88,166,255,.035) 45px 46px)}
@@ -120,7 +120,7 @@ body.flow-layout .skill-card,body.flow-layout .weapon-card,body.flow-layout .dro
 <section id="baseScreen" class="screen active">
   <div class="wrap">
     <div class="topbar">
-      <div class="brand"><h1>ファンタジア・レコード・オプス</h1><small>PRO / 自動派遣戦闘 1.10.1 / MGSPW OUTER OPS inspired</small></div>
+      <div class="brand"><h1>ファンタジア・レコード・オプス</h1><small>PRO / 自動派遣戦闘 1.10.2 / MGSPW OUTER OPS inspired</small></div>
       <div class="wallet"><div class="credit">資金 <span id="credits">0</span></div><button class="reset" id="resetBtn">初期化</button></div>
     </div>
 
@@ -222,7 +222,7 @@ body.flow-layout .skill-card,body.flow-layout .weapon-card,body.flow-layout .dro
     </section>
     <div class="data-tools save-tools"><h2>セーブデータ・設定</h2><p class="sub">進行状況と追加パックをJSONファイルに書き出し、機種変更やバックアップに使えます。</p><div class="controls"><button id="exportSaveBtn" class="secondary" type="button">セーブを書き出す</button><button id="importSaveBtn" class="secondary" type="button">セーブを読み込む</button><input id="saveFileInput" type="file" accept=".json,application/json" hidden></div><label class="toggle-line"><input id="fatigueToggle" type="checkbox" checked> 疲労・負傷ルール（出撃で疲労がたまり、撃破されると数日休養が必要）</label><div id="saveStatus" class="data-status"></div></div>
     <div class="data-tools bundle-tools"><h2>統合パック</h2><p class="sub">ユニット・作戦・アイテムをまとめたJSを一度に読み込みます。更新・解除もパック単位です。</p><div class="controls"><button id="importBundleBtn" class="secondary">統合JSを読み込む</button><input id="bundleFileInput" type="file" accept=".js,.json,text/javascript,application/javascript" multiple hidden></div><div id="bundleDataStatus" class="data-status"></div><div id="bundlePackManager" class="pack-manager-body"></div></div>
-    <div class="foot">Fantasia Record Ops (PRO) 1.10.1 / MGSPW-inspired auto deployment / Unit Pack Schema 3・Mission Schema 2・Item Schema 3・Bundle Schema 2（旧Schema読込互換）</div>
+    <div class="foot">Fantasia Record Ops (PRO) 1.10.2 / MGSPW-inspired auto deployment / Unit Pack Schema 4・Mission Schema 2・Item Schema 3・Bundle Schema 3（旧Schema読込互換）</div>
   </div>
 </section>
 
@@ -308,8 +308,8 @@ body.flow-layout .skill-card,body.flow-layout .weapon-card,body.flow-layout .dro
 'use strict';
 const C=window.PROCore,B=window.PROBattle;
 const UNIT_PACK_FORMAT = 'VAIS_OUTER_OPS_UNIT_PACK';
-const UNIT_PACK_SCHEMA = 3;
-const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3]);
+const UNIT_PACK_SCHEMA = 4;
+const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3,4]);
 const IMPORTED_PACKS_KEY = 'vais_outer_ops_imported_unit_packs_v1';
 const MISSION_PACK_FORMAT = 'VAIS_OUTER_OPS_MISSION_PACK';
 const MISSION_PACK_SCHEMA = 2;
@@ -319,7 +319,7 @@ const ITEM_PACK_FORMAT = 'VAIS_OUTER_OPS_ITEM_PACK';
 const ITEM_PACK_SCHEMA = 3;
 const IMPORTED_ITEM_PACKS_KEY = 'vais_outer_ops_imported_item_packs_v1';
 const IMPORTED_BUNDLE_PACKS_KEY = 'pro_imported_bundle_packs_v1';
-const GAME_VERSION = '1.10.1';
+const GAME_VERSION = '1.10.2';
 
 function storageGet(key,fallback=null){try{const v=localStorage.getItem(key);return v===null?fallback:v;}catch(e){console.warn('localStorage read failed',e);return fallback;}}
 function storageSet(key,value){try{localStorage.setItem(key,value);return true;}catch(e){console.warn('localStorage write failed',e);return false;}}
@@ -423,10 +423,10 @@ function validatePack(pack){
   if(!SUPPORTED_UNIT_SCHEMAS.has(num(pack.schemaVersion,0)))throw new Error(`schemaVersion ${pack.schemaVersion} は未対応です。`);
   if(!pack.packId)throw new Error('packId がありません。');
   if(!Array.isArray(pack.units))throw new Error('units 配列がありません。');
-  const units=pack.units.map(normalizeUnit);assertUniqueIds(units,'unit');
+  // 1.10.2: legacy pilots become units that can fight on their own or ride other units.
+  const units=C.pilotsToUnits(pack.units,pack.pilots).units.map(normalizeUnit);assertUniqueIds(units,'unit');
   for(const u of units){assertUniqueIds(u.skills||[],`${u.id} の skill`);}
-  const pilots=C.pilotList(pack.pilots);
-  return {format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),units,...(pilots.length?{pilots}:{})};
+  return {format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),units};
 }
 function extractPackFromJs(text){return validatePack(extractAssignedObject(text,'VAIS_UNIT_PACK'));}
 function loadImportedUnitPacks(){
@@ -513,14 +513,15 @@ function rebuildUnitMasters(){
   const packs=[];
   if(window.VAIS_UNIT_PACK){try{packs.push({...validatePack(window.VAIS_UNIT_PACK),_base:true});}catch(e){console.warn('Base unit pack error',e);}}
   packs.push(...importedUnitPacks,...importedBundlePacks.map(b=>bundleComponent(b,'units',UNIT_PACK_SCHEMA,UNIT_PACK_FORMAT)));
-  const merged=new Map(),pilots=new Map();
-  for(const pack of packs){for(const unit of pack.units)merged.set(unit.id,{...unit,_packId:pack.packId,_packName:pack.packName});for(const p of pack.pilots||[])pilots.set(p.id,{...p,_packName:pack.packName});}
+  const merged=new Map();
+  for(const pack of packs){for(const unit of pack.units)merged.set(unit.id,{...unit,_packId:pack.packId,_packName:pack.packName});}
   const units=[...merged.values()];
   BASE_UNIT_MASTER=units.filter(u=>u.deploy.player);
   UNIT_MASTER=BASE_UNIT_MASTER.map(u=>({...u}));
   ENEMY_MASTER=Object.fromEntries(units.filter(u=>u.deploy.enemy).map(u=>[u.id,u]));
   UNIT_INDEX=Object.fromEntries(units.map(u=>[u.id,u]));
-  PILOT_MASTER=Object.fromEntries(pilots);
+  // Pilots are player units with a pilotProfile (keyed by unit ID).
+  PILOT_MASTER=Object.fromEntries(BASE_UNIT_MASTER.filter(u=>u.pilotProfile).map(u=>[u.id,{id:u.id,name:u.name,...u.pilotProfile,profile:u.pilotProfile,_packName:u._packName}]));
   loadedUnitPacks=packs;
 }
 function unitDataStatus(){
@@ -675,12 +676,17 @@ function expToNext(lv){return 100*lv;}
 function growthOf(u){if(u.growth)return {hp:u.growth.hp||0,atk:u.growth.atk||0,def:u.growth.def||0,mob:u.growth.mob||0,acc:u.growth.acc||0};return {hp:Math.max(1,Math.round(u.hp*.04)),atk:Math.round(u.atk*.03),def:Math.round(u.def*.03),mob:Math.round(u.mob*.02),acc:Math.round(u.acc*.02)};}
 function isRecruited(u){return !u.recruit?.locked||state.recruited.includes(u.id);}
 function equippedItems(id){return (state.equip[id]||[]).map(x=>x&&ITEM_MASTER[x]).filter(i=>i?.equip);}
-function pilotFor(id){return PILOT_MASTER[state.pilots[id]]||null;}
+function crewOf(u){return C.crewOf(u);}
+// A pilot unit rides at most one unit; that unit must accept a pilot and must not itself be riding something.
+function pilotAssignable(unitId,pilotId){const u=UNIT_INDEX[unitId],p=PILOT_MASTER[pilotId],pu=BASE_UNIT_MASTER.find(x=>x.id===pilotId);if(!u||!p||!pu||unitId===pilotId||!u.deploy.player)return false;if(crewOf(u)==='none'||!isRecruited(pu)||!isRecruited(u))return false;if(boardingOf(unitId))return false;if(state.pilots[pilotId])return false;return true;}
+function boardingOf(pilotId){const hit=Object.entries(state.pilots||{}).find(([,v])=>v===pilotId);return hit?hit[0]:null;}
+function pilotFor(id){const pid=state.pilots[id],p=PILOT_MASTER[pid];if(!p)return null;const lv=levelOf(pid);return {...p,lv,stats:C.pilotBonus(p.profile,lv)};}
+function cleanPilots(){for(const [k,v] of Object.entries(state.pilots||{})){const u=UNIT_INDEX[k],pu=BASE_UNIT_MASTER.find(x=>x.id===v);if(!u||!PILOT_MASTER[v]||!pu||k===v||crewOf(u)==='none'||!isRecruited(pu)||state.pilots[v])delete state.pilots[k];}}
 function treeSkills(u){const got=new Set(state.tree[u.id]||[]);return (u.skillTree||[]).filter(n=>got.has(n.id)).map(n=>n.skill);}
 function tagsWithMods(u){const m=state.tagMods[u.id];let tags=[...(u.tags||[])];if(m){tags=tags.filter(t=>!m.remove.includes(t));for(const t of m.add)if(!tags.includes(t))tags.push(t);}return tags;}
 function dedupe(list,key){const seen=new Set();return list.filter(x=>{const k=key(x);if(seen.has(k))return false;seen.add(k);return true;});}
 function applyUnitUpgrades(){
-  state.upgrades=normalizeUpgrades(state.upgrades);state.grants=normalizeGrants(state.grants);
+  state.upgrades=normalizeUpgrades(state.upgrades);state.grants=normalizeGrants(state.grants);cleanPilots();
   UNIT_MASTER=BASE_UNIT_MASTER.filter(isRecruited).map(u=>{
     const bonuses=Object.hasOwn(state.upgrades,u.id)?state.upgrades[u.id]:{},g=state.grants[u.id]||{skills:[],weapons:[]};
     const lv=levelOf(u.id),growth=growthOf(u),eq=equippedItems(u.id),pilot=pilotFor(u.id),tags=tagsWithMods(u),stats={};
@@ -688,7 +694,7 @@ function applyUnitUpgrades(){
     if(pilot?.aptitude?.pct&&pilot.aptitude.tags.some(t=>tags.includes(t)))for(const k of ['atk','mob','acc'])stats[k]=Math.round(stats[k]*(1+pilot.aptitude.pct/100));
     const skills=dedupe([...u.skills,...g.skills,...treeSkills(u),...eq.flatMap(i=>i.equip.skills),...(pilot?.skills||[])],x=>x.id);
     const weapons=dedupe([...u.weapons,...g.weapons,...eq.flatMap(i=>i.equip.weapons)],x=>x.name);
-    return {...u,...stats,tags,skills,weapons,level:lv,...(pilot?{pilotId:pilot.id,pilot:pilot.name}:{})};
+    return {...u,...stats,tags,skills,weapons,level:lv,...(pilot?{pilotId:pilot.id,pilot:pilot.name,pilotLv:pilot.lv}:{})};
   });
 }
 function ensureUnitState(){
@@ -738,6 +744,9 @@ function deployProblem(m,ids){
   const {tagRule,ban}=deployRules(m);
   for(const id of ids){const u=UNIT_MASTER.find(x=>x.id===id);if(!u)return '出撃できないユニットが含まれています。';
     const block=sortieBlock(id);if(block)return `${u.name}: ${block}`;
+    const riding=boardingOf(id);if(riding)return `${u.name}: ${UNIT_INDEX[riding]?.name||riding}に搭乗中です（単独では出撃できません）`;
+    const pilot=pilotFor(id);if(crewOf(u)==='required'&&!pilot)return `${u.name}: パイロットが必要です（「育成」でパイロットを搭乗させてください）`;
+    if(pilot){const pb=sortieBlock(pilot.id);if(pb)return `${u.name}: パイロット ${pilot.name} が${pb}`;}
     if(m.requires?.minLevel&&levelOf(id)<m.requires.minLevel)return `${u.name}: Lv${m.requires.minLevel}以上が必要`;
     const banned=ban.filter(t=>u.tags.includes(t));if(banned.length)return `${u.name}: 地形「${m.terrain}」では「${banned.join('・')}」は出撃不可`;
     if(tagRule){const ok=C.checkRequirements(tagRule,u);if(!ok.ok)return `${u.name}: 出撃制限 ${ok.reason}`;}
@@ -872,10 +881,10 @@ function unitThumb(u,cls='unit-thumb'){return u.image?`<img class="${cls}" src="
 function renderUnits(){
   const el=document.getElementById('unitList');el.innerHTML='';
   if(!UNIT_MASTER.length){el.innerHTML='<div class="empty">味方ユニットデータがありません。</div>';return;}
-  UNIT_MASTER.forEach(u=>{const cur=state.units[u.id]?.hp??u.hp,ratio=cur/u.hp,block=sortieBlock(u.id),d=document.createElement('div');d.className='unit'+(selected.includes(u.id)?' selected':'')+(cur<=0||block?' disabled':'');
+  UNIT_MASTER.forEach(u=>{const cur=state.units[u.id]?.hp??u.hp,ratio=cur/u.hp,riding=boardingOf(u.id),needPilot=crewOf(u)==='required'&&!u.pilotId,block=sortieBlock(u.id)||(riding?`${UNIT_INDEX[riding]?.name||riding}に搭乗中`:'')||(needPilot?'要パイロット（未搭乗）':''),d=document.createElement('div');d.className='unit'+(selected.includes(u.id)?' selected':'')+(cur<=0||block?' disabled':'');
     const baseVsStd=baseHitRate(u.acc,700,0);
     const cost=repairCost(u.hp-cur),row=state.rows[u.id]||u.row||'front',info=levelInfo(u.id),fat=fatigueOf(u.id);
-    d.innerHTML=`<div class="row"><div class="unit-head">${unitThumb(u)}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub" style="margin:2px 0">${esc(u.role||'')} ${u.pilot?`/ ${esc(u.pilot)}`:''}</div></div></div><span class="tag">${esc(u._packName||'CORE')}</span></div><div class="stats"><div class="stat"><b>${Math.ceil(cur)}</b><span>HP</span></div><div class="stat"><b>${u.atk}</b><span>ATK ${outerGrade(u.atk)}</span></div><div class="stat"><b>${u.def}</b><span>DEF ${outerGrade(u.def)}</span></div><div class="stat"><b>${u.mob}</b><span>MOB ${outerGrade(u.mob)}</span></div><div class="stat"><b>${u.acc}</b><span>ACC ${outerGrade(u.acc)}</span></div></div><div class="hpbar"><div class="hpfill ${hpClass(ratio)}" style="width:${ratio*100}%"></div></div><div class="unit-extra"><span class="row-badge ${row}">${row==='back'?'後衛':'前衛'}</span>${fatigueOn()&&fat?`<span class="${fat>=FATIGUE_TIRED?'warn-badge':''}">疲労 ${fat}</span>`:''}${block?`<span class="bad-badge">${esc(block)}</span>`:''}<span>タグ ${esc(u.tags?.join('・')||'なし')}</span><span>武装 ${u.weapons.length}</span>${Object.entries(state.upgrades?.[u.id]||{}).filter(([,v])=>v>0).map(([k,v])=>`<span>強化 ${k==='hp'?'最大HP':k.toUpperCase()} +${v}</span>`).join('')}<span>標準MOB700へ基礎命中 ${pct(baseVsStd)}%</span>${u.skills?.length?`<span>SKILL ${esc(u.skills.map(x=>x.name).join(' / '))}</span>`:(u.ability?`<span>${esc(u.ability)}</span>`:'')}</div><div class="weapon-title">WEAPONS</div><div class="weapon-list">${u.weapons.map(w=>`<span class="weapon-chip ${weaponClass(w)}">${esc(w.name)} / ${weaponTypeLabel(w)}${w.usesPerBattle?` / ${w.usesPerBattle}回`:''}${w.cooldown?` / 待機${w.cooldown}`:''}${w.effects?.length?` / 効果${w.effects.length}`:''}</span>`).join('')}</div>${u.weapons.some(w=>w.effects?.length)?`<div class="weapon-fx">${u.weapons.filter(w=>w.effects?.length).map(w=>`<div><b>${esc(w.name)}</b> ${esc(C.weaponEffectsText(w).join(' ／ '))}</div>`).join('')}</div>`:''}<div class="unit-actions"><button class="row-toggle secondary" ${battleRunning?'disabled':''}>${row==='back'?'前衛にする':'後衛にする'}</button>${cost?`<button class="repair-one" ${battleRunning||state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}${state.credits<cost?'（資金不足）':''}</button>`:''}</div>`;
+    d.innerHTML=`<div class="row"><div class="unit-head">${unitThumb(u)}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub" style="margin:2px 0">${esc(u.role||'')} ${u.pilotId?`/ 搭乗: ${esc(u.pilot)}（Lv${u.pilotLv}）`:u.pilot?`/ ${esc(u.pilot)}`:''}${crewOf(u)==='required'?' <span class="crew-badge">要パイロット</span>':''}${u.pilotProfile?' <span class="crew-badge pilot">パイロット</span>':''}</div></div></div><span class="tag">${esc(u._packName||'CORE')}</span></div><div class="stats"><div class="stat"><b>${Math.ceil(cur)}</b><span>HP</span></div><div class="stat"><b>${u.atk}</b><span>ATK ${outerGrade(u.atk)}</span></div><div class="stat"><b>${u.def}</b><span>DEF ${outerGrade(u.def)}</span></div><div class="stat"><b>${u.mob}</b><span>MOB ${outerGrade(u.mob)}</span></div><div class="stat"><b>${u.acc}</b><span>ACC ${outerGrade(u.acc)}</span></div></div><div class="hpbar"><div class="hpfill ${hpClass(ratio)}" style="width:${ratio*100}%"></div></div><div class="unit-extra"><span class="row-badge ${row}">${row==='back'?'後衛':'前衛'}</span>${fatigueOn()&&fat?`<span class="${fat>=FATIGUE_TIRED?'warn-badge':''}">疲労 ${fat}</span>`:''}${block?`<span class="bad-badge">${esc(block)}</span>`:''}<span>タグ ${esc(u.tags?.join('・')||'なし')}</span><span>武装 ${u.weapons.length}</span>${Object.entries(state.upgrades?.[u.id]||{}).filter(([,v])=>v>0).map(([k,v])=>`<span>強化 ${k==='hp'?'最大HP':k.toUpperCase()} +${v}</span>`).join('')}<span>標準MOB700へ基礎命中 ${pct(baseVsStd)}%</span>${u.skills?.length?`<span>SKILL ${esc(u.skills.map(x=>x.name).join(' / '))}</span>`:(u.ability?`<span>${esc(u.ability)}</span>`:'')}</div><div class="weapon-title">WEAPONS</div><div class="weapon-list">${u.weapons.map(w=>`<span class="weapon-chip ${weaponClass(w)}">${esc(w.name)} / ${weaponTypeLabel(w)}${w.usesPerBattle?` / ${w.usesPerBattle}回`:''}${w.cooldown?` / 待機${w.cooldown}`:''}${w.effects?.length?` / 効果${w.effects.length}`:''}</span>`).join('')}</div>${u.weapons.some(w=>w.effects?.length)?`<div class="weapon-fx">${u.weapons.filter(w=>w.effects?.length).map(w=>`<div><b>${esc(w.name)}</b> ${esc(C.weaponEffectsText(w).join(' ／ '))}</div>`).join('')}</div>`:''}<div class="unit-actions"><button class="row-toggle secondary" ${battleRunning?'disabled':''}>${row==='back'?'前衛にする':'後衛にする'}</button>${cost?`<button class="repair-one" ${battleRunning||state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}${state.credits<cost?'（資金不足）':''}</button>`:''}</div>`;
     d.onclick=()=>{if(battleRunning||cur<=0||block)return;if(selected.includes(u.id))selected=selected.filter(x=>x!==u.id);else{const m=MISSIONS.find(x=>x.id===selectedMission),limit=m?m.maxDeploy:MAX_SLOTS;if(selected.length<Math.min(MAX_SLOTS,limit))selected.push(u.id);}render();};
     d.querySelector('.repair-one')?.addEventListener('click',e=>{e.stopPropagation();repairUnit(u.id);});
     d.querySelector('.row-toggle')?.addEventListener('click',e=>{e.stopPropagation();setRow(u.id,row==='back'?'front':'back');});
@@ -969,9 +978,11 @@ function afterBattle(m,ctx,result,roster){
   const rec=state.records;rec.battles++;rec[win?'wins':result.outcome==='draw'?'draws':'losses']++;
   for(const k of ctx.killLog)if(k.killerSide==='ally'&&k.victimSide==='enemy'){rec.kills++;rec.enemyKills[k.victimKey]=(rec.enemyKills[k.victimKey]||0)+1;rec.enemyNames[k.victimKey]=k.victimName;}
   const base=missionExp(m),mult=win?1:.5;
-  for(const u of roster){let gain=Math.round(base*mult*(u.alive?1:.5));for(const k of ctx.killLog)if(k.killer===u.combatId&&k.victimSide==='enemy')gain+=enemyExp(k.victimKey);const ups=addExp(u.id,gain);report.exp.push({name:u.name,gain});if(ups)report.levelUps.push({name:u.name,lv:levelOf(u.id)});}
-  const deployed=new Set(roster.map(u=>u.id));passDay(deployed,base);
-  if(fatigueOn())for(const u of roster){state.fatigue[u.id]=clamp(fatigueOf(u.id)+FATIGUE_SORTIE+(u.alive?0:10),0,100);if(!u.alive){state.injury[u.id]=INJURY_BATTLES;report.injured.push(u.name);}}
+  // Pilots riding a deployed unit share its experience, fatigue and injury (1.10.2).
+  const crew=roster.map(u=>({u,pilot:u.pilotId&&PILOT_MASTER[u.pilotId]?u.pilotId:null}));
+  for(const {u,pilot} of crew){let gain=Math.round(base*mult*(u.alive?1:.5));for(const k of ctx.killLog)if(k.killer===u.combatId&&k.victimSide==='enemy')gain+=enemyExp(k.victimKey);for(const id of [u.id,pilot].filter(Boolean)){const name=id===u.id?u.name:`${PILOT_MASTER[id].name}（${u.name}に搭乗）`;const ups=addExp(id,gain);report.exp.push({name,gain});if(ups)report.levelUps.push({name:id===u.id?u.name:PILOT_MASTER[id].name,lv:levelOf(id)});}}
+  const deployed=new Set(crew.flatMap(({u,pilot})=>[u.id,pilot].filter(Boolean)));passDay(deployed,base);
+  if(fatigueOn())for(const {u,pilot} of crew)for(const id of [u.id,pilot].filter(Boolean)){state.fatigue[id]=clamp(fatigueOf(id)+FATIGUE_SORTIE+(u.alive?0:10),0,100);if(!u.alive){state.injury[id]=INJURY_BATTLES;report.injured.push(id===u.id?u.name:PILOT_MASTER[id].name);}}
   for(const u of roster)delete state.sortieBuffs[u.id];
   if(win){
     const mr=missionRecord(m.id);mr.clears++;mr.best=mr.best?Math.min(mr.best,result.turns):result.turns;
@@ -1157,9 +1168,9 @@ function equipItem(unitId,slot,itemId){
 }
 function assignPilot(unitId,pilotId){
   if(battleRunning)return false;const u=UNIT_MASTER.find(x=>x.id===unitId);if(!u)return false;
-  if(pilotId&&!PILOT_MASTER[pilotId])return false;
+  if(pilotId){if(!PILOT_MASTER[pilotId])return false;const was=state.pilots[unitId];for(const [k,v] of Object.entries(state.pilots))if(v===pilotId)delete state.pilots[k];if(!pilotAssignable(unitId,pilotId)){if(was)state.pilots[unitId]=was;return false;}}
   for(const [k,v] of Object.entries(state.pilots))if(v===pilotId)delete state.pilots[k];
-  if(pilotId)state.pilots[unitId]=pilotId;else delete state.pilots[unitId];
+  if(pilotId){state.pilots[unitId]=pilotId;selected=selected.filter(x=>x!==pilotId);}else delete state.pilots[unitId];
   return commitChange(pilotId?`${u.name} に ${PILOT_MASTER[pilotId].name} が搭乗`:`${u.name} のパイロットを降ろしました`);
 }
 function shopAvailable(i){
@@ -1239,10 +1250,13 @@ function renderGrowth(){
   const u=UNIT_MASTER.find(x=>x.id===growthTargetId),base=baseUnit(u.id),info=levelInfo(u.id),growth=growthOf(base);view.replaceChildren();
   const head=el('div','growth-head');head.innerHTML=`${unitThumb(u,'growth-thumb')}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub">EXP ${info.lv>=MAX_LEVEL?'MAX':`${info.exp} / ${expToNext(info.lv)}`} ／ スキルポイント ${info.sp} ／ 疲労 ${fatigueOf(u.id)}${injuryOf(u.id)?` ／ 負傷 あと${injuryOf(u.id)}日`:''}</div><div class="sub">HP ${u.hp} / ATK ${u.atk} / DEF ${u.def} / MOB ${u.mob} / ACC ${u.acc}（レベル成長: HP+${growth.hp} ATK+${growth.atk} DEF+${growth.def} MOB+${growth.mob} ACC+${growth.acc}）</div><div class="sub">タグ ${esc(u.tags.join('・')||'なし')}</div></div>`;view.append(head);
   const rowBox=el('div','growth-section');rowBox.append(el('h3','','隊列'),el('p','sub','前衛は狙われやすく、後衛は前衛がいる間は近接攻撃を受けません。'));const row=state.rows[u.id]||u.row||'front';rowBox.append(actionButton(row==='front'?'✓ 前衛':'前衛',()=>setRow(u.id,'front'),row==='front'),actionButton(row==='back'?'✓ 後衛':'後衛',()=>setRow(u.id,'back'),row==='back'));view.append(rowBox);
-  const pilotBox=el('div','growth-section');pilotBox.append(el('h3','','パイロット'));const pilots=Object.values(PILOT_MASTER);
-  if(!pilots.length)pilotBox.append(el('p','sub','パイロットデータがありません（ユニットパックの pilots で追加できます）。'));
-  else{const sel=el('select','growth-select');sel.setAttribute('aria-label','パイロット');sel.innerHTML='<option value="">搭乗なし</option>'+pilots.map(p=>{const at=Object.entries(state.pilots).find(([,v])=>v===p.id);const where=at&&at[0]!==u.id?`（${UNIT_MASTER.find(x=>x.id===at[0])?.name||at[0]}に搭乗中）`:'';return `<option value="${esc(p.id)}">${esc(p.name)}${where}</option>`;}).join('');sel.value=state.pilots[u.id]||'';sel.disabled=battleRunning;sel.onchange=()=>assignPilot(u.id,sel.value);pilotBox.append(sel);
-    const p=pilotFor(u.id);if(p)pilotBox.append(el('p','sub',`補正 ${Object.entries(p.stats).map(([k,v])=>`${k.toUpperCase()}+${v}`).join(' ')||'なし'}${p.aptitude?.pct?` ／ 適性「${p.aptitude.tags.join('・')}」でATK・MOB・ACC +${p.aptitude.pct}%${p.aptitude.tags.some(t=>u.tags.includes(t))?'（適用中）':'（対象外）'}`:''}${p.skills.length?' ／ スキル '+p.skills.map(s=>s.name).join('・'):''}`));}
+  const pilotBox=el('div','growth-section');pilotBox.append(el('h3','','パイロット'));const pilots=Object.values(PILOT_MASTER).filter(p=>p.id!==u.id&&isRecruited(BASE_UNIT_MASTER.find(x=>x.id===p.id)||{})&&!state.pilots[p.id]);
+  if(u.pilotProfile){const lv=levelOf(u.id),b=C.pilotBonus(u.pilotProfile,lv),at=boardingOf(u.id);pilotBox.append(el('p','sub',`パイロットとしての補正（Lv${lv}・成長 +${u.pilotProfile.growthPct}%/Lv）: ${Object.entries(b).map(([k,v])=>`${k.toUpperCase()}+${v}`).join(' ')||'なし'}${u.pilotProfile.aptitude?.pct?` ／ 適性「${u.pilotProfile.aptitude.tags.join('・')}」+${u.pilotProfile.aptitude.pct}%`:''}${u.pilotProfile.skills.length?' ／ スキル '+u.pilotProfile.skills.map(s=>s.name).join('・'):''}${at?` ／ いまは ${UNIT_INDEX[at]?.name||at} に搭乗中`:''}`));if(at)pilotBox.append(actionButton('降りる',()=>assignPilot(at,'')));}
+  if(crewOf(u)==='none'){if(!u.pilotProfile)pilotBox.append(el('p','sub','このユニットはパイロットを乗せられません（生身など）。'));}
+  else if(state.pilots[u.id]===undefined&&boardingOf(u.id))pilotBox.append(el('p','sub','搭乗中のユニットにはパイロットを乗せられません。'));
+  else if(!pilots.length&&!state.pilots[u.id])pilotBox.append(el('p','sub',crewOf(u)==='required'?'このユニットはパイロットが必要です。パイロットになれるユニット（「パイロット」マーク）が加入すると搭乗させられます。':'搭乗できるパイロットがいません。'));
+  else{const sel=el('select','growth-select');sel.setAttribute('aria-label','パイロット');const cur=state.pilots[u.id]&&PILOT_MASTER[state.pilots[u.id]];const list=cur&&!pilots.includes(cur)?[cur,...pilots]:pilots;sel.innerHTML='<option value="">搭乗なし</option>'+list.map(p=>{const at=Object.entries(state.pilots).find(([,v])=>v===p.id);const where=at&&at[0]!==u.id?`（${UNIT_MASTER.find(x=>x.id===at[0])?.name||at[0]}に搭乗中）`:'';return `<option value="${esc(p.id)}">${esc(p.name)}${where}</option>`;}).join('');sel.value=state.pilots[u.id]||'';sel.disabled=battleRunning;sel.onchange=()=>assignPilot(u.id,sel.value);pilotBox.append(sel);
+    const p=pilotFor(u.id);if(p)pilotBox.append(el('p','sub',`${esc(p.name)}（Lv${p.lv}）の補正 ${Object.entries(p.stats).map(([k,v])=>`${k.toUpperCase()}+${v}`).join(' ')||'なし'}${p.aptitude?.pct?` ／ 適性「${p.aptitude.tags.join('・')}」でATK・MOB・ACC +${p.aptitude.pct}%${p.aptitude.tags.some(t=>u.tags.includes(t))?'（適用中）':'（対象外）'}`:''}${p.skills.length?' ／ スキル '+p.skills.map(s=>s.name).join('・'):''}`));}
   view.append(pilotBox);
   const eqBox=el('div','growth-section');eqBox.append(el('h3','',`装備（${EQUIP_SLOTS}枠）`));const slots=state.equip[u.id]||[];const owned=Object.entries(state.items).filter(([id,n])=>n>0&&ITEM_MASTER[id]?.equip);
   for(let i=0;i<EQUIP_SLOTS;i++){const line=el('div','equip-line'),cur=slots[i]&&ITEM_MASTER[slots[i]];line.append(el('span','',`スロット${i+1}: ${cur?cur.name+' ／ '+C.itemSummary(cur):'なし'}`));const sel=el('select','growth-select');sel.setAttribute('aria-label',`装備スロット${i+1}`);sel.innerHTML='<option value="">— 選択 —</option>'+owned.map(([id,n])=>`<option value="${esc(id)}">${esc(ITEM_MASTER[id].name)} ×${n}</option>`).join('');sel.disabled=battleRunning||!owned.length;sel.onchange=()=>{if(sel.value)equipItem(u.id,i,sel.value);};line.append(sel);if(cur)line.append(actionButton('外す',()=>equipItem(u.id,i,null)));eqBox.append(line);}

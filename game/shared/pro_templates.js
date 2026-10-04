@@ -1,4 +1,4 @@
-/* PRO maker templates 1.1.0 — ready-made units, skills, weapons, items, missions, pilots and research.
+/* PRO maker templates 1.2.0 — ready-made units, skills, weapons, items, missions, pilots and research.
  * Every template produces data that passes PROCore validation (tests/test_maker_friendly.cjs). */
 (function(root){'use strict';
 const C=root.PROCore;
@@ -64,6 +64,9 @@ const units=[
   {key:'apc',label:'装甲車',desc:'高い耐久で味方の盾になる。',role:'装甲車',mark:'APC',tags:['装甲車','機械'],stats:[7000,600,300,350,480],weapons:['autocannon','grenade'],skills:['taunt','counter']},
   {key:'tank',label:'戦車',desc:'重装甲と主砲の大火力。',role:'戦車',mark:'TNK',tags:['戦車','装甲車','機械'],stats:[9000,800,450,300,500],weapons:['maingun','autocannon'],skills:['physresist']},
   {key:'drone',label:'ドローン',desc:'機動力が高く、ミサイルで複数を攻撃。',role:'ドローン',mark:'DRN',tags:['機械','飛行'],stats:[2000,450,0,700,550],weapons:['missile','smg'],skills:['dodge']},
+  // 1.10.2: a unit that needs a pilot, and a pilot who can fight alone or ride it.
+  {key:'mech',label:'人型機動兵器（要パイロット）',desc:'パイロットが乗らないと出撃できない機体。パイロットの補正で強くなる。',role:'機動兵器',mark:'MEC',tags:['機動兵器','機械'],stats:[6000,700,200,550,520],weapons:['beamrifle','shocklance'],skills:[],crew:'required'},
+  {key:'pilot',label:'パイロット（生身・機体に乗れる）',desc:'自分でも戦え、機体に乗るとACC+40・MOB+20、「機動兵器」で+10%。',role:'パイロット',mark:'PLT',tags:['歩兵','生身','パイロット'],stats:[2600,450,0,550,560],weapons:['handgun'],skills:[],crew:'none',pilotProfile:{stats:{acc:40,mob:20},aptitude:{tags:['機動兵器'],pct:10},skills:[],growthPct:2}},
   {key:'commander',label:'指揮官機（ボス向け）',desc:'バリアと激昂を持つ大型機。作戦のボスに。',role:'指揮官機',mark:'CMD',tags:['機械','指揮官'],stats:[12000,850,250,520,600],weapons:['beamrifle','missile','napalm'],skills:['barrier','rage','jamming'],row:'back'}
 ];
 const tiers=[
@@ -83,7 +86,7 @@ function makeUnit(key,tierKey='normal',factionKey='both',name='',existingIds=[])
   const skillIds=[];const sk=t.skills.map(k=>{const s=skillByKey(k,skillIds);skillIds.push(s.id);return s;});
   return {id:autoId('unit',existingIds),name:name||t.label.replace(/（.*?）/,''),role:t.role,pilot:'',mark:t.mark,tags:[...t.tags],ability:'',deploy:{...f.deploy},
     hp:Math.max(100,r(hp,tier.hp,100)),atk:r(atk,tier.other,10),def:r(def,tier.other,10),mob:r(mob,tierKey==='boss'?1:tier.other,10),acc:r(acc,tierKey==='boss'?1.1:tier.other,10),
-    skills:sk,weapons:t.weapons.map(weaponByKey),...(t.row?{row:t.row}:{}),...(t.ai?{ai:clone(t.ai)}:{})};
+    skills:sk,weapons:t.weapons.map(weaponByKey),...(t.row?{row:t.row}:{}),...(t.ai?{ai:clone(t.ai)}:{}),...(t.crew?{crew:t.crew}:{}),...(t.pilotProfile?{pilotProfile:clone(t.pilotProfile)}:{})};
 }
 // ---- items (ctx: {itemIds, units:[{id,recruit}], researchIds}) ----
 const I=(o)=>({desc:'',...o});
@@ -137,11 +140,13 @@ const pilots=[
   {key:'mech',label:'機械適性型',desc:'「機械」タグの機体でATK・MOB・ACC+15%。',make:()=>({name:'メカニック',tags:['パイロット'],stats:{acc:20},aptitude:{tags:['機械'],pct:15},skills:[]})}
 ];
 function makePilot(key,name,existingIds=[]){const t=pilots.find(x=>x.key===key)||pilots[0];return {id:autoId('pilot',existingIds),...t.make(),...(name?{name}:{})};}
+// Pilot templates as units (1.10.2): standard infantry-class body plus the pilot bonuses.
+function makePilotUnit(key,name,existingIds=[]){const p=makePilot(key,name,[]);const u=C.pilotToUnit({...p,id:'p'},new Set());return {...u,id:autoId('unit',existingIds)};}
 const research=[
   {key:'shop',label:'ショップ解放',desc:'完了するとアイテムがショップに並ぶ。',make:ctx=>({name:'新装備の開発',desc:'ショップに新しいアイテムが並ぶ。',cost:{credits:1500},requires:[],unlock:{items:(ctx.pricedItemIds||[]).slice(0,1)}})},
   {key:'recruit',label:'ユニット加入',desc:'完了すると加入条件付きのユニットが仲間になる。',make:ctx=>({name:'新戦力の配備',desc:'新しいユニットが加入する。',cost:{credits:3000},requires:[],unlock:{units:(ctx.lockedUnitIds||[]).slice(0,1)}})}
 ];
 function makeResearch(key,name,ctx={},existingIds=[]){const t=research.find(x=>x.key===key)||research[0];return {id:autoId('research',existingIds),...t.make(ctx),...(name?{name}:{})};}
 function makeTreeNode(skillKey,existingIds=[]){return {id:autoId('node',existingIds),cost:1,minLevel:1,requires:[],skill:skillByKey(skillKey)};}
-root.PROTemplates=Object.freeze({version:'1.1.0',weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
+root.PROTemplates=Object.freeze({version:'1.2.0',makePilotUnit,weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
 })(window);

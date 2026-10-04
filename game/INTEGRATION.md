@@ -1,3 +1,28 @@
+# Toolkit 1.10.2 パイロットとユニットの統合（追加分）
+
+パイロットはユニットとして表します。ユニットに次の2項目（どちらも省略可）を追加しました。どちらかを使ったユニットパックは **Unit Schema 4**、統合パックは **Bundle Schema 3** で出力されます。
+
+```json
+{"id": "pl-m-strider", "name": "ストライダー", "crew": "required", "...": "..."}
+{"id": "pl-p-kai", "name": "カイ", "crew": "none", "tags": ["歩兵","生身","パイロット"], "...": "...",
+ "pilotProfile": {"stats": {"acc": 40, "mob": 20}, "aptitude": {"tags": ["機動兵器"], "pct": 15}, "skills": [], "growthPct": 3}}
+```
+
+| 項目 | 内容 |
+|---|---|
+| `crew` | `required`（パイロットが乗っていないと出撃不可。敵としては無視）／`optional`（省略時。従来どおり任意）／`none`（パイロットは乗れない） |
+| `pilotProfile.stats` | 搭乗時の能力補正（hp/atk/def/mob/acc） |
+| `pilotProfile.aptitude` | `{tags, pct}`。機体がタグを1つでも持てば ATK・MOB・ACC を pct% 上げる |
+| `pilotProfile.skills` | 搭乗時に機体へ加わるスキル（8個まで） |
+| `pilotProfile.growthPct` | 0～20（省略=2）。補正 = stats ×（1 + growthPct% ×（パイロットLv − 1））、四捨五入 |
+
+- `crew:"required"` のユニットに `pilotProfile` は付けられません。
+- ゲームのセーブ `state.pilots` は `{機体ユニットID: パイロットユニットID}`。搭乗中のパイロットは単独出撃不可。機体と同じ経験値・疲労を受け、機体が撃破されると負傷します。
+- 旧形式 `pilots`（Unit Schema 3 / Bundle Schema 2）は `PROCore.pilotsToUnits(units, pilots)` で `crew:"none"`・プレイヤー専用・標準歩兵相当（HP3000/ATK500/DEF0/MOB500/ACC500、ハンドガン）のユニットへ変換されます。IDは維持（重複時は `_pilot` を付加）。`bundlePack` は変換後のユニットを返し、`pilots` は出力しません。
+- API（PROCore 2.2.0）: `crews` / `crewOf(unit)` / `pilotProfile(raw, label)` / `pilotBonus(profile, lv)` / `pilotToUnit(pilot, takenIds)` / `pilotsToUnits(units, pilots)` / `unitIsV4(unit)`。PROTemplates 1.2.0: `makePilotUnit(key, name, existingIds)`、ユニットテンプレート `mech` / `pilot`。
+
+---
+
 # Toolkit 1.10.1 武装の追加効果（追加分）
 
 武装に `effects`（省略可・0～4個）を追加しました。使った武装は `weaponIsExtended` が true になり、ユニットは Unit Schema 3（アイテムの `add_weapon`・装備品の武装は Item Schema 3）で出力されます。

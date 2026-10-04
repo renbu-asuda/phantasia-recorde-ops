@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ファンタジア・レコード・オプス (PRO) Mission Maker 1.12.0</title>
+<title>ファンタジア・レコード・オプス (PRO) Mission Maker 1.12.1</title>
 <style>
 :root{
   --bg:#071019;--panel:#0d1823;--panel2:#101f2d;--line:#24384a;--text:#e8f0f7;--muted:#91a3b4;
@@ -56,7 +56,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 </head>
 <body>
 <div class="topbar"><div class="toprow">
-  <div class="brand">PRO <span style="color:var(--accent)">MISSION MAKER</span><small>v1.12.0 / テンプレートで作れる・難易度の目安つき / Game 1.10.1</small><div id="modeBox"></div></div>
+  <div class="brand">PRO <span style="color:var(--accent)">MISSION MAKER</span><small>v1.12.1 / テンプレートで作れる・難易度の目安つき / Game 1.10.2</small><div id="modeBox"></div></div>
   <div class="actions">
     <button class="btn ghost" id="newPackBtn">新規パック</button>
     <button class="btn" id="loadBaseBtn">同梱基本作戦を読み込む</button>
@@ -174,7 +174,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <script>
 (()=>{
 'use strict';
-const C=window.PROCore,E=window.PROEditor,T=window.PROTemplates,MFORMAT='VAIS_OUTER_OPS_MISSION_PACK',UFORMAT='VAIS_OUTER_OPS_UNIT_PACK',IFORMAT='VAIS_OUTER_OPS_ITEM_PACK',SCHEMA=1,UNIT_SCHEMAS=new Set([1,2,3]),MAX_SLOTS=8,DRAFT_KEY='vais_outer_ops_mission_maker_draft_v1';
+const C=window.PROCore,E=window.PROEditor,T=window.PROTemplates,MFORMAT='VAIS_OUTER_OPS_MISSION_PACK',UFORMAT='VAIS_OUTER_OPS_UNIT_PACK',IFORMAT='VAIS_OUTER_OPS_ITEM_PACK',SCHEMA=1,UNIT_SCHEMAS=new Set([1,2,3,4]),MAX_SLOTS=8,DRAFT_KEY='vais_outer_ops_mission_maker_draft_v1';
 function storageGet(k,f=null){try{const v=localStorage.getItem(k);return v===null?f:v;}catch(e){return f;}}function storageSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}}function storageRemove(k){try{localStorage.removeItem(k);return true;}catch(e){return false;}}
 const $=id=>document.getElementById(id), qsa=s=>[...document.querySelectorAll(s)], esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])), n=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -199,7 +199,7 @@ function normalizeDrop(d){return {itemId:String(d?.itemId||''),chance:Number(d?.
 function normalizeMission(m){const enemies=Array.isArray(m.enemies)?m.enemies.map(String).filter(Boolean).slice(0,MAX_SLOTS):[];const rules=Array.isArray(m.rules)?m.rules.map(r=>typeof r==='string'?r:clone(r)).filter(r=>typeof r!=='string'||r.trim()):[];const tags=Array.isArray(m.tags)?m.tags.map(String).map(x=>x.trim()).filter(Boolean):[];return {id:String(m.id||''),name:String(m.name||''),diff:String(m.diff||'C'),reward:Math.max(0,Math.floor(n(m.reward,0))),desc:String(m.desc||''),enemies,maxDeploy:Math.max(1,Math.min(8,Math.floor(n(m.maxDeploy,8)))),terrain:String(m.terrain||'標準'),rules,tags,drops:Array.isArray(m.drops)?m.drops.map(normalizeDrop):[],...E.pick(m,E.MISSION_EXT_KEYS)};}
 function newMission(){let i=pack.missions.length+1,id='mission_'+i;while(pack.missions.some(m=>m.id===id)){i++;id='mission_'+i;}return {id,name:'新規作戦',diff:'E',reward:1000,desc:'',enemies:[],maxDeploy:8,terrain:'標準',rules:[],tags:[],drops:[]};}
 function readMissionPack(text){const bundle=text.includes('VAIS_BUNDLE_PACK')?window.PROCore.bundlePack(window.PROCore.parse(text,'VAIS_BUNDLE_PACK')):null;const o=bundle?{format:MFORMAT,schemaVersion:SCHEMA,packId:'bundle_'+bundle.packId,packName:bundle.packName+'（作戦のみ）',missions:bundle.missions}:parseObject(text,'VAIS_MISSION_PACK',MFORMAT,'missions');return {format:MFORMAT,schemaVersion:SCHEMA,packId:String(o.packId||'imported_missions'),packName:String(o.packName||o.packId||'Imported Missions'),missions:o.missions.map(normalizeMission)};}
-function readUnitPack(text){const bundle=text.includes('VAIS_BUNDLE_PACK')?window.PROCore.bundlePack(window.PROCore.parse(text,'VAIS_BUNDLE_PACK')):null;const o=bundle?{format:UFORMAT,schemaVersion:2,packId:'bundle_'+bundle.packId,packName:bundle.packName,units:bundle.units}:extractAssignedObject(text,'VAIS_UNIT_PACK');if(o.format!==UFORMAT)throw new Error('対応するPROユニットパックではありません。');if(!UNIT_SCHEMAS.has(Number(o.schemaVersion)))throw new Error('未対応のUnit schemaVersionです。');if(!Array.isArray(o.units))throw new Error('units 配列がありません。');const dups=duplicateIds(o.units);if(dups.length)throw new Error(`units 内のIDが重複しています: ${dups.join(', ')}`);return {packId:String(o.packId||'units'),packName:String(o.packName||o.packId||'Units'),units:o.units.map(normalizeUnit).filter(Boolean)};}
+function readUnitPack(text){const bundle=text.includes('VAIS_BUNDLE_PACK')?window.PROCore.bundlePack(window.PROCore.parse(text,'VAIS_BUNDLE_PACK')):null;const o=bundle?{format:UFORMAT,schemaVersion:2,packId:'bundle_'+bundle.packId,packName:bundle.packName,units:bundle.units}:extractAssignedObject(text,'VAIS_UNIT_PACK');if(o.format!==UFORMAT)throw new Error('対応するPROユニットパックではありません。');if(!UNIT_SCHEMAS.has(Number(o.schemaVersion)))throw new Error('未対応のUnit schemaVersionです。');if(!Array.isArray(o.units))throw new Error('units 配列がありません。');const dups=duplicateIds(o.units);if(dups.length)throw new Error(`units 内のIDが重複しています: ${dups.join(', ')}`);return {packId:String(o.packId||'units'),packName:String(o.packName||o.packId||'Units'),units:window.PROCore.pilotsToUnits(o.units,o.pilots).units.map(normalizeUnit).filter(Boolean)};}
 function readItemPack(text){const bundle=text.includes('VAIS_BUNDLE_PACK')?window.PROCore.bundlePack(window.PROCore.parse(text,'VAIS_BUNDLE_PACK')):null;return window.PROCore.itemPack(bundle?{format:IFORMAT,schemaVersion:2,packId:'bundle_'+bundle.packId,packName:bundle.packName,items:bundle.items}:window.PROCore.parse(text,'VAIS_ITEM_PACK'));}
 function mergeItemPack(p){const idx=itemSources.findIndex(x=>x.packId===p.packId);if(idx>=0)itemSources[idx]=p;else itemSources.push(p);itemMap=new Map();for(const source of itemSources)for(const item of source.items)itemMap.set(item.id,item);renderDropOptions();updateDataStatus();updateAll(false);}
 function loadEmbeddedItems(){try{if(window.VAIS_ITEM_PACK)mergeItemPack(readItemPack('window.VAIS_ITEM_PACK = '+JSON.stringify(window.VAIS_ITEM_PACK)+';'));}catch(e){console.warn(e);}updateDataStatus();}
