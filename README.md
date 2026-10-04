@@ -7,17 +7,17 @@
 **https://renbu-asuda.github.io/phantasia-recorde-ops/** を開くだけで遊べます（インストール不要）。iPhoneはSafariの「ホーム画面に追加」でアプリのように起動できます。
 
 - ゲーム: https://renbu-asuda.github.io/phantasia-recorde-ops/game/index.html
-- メーカー: https://renbu-asuda.github.io/phantasia-recorde-ops/game/maker_hub.html
+- メーカー: https://renbu-asuda.github.io/phantasia-recorde-ops/game/makers/maker_hub.html
 
 ## ダウンロード
 
-オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.10.2.zip](dist/fantasia_record_ops_toolkit_v1.10.2.zip)**（リンク先の「Download raw file」ボタンで保存できます）
+オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.10.3.zip](dist/fantasia_record_ops_toolkit_v1.10.3.zip)**（リンク先の「Download raw file」ボタンで保存できます）
 
 ## 遊び方
 
 1. ZIPを**すべて展開**します（`shared` フォルダも必要です）。
 2. `index.html` を開くとゲームが始まります。
-3. 1.9 の新要素は、ゲームの「データ管理 → 統合JSを読み込む」で `pro_190_feature_sample.js` を読み込むと一通り試せます。
+3. 1.9 の新要素は、ゲームの「データ管理 → 統合JSを読み込む」で `samples/pro_190_feature_sample.js` を読み込むと一通り試せます。
 
 ## データを作る
 
@@ -37,8 +37,9 @@
 
 ## 更新履歴（抜粋）
 
-- **1.10.2**: パイロットとユニットの統合。パイロットもユニットとして出撃でき、機体に乗ると補正（レベルで成長）。「パイロットが必要な機体」と「生身のユニット」を作り分け可能（サンプル: `game/pro_1102_pilot_sample.js`）
-- **1.10.1**: 武装の追加効果。武装を使う前・使った後に、自分のATKアップ・相手のDEFダウン・スタン・炎上・HP吸収・反動・撃破で再行動などを発動（サンプル: `game/pro_1101_weapon_effects_sample.js`）
+- **1.10.3**: ファイル整理（メーカーは `makers/`、サンプルは `samples/`、拡張パックは `expansion_packs/`、説明書類は `docs/`）。基本データを最新形式で作り直し（パイロット・要パイロット機体・作戦7本・ショップ・研究など）
+- **1.10.2**: パイロットとユニットの統合。パイロットもユニットとして出撃でき、機体に乗ると補正（レベルで成長）。「パイロットが必要な機体」と「生身のユニット」を作り分け可能（サンプル: `game/samples/pro_1102_pilot_sample.js`）
+- **1.10.1**: 武装の追加効果。武装を使う前・使った後に、自分のATKアップ・相手のDEFダウン・スタン・炎上・HP吸収・反動・撃破で再行動などを発動（サンプル: `game/samples/pro_1101_weapon_effects_sample.js`）
 - **1.10.0**: メーカーのかんたんモード、テンプレート作成、ID自動付与、強さ・難易度の目安、わかりやすいエラー表示
 - **1.9.0**: 新スキル・状態異常・隊列・地形・勝利条件、レベル・スキルツリー・装備・パイロット、ショップ・研究・施設・実績・ストーリー、セーブの書き出し
 - **1.8.4**: スキル付きユニットの追加パックが再起動で消える不具合などを修正
