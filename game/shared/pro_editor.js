@@ -130,7 +130,7 @@ const WEAPON_EFFECT_PRESETS=[
   ['使用後：自分にバリア200',{timing:'after',effect:'shield',value:200}],
   ['使用後：味方全体のATK+10%（2TURN）',{timing:'after',effect:'atk_up_pct',value:10,target:'allies',duration:2}]
 ];
-const WEAPON_OWN_EFFECTS=[...C.WEAPON_BEFORE_ONLY,...C.WEAPON_AFTER_ONLY,'extra_action'];
+const WEAPON_OWN_EFFECTS=[...(C.WEAPON_BEFORE_ONLY||[]),...(C.WEAPON_AFTER_ONLY||[]),'extra_action']; // tolerant of an older cached pro_core.js
 function weaponEffectFields(){return [
   {key:'timing',label:'タイミング',type:'select',choices:{before:'使用前（ダメージ計算の前）',after:'使用後（攻撃が終わった後）'},rerender:true,onSet:o=>{if(!C.weaponEffectsAllowed[o.timing].includes(o.effect))o.effect=C.weaponEffectsAllowed[o.timing][0];if(o.timing!=='after')delete o.when;}},
   {key:'effect',label:'何が起きる？',type:'select',choices:o=>Object.fromEntries((C.weaponEffectsAllowed[o.timing]||[]).map(x=>[x,C.weaponEffectLabels[x]])),rerender:true,onSet:o=>{if(o.effect==='tag_damage_up_pct'&&!o.tag)o.tag='装甲車';if(WEAPON_OWN_EFFECTS.includes(o.effect))delete o.target;}},

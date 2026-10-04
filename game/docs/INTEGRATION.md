@@ -1,3 +1,10 @@
+# Toolkit 1.10.4 読み込みチェック
+
+- 各ページは共通ファイルを `?v=<版>` 付きで読み込みます。本体スクリプトの直前の `<script data-pro-guard>` が `PROCore` などの有無と最低バージョンを確認し、足りなければ `#proBootError` に案内を出して `window.__PRO_BOOT_FAILED` に理由の配列を入れます。
+- ページから `../` で上のフォルダを参照しないこと（Android のローカルサーバー系アプリで読めなくなる）。
+
+---
+
 # Toolkit 1.10.3 ファイル構成と基本データ
 
 データ形式の変更はありません。同梱ファイルの場所が変わりました。
@@ -5,7 +12,7 @@
 | 場所 | 中身 |
 |---|---|
 | `index.html` / `outer_ops_*.js` / `shared/` | ゲーム本体・基本データ・共通モジュール（ルートに配置） |
-| `makers/` | メーカー（`maker_hub.html` / `combined_maker.html` / `unit_maker.html` / `mission_maker.html` / `item_maker.html`）。共通モジュールは `../shared/`、基本データは `../outer_ops_*.js` を読み込みます |
+| ルート | メーカー（`maker_hub.html` / `combined_maker.html` / `unit_maker.html` / `mission_maker.html` / `item_maker.html`）。1.10.4 で `makers/` からルートに戻しました（`../` を読めない環境があるため）。共通ファイルは `shared/xxx.js?v=<版>` で読み込みます |
 | `samples/` | `pro_sample_bundle.js` / `pro_190_feature_sample.js` / `pro_1101_weapon_effects_sample.js` / `pro_1102_pilot_sample.js` |
 | `expansion_packs/` | `PR-01.js` / `pack-0000.js` / `black_bullet_bundle_PRO.js` |
 | `docs/` | `README.txt` / `CHANGELOG.txt` / `INTEGRATION.md` / `TEST_REPORT.txt` |

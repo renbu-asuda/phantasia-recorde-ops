@@ -1,3 +1,18 @@
+PRO Toolkit 1.10.4（修正）
+
+- 修正: 統合メーカーなどで上のタブ・「かんたん／詳細」・ボタンの色が出ない問題。
+  原因は 1.10.3 でメーカーを makers/ に移し、共通ファイルを ../shared/ から読むようにしたこと。Android のローカルサーバー系アプリなど、
+  開いたファイルのフォルダより上を読ませない環境では shared フォルダが丸ごと読み込めず、メーカーが途中で止まっていました。
+  → メーカー5つ（maker_hub.html・combined_maker.html・unit_maker.html・mission_maker.html・item_maker.html）を index.html と同じ場所に戻しました。
+- 共通ファイルの読み込みにバージョンを付けました（例: shared/pro_core.js?v=1.10.4）。公開サイトやスマホのブラウザが古いファイルをキャッシュから返して、新旧が混ざるのを防ぎます。
+- 読み込みチェックを追加: shared フォルダが読めない・古い版が混ざっているときは、画面上部に赤い案内（読めなかったファイルと対処）を表示します。何も出ずに止まることはなくなりました。
+- タブなどが出ないときの対処: ① ZIPは「すべて展開」し、index.html・メーカー・shared フォルダの位置関係を変えずに開く。② ページを再読み込み（直らなければブラウザの履歴・キャッシュを削除）。
+- テスト: tests/test_boot_guard.cjs を追加。test_base_data で「../ を使った読み込みがないこと」も確認。全19本PASS。
+
+フォルダ構成（1.10.4〜）
+  index.html / *_maker.html（メーカー5つ） / outer_ops_*.js / shared/ … すべて同じ場所（ここを開く）
+  samples/ … 機能サンプル　expansion_packs/ … 拡張パック　docs/ … 説明書類　tests/ … 開発者向けテスト
+
 PRO Toolkit 1.10.3 追補 — 拡張パック「ブラック・ブレット」更新
 
 - expansion_packs/black_bullet_unit_pack_PRO_v1.js（ユニットだけのパック）を、統合パック expansion_packs/black_bullet_bundle_PRO.js に置き換えました（旧パックは削除）。
