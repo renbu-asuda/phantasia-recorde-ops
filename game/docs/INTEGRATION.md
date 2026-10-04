@@ -7,7 +7,7 @@
 | `index.html` / `outer_ops_*.js` / `shared/` | ゲーム本体・基本データ・共通モジュール（ルートに配置） |
 | `makers/` | メーカー（`maker_hub.html` / `combined_maker.html` / `unit_maker.html` / `mission_maker.html` / `item_maker.html`）。共通モジュールは `../shared/`、基本データは `../outer_ops_*.js` を読み込みます |
 | `samples/` | `pro_sample_bundle.js` / `pro_190_feature_sample.js` / `pro_1101_weapon_effects_sample.js` / `pro_1102_pilot_sample.js` |
-| `expansion_packs/` | `PR-01.js` / `pack-0000.js` / `black_bullet_unit_pack_PRO_v1.js` |
+| `expansion_packs/` | `PR-01.js` / `pack-0000.js` / `black_bullet_bundle_PRO.js` |
 | `docs/` | `README.txt` / `CHANGELOG.txt` / `INTEGRATION.md` / `TEST_REPORT.txt` |
 
 - 基本データは `packId: "pro-core"`（Unit Schema 4 / Mission Schema 2 / Item Schema 3）。IDは `core-u-*` / `core-e-*` / `core-m-*` / `core-i-*` / `core-r-*`。
