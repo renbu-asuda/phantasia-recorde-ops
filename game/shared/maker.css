@@ -62,3 +62,14 @@ body.mode-easy .adv{display:none!important}
 .pro-ok{color:#9be9ba;font-weight:700}.pro-after{background:#0f2a22;color:#c9f1dc;border-radius:8px;padding:12px;margin:10px 0}
 .pro-power{display:inline-block;color:#ffd27a;font-weight:700;margin:4px 0}.pro-desc{color:#cfe6f3;background:#0c2030;border-radius:8px;padding:8px 10px;margin:6px 0;line-height:1.6}
 .pro-difficulty{border:1px solid #33556c;border-radius:10px;padding:10px 12px;margin:10px 0;background:#0c1f2c}.pro-difficulty .pro-output{min-height:0}
+/* 1.12.0: number input with ±, front/back lanes, waves, win/lose conditions, terrains, test battle */
+.pro-num{display:flex;gap:6px;align-items:stretch;min-width:0}.pro-num>input{flex:1;min-width:0}
+.pro-sign{flex:0 0 auto;min-width:44px;border:1px solid #3f6f8c;background:#132a3b;color:#e4f3ff;border-radius:8px;font:inherit;font-weight:800;cursor:pointer}
+.pro-formation{display:grid;gap:8px;margin:6px 0}
+.pro-lane{border:1px solid #2c4a5f;border-radius:10px;padding:8px 10px;background:#0b1b27}.pro-lane-front{border-left:4px solid #ff9f6b}.pro-lane-back{border-left:4px solid #7fb8ff}
+.pro-lane-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}.pro-lane-head b{font-size:15px}
+.pro-chip{display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:#132536;border-radius:8px;padding:5px 8px;margin:5px 0}.pro-chip-name{flex:1 1 140px;min-width:0;overflow-wrap:anywhere}
+.pro-chip .flow-btn{min-height:34px;padding:4px 10px}
+.pro-wave{background:#0c1f2c;border-radius:0 10px 10px 0;padding:8px 10px}.pro-wave .pro-list-head b{color:#ffd27a}
+.pro-conditions{background:#0f2a22;color:#d6f3e6;border-radius:8px;padding:8px 10px;margin:6px 0;line-height:1.7}.pro-conditions-title{display:block;margin-top:8px;color:#9be9ba}
+.pro-terrains{margin:8px 0}.pro-testlog{white-space:pre-wrap;max-height:420px;overflow:auto}

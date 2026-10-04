@@ -1,5 +1,7 @@
-/* PRO maker editor 1.4.0 — schema-driven forms, easy/expert mode, reference pickers, plain-language
+/* PRO maker editor 1.5.0 — schema-driven forms, easy/expert mode, reference pickers, plain-language
  * descriptions, strength and difficulty estimates, friendly validation, simulator and damage calculator.
+ * 1.5.0: minus-friendly number input, front/back formation editor, wave editor, win/lose condition editor,
+ * terrain list + pack terrain editor, one-battle test with a readable log.
  * Uses only element properties and on* handlers so it also runs in the lightweight test DOM. */
 (function(root){'use strict';
 const C=root.PROCore,B=root.PROBattle;
@@ -11,7 +13,7 @@ function setVal(obj,key,v,keep){if(!keep&&isEmpty(v))delete obj[key];else obj[ke
 const splitList=text=>String(text||'').split(/[,、\n]/).map(x=>x.trim()).filter(Boolean);
 const choicesOf=(f,obj)=>typeof f.choices==='function'?f.choices(obj):f.choices;
 const STAT_LABELS={hp:'HP',atk:'ATK',def:'DEF',mob:'MOB',acc:'ACC'};
-const BLOCK_TYPES=['list','object','lines','textarea','json','skill','statmap','days','counts','idlines','image','typedRules','refcounts'];
+const BLOCK_TYPES=['formation','waves','objective','terrain','list','object','lines','textarea','json','skill','statmap','days','counts','idlines','image','typedRules','refcounts'];
 const MODE_KEY='pro_maker_mode';
 function mode(){try{return localStorage.getItem(MODE_KEY)==='expert'?'expert':'easy';}catch(e){return 'easy';}}
 function applyMode(){const b=document.body;if(b&&b.classList){b.classList.toggle('mode-easy',mode()==='easy');b.classList.toggle('mode-expert',mode()==='expert');}}
@@ -23,11 +25,12 @@ function newWeapon(){return C.clone(C.weaponDefaults);}
 // so packs that never use a 1.9 field keep their older schema number.
 function form(container,obj,fields,onChange,opts={}){
   const host=el('div','pro-form');container.append(host);
-  const changed=()=>{if(onChange)onChange(obj);};
-  function redraw(){host.replaceChildren();draw();}
+  const lives=[];const changed=()=>{for(const f of lives)f();if(onChange)onChange(obj);};
+  function redraw(){host.replaceChildren();lives.length=0;draw();}
   function draw(){const grid=el('div','pro-fields');host.append(grid);const easy=mode()==='easy';let adv=null,advGrid=null;for(const f of fields){if(f.show&&!f.show(obj))continue;const block=BLOCK_TYPES.includes(f.type)||f.wide;let target=block?host:grid;if(f.advanced&&easy){if(!adv){adv=el('details','pro-advanced');adv.append(el('summary',undefined,'詳細設定を開く'));advGrid=el('div','pro-fields');adv.append(advGrid);host.append(adv);}target=block?adv:advGrid;}renderField(target,f);}}
   const refList=kind=>{try{return opts.refs?opts.refs(kind,obj)||null:null;}catch(e){return null;}};
-  function refSelect(list,value,label,placeholder='（選んでください）'){const s=el('select');s.setAttribute('aria-label',label);const opts2=[['',placeholder],...list];if(value&&!list.some(([v])=>v===value))opts2.push([value,value+'（未読込）']);for(const [v,t] of opts2){const o=el('option',undefined,t);o.value=v;s.append(o);}s.value=value||'';return s;}
+  const refSelect=selectOf;
+  const nameMap=()=>labelNames(refList('units'));
   function wrap(parent,f){const l=el('label','pro-field');l.append(el('span','pro-label',f.label||f.key));parent.append(l);return l;}
   function help(l,f){if(f.help)l.append(el('small','pro-help',f.help));}
   function after(f){changed();if(f.rerender)redraw();}
@@ -36,7 +39,7 @@ function form(container,obj,fields,onChange,opts={}){
     switch(f.type){
     case 'select':{const l=wrap(parent,f),s=el('select');s.setAttribute('aria-label',f.label||k);const opts=[...(f.empty!==undefined?[['',f.empty]]:[]),...Object.entries(choicesOf(f,obj)||{})];for(const [v,t] of opts){const o=el('option',undefined,t);o.value=v;s.append(o);}s.value=obj[k]??'';s.onchange=()=>{if(s.value===''&&f.empty!==undefined)delete obj[k];else obj[k]=s.value;if(f.onSet)f.onSet(obj);after(f);};l.append(s);help(l,f);return;}
     case 'check':{const l=el('label','pro-check'),x=el('input');x.type='checkbox';x.checked=!!obj[k];x.onchange=()=>{if(x.checked)obj[k]=true;else delete obj[k];after(f);};l.append(x,el('span',undefined,f.label));parent.append(l);help(l,f);return;}
-    case 'number':{const l=wrap(parent,f),i=el('input');i.type='number';i.step=f.step||'any';if(f.min!==undefined)i.min=f.min;if(f.max!==undefined)i.max=f.max;if(f.placeholder)i.placeholder=f.placeholder;i.value=obj[k]??'';const set=()=>{if(i.value===''){if(f.keep)obj[k]=0;else delete obj[k];}else obj[k]=Number(i.value);changed();};i.oninput=set;i.onchange=()=>{set();if(f.rerender)redraw();};l.append(i);help(l,f);return;}
+    case 'number':{const l=wrap(parent,f),i=el('input');i.type='number';i.step=f.step||'any';if(f.min!==undefined)i.min=f.min;if(f.max!==undefined)i.max=f.max;if(f.placeholder)i.placeholder=f.placeholder;i.value=obj[k]??'';const set=()=>{const v=normNum(i.value);if(v!==i.value)i.value=v;if(v===''){if(f.keep)obj[k]=0;else delete obj[k];}else{const x=Number(v);if(!Number.isFinite(x))return;obj[k]=x;}changed();};i.oninput=set;i.onchange=()=>{set();if(f.rerender)redraw();};l.append(i);numberInput(i,set);help(l,f);return;}
     case 'tags':case 'ids':case 'rowlist':{const l=wrap(parent,f),i=el('input');i.type='text';i.placeholder=f.placeholder||(f.type==='rowlist'?'front, back, front':'カンマ区切り');i.value=(obj[k]||[]).join(', ');i.oninput=()=>{setVal(obj,k,splitList(i.value),f.keepEmptyArray);changed();};l.append(i);help(l,f);return;}
     case 'textarea':{const l=wrap(parent,f),t=el('textarea');t.value=obj[k]??'';t.oninput=()=>{setVal(obj,k,t.value);changed();};l.append(t);help(l,f);return;}
     case 'lines':{const l=wrap(parent,f),t=el('textarea');t.placeholder='隊長: 作戦を開始する\nオペレーター: 了解';t.value=(obj[k]||[]).map(x=>x.speaker?`${x.speaker}: ${x.text}`:x.text).join('\n');t.oninput=()=>{const lines=t.value.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.match(/^([^:：]{1,40})[:：]\s*(.+)$/);return m?{speaker:m[1].trim(),text:m[2]}:{speaker:'',text:x};});setVal(obj,k,lines);changed();};l.append(t);help(l,f);return;}
@@ -52,6 +55,25 @@ function form(container,obj,fields,onChange,opts={}){
       const holder=obj[k]&&typeof obj[k]==='object'?obj[k]:{};
       form(box,holder,f.fields,h=>{if(!f.toggle&&(isEmpty(h)||(f.emptyWhen&&f.emptyWhen(h))))delete obj[k];else obj[k]=h;changed();},opts);return;}
     case 'skill':{const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));parent.append(box);if(!obj[k])obj[k]=newSkill();form(box,obj[k],skillFields(),()=>changed(),opts);return;}
+    case 'formation':{const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));parent.append(box);help(box,f);const ids=Array.isArray(obj[k])?obj[k]:(obj[k]=[]);const rws=ids.map((_,i)=>(obj[f.rowsKey]||[])[i]==='back'?'back':'front');
+      formationBox(box,ids,rws,refList(f.ref||'enemies'),()=>{obj[k]=ids;if(rws.some(r=>r==='back'))obj[f.rowsKey]=rws.slice(0,ids.length);else delete obj[f.rowsKey];changed();},{max:f.max});return;}
+    case 'waves':{const box=el('fieldset','pro-group pro-list');box.append(el('legend',undefined,f.label));parent.append(box);help(box,f);const list=refList(f.ref||'enemies'),waves=(Array.isArray(obj[k])?obj[k]:[]).map(C.normalizeWave);
+      const commit=re=>{const out=waves.map(compactWave);if(out.length)obj[k]=out;else delete obj[k];changed();if(re)redraw();};
+      waves.forEach((w,i)=>{const card=el('div','pro-list-item pro-wave'),head=el('div','pro-list-head'),title=el('b',undefined,'');const names=()=>labelNames(list);const retitle=()=>{title.textContent=C.waveText(w,i,names());};retitle();lives.push(retitle);head.append(title);
+        const up=btn('↑',()=>{[waves[i-1],waves[i]]=[waves[i],waves[i-1]];commit(true);});up.disabled=i===0;up.setAttribute('aria-label','前の波と入れ替え');
+        const down=btn('↓',()=>{[waves[i+1],waves[i]]=[waves[i],waves[i+1]];commit(true);});down.disabled=i===waves.length-1;down.setAttribute('aria-label','次の波と入れ替え');
+        head.append(up,down,btn('この波を削除',()=>{waves.splice(i,1);commit(true);},'flow-btn danger'));card.append(head);
+        const g=el('div','pro-fields');card.append(g);
+        const lw=el('label','pro-field');lw.append(el('span','pro-label','いつ出てくる？'));const sw=selectOf(Object.entries(WAVE_WHEN),w.when,'出現のタイミング',null);sw.onchange=()=>{w.when=sw.value;if(w.when==='cleared')delete w.value;else w.value=WAVE_DEFAULT[w.when];commit(true);};lw.append(sw);g.append(lw);
+        if(w.when!=='cleared'){const spec=WAVE_VALUE[w.when],lv=el('label','pro-field');lv.append(el('span','pro-label',spec.label));const iv=el('input');iv.type='number';iv.min=spec.min;iv.max=spec.max;iv.step='1';iv.value=w.value??'';iv.oninput=()=>{const v=normNum(iv.value);if(v==='')return;const x=Math.round(Number(v));if(!Number.isFinite(x))return;w.value=x;commit(false);};lv.append(iv,el('small','pro-help',spec.help));g.append(lv);}
+        const ll=el('label','pro-field');ll.append(el('span','pro-label','波の名前（なくてもOK）'));const il=el('input');il.type='text';il.placeholder='例: 増援部隊';il.value=w.label||'';il.oninput=()=>{const v=il.value.trim();if(v)w.label=v;else delete w.label;commit(false);};ll.append(il);g.append(ll);
+        formationBox(card,w.enemies,w.rows,list,()=>commit(false));box.append(card);});
+      const add=btn('＋ 波を追加',()=>{waves.push({enemies:[],rows:[],when:'cleared'});commit(true);});add.disabled=waves.length>=9;box.append(add);
+      if(!waves.length)box.append(el('small','pro-help','追加ウェーブなし（最初の敵だけで戦います）。'));return;}
+    case 'objective':{objectiveEditor(parent,obj,f,{refList,changed,redraw,lives});return;}
+    case 'terrain':{const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));parent.append(box);help(box,f);const packList=()=>{try{return opts.terrains?opts.terrains()||[]:[];}catch(e){return [];}};
+      const s=el('select');s.setAttribute('aria-label',f.label);const fx=el('div','pro-desc');const fill=()=>{s.replaceChildren();for(const [v,t] of terrainOptions(packList(),obj[k])){const o=el('option',undefined,t);o.value=v;s.append(o);}s.value=obj[k]||'標準';fx.textContent='効果: '+terrainEffectOf(obj[k],packList());};fill();
+      s.onchange=()=>{obj[k]=s.value;fill();changed();};box.append(s,fx);if(opts.onEditTerrains)box.append(btn('地形を追加・編集する',()=>opts.onEditTerrains()));lives.push(fill);return;}
     case 'list':{
       const box=el('fieldset','pro-group pro-list');box.append(el('legend',undefined,f.label));parent.append(box);help(box,f);const arr=Array.isArray(obj[k])?obj[k]:[];
       arr.forEach((item,i)=>{const row=el('div','pro-list-item'),head=el('div','pro-list-head'),title=el('b',undefined,f.itemLabel?f.itemLabel(item,i):`${i+1}`);head.append(title);const itemChanged=()=>{if(f.itemLabel)title.textContent=f.itemLabel(item,i);changed();};
@@ -169,17 +191,16 @@ function pilotFields(){return [
   {key:'tags',label:'タグ（カンマ区切り）',type:'tags',keepEmptyArray:true,advanced:true},{key:'id',label:'パイロットID',type:'text',advanced:true},{key:'note',label:'メモ',type:'text',advanced:true}
 ];}
 function newPilot(){return {id:'pilot_'+rid(),name:'新しいパイロット',tags:[],stats:{acc:20},skills:[]};}
-function ruleFields(type){if(type==='turn_limit')return [{key:'value',label:'このTURNまでに勝てなければ敗北',type:'number',min:1,max:99,keep:true}];if(type==='reinforce')return [{key:'turn',label:'出現TURN',type:'number',min:1,max:99,keep:true},{key:'enemies',label:'援軍の敵',type:'ref',ref:'enemies',multi:true,ordered:true,keepEmptyArray:true}];return [{key:'allTags',label:'全員がすべて持つタグ',type:'tags'},{key:'anyTags',label:'全員がどれか1つ持つタグ',type:'tags'},{key:'noneTags',label:'持っていると出撃不可のタグ',type:'tags'}];}
+function ruleFields(type){if(type==='turn_limit')return [{key:'value',label:'このTURNまでに勝てなければ敗北',type:'number',min:1,max:300,keep:true}];if(type==='reinforce')return [{key:'turn',label:'出現TURN',type:'number',min:1,max:300,keep:true},{key:'enemies',label:'援軍の敵',type:'ref',ref:'enemies',multi:true,ordered:true,keepEmptyArray:true}];return [{key:'allTags',label:'全員がすべて持つタグ',type:'tags'},{key:'anyTags',label:'全員がどれか1つ持つタグ',type:'tags'},{key:'noneTags',label:'持っていると出撃不可のタグ',type:'tags'}];}
 function missionExtFields(){return [
-  {key:'objective',label:'勝利条件',type:'object',emptyWhen:o=>!o.type,fields:[{key:'type',label:'種類',type:'select',empty:'殲滅（敵を全員倒す）',choices:{boss:C.objectives.boss,defense:C.objectives.defense,escort:C.objectives.escort,chain:C.objectives.chain},rerender:true},{key:'turns',label:'耐えるTURN数',type:'number',min:1,max:99,show:o=>o.type==='defense'},{key:'bossIndex',label:'ボスの番号（敵編成の1番目=0）',type:'number',min:0,max:7,show:o=>o.type==='boss'},{key:'escortUnitId',label:'護衛対象のユニット',type:'ref',ref:'units',show:o=>o.type==='escort'}]},
-  {key:'waves',label:'追加ウェーブ（連戦）: 1行が1ウェーブ、敵IDをカンマ区切り',type:'idlines',advanced:true},
-  {key:'rules',label:'戦闘ルール（TURN制限・援軍・出撃タグ制限）',type:'typedRules'},
+  {key:'objective',label:'勝敗条件',type:'objective',help:'勝ち方を1つ選び、必要なら「護衛」や「TURN制限」を足します。下の「勝敗条件の確認」に、ゲームで表示される文章が出ます。'},
+  {key:'waves',label:'追加ウェーブ（あとから出てくる敵）',type:'waves',ref:'enemies',help:'波ごとに「いつ出てくるか」と前衛・後衛を決めます。盤面の敵がいなくなったときは、まだ出ていない次の波がそのTURNの終わりに出ます。'},
+  {key:'rules',label:'戦闘ルール（TURN制限・決まったTURNの援軍・出撃できるユニットの条件）',type:'typedRules'},
   {key:'requires',label:'出撃条件',type:'object',fields:[{key:'missions',label:'先にクリアが必要な作戦',type:'ref',ref:'missions',multi:true},{key:'items',label:'持っている必要があるキーアイテム',type:'ref',ref:'keyItems',multi:true},{key:'minLevel',label:'出撃ユニットの必要レベル',type:'number',min:1,max:99}]},
-  {key:'story',label:'ストーリー（1行に「話者: セリフ」）',type:'object',fields:[{key:'before',label:'作戦前',type:'lines'},{key:'after',label:'勝利後',type:'lines'}]},
+  {key:'story',label:'ストーリー（1行に「話す人: セリフ」）',type:'object',fields:[{key:'before',label:'作戦前',type:'lines'},{key:'after',label:'勝利後',type:'lines'}]},
   {key:'stars',label:'星条件（最大3つ。なしなら「勝利／被撃破なし／10TURN以内」）',type:'list',max:3,addLabel:'星条件を追加',advanced:true,factory:()=>({type:'clear'}),fields:[{key:'type',label:'条件',type:'select',choices:C.starTypes,rerender:true},{key:'value',label:'値',type:'number',min:1,max:100,show:o=>['turns_le','hp_ge'].includes(o.type),keep:true}]},
   {key:'days',label:'出撃できる曜日（全部オフ=毎日）',type:'days',advanced:true},
-  {key:'enemyRows',label:'敵の隊列: 敵編成の順に front / back（例: front, front, back）',type:'rowlist',advanced:true},
-  {key:'terrainMods',label:'地形補正の上書き（空欄なら地形の標準値）',type:'object',advanced:true,fields:[{key:'meleeHitPt',label:'近接命中 pt',type:'number'},{key:'rangedHitPt',label:'射撃命中 pt',type:'number'},{key:'mobPct',label:'MOB %',type:'number'},{key:'banTags',label:'出撃禁止タグ',type:'tags'}]},
+  {key:'terrainMods',label:'この作戦だけ地形の効果を変える（空欄なら地形のまま）',type:'object',advanced:true,fields:[{key:'meleeHitPt',label:'近接の命中 pt（マイナス可）',type:'number',min:-100,max:100},{key:'rangedHitPt',label:'射撃の命中 pt（マイナス可）',type:'number',min:-100,max:100},{key:'mobPct',label:'MOB %（マイナス可）',type:'number',min:-90,max:200},{key:'banTags',label:'出撃できないタグ',type:'tags'}]},
   {key:'starReward',label:'星1つの初回ボーナス資金（空欄=報酬の20%）',type:'number',min:0,advanced:true},
   {key:'exp',label:'出撃経験値（空欄=RANKから自動）',type:'number',min:0,advanced:true}
 ];}
@@ -273,15 +294,122 @@ function starRating(u){let r=1;try{r=powerRatio(u);}catch(e){return {stars:0,rat
 const RANKS=['E','D','C','B','A','S','SS'];
 async function missionDifficulty(m,defs,squad,o={}){
   const mission=battleMission(m),ids=C.missionEnemyIds(mission),missing=ids.filter(id=>!defs[id]);if(!mission.enemies.length)return {ok:false,message:'敵編成が空です。'};if(missing.length)return {ok:false,message:'敵のデータが見つかりません: '+missing.join(', ')};
-  const enemyPower=[...mission.enemies,...(mission.waves||[]).flat(),...(mission.rules||[]).filter(r=>r.type==='reinforce').flatMap(r=>r.enemies)].reduce((s,id)=>s+powerRatio(defs[id]),0);
-  let allies=(squad||[]).filter(Boolean);let squadNote='読み込んだ味方の上位';if(!allies.length){allies=Array.from({length:Math.min(4,m.maxDeploy||4)},(_,i)=>({...STANDARD,id:'standard_'+i,name:'標準歩兵'}));squadNote='標準歩兵';}
-  allies=allies.slice(0,Math.max(1,Math.min(8,m.maxDeploy||8)));
+  const enemyPower=[...mission.enemies,...(mission.waves||[]).flatMap(w=>C.normalizeWave(w).enemies),...(mission.rules||[]).filter(r=>r.type==='reinforce').flatMap(r=>r.enemies)].reduce((s,id)=>s+powerRatio(defs[id]),0);
+  const sq=squadFor(m,squad),allies=sq.allies,squadNote=sq.note;
   const r=await B.simulate({allies,enemies:mission.enemies,mission,enemyDefs:defs,unitDefs:defs,trials:o.trials||40,seed:o.seed||11});
   const rankIndex=Math.max(0,Math.min(RANKS.length-1,Math.floor(Math.log2(Math.max(1,enemyPower))*1.4)));
   const reward=Math.max(300,Math.round(enemyPower*350/100)*100);
   const label=r.winRate>=.9?'かんたん':r.winRate>=.6?'ふつう':r.winRate>=.3?'むずかしい':'とてもむずかしい';
   return {ok:true,winRate:r.winRate,meanTurns:r.meanTurns,label,rank:RANKS[rankIndex],reward,enemyPower,squadNote:`${squadNote}${allies.length}体で${r.trials}回計算`,text:`推定勝率 ${Math.round(r.winRate*100)}%（${label}）／ 平均 ${r.meanTurns.toFixed(1)}TURN ／ 敵の強さ合計 標準歩兵の約${enemyPower.toFixed(1)}体分 ／ おすすめ: RANK ${RANKS[rankIndex]}・報酬 ${reward.toLocaleString()}`};
 }
+// ---- 1.5.0: shared inputs for missions ----
+function selectOf(list,value,label,placeholder='（選んでください）'){const s=el('select');s.setAttribute('aria-label',label);const opts2=[...(placeholder===null?[]:[['',placeholder]]),...list];if(value&&!list.some(([v])=>v===value))opts2.push([value,value+'（未読込）']);for(const [v,t] of opts2){const o=el('option',undefined,t);o.value=v;s.append(o);}s.value=value||(placeholder===null&&list[0]?list[0][0]:'');return s;}
+// "名前（id）" labels from refsFrom → {id: 名前}
+function labelNames(list){const out={};for(const [v,t] of list||[])out[v]=String(t).replace(/（[^（）]*）$/,'')||v;return out;}
+// Full-width digits / minus signs (Japanese IME) become plain ASCII.
+function normNum(v){return String(v??'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[－−ー‐―]/g,'-').replace(/[．。]/g,'.').replace(/[,，\s]/g,'');}
+function allowsNegative(i){const m=(i.getAttribute?i.getAttribute('min'):null)??i.min;return m===null||m===undefined||m===''||Number(m)<0;}
+// Phone number keyboards often have no "-": fields that accept negatives become decimal text inputs with a ± button.
+function numberInput(i,onSet,parent){if(!i||i._proNum)return i;i._proNum=true;if(!allowsNegative(i))return i;
+  i.type='text';i.setAttribute('inputmode','decimal');i.setAttribute('data-pro-num','1');i.setAttribute('autocomplete','off');
+  const b=btn('±',()=>{let v=normNum(i.value);v=v.startsWith('-')?v.slice(1):'-'+v;i.value=v;if(onSet)onSet();else{for(const type of ['input','change']){if(typeof Event==='function'&&i.dispatchEvent)i.dispatchEvent(new Event(type,{bubbles:true}));else if(i['on'+type])i['on'+type]();}}},'pro-sign');
+  b.setAttribute('aria-label','プラスとマイナスを切り替え');b.title='プラス／マイナスを切り替え';
+  const p=i.parentNode;if(p&&typeof p.insertBefore==='function'){const w=el('span','pro-num');p.insertBefore(w,i);w.append(i,b);}else if(parent)parent.append(b);
+  return i;}
+const WIN_TYPES={annihilate:'殲滅（敵を全部倒す）',boss:'ボス撃破（決めた敵を倒す）',defense:'防衛（決めたTURNまで耐える）'};
+const WAVE_WHEN={cleared:'前の敵がいなくなったら',turn:'決まったTURNになったら',remaining:'敵が残り少なくなったら',bossHp:'ボスのHPが減ったら'};
+const WAVE_DEFAULT={turn:3,remaining:2,bossHp:50};
+const WAVE_VALUE={turn:{label:'何TURN目に出る？（1～300）',min:1,max:300,help:'そのTURNの始めに出てきます。'},remaining:{label:'敵が残り何体以下で出る？（0～8）',min:0,max:8,help:'0なら、盤面の敵がいなくなったときに出ます。'},bossHp:{label:'ボスのHPが何%以下で出る？（1～99）',min:1,max:99,help:'勝ち方が「ボス撃破」のときに使えます。'}};
+// Old form (plain ID array) when nothing new is used, so packs keep their older schema.
+function compactWave(w){const enemies=[...(w.enemies||[])],rws=enemies.map((_,i)=>(w.rows||[])[i]==='back'?'back':'front'),back=rws.some(r=>r==='back'),when=w.when||'cleared';
+  if(when==='cleared'&&!back&&!w.label)return enemies;const o={enemies,when};if(back)o.rows=rws;if(when!=='cleared')o.value=w.value??WAVE_DEFAULT[when];if(w.label)o.label=w.label;return o;}
+// Front / back lanes. ids and rws are edited in place; onChange is called after each edit.
+function formationBox(parent,ids,rws,list,onChange,o={}){const box=el('div','pro-formation');parent.append(box);const max=o.max||8;
+  const sync=()=>{rws.length=ids.length;for(let i=0;i<ids.length;i++)rws[i]=rws[i]==='back'?'back':'front';};
+  const nameOf=id=>{if(!list)return id;const hit=list.find(([v])=>v===id);return hit?String(hit[1]).replace(/（[^（）]*）$/,''):id+'（未読込）';};
+  const commit=()=>{sync();onChange();draw();};
+  function draw(){sync();box.replaceChildren();
+    for(const [row,label,hint] of [['front','前衛','先に狙われます。近接攻撃が届きます。'],['back','後衛','前衛がいる間、近接攻撃は届きません。']]){
+      const lane=el('div','pro-lane pro-lane-'+row),h=el('div','pro-lane-head');h.append(el('b',undefined,label),el('small','pro-help',hint));lane.append(h);let count=0;
+      ids.forEach((id,i)=>{if(rws[i]!==row)return;count++;const chip=el('div','pro-chip');chip.append(el('span','pro-chip-name',`${i+1}. ${nameOf(id)}`));
+        const sw=btn(row==='front'?'後衛へ':'前衛へ',()=>{rws[i]=row==='front'?'back':'front';commit();});sw.setAttribute('aria-label',`${nameOf(id)}を${row==='front'?'後衛':'前衛'}へ移す`);
+        const up=btn('◀',()=>{[ids[i-1],ids[i]]=[ids[i],ids[i-1]];[rws[i-1],rws[i]]=[rws[i],rws[i-1]];commit();});up.disabled=i===0;up.setAttribute('aria-label','順番を前へ');
+        const rm=btn('×',()=>{ids.splice(i,1);rws.splice(i,1);commit();},'flow-btn danger');rm.setAttribute('aria-label',nameOf(id)+'を外す');
+        chip.append(sw,up,rm);lane.append(chip);});
+      if(!count)lane.append(el('small','pro-help','（なし）'));box.append(lane);}
+    const add=el('div','pro-row');let pick;if(list)pick=selectOf(list,'','追加する敵','追加する敵を選ぶ…');else{pick=el('input');pick.type='text';pick.placeholder='敵のユニットID';}
+    const addTo=row=>{const v=String(pick.value||'').trim();if(!v||ids.length>=max)return;ids.push(v);rws.push(row);commit();};
+    const bf=btn('＋ 前衛に追加',()=>addTo('front')),bb=btn('＋ 後衛に追加',()=>addTo('back'));bf.disabled=bb.disabled=ids.length>=max;add.append(pick,bf,bb);
+    box.append(add,el('small','pro-help',`${ids.length}/${max}体。「◀」で順番、「前衛へ」「後衛へ」で隊列を変えます。`));if(!list)box.append(el('small','pro-help','※ユニットのデータを読み込むとリストから選べます。'));}
+  draw();return {redraw:draw};}
+function turnLimitOf(obj){return (obj.rules||[]).find(r=>r&&typeof r==='object'&&r.type==='turn_limit')?.value||0;}
+function setTurnLimit(obj,v){const rules=Array.isArray(obj.rules)?obj.rules:(obj.rules=[]);const i=rules.findIndex(r=>r&&typeof r==='object'&&r.type==='turn_limit');if(v>=1){if(i>=0)rules[i].value=v;else rules.push({type:'turn_limit',value:v});}else if(i>=0)rules.splice(i,1);}
+function bossCandidates(obj,names){const out=[];(obj.enemies||[]).forEach((id,i)=>out.push([`0:${i}`,`最初の敵 ${i+1}番目: ${names[id]||id}`]));(obj.waves||[]).forEach((w,wi)=>C.normalizeWave(w).enemies.forEach((id,i)=>out.push([`${wi+1}:${i}`,`第${wi+2}波 ${i+1}番目: ${names[id]||id}`])));return out;}
+// Win condition (one) + add-on conditions (escort, turn limit) + the sentences the game shows.
+function objectiveEditor(parent,obj,f,ctx){
+  const box=el('fieldset','pro-group pro-objective');box.append(el('legend',undefined,f.label||'勝敗条件'));parent.append(box);if(f.help)box.append(el('small','pro-help',f.help));
+  const cur=()=>obj.objective||{},typeOf=ob=>ob.type==='boss'||ob.type==='defense'?ob.type:'annihilate',type=typeOf(cur());
+  const g=el('div','pro-fields');box.append(g);const field=(label,input,text)=>{const l=el('label','pro-field');l.append(el('span','pro-label',label),input);if(text)l.append(el('small','pro-help',text));g.append(l);return l;};
+  const names=()=>labelNames(ctx.refList('units')||ctx.refList('enemies'));
+  function write(patch){const ob=cur(),t=patch.type||typeOf(ob),esc=Object.hasOwn(patch,'escortUnitId')?patch.escortUnitId:ob.escortUnitId;let next=null;
+    if(t==='boss'){next={type:'boss',bossIndex:patch.bossIndex??(ob.type==='boss'?ob.bossIndex||0:0)};const bw=patch.bossWave??(ob.type==='boss'?ob.bossWave||0:0);if(bw)next.bossWave=bw;}
+    else if(t==='defense')next={type:'defense',turns:patch.turns??(ob.type==='defense'?ob.turns||10:10)};
+    else if(esc)next={type:'escort'};else if(ob.type==='chain'&&(obj.waves||[]).length)next={type:'chain'};
+    if(esc)next.escortUnitId=esc;if(next)obj.objective=next;else delete obj.objective;ctx.changed();}
+  const st=selectOf(Object.entries(WIN_TYPES),type,'勝ち方',null);st.onchange=()=>{write({type:st.value});ctx.redraw();};field('勝ち方',st);
+  if(type==='defense'){const i=el('input');i.type='number';i.min=1;i.max=300;i.step=1;i.value=cur().turns??10;i.oninput=()=>{const x=Math.round(Number(normNum(i.value)));if(x>=1&&x<=300)write({turns:x});};field('耐えるTURN数（1～300）',i,'このTURNの終わりまで耐えたら勝利。敵を全滅させても勝利です。');}
+  if(type==='boss'){const sb=el('select');sb.setAttribute('aria-label','倒すボス');const fill=()=>{const ob=cur(),v=`${ob.bossWave||0}:${ob.bossIndex||0}`,list=bossCandidates(obj,names());sb.replaceChildren();if(!list.some(([x])=>x===v))list.push([v,'⚠ その位置に敵がいません（選び直してください）']);for(const [x,t] of list){const o=el('option',undefined,t);o.value=x;sb.append(o);}sb.value=v;};fill();sb.onfocus=fill;ctx.lives.push(fill);
+    sb.onchange=()=>{const [w,i]=sb.value.split(':').map(Number);write({bossWave:w,bossIndex:i});};field('倒すボス',sb,'最初の敵か、追加ウェーブの敵から選びます。あとの波にいるボスは、出てくるまで倒せません。');}
+  const units=ctx.refList('units');let se;if(units){se=selectOf(units,cur().escortUnitId||'','護衛するユニット','なし（護衛しない）');se.onchange=()=>write({escortUnitId:se.value||undefined});}else{se=el('input');se.type='text';se.placeholder='ユニットID（空欄=なし）';se.value=cur().escortUnitId||'';se.oninput=()=>write({escortUnitId:se.value.trim()||undefined});}
+  field('追加条件: 護衛するユニット',se,'このユニットが味方の後衛に加わります。倒されたら敗北です。');
+  const li=el('input');li.type='number';li.min=1;li.max=300;li.step=1;li.placeholder='なし';li.value=turnLimitOf(obj)||'';li.oninput=()=>{const v=normNum(li.value);const x=v===''?0:Math.round(Number(v));if(!Number.isFinite(x)||x>300)return;setTurnLimit(obj,x);ctx.changed();};li.onchange=()=>ctx.redraw();
+  field('追加条件: TURN制限（空欄=なし、1～300）',li,'このTURNまでに勝てなければ敗北になります。');
+  const conf=el('div','pro-conditions');box.append(el('b','pro-conditions-title','勝敗条件の確認（ゲームでの表示）'),conf);
+  const show=()=>{let lines;try{const m={...obj,...C.missionExt(obj)};const c=C.missionConditions(m,names());lines=[c.win,c.lose,c.draw];}catch(e){lines=['⚠ '+(friendlyError(e.message).message||e.message)+'（'+e.message+'）'];}conf.replaceChildren(...lines.map(x=>el('div',undefined,x)));};show();ctx.lives.push(show);
+}
+// ---- terrains ----
+function terrainOptions(packList,current){const names=new Set((packList||[]).map(t=>t.name)),out=[];for(const t of packList||[])out.push([t.name,`★ ${t.name}（${C.terrainEffectText(t)}）`]);for(const [n,mods] of Object.entries(C.TERRAINS))if(!names.has(n))out.push([n,`${n}（${C.terrainEffectText(mods)}）`]);if(current&&!out.some(([v])=>v===current))out.push([current,`${current}（未登録・効果なし）`]);return out;}
+function terrainEffectOf(name,packList){const n=name||'標準',t=(packList||[]).find(x=>x.name===n)||C.TERRAINS[n];return t?C.terrainEffectText(t)+(t.desc?`。${t.desc}`:''):'未登録の地形です（効果なし）。「地形を追加・編集する」で作れます。';}
+function uniqueTerrainName(list,base){if(!list.some(t=>t.name===base))return base;let i=2;while(list.some(t=>t.name===base+i))i++;return base+i;}
+const TERRAIN_FIELDS=[{key:'name',label:'名前（作戦で選ぶときの名前）',type:'text',keep:true},{key:'desc',label:'説明（なくてもOK）',type:'text'},{key:'meleeHitPt',label:'近接の命中 pt（-100～100）',type:'number',min:-100,max:100},{key:'rangedHitPt',label:'射撃の命中 pt（-100～100）',type:'number',min:-100,max:100},{key:'mobPct',label:'MOB %（-90～200）',type:'number',min:-90,max:200},{key:'banTags',label:'出撃できないタグ（例: 生身）',type:'tags'}];
+// Pack terrains: add / edit / duplicate / delete, or copy a built-in one. o.get() returns the editable array.
+function terrainEditor(container,o){const box=el('section','pro-terrains');container.append(box);
+  const check=err=>{try{C.terrainList(o.get());err.textContent='';err.className='pro-help';}catch(e){err.textContent='⚠ '+e.message;err.className='pro-issue bad';}};
+  function draw(){box.replaceChildren();const list=o.get();
+    box.append(el('p','pro-help','ここで作った地形は、このパックの作戦で選べます。組み込みと同じ名前にすると、このパックの作戦ではこちらの効果になります。命中・MOBはマイナスも入れられます（「±」で切り替え）。'));
+    const err=el('div','pro-help');box.append(err);check(err);
+    if(!list.length)box.append(el('small','pro-help','このパックの地形はまだありません。'));
+    list.forEach((t,i)=>{const card=el('div','pro-list-item'),head=el('div','pro-list-head'),title=el('b',undefined,''),fx=el('div','pro-desc');const re=()=>{title.textContent='★ '+(t.name||'（名前なし）');fx.textContent='効果: '+C.terrainEffectText(t);};re();
+      head.append(title,btn('複製',()=>{if(list.length>=50)return;list.splice(i+1,0,{...C.clone(t),name:uniqueTerrainName(list,t.name||'地形')});o.onChange();draw();}),btn('削除',()=>{if(root.confirm&&!root.confirm(`地形「${t.name}」を削除しますか？`))return;list.splice(i,1);o.onChange();draw();},'flow-btn danger'));
+      card.append(head,fx);form(card,t,TERRAIN_FIELDS,()=>{re();check(err);o.onChange();});box.append(card);});
+    const row=el('div','pro-row'),add=btn('＋ 新しい地形',()=>{if(list.length>=50)return;list.push({name:uniqueTerrainName(list,'新しい地形'),desc:''});o.onChange();draw();});add.disabled=list.length>=50;
+    const s=selectOf(Object.entries(C.TERRAINS).map(([n,m])=>[n,`${n}（${C.terrainEffectText(m)}）`]),'','組み込みの地形をコピー','組み込みの地形をコピーして編集…');s.onchange=()=>{if(!s.value||list.length>=50)return;list.push({name:uniqueTerrainName(list,s.value),desc:'',...C.clone(C.TERRAINS[s.value])});o.onChange();draw();};
+    row.append(add,s);box.append(row);}
+  draw();return {redraw:draw};}
+// ---- one test battle with a readable log ----
+function squadFor(m,squad){let allies=(squad||[]).filter(Boolean),note='読み込んだ味方の上位';if(!allies.length){allies=Array.from({length:Math.min(4,m.maxDeploy||4)},(_,i)=>({...STANDARD,id:'standard_'+i,name:'標準歩兵'}));note='標準歩兵';}return {allies:allies.slice(0,Math.max(1,Math.min(8,m.maxDeploy||8))),note};}
+const unhtml=h=>String(h).replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&');
+function outcomeReason(ctx,m,r){const ob=m.objective||{},escort=ctx.allies.find(u=>u.escort);
+  if(r.outcome==='win'){if(ob.type==='boss'){const b=C.bossOf(m),u=ctx.enemies.find(e=>e.key===b?.id&&!e.alive);return `ボス「${u?.name||b?.id||'?'}」を倒した`;}if(ob.type==='defense')return ctx.enemies.some(e=>e.alive)?`${ob.turns||10}TURN耐えきった`:'敵を全滅させた';return '敵をすべて倒した';}
+  if(r.outcome==='lose'){if(escort&&!escort.alive)return `護衛対象「${escort.name}」が倒された`;if(!ctx.allies.some(u=>u.alive&&!u.escort))return '味方が全滅した';if(r.limit)return `${r.limit}TURNを過ぎた（TURN制限）`;return '敗北条件を満たした';}
+  return `${r.turns}TURNで決着がつかなかった`;}
+async function testBattle(m,defs,squad,o={}){
+  const mission=battleMission(m),ids=C.missionEnemyIds(mission),missing=ids.filter(id=>!defs[id]);if(!mission.enemies.length)return {ok:false,message:'敵編成が空です。'};if(missing.length)return {ok:false,message:'敵のデータが見つかりません: '+missing.join(', ')};
+  const esc=mission.objective?.escortUnitId;if(esc&&!defs[esc])return {ok:false,message:'護衛対象のユニットが見つかりません: '+esc};
+  const {allies,note}=squadFor(m,squad),lines=[],rng=B.mulberry32(o.seed??(Date.now()%1000000));
+  const ctx=B.buildBattle({allies,enemies:mission.enemies,mission,enemyDefs:defs,unitDefs:defs},rng);let lastTurn=-1;
+  ctx.hooks.log=h=>{if(ctx.turn!==lastTurn){lastTurn=ctx.turn;if(ctx.turn)lines.push(`── ${ctx.turn}TURN ──`);}lines.push(unhtml(h));};
+  const r=await B.runBattle(ctx,{maxTurns:o.maxTurns}),reason=outcomeReason(ctx,mission,r),label={win:'勝利',lose:'敗北',draw:'引き分け'}[r.outcome];
+  const log=lines.length>400?[...lines.slice(0,300),`…（${lines.length-350}行省略）…`,...lines.slice(-50)]:lines;
+  let cond=[];try{const c=C.missionConditions(mission,Object.fromEntries(Object.entries(defs).map(([k,d])=>[k,d.name||k])));cond=[c.win,c.lose,c.draw];}catch(e){}
+  const head=[`結果: ${label}（${r.turns}TURN）— ${reason}`,`味方: ${note}（${allies.map(a=>a.name).join('・')}）`,...cond];
+  return {ok:true,outcome:r.outcome,turns:r.turns,reason,log,text:[...head,'',...log].join('\n')};}
+// Upgrade number inputs on maker pages (also ones built later from HTML strings) and normalize full-width input.
+function upgradeNumbers(node){if(node&&node.querySelectorAll)for(const i of node.querySelectorAll('input[type="number"]'))numberInput(i);}
+if(typeof document!=='undefined'&&typeof document.addEventListener==='function'&&typeof MutationObserver!=='undefined'){
+  document.addEventListener('input',e=>{const t=e.target;if(t&&t._proNum&&t.type==='text'){const v=normNum(t.value);if(v!==t.value)t.value=v;}},true);
+  const start=()=>{upgradeNumbers(document.body);new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes){if(n.nodeType!==1)continue;if(n.matches&&n.matches('input[type="number"]'))numberInput(n);else upgradeNumbers(n);}}).observe(document.body,{childList:true,subtree:true});};
+  if(document.body)start();else document.addEventListener('DOMContentLoaded',start);}
 // ---- friendly validation ----
 const FRIENDLY=[
   [/IDは英数字|IDのIDは英数字|ID・名前が必要|IDが空|ID重複|IDが重複/,'IDに問題があります（空欄・重複・使えない文字）。','「IDを自動修正」ボタンを押すと、自動で付け直します。'],
@@ -293,6 +421,10 @@ const FRIENDLY=[
   [/ドロップアイテムが不足|ドロップアイテム「|アイテムJS未読込/,'ドロップに設定したアイテムが見つかりません。','同じパックにアイテムを作るか、アイテムJSを読み込んでください。'],
   [/護衛対象/,'護衛対象のユニットが見つかりません。','勝利条件の「護衛対象」をリストから選び直してください。'],
   [/効果は1～8個|効果は8個まで/,'アイテムの効果がありません（または多すぎます）。','効果を1～8個にしてください。装備品・キーアイテムなら効果なしでもOKです。'],
+  [/ボスの出る波|ボス番号/,'ボスに指定した敵が見つかりません。','「勝敗条件」の「倒すボス」をリストから選び直してください。'],
+  [/出現条件|出現TURN|残り体数|ボスHP%/,'追加ウェーブの「いつ出てくる？」の設定が正しくありません。','波の出現タイミングと数値（TURNは1～300、残り体数は0～8、ボスHPは1～99%）を確認してください。'],
+  [/波の敵がいません|波が空です/,'敵のいない追加ウェーブがあります。','その波に敵を追加するか、波を削除してください。'],
+  [/地形/,'地形の設定に問題があります。','名前の重複や、数値の範囲（命中は-100～100、MOBは-90～200%）を確認してください。'],
   [/数値が必要|で指定してください|以上にしてください/,'数値の範囲が正しくありません。','エラーに書かれた範囲の数値に直してください。'],
   [/敵編成が空|敵編成を1～8体/,'敵が1体もいません。','「敵編成」で敵を1～8体追加してください。'],
   [/追加ウェーブ/,'連戦なのに追加の敵（ウェーブ）がありません。','勝利条件を変えるか、追加ウェーブを設定してください。'],
@@ -334,7 +466,7 @@ function fixIds(pack){
     for(const r of rows){if(!r)continue;if(C.safeId(r.id)&&!seen.has(r.id)){seen.add(r.id);continue;}const old=r.id,id=autoId(prefix[kind],[...seen,...valid]);if(old!==undefined&&old!==''&&!seen.has(old))maps[kind][old]=id;r.id=id;seen.add(id);renamed.push({kind,from:old||'(空欄)',to:id,name:r.name});}}
   const mu=x=>maps.units[x]||x,mm=x=>maps.missions[x]||x,mi=x=>maps.items[x]||x,mr=x=>maps.research[x]||x,remapKeys=(o,f)=>o?Object.fromEntries(Object.entries(o).map(([k,v])=>[f(k),v])):o;
   for(const u of pack.units||[]){if(u.recruit?.missionId)u.recruit.missionId=mm(u.recruit.missionId);const sk=new Set();for(const s of u.skills||[]){if(!C.safeId(s.id)||sk.has(s.id)){const id=autoId('skill',[...sk]);renamed.push({kind:'skills',from:s.id||'(空欄)',to:id,name:s.name});s.id=id;}sk.add(s.id);}const nodes=new Set();for(const n of u.skillTree||[]){if(!C.safeId(n.id)||nodes.has(n.id))n.id=autoId('node',[...nodes]);nodes.add(n.id);}}
-  for(const m of pack.missions||[]){if(m.enemies)m.enemies=m.enemies.map(mu);if(m.waves)m.waves=m.waves.map(w=>w.map(mu));for(const r of m.rules||[])if(r&&r.type==='reinforce')r.enemies=(r.enemies||[]).map(mu);if(m.objective?.escortUnitId)m.objective.escortUnitId=mu(m.objective.escortUnitId);if(m.requires){if(m.requires.missions)m.requires.missions=m.requires.missions.map(mm);if(m.requires.items)m.requires.items=m.requires.items.map(mi);}for(const d of m.drops||[])d.itemId=mi(d.itemId);}
+  for(const m of pack.missions||[]){if(m.enemies)m.enemies=m.enemies.map(mu);if(m.waves)m.waves=m.waves.map(w=>Array.isArray(w)?w.map(mu):{...w,enemies:(w.enemies||[]).map(mu)});for(const r of m.rules||[])if(r&&r.type==='reinforce')r.enemies=(r.enemies||[]).map(mu);if(m.objective?.escortUnitId)m.objective.escortUnitId=mu(m.objective.escortUnitId);if(m.requires){if(m.requires.missions)m.requires.missions=m.requires.missions.map(mm);if(m.requires.items)m.requires.items=m.requires.items.map(mi);}for(const d of m.drops||[])d.itemId=mi(d.itemId);}
   for(const i of pack.items||[]){for(const e of i.effects||(i.effect?[i.effect]:[])){if(e?.type==='recruit_unit')e.unitId=mu(e.unitId);if(e?.type==='loot_box')for(const r of e.table||[])r.itemId=mi(r.itemId);}if(i.shop){if(i.shop.requiresResearch)i.shop.requiresResearch=mr(i.shop.requiresResearch);if(i.shop.requiresMission)i.shop.requiresMission=mm(i.shop.requiresMission);}}
   for(const r of pack.research||[]){r.requires=(r.requires||[]).map(mr);if(r.cost?.items)r.cost.items=remapKeys(r.cost.items,mi);if(r.unlock){r.unlock.units=(r.unlock.units||[]).map(mu);r.unlock.items=(r.unlock.items||[]).map(mi);if(r.unlock.grantItems)r.unlock.grantItems=remapKeys(r.unlock.grantItems,mi);}}
   return renamed;
@@ -344,5 +476,5 @@ function refsFrom(src){const label=x=>`${x.name||x.id}（${x.id}）`;return (kin
   switch(kind){case 'units':return units.map(u=>[u.id,label(u)]);case 'enemies':return units.filter(u=>u.deploy?.enemy).map(u=>[u.id,label(u)]);case 'players':return units.filter(u=>u.deploy?.player!==false).map(u=>[u.id,label(u)]);case 'lockedUnits':{const l=units.filter(u=>u.recruit?.locked);return (l.length?l:units.filter(u=>u.deploy?.player!==false)).map(u=>[u.id,label(u)]);}
   case 'missions':return missions.map(m=>[m.id,label(m)]);case 'items':return items.map(i=>[i.id,label(i)]);case 'keyItems':{const k=items.filter(i=>i.key);return (k.length?k:items).map(i=>[i.id,label(i)]);}case 'pricedItems':{const p=items.filter(i=>i.price);return (p.length?p:items).map(i=>[i.id,label(i)]);}
   case 'research':return research.map(r=>[r.id,label(r)]);case 'nodes':{const nodes=src.nodes?.()||[];return nodes.filter(n=>n.id!==obj?.id).map(n=>[n.id,`${n.skill?.name||n.id}（${n.id}）`]);}}return null;};}
-root.PROEditor=Object.freeze({version:'1.4.0',weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
+root.PROEditor=Object.freeze({version:'1.5.0',numberInput,normNum,selectOf,labelNames,formationBox,compactWave,objectiveEditor,terrainOptions,terrainEffectOf,terrainEditor,TERRAIN_FIELDS,testBattle,squadFor,WIN_TYPES,WAVE_WHEN,weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
 })(window);

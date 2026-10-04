@@ -1,4 +1,4 @@
-/* PRO battle engine 1.2.0 — shared by the game and the makers' simulator. Plain script, file:// compatible.
+/* PRO battle engine 1.3.0 — shared by the game and the makers' simulator. Plain script, file:// compatible.
  * Pure combat rules: no DOM access. Presentation happens through ctx.hooks; randomness through ctx.rng. */
 (function(root){'use strict';
 const C=root.PROCore;
@@ -232,9 +232,9 @@ async function attack(ctx,attacker){
 }
 
 // ---- battle flow ----
-function spawnEnemies(ctx,ids,label){
-  const made=[];for(const key of ids){const def=ctx.enemyDefs[key];if(!def)continue;const i=ctx.spawnCount++;const u=ctx.hooks.makeEnemy?ctx.hooks.makeEnemy(key,i):combatant(def,'enemy',`e_${key}_${i}`,{id:`${key}_${i}`,key});prepare(u);u.id=`${key}_${i}`;u.key=key;ctx.enemies.push(u);made.push(u);}
-  if(made.length){ctx.hooks.log(`<span class="skill">[${esc(label)}]</span> ${esc(made.map(u=>u.name).join(' / '))} が出現`,'sys');ctx.hooks.spawned(made);}
+function spawnEnemies(ctx,ids,label,rows){
+  const made=[];ids.forEach((key,n)=>{const def=ctx.enemyDefs[key];if(!def)return;const i=ctx.spawnCount++;const u=ctx.hooks.makeEnemy?ctx.hooks.makeEnemy(key,i):combatant(def,'enemy',`e_${key}_${i}`,{id:`${key}_${i}`,key});prepare(u);u.id=`${key}_${i}`;u.key=key;if(rows&&rows[n])u.row=rows[n];ctx.enemies.push(u);made.push(u);});
+  if(made.length){ctx.hooks.log(`<span class="skill">[${esc(label)}]</span> ${esc(made.map(u=>u.name+(u.row==='back'?'〔後衛〕':'')).join(' / '))} が出現`,'sys');ctx.hooks.spawned(made);}
   return made;
 }
 function tickStatuses(ctx){
@@ -244,17 +244,39 @@ function burnTick(ctx){
   for(const u of [...ctx.allies,...ctx.enemies]){if(!u.alive||!u.status?.burn)continue;const dmg=u.status.burn.dmg;u.currentHp-=dmg;statFor(ctx,u).damageTaken+=dmg;ctx.hooks.log(`<span class="skill">[炎上]</span> ${esc(u.name)} に ${dmg} DMG`,'hit');if(u.currentHp<=0)handleDeath(ctx,u,null);}
 }
 function battleRules(m){const rules=(m?.rules||[]).filter(r=>r&&typeof r==='object');return {limit:rules.find(r=>r.type==='turn_limit')?.value||0,reinforce:rules.filter(r=>r.type==='reinforce')};}
+const DRAW_TURNS=300;
+// Battle plan for a mission: waves with triggers, the boss (possibly inside a wave) and the escort add-on. (1.12.0)
+function battlePlan(ctx){
+  const m=ctx.mission||{},ob=m.objective||{type:'annihilate'},type=ob.type==='escort'||ob.type==='chain'?'annihilate':ob.type;
+  const waves=(m.waves||[]).map(w=>({...C.normalizeWave(w),spawned:false,units:[]}));
+  return {type,ob,waves,bossWave:type==='boss'?(ob.bossWave||0):-1,bossIndex:ob.bossIndex||0,boss:type==='boss'&&!(ob.bossWave)?ctx.enemies[ob.bossIndex||0]||null:null};
+}
+function spawnWave(ctx,plan,i){const w=plan.waves[i];if(!w||w.spawned)return;w.spawned=true;w.units=spawnEnemies(ctx,w.enemies,`第${i+2}波${w.label?'「'+w.label+'」':''}`,w.rows);if(plan.bossWave===i+1)plan.boss=w.units[plan.bossIndex]||null;}
+function checkWaves(ctx,plan,phase){
+  const left=ctx.enemies.filter(u=>u.alive).length;
+  plan.waves.forEach((w,i)=>{if(w.spawned)return;
+    if(w.when==='turn'&&phase==='turn'&&ctx.turn>=w.value)spawnWave(ctx,plan,i);
+    else if(w.when==='remaining'&&phase!=='turn'&&left<=w.value&&left>0)spawnWave(ctx,plan,i);
+    else if(w.when==='bossHp'&&plan.boss&&plan.boss.alive&&plan.boss.currentHp/plan.boss.maxHp*100<=w.value)spawnWave(ctx,plan,i);});
+  // At the end of a turn, an empty field brings in the next unspawned wave, whatever its trigger (same timing as the classic 連戦).
+  if(phase==='end'&&!ctx.enemies.some(alive)){const next=plan.waves.findIndex(w=>!w.spawned);if(next>=0)spawnWave(ctx,plan,next);}
+}
+function objectiveStatus(ctx){const plan=ctx.plan;if(!plan)return null;const m=ctx.mission||{},{limit}=battleRules(m);
+  const total=plan.waves.length+1,spawned=1+plan.waves.filter(w=>w.spawned).length,next=plan.waves.find(w=>!w.spawned);
+  const escort=ctx.allies.find(u=>u.escort);
+  return {wave:spawned,totalWaves:total,boss:plan.type==='boss'?(plan.boss?{name:plan.boss.name,hpPct:Math.max(0,Math.round(plan.boss.currentHp/plan.boss.maxHp*100)),alive:plan.boss.alive}:{pending:true}):null,
+    defenseLeft:plan.type==='defense'?Math.max(0,(plan.ob.turns||10)-(ctx.turn||0)):null,escort:escort?{name:escort.name,hpPct:Math.max(0,Math.round(escort.currentHp/escort.maxHp*100)),alive:escort.alive}:null,
+    nextWave:next?C.waveWhenText(next):null,turnsLeft:limit?Math.max(0,limit-(ctx.turn||0)):null,enemiesLeft:ctx.enemies.filter(alive).length};}
 async function runBattle(ctx,opts={}){
-  const H=ctx.hooks,m=ctx.mission||{},ob=m.objective||{type:'annihilate'},{limit,reinforce}=battleRules(m);
-  const waves=[...(m.waves||[])];let waveIndex=0;
-  const boss=ob.type==='boss'?ctx.enemies[ob.bossIndex||0]:null;
-  const maxTurns=limit||(ob.type==='defense'?Math.max(opts.maxTurns||30,ob.turns||10):(opts.maxTurns||30));
+  const H=ctx.hooks,m=ctx.mission||{},{limit,reinforce}=battleRules(m);
+  const plan=battlePlan(ctx);ctx.plan=plan;
+  const maxTurns=limit||(plan.type==='defense'?Math.max(opts.maxTurns||DRAW_TURNS,plan.ob.turns||10):(opts.maxTurns||DRAW_TURNS));
   const fighters=()=>ctx.allies.filter(alive);
   const evaluate=()=>{
     if(!fighters().length)return 'lose';
     if(ctx.allies.some(u=>u.escort&&!u.alive))return 'lose';
-    if(boss&&!boss.alive)return 'win';
-    if(!ctx.enemies.some(alive)&&waveIndex>=waves.length&&!boss)return 'win';
+    if(plan.type==='boss'&&plan.boss&&!plan.boss.alive)return 'win';
+    if(plan.type!=='boss'&&!ctx.enemies.some(alive)&&plan.waves.every(w=>w.spawned))return 'win';
     return null;
   };
   triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'battle_start');await processPending(ctx);
@@ -262,19 +284,22 @@ async function runBattle(ctx,opts={}){
   while(!outcome&&turn<=maxTurns){
     ctx.turn=turn;await H.turnStart(turn);
     for(const r of reinforce)if(r.turn===turn)spawnEnemies(ctx,r.enemies,'援軍');
+    checkWaves(ctx,plan,'turn');
     burnTick(ctx);outcome=evaluate();if(outcome)break;
     triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_start');await processPending(ctx);H.render();
     const order=[...ctx.allies,...ctx.enemies].filter(alive).map(u=>({u,init:eff(ctx,u,'mob')+rand(ctx,0,100)})).sort((a,b)=>b.init-a.init).map(x=>x.u);
     for(const a of order){
       if(!a.alive)continue;if(!oppOf(ctx,a).some(alive))break;
       await H.gate();if(ctx.aborted)break;await attack(ctx,a);
-      outcome=evaluate();if(outcome||!ctx.allies.some(alive)||!ctx.enemies.some(alive))break;await H.wait(.35);
+      outcome=evaluate();if(outcome)break;
+      checkWaves(ctx,plan,'action');outcome=evaluate();
+      if(outcome||!ctx.allies.some(alive)||!ctx.enemies.some(alive))break;await H.wait(.35);
     }
     if(ctx.aborted)break;
     triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_end');await processPending(ctx);tickStatuses(ctx);
     outcome=outcome||evaluate();
-    if(!outcome&&!ctx.enemies.some(alive)&&waveIndex<waves.length){spawnEnemies(ctx,waves[waveIndex],`第${waveIndex+2}波`);waveIndex++;}
-    if(!outcome&&ob.type==='defense'&&turn>=(ob.turns||10)&&fighters().length)outcome='win';
+    if(!outcome){checkWaves(ctx,plan,'end');outcome=evaluate();}
+    if(!outcome&&plan.type==='defense'&&turn>=(plan.ob.turns||10)&&fighters().length)outcome='win';
     H.render();turn++;if(!outcome)await H.wait(.4);
   }
   const turns=Math.max(1,outcome?ctx.turn||1:turn-1);
@@ -288,7 +313,7 @@ function buildBattle(o,rng){
   const allies=o.allies.map((d,i)=>combatant(d,'ally',`a_${d.id}_${i}`,{row:o.rows?.[i]||d.row||'front'}));
   const m=o.mission||null,enemyIds=m?m.enemies.slice(0,MAX_SLOTS):o.enemies;
   const enemies=enemyIds.map((k,i)=>{const d=o.enemyDefs[k];return combatant(d,'enemy',`e_${k}_${i}`,{id:`${k}_${i}`,key:k,row:enemyRow(m,i,d)});});
-  if(m?.objective?.type==='escort'){const d=o.unitDefs?.[m.objective.escortUnitId];if(d)allies.push(combatant(d,'ally','escort_'+d.id,{escort:true,row:'back'}));}
+  if(m?.objective?.escortUnitId){const d=o.unitDefs?.[m.objective.escortUnitId];if(d)allies.push(combatant(d,'ally','escort_'+d.id,{escort:true,row:'back'}));}
   return createContext({allies,enemies,mission:m,rng,enemyDefs:o.enemyDefs,unitDefs:o.unitDefs});
 }
 async function simulate(o){
@@ -322,5 +347,5 @@ function unitPower(a){const ws=(a.weapons&&a.weapons.length)?a.weapons:[BASIC_WE
 let STD_POWER=0;
 function powerRatio(a){if(!STD_POWER)STD_POWER=unitPower(STANDARD_UNIT);return Math.sqrt(unitPower(a)/STD_POWER);}
 function starCount(r){return r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;}
-root.PROBattle=Object.freeze({version:'1.2.0',STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+root.PROBattle=Object.freeze({version:'1.3.0',DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);

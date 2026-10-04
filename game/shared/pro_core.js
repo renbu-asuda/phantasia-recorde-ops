@@ -1,7 +1,8 @@
-/* PRO shared data contract 2.2.0 — plain script, file:// compatible.
+/* PRO shared data contract 2.3.0 — plain script, file:// compatible.
  * 1.9.0 adds Unit Schema 3 / Item Schema 3 / Mission Schema 2 / Bundle Schema 2 fields.
  * 1.10.1 adds weapon effects (before / after use) to Unit Schema 3.
  * 1.10.2 merges pilots into units (crew / pilotProfile → Unit Schema 4, Bundle Schema 3); legacy pilots convert to units.
+ * 1.12.0: objective + add-on conditions, wave objects with triggers/rows, 300-turn draw, pack terrains → Mission Schema 3, Bundle Schema 4.
  * Packs that use none of the new fields keep their previous schema number so older games still read them. */
 (function(root){'use strict';
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -188,14 +189,20 @@ function itemPack(p){need(p&&p.format==='VAIS_OUTER_OPS_ITEM_PACK'&&[1,2,3].incl
 // ---- missions ----
 function story(raw,label){if(raw===undefined||raw===null)return null;need(typeof raw==='object'&&!Array.isArray(raw),label+': ストーリーが不正です');const lines=(arr,part)=>{if(arr===undefined||arr===null)return [];need(Array.isArray(arr)&&arr.length<=100,label+' '+part+': 会話は100行までです');return arr.map(l=>{need(l&&typeof l==='object'&&String(l.text||'').trim(),label+' '+part+': 会話の本文が必要です');return {speaker:String(l.speaker||'').slice(0,40),text:String(l.text).slice(0,500)};});};const o={before:lines(raw.before,'作戦前'),after:lines(raw.after,'勝利後')};return o.before.length||o.after.length?o:null;}
 function rule(r,label){if(typeof r==='string')return r;need(r&&typeof r==='object','特殊ルールが不正です');if(!Object.hasOwn(ruleTypes,r.type))return clone(r);// unknown object rules are preserved as display data
-  if(r.type==='turn_limit')return {type:r.type,value:number(r.value,label+' TURN制限',1,99,true)};
+  if(r.type==='turn_limit')return {type:r.type,value:number(r.value,label+' TURN制限',1,300,true)};
   if(r.type==='reinforce'){const enemies=idList(r.enemies,label+' 援軍',8);need(enemies.length>0,label+': 援軍の敵を1体以上指定してください');return {type:r.type,turn:number(r.turn,label+' 援軍TURN',1,99,true),enemies};}
   const req=requirements({allTags:r.allTags,anyTags:r.anyTags,noneTags:r.noneTags});return {type:r.type,...(req||{})};}
 function missionExt(m,label=m?.id||'作戦'){
   const o={};
   if(has(m,'enemyRows')){need(Array.isArray(m.enemyRows)&&m.enemyRows.length<=8&&m.enemyRows.every(x=>Object.hasOwn(rows,x)),label+': 敵の隊列は front / back の配列です');if(m.enemyRows.some(x=>x==='back'))o.enemyRows=[...m.enemyRows];}
-  if(has(m,'objective')){const ob=m.objective;need(ob&&Object.hasOwn(objectives,ob.type),label+': 勝利条件が不正です');if(ob.type!=='annihilate'){const out={type:ob.type};if(ob.type==='defense')out.turns=number(ob.turns??10,label+' 防衛TURN',1,99,true);if(ob.type==='boss')out.bossIndex=number(ob.bossIndex??0,label+' ボス番号',0,7,true);if(ob.type==='escort'){need(safeId(ob.escortUnitId),label+': 護衛対象のユニットIDが必要です');out.escortUnitId=ob.escortUnitId;}o.objective=out;}}
-  if(has(m,'waves')){need(Array.isArray(m.waves)&&m.waves.length<=9,label+': 連戦の追加ウェーブは9個までです');const waves=m.waves.map((w,i)=>{const ids=idList(w,label+' ウェーブ'+(i+2),8);need(ids.length>0,label+': ウェーブ'+(i+2)+'が空です');return ids;});if(waves.length)o.waves=waves;}
+  if(has(m,'objective')){const ob=m.objective;need(ob&&Object.hasOwn(objectives,ob.type),label+': 勝利条件が不正です');const out={type:ob.type};
+    if(ob.type==='defense')out.turns=number(ob.turns??10,label+' 防衛TURN',1,300,true);
+    if(ob.type==='boss'){out.bossIndex=number(ob.bossIndex??0,label+' ボス番号',0,7,true);if(has(ob,'bossWave')){const w=number(ob.bossWave,label+' ボスの出る波',0,9,true);if(w)out.bossWave=w;}}
+    if(ob.type==='escort'||has(ob,'escortUnitId')){need(safeId(ob.escortUnitId),label+': 護衛対象のユニットIDが必要です');out.escortUnitId=ob.escortUnitId;}
+    if(out.type!=='annihilate'||out.escortUnitId)o.objective=out;}
+  if(has(m,'waves')){need(Array.isArray(m.waves)&&m.waves.length<=9,label+': 追加ウェーブは9個までです');const waves=m.waves.map((w,i)=>wave(w,label+' 第'+(i+2)+'波'));if(waves.length)o.waves=waves;}
+  if(o.objective?.bossWave){need(o.waves&&o.waves.length>=o.objective.bossWave,label+': ボスの出る波がありません');const wv=normalizeWave(o.waves[o.objective.bossWave-1]);need(o.objective.bossIndex<wv.enemies.length,label+': ボス番号がその波の敵の数を超えています');}
+  else if(o.objective?.type==='boss')need(o.objective.bossIndex<(m.enemies||[]).length,label+': ボス番号が敵編成の数を超えています');
   if(o.objective?.type==='chain')need(o.waves?.length,label+': 連戦には追加ウェーブが必要です');
   if(has(m,'terrainMods')){const t=m.terrainMods;need(typeof t==='object'&&!Array.isArray(t),label+': 地形補正が不正です');const out={};for(const k of ['meleeHitPt','rangedHitPt'])if(has(t,k))out[k]=number(t[k],label+' '+k,-100,100);if(has(t,'mobPct'))out.mobPct=number(t.mobPct,label+' mobPct',-90,200);if(has(t,'banTags'))out.banTags=tagList(t.banTags,label+' 出撃禁止タグ');if(Object.keys(out).length)o.terrainMods=out;}
   if(has(m,'requires')){const r=m.requires;need(typeof r==='object'&&!Array.isArray(r),label+': 出撃条件が不正です');const out={};const ms=idList(r.missions,label+' 前提作戦'),is=idList(r.items,label+' 必要キーアイテム');if(ms.length)out.missions=ms;if(is.length)out.items=is;if(has(r,'minLevel'))out.minLevel=number(r.minLevel,label+' 必要レベル',1,99,true);if(Object.keys(out).length)o.requires=out;}
@@ -207,30 +214,71 @@ function missionExt(m,label=m?.id||'作戦'){
   return o;
 }
 function missionIsExtended(m){try{return Object.keys(missionExt(m)).length>0||(m.rules||[]).some(r=>r&&typeof r==='object'&&Object.hasOwn(ruleTypes,r.type));}catch(e){return true}}
+// ---- waves, conditions (1.12.0) ----
+const waveTriggers={cleared:'前の敵がいなくなったら',turn:'指定TURNの開始時',remaining:'敵が残りN体以下になったら',bossHp:'ボスのHPがN%以下になったら'};
+function wave(w,label){
+  if(Array.isArray(w)){const ids=idList(w,label,8);need(ids.length>0,label+'が空です');return ids;}
+  need(w&&typeof w==='object',label+': 形式が不正です');const enemies=idList(w.enemies,label,8);need(enemies.length>0,label+'の敵がいません');
+  const when=w.when||'cleared';need(Object.hasOwn(waveTriggers,when),label+': 出現条件が不正です');
+  const o={enemies,when};
+  if(has(w,'rows')){need(Array.isArray(w.rows)&&w.rows.length<=8&&w.rows.every(x=>Object.hasOwn(rows,x)),label+': 隊列は front / back の配列です');if(w.rows.some(x=>x==='back'))o.rows=w.rows.slice(0,enemies.length);}
+  if(when==='turn')o.value=number(w.value,label+' 出現TURN',1,300,true);
+  if(when==='remaining')o.value=number(w.value??0,label+' 残り体数',0,8,true);
+  if(when==='bossHp')o.value=number(w.value??50,label+' ボスHP%',1,99,true);
+  if(has(w,'label'))o.label=String(w.label).slice(0,40);
+  return (when==='cleared'&&!o.rows&&!o.label)?enemies:o;
+}
+function normalizeWave(w){if(Array.isArray(w))return {enemies:[...w],rows:[],when:'cleared'};return {enemies:[...(w?.enemies||[])],rows:[...(w?.rows||[])],when:w?.when||'cleared',...(w?.value!==undefined?{value:w.value}:{}),...(w?.label?{label:w.label}:{})};}
+function waveIsExtended(w){return !Array.isArray(w);}
+function groupNames(ids,names){const counts=new Map();for(const id of ids){const n=names?.[id]||id;counts.set(n,(counts.get(n)||0)+1);}return [...counts].map(([n,c])=>c>1?`${n}×${c}`:n).join('・');}
+function formationText(ids,rowsArr,names){const f=[],b=[];ids.forEach((id,i)=>((rowsArr||[])[i]==='back'?b:f).push(id));return [f.length?'前衛 '+groupNames(f,names):'',b.length?'後衛 '+groupNames(b,names):''].filter(Boolean).join('／')||'なし';}
+function waveWhenText(w){const n=normalizeWave(w);return n.when==='turn'?`${n.value}TURN目に`:n.when==='remaining'?`敵が残り${n.value}体以下になったら`:n.when==='bossHp'?`ボスのHPが${n.value}%以下になったら`:'前の敵がいなくなったら';}
+function waveText(w,index,names){const n=normalizeWave(w);return `第${index+2}波${n.label?'「'+n.label+'」':''}（${waveWhenText(n)}）：${formationText(n.enemies,n.rows,names)}`;}
+function bossOf(m){const ob=m?.objective;if(!ob||ob.type!=='boss')return null;const wv=ob.bossWave||0;const list=wv?normalizeWave((m.waves||[])[wv-1]).enemies:(m.enemies||[]);return {wave:wv,index:ob.bossIndex||0,id:list[ob.bossIndex||0]};}
+const DRAW_TURNS=300;
+function missionConditions(m,names={}){
+  const ob=m?.objective||{type:'annihilate'},type=ob.type==='escort'||ob.type==='chain'?'annihilate':ob.type,waves=(m?.waves||[]).length,rules=(m?.rules||[]).filter(r=>r&&typeof r==='object');
+  const limit=rules.find(r=>r.type==='turn_limit')?.value||0,boss=bossOf(m);
+  const win=type==='boss'?`ボス「${names[boss?.id]||boss?.id||'?'}」を倒す${boss?.wave?`（第${boss.wave+1}波で出現）`:''}`:type==='defense'?`${ob.turns||10}TURN耐える（敵を全滅させても勝利）`:waves?`全${waves+1}波の敵をすべて倒す`:'敵をすべて倒す';
+  const lose=['味方が全滅する'];if(ob.escortUnitId)lose.push(`護衛対象「${names[ob.escortUnitId]||ob.escortUnitId}」が倒される`);if(limit)lose.push(`${limit}TURNを過ぎる`);
+  const drawTurns=limit?0:(type==='defense'?Math.max(DRAW_TURNS,ob.turns||10):DRAW_TURNS);
+  return {win:'勝利: '+win,lose:'敗北: '+lose.join('・'),draw:drawTurns?`引き分け: ${drawTurns}TURNで決着がつかない`:'引き分け: なし（TURN制限で敗北）',type,escort:ob.escortUnitId||null,limit};
+}
+// ---- terrains (1.12.0): built-in presets + pack-defined terrains ----
+function terrain(t,label='地形'){need(t&&typeof t==='object',label+': 形式が不正です');const name=String(t.name||'').trim();need(name.length>0&&name.length<=20,label+': 名前は1～20文字です');const o={name};
+  if(has(t,'desc'))o.desc=String(t.desc).slice(0,200);for(const k of ['meleeHitPt','rangedHitPt'])if(has(t,k)){const v=number(t[k],label+' '+k,-100,100);if(v)o[k]=v;}if(has(t,'mobPct')){const v=number(t.mobPct,label+' mobPct',-90,200);if(v)o.mobPct=v;}if(has(t,'banTags')){const b=tagList(t.banTags,label+' 出撃禁止タグ');if(b.length)o.banTags=b;}return o;}
+function terrainList(raw){if(raw===undefined||raw===null)return [];need(Array.isArray(raw)&&raw.length<=50,'地形は50個までです');const list=raw.map((t,i)=>terrain(t,'地形'+(i+1))),names=new Set();for(const t of list){need(!names.has(t.name),'地形の名前が重複しています: '+t.name);names.add(t.name);}return list;}
+let CUSTOM_TERRAINS={};
+function registerTerrains(list){CUSTOM_TERRAINS={};for(const t of list||[]){const {name,desc,...mods}=t;CUSTOM_TERRAINS[name]=mods;}}
+function terrainDef(name){const n=String(name||'標準');return CUSTOM_TERRAINS[n]||TERRAINS[n]||null;}
+function terrainEffectText(mods){const t=mods||{},parts=[];if(t.meleeHitPt)parts.push(`近接命中${t.meleeHitPt>0?'+':''}${t.meleeHitPt}`);if(t.rangedHitPt)parts.push(`射撃命中${t.rangedHitPt>0?'+':''}${t.rangedHitPt}`);if(t.mobPct)parts.push(`MOB${t.mobPct>0?'+':''}${t.mobPct}%`);if(t.banTags?.length)parts.push(`「${t.banTags.join('・')}」出撃不可`);return parts.join(' / ')||'効果なし';}
 const defaultStars=[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:10}];
 function missionStars(m){return m.stars?.length?m.stars:defaultStars;}
 function starText(s){return s.type==='turns_le'?`${s.value}TURN以内に勝利`:s.type==='hp_ge'?`残りHP合計${s.value}%以上で勝利`:starTypes[s.type]||s.type;}
-function terrainMods(m){const base=TERRAINS[String(m?.terrain||'標準')]||{};return {...base,...(m?.terrainMods||{})};}
-function missionEnemyIds(m){const ids=[...(m.enemies||[]),...(m.waves||[]).flat()];for(const r of m.rules||[])if(r&&r.type==='reinforce')ids.push(...(r.enemies||[]));return [...new Set(ids)];}
+function terrainMods(m){const base=terrainDef(m?.terrain)||{};return {...base,...(m?.terrainMods||{})};}
+function missionEnemyIds(m){const ids=[...(m.enemies||[]),...(m.waves||[]).flatMap(w=>normalizeWave(w).enemies)];for(const r of m.rules||[])if(r&&r.type==='reinforce')ids.push(...(r.enemies||[]));return [...new Set(ids)];}
 // ---- bundles ----
-const BUNDLE_FORMAT='VAIS_OUTER_OPS_BUNDLE_PACK',BUNDLE_SCHEMA=3,BUNDLE_SCHEMAS=[1,2,3];
+const BUNDLE_FORMAT='VAIS_OUTER_OPS_BUNDLE_PACK',BUNDLE_SCHEMA=4,BUNDLE_SCHEMAS=[1,2,3,4];
 function bundlePack(raw){
-  need(raw&&raw.format===BUNDLE_FORMAT&&BUNDLE_SCHEMAS.includes(Number(raw.schemaVersion))&&String(raw.packId||'').trim(),'対応する統合パック Schema 1～3ではありません');
+  need(raw&&raw.format===BUNDLE_FORMAT&&BUNDLE_SCHEMAS.includes(Number(raw.schemaVersion))&&String(raw.packId||'').trim(),'対応する統合パック Schema 1～4ではありません');
   for(const type of ['units','missions','items'])need(Array.isArray(raw[type]),type+' 配列が必要です');
   const unique=(rows,type)=>{const ids=new Set();for(const row of rows){need(row&&safeId(row.id),type+' IDは英数字・_・-で指定してください');need(!ids.has(row.id),type+' ID重複: '+row.id);ids.add(row.id);}};
   unique(raw.units,'unit');unique(raw.missions,'mission');
   const items=raw.items.map(item);unique(items,'item');
   const conv=pilotsToUnits(clone(raw.units),raw.pilots),units=conv.units,res=researchList(raw.research);
+  const terrains=terrainList(raw.terrains);
   const ext=res.length>0||units.some(unitIsExtended)||raw.missions.some(missionIsExtended)||items.some(itemIsExtended);
-  return {format:BUNDLE_FORMAT,schemaVersion:units.some(unitIsV4)?3:ext?2:1,packId:String(raw.packId),packName:String(raw.packName||raw.packId),units,missions:clone(raw.missions),items,...(res.length?{research:res}:{})};
+  const schema=terrains.length||raw.missions.some(missionIsV3)?4:units.some(unitIsV4)?3:ext?2:1;
+  return {format:BUNDLE_FORMAT,schemaVersion:schema,packId:String(raw.packId),packName:String(raw.packName||raw.packId),units,missions:clone(raw.missions),items,...(res.length?{research:res}:{}),...(terrains.length?{terrains}:{})};
 }
 function unitSchemaFor(units,pilots){return (pilots&&pilots.length)||units.some(unitIsV4)?4:units.some(unitIsExtended)?3:2;}
-function missionSchemaFor(missions){return missions.some(missionIsExtended)?2:1;}
+function missionIsV3(m){const ob=m?.objective;return !!m&&((m.waves||[]).some(waveIsExtended)||!!(ob&&ob.type!=='escort'&&ob.escortUnitId)||!!ob?.bossWave||(m.rules||[]).some(r=>r&&r.type==='turn_limit'&&r.value>99)||(ob?.type==='defense'&&ob.turns>99));}
+function missionSchemaFor(missions,terrains){return (terrains&&terrains.length)||missions.some(missionIsV3)?3:missions.some(missionIsExtended)?2:1;}
 // ---- text ----
 function effectText(e){const v=e.value;switch(e.type){case 'heal_hp_flat':return `HPを${v}回復`;case 'heal_hp_pct':return `最大HPの${v}%回復`;case 'heal_hp_full':return 'HP全回復';case 'revive_hp_pct':return `HP 0から最大HPの${v}%で復帰`;case 'stat_up_flat':return `${stats[e.stat]} +${v}（恒久）`;case 'stat_up_pct':return `${stats[e.stat]} +${v}%（使用時の値から切り上げ・恒久）`;case 'all_stats_up_flat':return `全能力 +${v}（恒久）`;case 'add_skill':return `スキル「${e.skill.name}」習得`;case 'add_weapon':return `武装「${e.weapon.name}」追加`;case 'credits_gain':return `資金 +${v}`;
   case 'add_tag':return `タグ「${e.tag}」を追加`;case 'remove_tag':return `タグ「${e.tag}」を削除`;case 'sortie_buff':return `次の出撃だけ${stats[e.stat]} +${v}%`;case 'loot_box':return `ランダム箱（${e.table.length}種から1つ）`;case 'remove_skill':return e.skillId?`習得スキル「${e.skillId}」を外す`:'習得スキルをすべて外す';case 'remove_weapon':return e.name?`追加武装「${e.name}」を外す`:'追加武装をすべて外す';case 'recruit_unit':return `ユニット「${e.unitId}」が加入`;case 'exp_gain':return `経験値 +${v}`;case 'skill_point':return `スキルポイント +${v}`;default:return '不明';}}
 function itemSummary(i){const parts=itemEffects(i).map(effectText);if(i.equip){const s=Object.entries(i.equip.stats||{}).map(([k,v])=>`${stats[k]}+${v}`);parts.push('装備: '+[...s,...(i.equip.skills||[]).map(x=>'「'+x.name+'」'),...(i.equip.weapons||[]).map(x=>'武装「'+x.name+'」')].join(' / '));}if(i.key)parts.push('キーアイテム');if(i.scope==='party')parts.push('部隊全体');if(i.limitPerUnit)parts.push(`1体${i.limitPerUnit}回まで`);return parts.join(' ／ ');}
 function skillText(s){const c=s.cond?' ['+conditions[s.cond.type].replace('値',s.cond.value??'').replace('指定タグ','「'+(s.cond.tag||'')+'」')+']':'';const t=s.target?' → '+skillTargets[s.target]:'';const d=s.duration?` ${s.duration}TURN`:'';return `${triggers[s.trigger]||s.trigger}${c}: ${skillEffects[s.effect]||s.effect} ${s.value}${s.effect==='tag_damage_up_pct'?'（対「'+s.tag+'」）':''}${t}${d}`;}
 function serialize(marker,p){return '/* PRO data pack */\nwindow.'+marker+' = '+JSON.stringify(p,null,2)+';\n';}
-root.PROCore=Object.freeze({version:'2.2.0',crews,pilotProfile,unitIsV4,crewOf,pilotBonus,pilotToUnit,pilotsToUnits,PILOT_UNIT_STATS,weaponTimings,weaponEffectLabels,weaponEffectsAllowed,weaponEffectTargets,weaponWhen,WEAPON_BEFORE_ONLY,WEAPON_AFTER_ONLY,WEAPON_EFFECT_MAX,weaponEffect,weaponEffectHostile,weaponEffectText,weaponEffectsText,clone,stats,STAT_KEYS,triggers,skillEffects,allowed,conditions,skillTargets,DURATION_EFFECTS,TARGETED_EFFECTS,HOSTILE_EFFECTS,effects,aiTargets,rows,objectives,ruleTypes,starTypes,days,TERRAINS,safeId,parse,skill,skillExt,skillIsExtended,weapon,weaponExt,weaponIsExtended,weaponDefaults,unitExt,unitIsExtended,pilot,pilotList,image,effect,item,itemExt,itemIsExtended,itemPack,itemEffects,itemSummary,effectText,skillText,research,researchList,serialize,tagList,parseTags,unitTags,requirements,checkRequirements,requirementText,missionExt,missionIsExtended,missionStars,starText,terrainMods,missionEnemyIds,rule,BUNDLE_FORMAT,BUNDLE_SCHEMA,bundlePack,unitSchemaFor,missionSchemaFor});
+root.PROCore=Object.freeze({version:'2.3.0',waveTriggers,wave,normalizeWave,waveIsExtended,waveText,waveWhenText,formationText,groupNames,bossOf,DRAW_TURNS,missionConditions,missionIsV3,terrain,terrainList,registerTerrains,terrainDef,terrainEffectText,crews,pilotProfile,unitIsV4,crewOf,pilotBonus,pilotToUnit,pilotsToUnits,PILOT_UNIT_STATS,weaponTimings,weaponEffectLabels,weaponEffectsAllowed,weaponEffectTargets,weaponWhen,WEAPON_BEFORE_ONLY,WEAPON_AFTER_ONLY,WEAPON_EFFECT_MAX,weaponEffect,weaponEffectHostile,weaponEffectText,weaponEffectsText,clone,stats,STAT_KEYS,triggers,skillEffects,allowed,conditions,skillTargets,DURATION_EFFECTS,TARGETED_EFFECTS,HOSTILE_EFFECTS,effects,aiTargets,rows,objectives,ruleTypes,starTypes,days,TERRAINS,safeId,parse,skill,skillExt,skillIsExtended,weapon,weaponExt,weaponIsExtended,weaponDefaults,unitExt,unitIsExtended,pilot,pilotList,image,effect,item,itemExt,itemIsExtended,itemPack,itemEffects,itemSummary,effectText,skillText,research,researchList,serialize,tagList,parseTags,unitTags,requirements,checkRequirements,requirementText,missionExt,missionIsExtended,missionStars,starText,terrainMods,missionEnemyIds,rule,BUNDLE_FORMAT,BUNDLE_SCHEMA,bundlePack,unitSchemaFor,missionSchemaFor});
 })(window);

@@ -1,3 +1,48 @@
+# Toolkit 1.12.0 作戦データの追加項目（Mission Schema 3 / Bundle Schema 4）
+
+使ったときだけ Schema が上がります（使わなければ Mission 1・2 / Bundle 1～3 のまま）。1.11.0 以前のゲームは Schema 3 の作戦パック・Schema 4 の統合パックを読み込めません。
+
+## 勝敗条件 `objective`
+
+| 項目 | 内容 |
+| --- | --- |
+| `type` | `annihilate`（殲滅）／`boss`（ボス撃破）／`defense`（防衛）。旧 `escort`（=殲滅＋護衛）・`chain`（=追加ウェーブ付きの殲滅）も読めます |
+| `turns` | 防衛で耐えるTURN数（1～300）。指定TURNの終わりまで耐えたら勝利。敵を全滅させても勝利 |
+| `bossWave` | ボスがいる波（0=最初の敵、1以降=`waves` の番号）。省略は0 |
+| `bossIndex` | その波の中の番号（0から） |
+| `escortUnitId` | 護衛するユニット。どの `type` とも組み合わせられ、倒れたら敗北（`escort` 以外に付けると Schema 3） |
+
+TURN制限は今までどおり `rules` の `{type:'turn_limit',value}`（1～300。100以上は Schema 3）。決着がつかないまま300TURN経過で引き分け（`PROBattle.DRAW_TURNS`）。
+
+## 追加ウェーブ `waves`（最大9）
+
+要素は旧形式（敵IDの配列）か、新形式のオブジェクト。
+
+| 項目 | 内容 |
+| --- | --- |
+| `enemies` | 敵ID（1～8） |
+| `rows` | `front` / `back` の配列（省略は全員前衛） |
+| `when` | `cleared`（前の敵がいなくなったら・省略時）／`turn`（`value` TURNの開始時、1～300）／`remaining`（敵が残り `value` 体以下、0～8）／`bossHp`（ボスのHPが `value`% 以下、1～99） |
+| `label` | 波の名前（40文字まで。ログと説明に出る） |
+
+- どの波も1回だけ出ます。盤面の敵がいなくなったときは、まだ出ていない次の波がそのTURNの終わりに出ます。
+- 殲滅の勝利は「全部の波が出たうえで敵が全滅」。ボス撃破はボスを倒した時点で勝利（ボスが後の波にいるなら出現前は勝てない）。
+- `cleared` で隊列も名前もない波は旧形式（配列）で書き出します。
+
+## 地形 `terrains`（作戦パック・統合パックの直下、最大50）
+
+`[{name, desc?, meleeHitPt?, rangedHitPt?, mobPct?, banTags?}]`。命中は -100～100、MOB は -90～200(%)。名前の重複は不可。
+ゲームは読み込んだパックの地形を `PROCore.registerTerrains` に登録し、`terrainMods(m)` は「作戦の `terrainMods` ＞ パックの地形 ＞ 組み込み10種」の順で決まります（同じ名前の地形は後から読み込んだパックが優先）。地形があるパックは Mission Schema 3 / Bundle Schema 4。
+
+## 追加API
+
+- `PROCore`（2.3.0）: `normalizeWave` / `waveText(w,i,names)` / `waveWhenText` / `formationText(ids,rows,names)` / `bossOf(m)` / `missionConditions(m,names)`（`{win,lose,draw,…}` の文章）/ `missionIsV3` / `terrain` / `terrainList` / `registerTerrains` / `terrainDef` / `terrainEffectText` / `DRAW_TURNS`。`missionSchemaFor(missions,terrains)`。
+- `PROBattle`（1.3.0）: `objectiveStatus(ctx)`（`{wave,totalWaves,boss,defenseLeft,escort,nextWave,turnsLeft,enemiesLeft}`）/ `buildBattle` / `DRAW_TURNS`。`runBattle` の既定の最大TURNは300（`opts.maxTurns` で変更可）。
+- `PROEditor`（1.5.0）: 項目タイプ `formation`（`rowsKey`）/ `waves` / `objective` / `terrain`、`numberInput(input)`（マイナス可の欄を「±」付きに）/ `normNum` / `terrainEditor(container,{get,onChange})` / `terrainOptions` / `terrainEffectOf` / `testBattle(mission,defs,squad,{seed})`（`{ok,outcome,turns,reason,log,text}`）/ `compactWave`。
+  ページ内の `input[type=number]` のうち min が未指定か負の欄は、自動で「±」付きの入力欄になります。
+
+---
+
 # Toolkit 1.11.0 追加API
 
 - `PROBattle`（1.2.0）: `STANDARD_UNIT` / `unitPower(unit)` / `powerRatio(unit)` / `starCount(ratio)`。正規化済みのユニット（ゲームの UNIT_MASTER や `PROEditor.battleUnit` の結果）を渡します。`PROEditor.starRating` / `powerRatio` もこれを使います。

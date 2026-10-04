@@ -1,9 +1,9 @@
-/* PRO 1.10.3 基本データ（作戦）— ゲームに最初から入っているデータです。
- * 最新の形式（Unit Schema 4 / Mission Schema 2 / Item Schema 3）で作り直しました。
+/* PRO 1.12.0 基本データ（作戦）— ゲームに最初から入っているデータです。
+ * 最新の形式（Unit Schema 4 / Mission Schema 3 / Item Schema 3）で作り直しました。
  * 作り方の参考にどうぞ。メーカーで読み込めば、そのまま編集できます。 */
 window.VAIS_MISSION_PACK = {
   "format": "VAIS_OUTER_OPS_MISSION_PACK",
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "packId": "pro-core",
   "packName": "基本データ",
   "missions": [
@@ -248,18 +248,25 @@ window.VAIS_MISSION_PACK = {
       "name": "敵基地強襲",
       "diff": "B",
       "reward": 4000,
-      "desc": "夜間、敵基地に突入せよ。敵は2波。20TURN以内に制圧しないと失敗。",
+      "desc": "夜間、敵基地に突入せよ。敵が残り1体になると守備隊本隊（後衛に狙撃兵）が出てくる。20TURN以内に制圧しないと失敗。",
       "terrain": "夜間",
       "tags": [],
-      "objective": {
-        "type": "chain"
-      },
       "waves": [
-        [
-          "core-e-raider",
-          "core-e-sniper",
-          "core-e-apc"
-        ]
+        {
+          "enemies": [
+            "core-e-raider",
+            "core-e-sniper",
+            "core-e-apc"
+          ],
+          "rows": [
+            "front",
+            "back",
+            "front"
+          ],
+          "when": "remaining",
+          "value": 1,
+          "label": "守備隊本隊"
+        }
       ],
       "rules": [
         {
@@ -315,34 +322,26 @@ window.VAIS_MISSION_PACK = {
       "name": "決戦：指揮官機撃破",
       "diff": "A",
       "reward": 8000,
-      "desc": "敵の指揮官機を撃破せよ。指揮官機は防御フィールドを張り、HPが減ると激昂する。",
+      "desc": "敵の前衛を崩すと、後方から指揮官機が出てくる。指揮官機を倒せば勝利。HPが半分になると親衛隊が駆けつける。",
       "terrain": "標準",
       "tags": [
         "ボス"
       ],
       "objective": {
         "type": "boss",
+        "bossWave": 1,
         "bossIndex": 0
       },
-      "rules": [
-        {
-          "type": "reinforce",
-          "turn": 4,
-          "enemies": [
-            "core-e-trooper",
-            "core-e-trooper"
-          ]
-        }
-      ],
+      "rules": [],
       "enemies": [
-        "core-e-commander",
-        "core-e-mech",
-        "core-e-raider"
+        "core-e-raider",
+        "core-e-trooper",
+        "core-e-sniper"
       ],
       "enemyRows": [
-        "back",
         "front",
-        "front"
+        "front",
+        "back"
       ],
       "maxDeploy": 6,
       "requires": {
@@ -377,7 +376,31 @@ window.VAIS_MISSION_PACK = {
             "text": "ああ。全員よくやった。"
           }
         ]
-      }
+      },
+      "waves": [
+        {
+          "enemies": [
+            "core-e-commander",
+            "core-e-trooper"
+          ],
+          "rows": [
+            "back",
+            "front"
+          ],
+          "when": "remaining",
+          "value": 2,
+          "label": "指揮官部隊"
+        },
+        {
+          "enemies": [
+            "core-e-raider",
+            "core-e-raider"
+          ],
+          "when": "bossHp",
+          "value": 50,
+          "label": "親衛隊"
+        }
+      ]
     },
     {
       "id": "core-m-07",
