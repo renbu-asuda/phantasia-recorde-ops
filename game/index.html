@@ -3,16 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<script data-pro-view>/* 1.10.5: PC表示切り替え（ブラウザのPC版表示がなくても使える）とLINE内ブラウザの案内。共通JSに頼らない */(function(){var K='pro_view_mode',mode='mobile';try{mode=localStorage.getItem(K)==='pc'?'pc':'mobile';}catch(e){}if(window.__PRO_VIEW_FORCE)mode=window.__PRO_VIEW_FORCE;
+<script data-pro-view>/* 1.10.5: PC表示切り替え（ブラウザのPC版表示がなくても使える）とLINE内ブラウザの案内。1.11.0: 文字サイズ。共通JSに頼らない */(function(){var K='pro_view_mode',TK='pro_text_size',mode='mobile',text='normal';try{mode=localStorage.getItem(K)==='pc'?'pc':'mobile';text=localStorage.getItem(TK)==='large'?'large':'normal';}catch(e){}if(window.__PRO_VIEW_FORCE)mode=window.__PRO_VIEW_FORCE;if(window.__PRO_TEXT_FORCE)text=window.__PRO_TEXT_FORCE;
+if(text==='large'&&document.documentElement){document.documentElement.classList.add('pro-text-large');var st=document.createElement('style');st.textContent='html.pro-text-large body{zoom:1.15}';(document.head||document.documentElement).appendChild(st);}
+function setText(t){try{localStorage.setItem(TK,t);}catch(e){window.__PRO_TEXT_FORCE=t;}try{location.reload();}catch(e){}}
 var meta=document.querySelector('meta[name=viewport]');if(meta&&mode==='pc')meta.setAttribute('content','width=1280');
 function set(m){try{localStorage.setItem(K,m);}catch(e){window.__PRO_VIEW_FORCE=m;}if(meta)meta.setAttribute('content',m==='pc'?'width=1280':'width=device-width,initial-scale=1');try{location.reload();}catch(e){}}
 var line=/ Line\//.test(navigator.userAgent||'');
 function externalUrl(){var u=location.href.replace(/#.*$/,'');return u+(u.indexOf('?')<0?'?':'&')+'openExternalBrowser=1';}
-window.PROView={mode:mode,set:set,isLine:line,externalUrl:externalUrl};
-function ui(){var slot=document.getElementById('viewModeSlot');if(slot&&!slot.firstChild){var b=document.createElement('button');b.type='button';b.className='view-mode-btn';b.textContent=mode==='pc'?'📱 スマホ表示':'🖥 PC表示';b.title=mode==='pc'?'スマホ向けの表示に戻す':'画面を広く使うPC向けの表示にする';b.setAttribute('style','font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid #3d5a73;background:#10202e;color:#cfe6f5;cursor:pointer;white-space:nowrap');b.onclick=function(){set(mode==='pc'?'mobile':'pc');};slot.appendChild(b);}
+window.PROView={mode:mode,set:set,text:text,setText:setText,isLine:line,externalUrl:externalUrl};
+function ui(){var slot=document.getElementById('viewModeSlot');if(slot&&!slot.firstChild){var b=document.createElement('button');b.type='button';b.className='view-mode-btn';b.textContent=mode==='pc'?'📱 スマホ表示':'🖥 PC表示';b.title=mode==='pc'?'スマホ向けの表示に戻す':'画面を広く使うPC向けの表示にする';b.setAttribute('style','font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid #3d5a73;background:#10202e;color:#cfe6f5;cursor:pointer;white-space:nowrap');b.onclick=function(){set(mode==='pc'?'mobile':'pc');};slot.appendChild(b);var tb=document.createElement('button');tb.type='button';tb.className='text-size-btn';tb.textContent=text==='large'?'Aa 文字：標準':'Aa 文字：大';tb.title='文字の大きさを切り替える';tb.setAttribute('style',b.getAttribute('style')+';margin-left:6px');tb.onclick=function(){setText(text==='large'?'normal':'large');};slot.appendChild(tb);}
 if(line&&!document.getElementById('proLineNotice')){var d=document.createElement('div');d.id='proLineNotice';d.setAttribute('role','note');d.setAttribute('style','margin:10px;padding:12px 14px;border:2px solid #f0c040;border-radius:10px;background:#2e2610;color:#fff3cf;font:14px/1.7 system-ui,sans-serif');var t=document.createElement('div');t.textContent='LINEの中のブラウザで開いています。ここではZIPのダウンロードができず、セーブも普段のブラウザとは別になります。';var a=document.createElement('a');a.href=externalUrl();a.textContent='▶ ブラウザで開き直す';a.setAttribute('style','display:inline-block;margin-top:6px;padding:6px 12px;border-radius:8px;background:#f0c040;color:#2a2000;font-weight:bold;text-decoration:none');d.appendChild(t);d.appendChild(a);document.body.insertBefore(d,document.body.firstChild);}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ui);else ui();})();</script>
-<title>ファンタジア・レコード・オプス (PRO) - 1.10.5</title>
+<title>ファンタジア・レコード・オプス (PRO) - 1.11.0</title>
 <style>
 :root{
   --bg:#070b10; --panel:#111923; --panel2:#172230; --line:#2c3a4b;
@@ -27,7 +29,7 @@ button{font:inherit}.wrap{max-width:1180px;margin:auto;padding:14px}.topbar{disp
 @media(max-width:860px){.grid{grid-template-columns:1fr}.topbar{position:static}}
 .unit-list,.mission-list{display:grid;gap:9px}.unit,.mission{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:10px;transition:.16s}.unit{cursor:pointer}.unit:hover,.mission:hover{border-color:#4a627b}.unit.selected{outline:2px solid var(--ally);border-color:transparent}.unit.disabled{opacity:.52}.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.name{font-weight:850}.tag{font-size:11px;color:#cbd5e1;border:1px solid var(--line);padding:2px 7px;border-radius:999px;white-space:nowrap}.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}.stat{background:#0b1119;border-radius:8px;padding:6px;text-align:center}.stat b{display:block;font-size:13px}.stat span{font-size:10px;color:var(--muted)}
 .hpbar{height:8px;border-radius:999px;background:#05080c;overflow:hidden;border:1px solid #26313f;margin-top:8px}.hpfill{height:100%;background:linear-gradient(90deg,#2ea043,#7ee787);transition:width .22s}.hpfill.mid{background:linear-gradient(90deg,#9e6a03,#f2cc60)}.hpfill.low{background:linear-gradient(90deg,#b62324,#ff7b72)}
-.crew-badge{font-size:10px;border:1px solid #6a5a2a;color:#ffd77a;border-radius:6px;padding:0 5px;margin-left:4px}.crew-badge.pilot{border-color:#2a5a6a;color:#8bd8ff}.weapon-fx{font-size:10px;color:#c9b7ff;margin-top:5px;line-height:1.5}.weapon-fx b{color:#e6dcff;font-weight:600}.weapon-title{font-size:10px;color:var(--muted);margin-top:8px}.weapon-list{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.weapon-chip{font-size:10px;border:1px solid #31445a;background:#0c1520;padding:3px 6px;border-radius:7px;color:#cad7e5}.weapon-chip.physical{border-color:#776b48}.weapon-chip.beam{border-color:#4b6f97}.weapon-chip.special{border-color:#6c5792}.weapon-chip.melee-weapon{box-shadow:inset 3px 0 0 #b782a9}.weapon-chip.ranged-weapon{box-shadow:inset 3px 0 0 #5c91b8}
+.any-import{border-color:#2ea043}.home-cards{display:grid;gap:10px;margin:0 0 14px}.home-card{border:1px solid #2c4a62;border-radius:12px;padding:12px 14px;background:linear-gradient(180deg,#112033,#0c1724)}.home-card.guide{border-color:#2ea043}.home-title{font-weight:700;margin-bottom:6px;color:#8bd8ff}.home-card.guide .home-title{color:#7ee787}.guide-steps{margin:0;padding-left:20px;display:grid;gap:6px}.guide-steps .flow-btn{margin-left:6px;padding:3px 10px;font-size:12px}.guide-close{margin-top:8px}.next-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}.next-btn{width:100%;text-align:left;border:1px solid #2c4a62;background:#0f1d2b;color:#dbeaf6;border-radius:9px;padding:9px 12px;font-size:13px;cursor:pointer}.next-btn:hover{border-color:#8bd8ff}.tip-btn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #4d6a84;background:#132433;color:#9fc4e0;font-size:10px;line-height:1;padding:0;margin-left:3px;cursor:pointer;vertical-align:middle}.tip-box{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:90;max-width:min(92vw,520px);background:#0f2232;border:1px solid #8bd8ff;color:#e6f3fb;border-radius:10px;padding:10px 14px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.5)}.unit-summary{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;margin:6px 0 4px}.power-stars{color:#ffd76a;letter-spacing:1px}.hp-text{color:#cfe0f0}.unit-more{margin-top:6px}.unit-more>summary{cursor:pointer;font-size:12px;color:#8bd8ff}.unit-more[open]>summary{margin-bottom:6px}.win-est{margin-top:6px;font-size:12px;color:#cfe6f5}.win-est b{color:#ffd76a}.squad-prep{display:grid;gap:6px;margin:8px 0}.prep-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;border:1px solid #294354;border-radius:9px;padding:8px 10px}.prep-row.bad{border-color:#a85a2a}.prep-problem{color:#ffb38a;font-size:12px;margin-top:2px}.pack-catalog{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}.pack-card{border:1px solid #2c4a62;border-radius:12px;padding:12px;background:#0f1b28;display:grid;gap:6px}.pack-card.installed{border-color:#2ea043}.pack-card .good{color:#7ee787}.crew-badge{font-size:10px;border:1px solid #6a5a2a;color:#ffd77a;border-radius:6px;padding:0 5px;margin-left:4px}.crew-badge.pilot{border-color:#2a5a6a;color:#8bd8ff}.weapon-fx{font-size:10px;color:#c9b7ff;margin-top:5px;line-height:1.5}.weapon-fx b{color:#e6dcff;font-weight:600}.weapon-title{font-size:10px;color:var(--muted);margin-top:8px}.weapon-list{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}.weapon-chip{font-size:10px;border:1px solid #31445a;background:#0c1520;padding:3px 6px;border-radius:7px;color:#cad7e5}.weapon-chip.physical{border-color:#776b48}.weapon-chip.beam{border-color:#4b6f97}.weapon-chip.special{border-color:#6c5792}.weapon-chip.melee-weapon{box-shadow:inset 3px 0 0 #b782a9}.weapon-chip.ranged-weapon{box-shadow:inset 3px 0 0 #5c91b8}
 .mission{cursor:pointer}.mission.selected{outline:2px solid var(--accent);border-color:transparent}.mission .reward{color:var(--good);font-weight:800}.controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.primary{border:0;background:linear-gradient(135deg,#238636,#2ea043);color:white;font-weight:850;padding:11px 15px;border-radius:10px}.primary:disabled{opacity:.4}.secondary{border:1px solid var(--line);background:#111923;color:var(--text);padding:10px 13px;border-radius:10px}.squad{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}.chip{background:#0d141d;border:1px solid var(--line);border-radius:999px;padding:6px 9px;font-size:12px}.empty{color:var(--muted);font-size:13px;padding:8px 0}
 .battle{margin-top:14px}.battle-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.battle-controls{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.speed-select{border:1px solid var(--line);background:#111923;color:var(--text);padding:9px 10px;border-radius:10px}.battle-status{font-size:10px;color:var(--muted);border:1px solid var(--line);background:#0b121a;border-radius:999px;padding:5px 8px;min-width:76px;text-align:center}
 .arena{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 190px minmax(0,1fr);grid-template-areas:"ally command enemy";gap:10px;min-height:330px;margin-top:10px;padding:12px;border:1px solid #26384d;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,rgba(16,27,40,.95),rgba(5,10,15,.97)),repeating-linear-gradient(90deg,transparent 0 44px,rgba(88,166,255,.035) 45px 46px)}
@@ -123,25 +125,28 @@ body.flow-layout .skill-card,body.flow-layout .weapon-card,body.flow-layout .dro
 .shot-lane.fire{--fx-color:var(--fx)}
 .story-overlay{position:fixed;inset:0;z-index:100;background:rgba(3,6,10,.82);display:flex;align-items:flex-end;justify-content:center;padding:16px}.story-card{width:100%;max-width:760px;background:linear-gradient(180deg,#132131,#0a121b);border:1px solid #35506a;border-radius:16px;padding:18px;box-shadow:0 18px 60px rgba(0,0,0,.5)}.story-speaker{font-weight:850;color:var(--cyan);margin-top:6px;min-height:1.4em}.story-text{font-size:16px;line-height:1.8;margin:8px 0 6px;white-space:pre-wrap;min-height:3.6em}.story-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 
+/* 1.11.0 grouped menu (after the base rules so it wins) */
+body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relative;margin-left:12px}.flow-nav .flow-btn[data-group]:first-child{margin-left:0}.flow-nav .flow-btn[data-group]::before{content:attr(data-group);position:absolute;top:-17px;left:2px;font-size:10px;color:#7f9bb2;font-weight:600;letter-spacing:.08em;pointer-events:none}@media(max-width:600px){body .flow-nav{display:flex!important;flex-wrap:nowrap;padding-bottom:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}.flow-nav .flow-btn{flex:0 0 auto;white-space:nowrap}}
 </style>
 </head>
 <body>
 <section id="baseScreen" class="screen active">
   <div class="wrap">
     <div class="topbar">
-      <div class="brand"><h1>ファンタジア・レコード・オプス</h1><small>PRO / 自動派遣戦闘 1.10.5 / MGSPW OUTER OPS inspired</small></div>
+      <div class="brand"><h1>ファンタジア・レコード・オプス</h1><small>PRO / 自動派遣戦闘 1.11.0</small></div>
       <div class="wallet"><div class="credit">資金 <span id="credits">0</span></div><span id="viewModeSlot" style="margin-right:6px"></span><button class="reset" id="resetBtn">初期化</button></div>
     </div>
 
     <div class="grid">
       <section class="panel">
+        <div id="homeCards" class="home-cards"></div>
         <h2>1. 派遣部隊を編成</h2>
-        <div class="sub">最大8枠。部隊を選んだら戦闘は自動進行。武装は抽選ウェイトに応じてランダム使用する。数値パラメーターとOUTER OPS風の性能差を両立したPRO独自仕様。</div>
+        <div class="sub">出撃させるユニットをタップして選びます（作戦ごとに上限あり）。戦闘は自動で進み、武装はランダムに使い分けます。★は強さの目安、「詳しく」で能力や武装を確認できます。</div>
         <div id="unitList" class="unit-list"></div>
         <div class="controls"><button id="repairBtn" class="secondary">全機修理</button><span class="sub" style="margin:0">各ユニットの修理ボタンから1機ずつ修理できます。</span></div>
         <div class="data-tools">
           <div class="name" style="font-size:12px">UNIT DATA</div>
-          <div class="sub" style="margin:3px 0 0">外部JSユニットパックを読み込み。fetchは使用しない。</div>
+          <div class="sub" style="margin:3px 0 0">自作のユニットファイル（.js）を読み込みます。</div>
           <div class="controls">
             <button id="importUnitBtn" class="secondary">ユニットJSをインポート</button>
             <button id="clearImportedUnitsBtn" class="secondary">追加データ解除</button>
@@ -154,11 +159,11 @@ body.flow-layout .skill-card,body.flow-layout .weapon-card,body.flow-layout .dro
 
       <section class="panel">
         <h2>2. 作戦を選択</h2>
-        <div class="sub">勝敗は敵編成・ユニット性能・地形・勝利条件で決まります。地形は命中や機動に影響し、特殊ルール（TURN制限・援軍・出撃制限）も戦闘に反映されます。30TURNで未決着なら引き分けです。星条件を満たすと初回ボーナスがもらえます。</div>
+        <div class="sub">作戦をタップして選びます。カードの<b>推定勝率</b>が目安です。地形や特殊ルール（TURN制限・援軍など）も勝敗に影響し、30TURNで決着しなければ引き分けです。☆の条件を初めて満たすとボーナスがもらえます。<button type="button" class="tip-btn" data-tip="win" aria-label="説明">?</button><button type="button" class="tip-btn" data-tip="star" aria-label="説明">?</button></div>
         <div id="missionList" class="mission-list"></div>
         <div class="data-tools">
           <div class="name" style="font-size:12px">MISSION DATA</div>
-          <div class="sub" style="margin:3px 0 0">外部JS作戦パックを読み込み。敵編成はユニットIDで参照する。</div>
+          <div class="sub" style="margin:3px 0 0">自作の作戦ファイル（.js）を読み込みます。</div>
           <div class="controls">
             <button id="importMissionBtn" class="secondary">作戦JSをインポート</button>
             <button id="clearImportedMissionsBtn" class="secondary">追加作戦データ解除</button>
@@ -169,6 +174,7 @@ body.flow-layout .skill-card,body.flow-layout .weapon-card,body.flow-layout .dro
         </div>
         <h2 style="margin-top:14px">出撃編成</h2>
         <div id="squadView" class="squad"></div>
+        <div id="squadPrep" class="squad-prep"></div>
         <div id="squadSummary" class="info-strip"></div>
         <div id="missionView" class="sub">作戦未選択</div>
         <div id="missionEnemyView" class="enemy-roster"></div>
@@ -231,7 +237,9 @@ body.flow-layout .skill-card,body.flow-layout .weapon-card,body.flow-layout .dro
     </section>
     <div class="data-tools save-tools"><h2>セーブデータ・設定</h2><p class="sub">進行状況と追加パックをJSONファイルに書き出し、機種変更やバックアップに使えます。</p><div class="controls"><button id="exportSaveBtn" class="secondary" type="button">セーブを書き出す</button><button id="importSaveBtn" class="secondary" type="button">セーブを読み込む</button><input id="saveFileInput" type="file" accept=".json,application/json" hidden></div><label class="toggle-line"><input id="fatigueToggle" type="checkbox" checked> 疲労・負傷ルール（出撃で疲労がたまり、撃破されると数日休養が必要）</label><div id="saveStatus" class="data-status"></div></div>
     <div class="data-tools bundle-tools"><h2>統合パック</h2><p class="sub">ユニット・作戦・アイテムをまとめたJSを一度に読み込みます。更新・解除もパック単位です。</p><div class="controls"><button id="importBundleBtn" class="secondary">統合JSを読み込む</button><input id="bundleFileInput" type="file" accept=".js,.json,text/javascript,application/javascript" multiple hidden></div><div id="bundleDataStatus" class="data-status"></div><div id="bundlePackManager" class="pack-manager-body"></div></div>
-    <div class="foot">Fantasia Record Ops (PRO) 1.10.5 / MGSPW-inspired auto deployment / Unit Pack Schema 4・Mission Schema 2・Item Schema 3・Bundle Schema 3（旧Schema読込互換）</div>
+    <div class="foot">Fantasia Record Ops (PRO) 1.11.0</div>
+    <div id="tipBox" class="tip-box" role="status" hidden></div>
+    <div id="techInfo" hidden>MGSPW OUTER OPS inspired / Unit Pack Schema 4・Mission Schema 2・Item Schema 3・Bundle Schema 3（旧Schema読込互換）</div>
   </div>
 </section>
 
@@ -307,12 +315,12 @@ body.flow-layout .skill-card,body.flow-layout .weapon-card,body.flow-layout .dro
 
 <div id="storyOverlay" class="story-overlay" role="dialog" aria-modal="true" aria-labelledby="storyTitle" hidden><div class="story-card"><div id="storyTitle" class="result-kicker"></div><div id="storySpeaker" class="story-speaker"></div><div id="storyText" class="story-text"></div><div class="story-foot"><span id="storyProgress" class="sub"></span><div class="result-actions"><button id="storySkip" class="secondary" type="button">スキップ</button><button id="storyNext" class="primary" type="button">次へ</button></div></div></div></div>
 
-<script src="shared/pro_core.js?v=1.10.5"></script>
-<script src="shared/pro_battle.js?v=1.10.5"></script>
-<script src="outer_ops_units.js?v=1.10.5" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
-<script src="outer_ops_missions.js?v=1.10.5" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
-<script src="outer_ops_items.js?v=1.10.5" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
-<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.2.0','shared/pro_core.js'],['PROBattle','1.1.0','shared/pro_battle.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
+<script src="shared/pro_core.js?v=1.11.0"></script>
+<script src="shared/pro_battle.js?v=1.11.0"></script>
+<script src="outer_ops_units.js?v=1.11.0" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_missions.js?v=1.11.0" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_items.js?v=1.11.0" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
+<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.2.0','shared/pro_core.js'],['PROBattle','1.2.0','shared/pro_battle.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
 <script>
 (() => {
 'use strict';
@@ -329,7 +337,7 @@ const ITEM_PACK_FORMAT = 'VAIS_OUTER_OPS_ITEM_PACK';
 const ITEM_PACK_SCHEMA = 3;
 const IMPORTED_ITEM_PACKS_KEY = 'vais_outer_ops_imported_item_packs_v1';
 const IMPORTED_BUNDLE_PACKS_KEY = 'pro_imported_bundle_packs_v1';
-const GAME_VERSION = '1.10.5';
+const GAME_VERSION = '1.11.0';
 
 function storageGet(key,fallback=null){try{const v=localStorage.getItem(key);return v===null?fallback:v;}catch(e){console.warn('localStorage read failed',e);return fallback;}}
 function storageSet(key,value){try{localStorage.setItem(key,value);return true;}catch(e){console.warn('localStorage write failed',e);return false;}}
@@ -658,7 +666,7 @@ function normalizeExtState(saved){
     records:{...base,...Object.fromEntries(['battles','wins','losses','draws','kills','purchases'].map(k=>[k,intIn(r[k],0,1e12,0)])),enemyKills:mapEntries(r.enemyKills,v=>intIn(v,0,1e12,0)),enemyNames:mapEntries(r.enemyNames,v=>String(v).slice(0,60)),itemsFound:mapEntries(r.itemsFound,v=>intIn(v,0,1e12,0)),itemNames:mapEntries(r.itemNames,v=>String(v).slice(0,60))},
     achievements:idArray(saved.achievements),
     presets:Array.isArray(saved.presets)?saved.presets.slice(0,3).map((p,i)=>p&&typeof p==='object'?{name:String(p.name||`プリセット${i+1}`).slice(0,30),selected:idArray(p.selected,MAX_SLOTS),rows:mapEntries(p.rows,v=>v==='back'?'back':'front')}:null):[],
-    settings:{fatigue:saved.settings?.fatigue!==false},
+    settings:{fatigue:saved.settings?.fatigue!==false,guideDone:saved.settings?.guideDone===true},
     day:intIn(saved.day,0,1e9,0)
   };
 }
@@ -819,6 +827,7 @@ function render(){
   document.getElementById('deployBtn').disabled=battleRunning||selected.length===0||!activeMission||selected.length>activeMission.maxDeploy||!missionAvailable(activeMission)||!!missionLockReason(activeMission)||!!deployProblem(activeMission,selected); document.getElementById('repairBtn').disabled=battleRunning;
   renderPackManagers();renderItemPackManager();renderBundlePackManager();updateDeployReadiness(activeMission);updateBattleControls();
   renderGrowth();renderShop();renderLab();renderRecords();renderPresets();renderSaveTools();renderMissionDetail(activeMission);
+  renderHomeCards();renderPackCatalog();renderSquadPrep();if(typeof document.getElementById('missionList')?.closest==='function')scheduleEstimates();
   const notice=document.getElementById('itemNotice');if(notice){notice.hidden=!lastNotice;notice.textContent=lastNotice;}
 }
 function itemEffectText(item){return C.itemSummary(item)+(item.requires?' / '+C.requirementText(item.requires):'');}
@@ -890,14 +899,16 @@ function renderItemPackManager(){const el=document.getElementById('itemPackManag
 function removeImportedItemPack(packId){if(battleRunning)return;const p=importedItemPacks.find(x=>x.packId===packId);if(!p||!confirm(`アイテムパック「${p.packName}」を解除しますか？\n所持数は残り、再読込すると使用できます。`))return;const next=importedItemPacks.filter(x=>x.packId!==packId);if(!saveImportedItemPacks(next)){alert(STORAGE_FAIL_MESSAGE);return;}importedItemPacks=next;rebuildItemMaster();render();}
 function rollMissionDrops(mission){const found=[];for(const drop of mission.drops||[]){const item=ITEM_MASTER[drop.itemId];if(!item){log(`DROP SKIPPED: 未読込アイテム ${esc(drop.itemId)}`,'sys');continue;}if(!chance(drop.chance/100))continue;const count=drop.min+Math.floor(Math.random()*(drop.max-drop.min+1));state.items[item.id]=(state.items[item.id]||0)+count;recordItem(item.id,count);found.push({id:item.id,name:item.name,count});log(`ITEM GET: ${esc(item.name)} ×${count}`,'sys');}return found;}
 function unitThumb(u,cls='unit-thumb'){return u.image?`<img class="${cls}" src="${esc(u.image)}" alt="">`:'';}
+const openUnitDetails=new Set(); // keeps 「詳しく」 open across re-renders
 function renderUnits(){
   const el=document.getElementById('unitList');el.innerHTML='';
   if(!UNIT_MASTER.length){el.innerHTML='<div class="empty">味方ユニットデータがありません。</div>';return;}
   UNIT_MASTER.forEach(u=>{const cur=state.units[u.id]?.hp??u.hp,ratio=cur/u.hp,riding=boardingOf(u.id),needPilot=crewOf(u)==='required'&&!u.pilotId,block=sortieBlock(u.id)||(riding?`${UNIT_INDEX[riding]?.name||riding}に搭乗中`:'')||(needPilot?'要パイロット（未搭乗）':''),d=document.createElement('div');d.className='unit'+(selected.includes(u.id)?' selected':'')+(cur<=0||block?' disabled':'');
     const baseVsStd=baseHitRate(u.acc,700,0);
     const cost=repairCost(u.hp-cur),row=state.rows[u.id]||u.row||'front',info=levelInfo(u.id),fat=fatigueOf(u.id);
-    d.innerHTML=`<div class="row"><div class="unit-head">${unitThumb(u)}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub" style="margin:2px 0">${esc(u.role||'')} ${u.pilotId?`/ 搭乗: ${esc(u.pilot)}（Lv${u.pilotLv}）`:u.pilot?`/ ${esc(u.pilot)}`:''}${crewOf(u)==='required'?' <span class="crew-badge">要パイロット</span>':''}${u.pilotProfile?' <span class="crew-badge pilot">パイロット</span>':''}</div></div></div><span class="tag">${esc(u._packName||'CORE')}</span></div><div class="stats"><div class="stat"><b>${Math.ceil(cur)}</b><span>HP</span></div><div class="stat"><b>${u.atk}</b><span>ATK ${outerGrade(u.atk)}</span></div><div class="stat"><b>${u.def}</b><span>DEF ${outerGrade(u.def)}</span></div><div class="stat"><b>${u.mob}</b><span>MOB ${outerGrade(u.mob)}</span></div><div class="stat"><b>${u.acc}</b><span>ACC ${outerGrade(u.acc)}</span></div></div><div class="hpbar"><div class="hpfill ${hpClass(ratio)}" style="width:${ratio*100}%"></div></div><div class="unit-extra"><span class="row-badge ${row}">${row==='back'?'後衛':'前衛'}</span>${fatigueOn()&&fat?`<span class="${fat>=FATIGUE_TIRED?'warn-badge':''}">疲労 ${fat}</span>`:''}${block?`<span class="bad-badge">${esc(block)}</span>`:''}<span>タグ ${esc(u.tags?.join('・')||'なし')}</span><span>武装 ${u.weapons.length}</span>${Object.entries(state.upgrades?.[u.id]||{}).filter(([,v])=>v>0).map(([k,v])=>`<span>強化 ${k==='hp'?'最大HP':k.toUpperCase()} +${v}</span>`).join('')}<span>標準MOB700へ基礎命中 ${pct(baseVsStd)}%</span>${u.skills?.length?`<span>SKILL ${esc(u.skills.map(x=>x.name).join(' / '))}</span>`:(u.ability?`<span>${esc(u.ability)}</span>`:'')}</div><div class="weapon-title">WEAPONS</div><div class="weapon-list">${u.weapons.map(w=>`<span class="weapon-chip ${weaponClass(w)}">${esc(w.name)} / ${weaponTypeLabel(w)}${w.usesPerBattle?` / ${w.usesPerBattle}回`:''}${w.cooldown?` / 待機${w.cooldown}`:''}${w.effects?.length?` / 効果${w.effects.length}`:''}</span>`).join('')}</div>${u.weapons.some(w=>w.effects?.length)?`<div class="weapon-fx">${u.weapons.filter(w=>w.effects?.length).map(w=>`<div><b>${esc(w.name)}</b> ${esc(C.weaponEffectsText(w).join(' ／ '))}</div>`).join('')}</div>`:''}<div class="unit-actions"><button class="row-toggle secondary" ${battleRunning?'disabled':''}>${row==='back'?'前衛にする':'後衛にする'}</button>${cost?`<button class="repair-one" ${battleRunning||state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}${state.credits<cost?'（資金不足）':''}</button>`:''}</div>`;
+    d.innerHTML=`<div class="row"><div class="unit-head">${unitThumb(u)}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub" style="margin:2px 0">${esc(u.role||'')} ${u.pilotId?`/ 搭乗: ${esc(u.pilot)}（Lv${u.pilotLv}）`:u.pilot?`/ ${esc(u.pilot)}`:''}${crewOf(u)==='required'?' <span class="crew-badge">要パイロット</span>':''}${u.pilotProfile?' <span class="crew-badge pilot">パイロット</span>':''}</div></div></div><span class="tag">${esc(u._packName||'CORE')}</span></div><div class="unit-summary"><span class="power-stars">${starText(unitStrength(u).stars)}</span>${tip('power')}<span class="hp-text">HP ${Math.ceil(cur).toLocaleString()} / ${u.hp.toLocaleString()}</span><span class="row-badge ${row}">${row==='back'?'後衛':'前衛'}</span>${tip('row')}${fatigueOn()&&fat?`<span class="${fat>=FATIGUE_TIRED?'warn-badge':''}">疲労 ${fat}</span>`:''}${block?`<span class="bad-badge">${esc(block)}</span>`:''}</div><div class="hpbar"><div class="hpfill ${hpClass(ratio)}" style="width:${ratio*100}%"></div></div><details class="unit-more"${openUnitDetails.has(u.id)?' open':''}><summary>詳しく（能力・武装・スキル）</summary><div class="stats"><div class="stat"><b>${Math.ceil(cur)}</b><span>HP ${tip('hp')}</span></div><div class="stat"><b>${u.atk}</b><span>ATK ${outerGrade(u.atk)} ${tip('atk')}</span></div><div class="stat"><b>${u.def}</b><span>DEF ${outerGrade(u.def)} ${tip('def')}</span></div><div class="stat"><b>${u.mob}</b><span>MOB ${outerGrade(u.mob)} ${tip('mob')}</span></div><div class="stat"><b>${u.acc}</b><span>ACC ${outerGrade(u.acc)} ${tip('acc')}</span></div></div><div class="unit-extra"><span>タグ ${esc(u.tags?.join('・')||'なし')}</span><span>武装 ${u.weapons.length}</span>${Object.entries(state.upgrades?.[u.id]||{}).filter(([,v])=>v>0).map(([k,v])=>`<span>強化 ${k==='hp'?'最大HP':k.toUpperCase()} +${v}</span>`).join('')}<span>命中の目安（機動700の相手に）${pct(baseVsStd)}%</span>${u.skills?.length?`<span>SKILL ${esc(u.skills.map(x=>x.name).join(' / '))}</span>`:(u.ability?`<span>${esc(u.ability)}</span>`:'')}</div><div class="weapon-title">WEAPONS</div><div class="weapon-list">${u.weapons.map(w=>`<span class="weapon-chip ${weaponClass(w)}">${esc(w.name)} / ${weaponTypeLabel(w)}${w.usesPerBattle?` / ${w.usesPerBattle}回`:''}${w.cooldown?` / 待機${w.cooldown}`:''}${w.effects?.length?` / 効果${w.effects.length}`:''}</span>`).join('')}</div>${u.weapons.some(w=>w.effects?.length)?`<div class="weapon-fx">${u.weapons.filter(w=>w.effects?.length).map(w=>`<div><b>${esc(w.name)}</b> ${esc(C.weaponEffectsText(w).join(' ／ '))}</div>`).join('')}</div>`:''}</details><div class="unit-actions"><button class="row-toggle secondary" ${battleRunning?'disabled':''}>${row==='back'?'前衛にする':'後衛にする'}</button>${cost?`<button class="repair-one" ${battleRunning||state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}${state.credits<cost?'（資金不足）':''}</button>`:''}</div>`;
     d.onclick=()=>{if(battleRunning||cur<=0||block)return;if(selected.includes(u.id))selected=selected.filter(x=>x!==u.id);else{const m=MISSIONS.find(x=>x.id===selectedMission),limit=m?m.maxDeploy:MAX_SLOTS;if(selected.length<Math.min(MAX_SLOTS,limit))selected.push(u.id);}render();};
+    const more=d.querySelector('.unit-more');if(more){more.addEventListener('click',e=>e.stopPropagation());more.addEventListener('toggle',()=>{if(more.open)openUnitDetails.add(u.id);else openUnitDetails.delete(u.id);});}
     d.querySelector('.repair-one')?.addEventListener('click',e=>{e.stopPropagation();repairUnit(u.id);});
     d.querySelector('.row-toggle')?.addEventListener('click',e=>{e.stopPropagation();setRow(u.id,row==='back'?'front':'back');});
     el.appendChild(d);
@@ -908,7 +919,7 @@ function objectiveText(m){const ob=m.objective;if(!ob||ob.type==='annihilate')re
 function ruleTexts(m){return (m.rules||[]).map(r=>{if(typeof r==='string')return r;if(r.type==='turn_limit')return `${r.value}TURN以内に勝利しないと敗北`;if(r.type==='reinforce')return `${r.turn}TURN目に援軍 ${r.enemies.map(id=>ENEMY_MASTER[id]?.name||id).join('・')}`;if(r.type==='deploy_tags')return '出撃制限 '+C.requirementText(r);return r.name||r.type||'特殊ルール';});}
 function terrainText(m){const t=C.terrainMods(m),parts=[];if(t.meleeHitPt)parts.push(`近接命中${t.meleeHitPt>0?'+':''}${t.meleeHitPt}`);if(t.rangedHitPt)parts.push(`射撃命中${t.rangedHitPt>0?'+':''}${t.rangedHitPt}`);if(t.mobPct)parts.push(`MOB${t.mobPct>0?'+':''}${t.mobPct}%`);if(t.banTags?.length)parts.push(`「${t.banTags.join('・')}」出撃不可`);return parts.length?`${m.terrain}（${parts.join(' / ')}）`:m.terrain;}
 function starMarks(m){const rec=state.missions[m.id],stars=C.missionStars(m);return stars.map((s,i)=>rec?.stars[i]?'★':'☆').join('');}
-function renderMissions(){const el=document.getElementById('missionList');el.innerHTML='';if(!MISSIONS.length){el.innerHTML='<div class="empty">作戦データがありません。</div>';return;}MISSIONS.forEach(m=>{const available=missionAvailable(m),lock=available?missionLockReason(m):'',enemyNames=m.enemies.map(id=>ENEMY_MASTER[id]?.name||id),tagText=m.tags?.length?m.tags.join(' / '):'なし',rules=ruleTexts(m),dropText=(m.drops||[]).map(d=>`${ITEM_MASTER[d.itemId]?.name||d.itemId} ${d.chance}% ×${d.min}${d.max>d.min?'～'+d.max:''}`).join(' / '),rec=state.missions[m.id];const d=document.createElement('div');d.className='mission'+(selectedMission===m.id?' selected':'')+(available&&!lock?'':' disabled');d.innerHTML=`<div class="row"><div class="name">${esc(m.name)} <span class="stars" title="${esc(C.missionStars(m).map(C.starText).join(' / '))}">${starMarks(m)}</span></div><span class="tag">RANK ${esc(m.diff)}</span></div><div class="sub" style="margin:5px 0">${esc(m.desc)}${available?'':' / 必要な敵ユニットデータが不足'}${lock?` / 🔒 ${esc(lock)}`:''}</div><div class="enemy-roster">${enemyNames.map(n=>`<span class="enemy-chip">${esc(n)}</span>`).join('')}</div><div class="unit-extra"><span>勝利条件 ${esc(objectiveText(m))}</span><span>地形 ${esc(terrainText(m))}</span><span>出撃上限 ${m.maxDeploy}</span>${m.days?.length?`<span>曜日 ${m.days.map(x=>C.days[x]).join('・')}</span>`:''}<span>タグ ${esc(tagText)}</span><span>特殊 ${esc(rules.join(' / ')||'なし')}</span><span>ドロップ ${esc(dropText||'なし')}（勝利時）</span>${rec?.clears?`<span>クリア ${rec.clears}回 / 最短 ${rec.best}TURN</span>`:''}${m.story?'<span>ストーリーあり</span>':''}</div><div class="row" style="margin-top:7px"><span>敵 ${m.enemies.length}機${m.waves?.length?` + ${m.waves.length}波`:''}</span><span class="reward">報酬 ${m.reward.toLocaleString()}</span></div>`;d.onclick=()=>{if(!battleRunning&&available&&!lock){selectedMission=m.id;if(selected.length>m.maxDeploy)selected=selected.slice(0,m.maxDeploy);render();}};el.appendChild(d);});}
+function renderMissions(){const el=document.getElementById('missionList');el.innerHTML='';if(!MISSIONS.length){el.innerHTML='<div class="empty">作戦データがありません。</div>';return;}MISSIONS.forEach(m=>{const available=missionAvailable(m),lock=available?missionLockReason(m):'',enemyNames=m.enemies.map(id=>ENEMY_MASTER[id]?.name||id),tagText=m.tags?.length?m.tags.join(' / '):'なし',rules=ruleTexts(m),dropText=(m.drops||[]).map(d=>`${ITEM_MASTER[d.itemId]?.name||d.itemId} ${d.chance}% ×${d.min}${d.max>d.min?'～'+d.max:''}`).join(' / '),rec=state.missions[m.id];const d=document.createElement('div');d.className='mission'+(selectedMission===m.id?' selected':'')+(available&&!lock?'':' disabled');d.innerHTML=`<div class="row"><div class="name">${esc(m.name)} <span class="stars" title="${esc(C.missionStars(m).map(C.starText).join(' / '))}">${starMarks(m)}</span></div><span class="tag">RANK ${esc(m.diff)}</span></div><div class="sub" style="margin:5px 0">${esc(m.desc)}${available?'':' / 必要な敵ユニットデータが不足'}${lock?` / 🔒 ${esc(lock)}`:''}</div><div class="enemy-roster">${enemyNames.map(n=>`<span class="enemy-chip">${esc(n)}</span>`).join('')}</div><div class="unit-extra"><span>勝利条件 ${esc(objectiveText(m))}</span><span>地形 ${esc(terrainText(m))}</span><span>出撃上限 ${m.maxDeploy}</span>${m.days?.length?`<span>曜日 ${m.days.map(x=>C.days[x]).join('・')}</span>`:''}<span>タグ ${esc(tagText)}</span><span>特殊 ${esc(rules.join(' / ')||'なし')}</span><span>ドロップ ${esc(dropText||'なし')}（勝利時）</span>${rec?.clears?`<span>クリア ${rec.clears}回 / 最短 ${rec.best}TURN</span>`:''}${m.story?'<span>ストーリーあり</span>':''}</div>${available&&!lock?`<div class="win-est" id="est-${m.id}">${(()=>{const ids=estimateSquad(m),v=estimateCache.get(estimateKey(m,ids));return v?estimateHtml(v):'推定勝率 計算中…';})()} ${tip('win')}</div>`:''}<div class="row" style="margin-top:7px"><span>敵 ${m.enemies.length}機${m.waves?.length?` + ${m.waves.length}波`:''}</span><span class="reward">報酬 ${m.reward.toLocaleString()}</span></div>`;d.onclick=()=>{if(!battleRunning&&available&&!lock){selectedMission=m.id;if(selected.length>m.maxDeploy)selected=selected.slice(0,m.maxDeploy);render();}};el.appendChild(d);});}
 function renderSquad(){
   const s=document.getElementById('squadView');const selectedUnits=selected.map(id=>UNIT_MASTER.find(u=>u.id===id)).filter(Boolean);
   const slots=Array.from({length:MAX_SLOTS},(_,i)=>selectedUnits[i]?`<span class="chip">${i+1}. ${esc(selectedUnits[i].name)} ${(state.rows[selectedUnits[i].id]||selectedUnits[i].row||'front')==='back'?'〔後〕':'〔前〕'}</span>`:`<span class="chip" style="opacity:.38">${i+1}. EMPTY</span>`);s.innerHTML=slots.join('');
@@ -1127,12 +1138,7 @@ async function importBundleFiles(files){
   for(const file of files){try{parsed.push(extractBundlePackFromJs(await file.text()));}catch(e){errors.push(`${file.name}: ${e.message}`);}}
   if(errors.length){alert(`統合パックの読込に失敗しました。変更は適用していません。\n${errors.join('\n')}`);return;}
   if(!parsed.length)return;
-  const duplicates=new Set();for(const p of parsed){if(duplicates.has(p.packId)){alert('同じ統合パックIDが複数ファイルにあります: '+p.packId);return;}duplicates.add(p.packId);}
-  const description=parsed.map(p=>`${p.packName}: ユニット${p.units.length}・作戦${p.missions.length}・アイテム${p.items.length}`).join('\n');
-  if(!confirm(`統合パックを適用しますか？\n${description}\n同じパックIDは更新されます。`))return;
-  const next=[...importedBundlePacks];for(const pack of parsed){const i=next.findIndex(x=>x.packId===pack.packId);if(i>=0)next[i]=pack;else next.push(pack);}
-  if(!storageSet(IMPORTED_BUNDLE_PACKS_KEY,JSON.stringify(next))){alert(STORAGE_FAIL_MESSAGE);return;}
-  importedBundlePacks=next;refreshBundleMasters();
+  await applyBundles(parsed);
 }
 function clearImportedItemPacks(){if(battleRunning||!importedItemPacks.length)return;if(!confirm('追加アイテムパックを解除しますか？\n所持数は残ります。'))return;if(!storageRemove(IMPORTED_ITEM_PACKS_KEY)){alert(STORAGE_FAIL_MESSAGE);return;}importedItemPacks=[];rebuildItemMaster();render();}
 function clearImportedMissionPacks(){
@@ -1317,7 +1323,123 @@ function renderMissionDetail(m){
   if(m.objective?.type==='escort')lines.push(`護衛対象「${UNIT_INDEX[m.objective.escortUnitId]?.name||m.objective.escortUnitId}」が自動で同行します（撃破されると敗北）`);
   box.innerHTML=lines.map(x=>`<div>${esc(x)}</div>`).join('');
 }
+// ===== 1.11.0: user-friendly helpers (guide, next actions, pack catalog, glossary, mission assist) =====
+const GLOSSARY={
+  hp:'HP: 体力。0になると撃破され、その戦闘では行動できません。',
+  atk:'ATK: 攻撃力。与えるダメージの大きさに影響します。',
+  def:'DEF: 防御力。受けるダメージを減らします。',
+  mob:'MOB: 機動力。攻撃をかわしやすくなり、行動順も早くなります。',
+  acc:'ACC: 照準。攻撃が当たりやすくなります（相手のMOBと比べて命中率が決まります）。',
+  row:'前衛・後衛: 前衛は狙われやすく、後衛は前衛がいる間は近接攻撃を受けません。',
+  fatigue:'疲労: 出撃でたまり、多すぎると出撃できません。出撃しない日や「休養」で回復します。',
+  star:'星評価: 作戦ごとに3つの条件があり、初めて達成すると報酬がもらえます。',
+  turn:'TURN: 全員が1回ずつ行動すると1TURN。作戦によってはTURN制限があります。',
+  power:'★強さ: 標準的な歩兵を★3として、攻撃力と耐久力から計算した目安です（スキルは含みません）。',
+  win:'推定勝率: 今の編成（未編成なら「おまかせ編成」）で20回戦闘を計算した目安です。運の要素があります。',
+  pilot:'パイロット: 「要パイロット」のユニットは、パイロットが乗らないと出撃できません。「育成」か出撃確認画面で搭乗させます。'
+};
+function tip(key){return `<button type="button" class="tip-btn" data-tip="${key}" aria-label="説明">?</button>`;}
+function unitStrength(u){try{const r=B.powerRatio(u);return {ratio:r,stars:B.starCount(r)};}catch(e){return {ratio:0,stars:0};}}
+function starText(n){return '★'.repeat(n)+'☆'.repeat(Math.max(0,5-n));}
+function goTo(view,opt={}){if(opt.growth){growthTargetId=opt.growth;}if(opt.mission&&MISSIONS.some(m=>m.id===opt.mission))selectedMission=opt.mission;if(opt.growth||opt.mission)render();if(window.PROFlow)window.PROFlow.show(view);}
+// Suggestions for what to do next, most useful first (max 3).
+function nextActions(){
+  const out=[],add=(prio,text,view,opt={})=>out.push({prio,text,view,...opt});
+  const freePilot=()=>Object.values(PILOT_MASTER).find(p=>UNIT_MASTER.some(x=>x.id===p.id)&&!boardingOf(p.id)&&!state.pilots[p.id]);
+  const mech=UNIT_MASTER.find(u=>crewOf(u)==='required'&&!u.pilotId);
+  if(mech&&freePilot())add(1,`${mech.name}にパイロットを乗せよう（乗せないと出撃できません）`,'growth',{growth:mech.id});
+  for(const u of UNIT_MASTER){const sp=levelInfo(u.id).sp,tree=BASE_UNIT_MASTER.find(b=>b.id===u.id)?.skillTree||[],got=state.tree[u.id]||[];if(sp>0&&tree.some(n=>!got.includes(n.id))){add(2,`${u.name}にスキルポイントが${sp}あります。スキルツリーで新しいスキルを覚えよう`,'growth',{growth:u.id});break;}}
+  const hurt=UNIT_MASTER.filter(u=>(state.units[u.id]?.hp??u.hp)<u.hp);if(hurt.length)add(3,`${hurt.length}体のHPが減っています。修理やアイテムで回復しておこう`,'units');
+  const next=MISSIONS.find(m=>missionAvailable(m)&&!missionLockReason(m)&&!state.missions[m.id]?.clears);if(next)add(4,`作戦「${next.name}」に挑戦しよう`,'missions',{mission:next.id});
+  const research=Object.values(RESEARCH_MASTER).find(r=>researchStatus(r)==='open'&&state.credits>=(r.cost?.credits||0)&&Object.entries(r.cost?.items||{}).every(([id,n])=>(state.items[id]||0)>=n));if(research)add(5,`研究「${research.name}」ができます`,'lab');
+  const starMiss=MISSIONS.find(m=>state.missions[m.id]?.clears&&state.missions[m.id].stars.some(x=>!x)&&!missionLockReason(m));if(starMiss)add(6,`「${starMiss.name}」で残りの星を集めよう`,'missions',{mission:starMiss.id});
+  out.sort((a,b)=>a.prio-b.prio);return out.slice(0,3);
+}
+function renderHomeCards(){
+  const box=document.getElementById('homeCards');if(!box)return;const parts=[];
+  if(!state.settings.guideDone)parts.push(`<div class="home-card guide"><div class="home-title">はじめての方へ — 3ステップで出撃</div><ol class="guide-steps"><li><b>部隊を選ぶ</b>：下のユニットをタップして出撃メンバーを選びます。<button type="button" class="flow-btn" data-go="units">01 部隊</button></li><li><b>作戦を選ぶ</b>：挑戦する作戦を選びます。推定勝率が目安になります。<button type="button" class="flow-btn" data-go="missions">02 作戦</button></li><li><b>出撃する</b>：確認して「派遣開始」。戦闘は自動で進みます。<button type="button" class="flow-btn" data-go="review">03 出撃確認</button></li></ol><button type="button" class="guide-close secondary" data-guide-close="1">わかった（閉じる）</button></div>`);
+  const acts=nextActions();
+  parts.push(`<div class="home-card next"><div class="home-title">次にやること</div>${acts.length?`<ul class="next-list">${acts.map((a,i)=>`<li><button type="button" class="next-btn" data-next="${i}">${esc(a.text)} →</button></li>`).join('')}</ul>`:'<div class="sub">すべて順調！ 作戦で腕を磨こう。</div>'}</div>`);
+  box.innerHTML=parts.join('');box._acts=acts;
+}
+function finishGuide(){state.settings.guideDone=true;commitChange('ガイドを閉じました（データ管理からもう一度見られます）');}
+function reopenGuide(){state.settings.guideDone=false;commitChange('ガイドを表示しました');if(window.PROFlow)window.PROFlow.show('units');}
+// ---- expansion pack catalog (bundled files, loaded with <script>, no fetch: works on file://) ----
+const PACK_CATALOG=[
+  {packId:'black_bullet',file:'expansion_packs/black_bullet_bundle_PRO.js',name:'ブラック・ブレット',kind:'拡張パック',desc:'原作1～7巻の流れをたどる作戦10本と、民警ペア・ガストレア・ゾディアックなどユニット27体。'},
+  {packId:'PR-01',file:'expansion_packs/PR-01.js',name:'PR-01',kind:'拡張パック',desc:'作戦11本とユニット・アイテムをまとめた拡張パック。'},
+  {packId:'pack-0000',file:'expansion_packs/pack-0000.js',name:'テスト統合パック02（旧基本データ入り）',kind:'拡張パック',desc:'1.10.2までの基本データ（ジャッカルたち）に、ユニット1体と作戦2本を足したパック。'},
+  {packId:'pro_190_feature_sample',file:'samples/pro_190_feature_sample.js',name:'1.9 機能サンプル',kind:'サンプル',desc:'勝利条件・研究・ショップ・装備・スキルツリーなど1.9の要素をまとめて試せます。'},
+  {packId:'pro_1101_weapon_effects_sample',file:'samples/pro_1101_weapon_effects_sample.js',name:'武装の追加効果サンプル',kind:'サンプル',desc:'使用前・使用後に発動する武装の追加効果を試せます。'},
+  {packId:'pro_1102_pilot_sample',file:'samples/pro_1102_pilot_sample.js',name:'パイロットサンプル',kind:'サンプル',desc:'パイロットが必要な機体と、生身のパイロットを試せます。'}
+];
+function loadCatalogScript(file){return new Promise((resolve,reject)=>{const keys=['VAIS_BUNDLE_PACK','VAIS_UNIT_PACK','VAIS_MISSION_PACK','VAIS_ITEM_PACK'],saved={};for(const k of keys){saved[k]=window[k];}delete window.VAIS_BUNDLE_PACK;
+  const restore=()=>{const got=window.VAIS_BUNDLE_PACK;for(const k of keys){if(saved[k]===undefined)delete window[k];else window[k]=saved[k];}return got;};
+  const s=document.createElement('script');s.src=file+'?v='+GAME_VERSION;s.onload=()=>{const got=restore();s.remove();got?resolve(got):reject(new Error('統合パックが見つかりません'));};s.onerror=()=>{restore();s.remove();reject(new Error(file+' を読み込めません（ZIPはすべて展開してください）'));};document.head.appendChild(s);});}
+async function applyBundles(parsed){
+  const duplicates=new Set();for(const p of parsed){if(duplicates.has(p.packId)){alert('同じ統合パックIDが複数ファイルにあります: '+p.packId);return false;}duplicates.add(p.packId);}
+  const description=parsed.map(p=>`${p.packName}: ユニット${p.units.length}・作戦${p.missions.length}・アイテム${p.items.length}`).join('\n');
+  if(!confirm(`統合パックを適用しますか？\n${description}\n同じパックIDは更新されます。`))return false;
+  const next=[...importedBundlePacks];for(const pack of parsed){const i=next.findIndex(x=>x.packId===pack.packId);if(i>=0)next[i]=pack;else next.push(pack);}
+  if(!storageSet(IMPORTED_BUNDLE_PACKS_KEY,JSON.stringify(next))){alert(STORAGE_FAIL_MESSAGE);return false;}
+  importedBundlePacks=next;refreshBundleMasters();return true;
+}
+async function addCatalogPack(packId){if(battleRunning)return false;const entry=PACK_CATALOG.find(x=>x.packId===packId);if(!entry)return false;
+  try{const raw=await loadCatalogScript(entry.file);const ok=await applyBundles([validateBundlePack(raw)]);if(ok){lastNotice=`「${entry.name}」を追加しました。部隊と作戦に追加されています。`;render();}return ok;}catch(e){alert('追加できませんでした: '+e.message);return false;}}
+function renderPackCatalog(){const box=document.getElementById('packCatalog');if(!box)return;
+  box.innerHTML=PACK_CATALOG.map(p=>{const inst=importedBundlePacks.find(x=>x.packId===p.packId);return `<div class="pack-card${inst?' installed':''}"><div class="row"><b>${esc(p.name)}</b><span class="tag">${esc(p.kind)}</span></div><div class="sub">${esc(p.desc)}</div>${inst?`<div class="sub good">追加済み：ユニット${inst.units.length}・作戦${inst.missions.length}・アイテム${inst.items.length}</div>`:''}<div class="controls"><button type="button" class="${inst?'secondary':'primary'}" data-pack-add="${esc(p.packId)}" ${battleRunning?'disabled':''}>${inst?'最新に更新':'＋ 追加する'}</button>${inst?`<button type="button" class="secondary" data-pack-remove="${esc(p.packId)}" ${battleRunning?'disabled':''}>外す</button>`:''}</div></div>`;}).join('');}
+// ---- one button for every kind of data file ----
+function detectDataKind(text){const t=String(text||'').trim();if(t.startsWith('{')){try{const o=JSON.parse(t);if(o&&o.format==='PRO_SAVE')return 'save';if(o&&o.format===C.BUNDLE_FORMAT)return 'bundle';if(o&&o.format===UNIT_PACK_FORMAT)return 'unit';if(o&&o.format===MISSION_PACK_FORMAT)return 'mission';if(o&&o.format===ITEM_PACK_FORMAT)return 'item';}catch(e){}return '';}
+  if(t.includes('VAIS_BUNDLE_PACK'))return 'bundle';if(t.includes('VAIS_UNIT_PACK'))return 'unit';if(t.includes('VAIS_MISSION_PACK'))return 'mission';if(t.includes('VAIS_ITEM_PACK'))return 'item';return '';}
+async function importAnyFiles(fileList){if(battleRunning)return;const groups={bundle:[],unit:[],mission:[],item:[],save:[]},unknown=[];
+  for(const f of fileList){const text=await f.text(),kind=detectDataKind(text),file={name:f.name,text:async()=>text};if(kind)groups[kind].push(file);else unknown.push(f.name);}
+  if(unknown.length)alert('種類がわからないファイルがありました（読み込みませんでした）:\n'+unknown.join('\n'));
+  if(groups.save.length){const data=JSON.parse(await groups.save[0].text());if(confirm(`セーブデータを読み込みますか？\n現在の進行と追加パックは置き換わります。\n書き出し日時: ${data?.exportedAt||'不明'}`)){importSaveData(data);lastNotice='セーブデータを読み込みました';render();}return;}
+  if(groups.bundle.length)await importBundleFiles(groups.bundle);if(groups.unit.length)await importUnitFiles(groups.unit);if(groups.mission.length)await importMissionFiles(groups.mission);if(groups.item.length)await importItemFiles(groups.item);
+  return groups;}
+// ---- mission assist ----
+function unitPower(u){return unitStrength(u).ratio;}
+function autoSquad(m){
+  const limit=Math.min(MAX_SLOTS,m?.maxDeploy||MAX_SLOTS),boards=[];
+  const usable=u=>{if((state.units[u.id]?.hp??0)<=0||sortieBlock(u.id)||boardingOf(u.id))return false;if(!m)return true;const p=deployProblem(m,[u.id]);return !p||/パイロットが必要/.test(p);};
+  let pool=UNIT_MASTER.filter(usable);
+  const pilots=pool.filter(u=>PILOT_MASTER[u.id]&&!state.pilots[u.id]).sort((a,b)=>unitPower(b)-unitPower(a));
+  for(const mech of pool.filter(u=>crewOf(u)==='required'&&!u.pilotId).sort((a,b)=>unitPower(b)-unitPower(a))){const p=pilots.find(p=>p.id!==mech.id&&!boards.some(b=>b.pilot===p.id)&&!sortieBlock(p.id));if(p)boards.push({unit:mech.id,pilot:p.id});}
+  const boarded=new Set(boards.map(b=>b.pilot));
+  pool=pool.filter(u=>!boarded.has(u.id)&&!(crewOf(u)==='required'&&!u.pilotId&&!boards.some(b=>b.unit===u.id)));
+  const ids=pool.sort((a,b)=>unitPower(b)-unitPower(a)).slice(0,limit).map(u=>u.id);
+  return {ids,boards:boards.filter(b=>ids.includes(b.unit))};
+}
+function applyAutoSquad(){if(battleRunning)return false;const m=MISSIONS.find(x=>x.id===selectedMission);if(!m){alert('先に作戦を選んでください。');return false;}
+  const r=autoSquad(m);for(const b of r.boards)assignPilot(b.unit,b.pilot);selected=r.ids;lastNotice=r.ids.length?`おまかせ編成：${r.ids.map(id=>UNIT_MASTER.find(u=>u.id===id)?.name).join('・')}`:'出撃できるユニットがいません';render();return r.ids.length>0;}
+const estimateCache=new Map();let estimateQueue=[],estimateRunning=false;
+function estimateKey(m,ids){return m.id+'|'+ids.map(id=>{const u=UNIT_MASTER.find(x=>x.id===id);return u?[id,u.level,u.hp,u.atk,u.def,u.mob,u.acc,u.pilotId||'',state.rows[id]||u.row||''].join(':'):id;}).join(',');}
+function estimateSquad(m){const ids=(selected.length?selected:autoSquad(m).ids).filter(id=>UNIT_MASTER.some(u=>u.id===id));return ids.slice(0,m.maxDeploy);}
+function difficultyLabel(w){return w>=.9?'かんたん':w>=.6?'ふつう':w>=.3?'むずかしい':'とてもむずかしい';}
+async function estimateWin(m,ids=estimateSquad(m)){
+  const key=estimateKey(m,ids);if(estimateCache.has(key))return estimateCache.get(key);
+  const allies=ids.map(id=>UNIT_MASTER.find(u=>u.id===id)).filter(Boolean).map(u=>({...u,row:state.rows[u.id]||u.row||'front'}));
+  if(!allies.length||!missionAvailable(m))return null;
+  const r=await B.simulate({allies,enemies:m.enemies,mission:m,enemyDefs:ENEMY_MASTER,unitDefs:UNIT_INDEX,trials:20,seed:7});
+  const v={winRate:r.winRate,label:difficultyLabel(r.winRate),auto:!selected.length};estimateCache.set(key,v);return v;
+}
+function estimateHtml(v){if(!v)return '';return `推定勝率 <b>${Math.round(v.winRate*100)}%</b>（${v.label}${v.auto?'・おまかせ編成で計算':''}）`;}
+function scheduleEstimates(){estimateQueue=MISSIONS.filter(m=>missionAvailable(m)&&!missionLockReason(m)).map(m=>m.id);if(!estimateRunning)runEstimates();}
+async function runEstimates(){estimateRunning=true;try{while(estimateQueue.length){const id=estimateQueue.shift(),m=MISSIONS.find(x=>x.id===id);if(!m||battleRunning)continue;const v=await estimateWin(m);const span=document.getElementById('est-'+id);if(span)span.innerHTML=estimateHtml(v)||'';await new Promise(r=>setTimeout(r,0));}}catch(e){console.warn('estimate failed',e);}finally{estimateRunning=false;}}
+function renderSquadPrep(){const box=document.getElementById('squadPrep');if(!box)return;const m=MISSIONS.find(x=>x.id===selectedMission);
+  if(!selected.length){box.innerHTML=`<div class="sub">まだ誰も選ばれていません。${m?'<button type="button" class="primary" data-auto-squad="1">おまかせ編成</button>':'先に「02 作戦」で作戦を選ぶと、おまかせ編成が使えます。'}</div>`;return;}
+  const freePilots=Object.values(PILOT_MASTER).filter(p=>UNIT_MASTER.some(x=>x.id===p.id)&&!boardingOf(p.id)&&!state.pilots[p.id]&&!selected.includes(p.id));
+  box.innerHTML=(m?'<div class="controls"><button type="button" class="secondary" data-auto-squad="1">おまかせ編成で選び直す</button></div>':'')+selected.map(id=>{const u=UNIT_MASTER.find(x=>x.id===id);if(!u)return '';const cur=state.units[id]?.hp??u.hp,cost=repairCost(u.hp-cur),prob=m?deployProblem(m,[id]):'';
+    const needSeat=crewOf(u)!=='none'&&!u.pilotId&&freePilots.length;
+    return `<div class="prep-row${prob?' bad':''}"><div><b>${esc(u.name)}</b> <span class="sub">HP ${Math.ceil(cur).toLocaleString()} / ${u.hp.toLocaleString()}${u.pilotId?` ／ 搭乗: ${esc(u.pilot)}`:''}</span>${prob?`<div class="prep-problem">⚠ ${esc(prob)}</div>`:''}</div><div class="controls">${cost?`<button type="button" class="secondary" data-prep-repair="${esc(id)}" ${state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}</button>`:''}${needSeat?`<select data-prep-pilot="${esc(id)}" aria-label="${esc(u.name)}に乗せるパイロット"><option value="">${crewOf(u)==='required'?'パイロットを選ぶ':'パイロットを乗せる（任意）'}</option>${freePilots.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select>`:''}<button type="button" class="secondary" data-prep-remove="${esc(id)}">外す</button></div></div>`;}).join('');}
+
 document.getElementById('deployBtn').onclick=deploy;
+// 1.11.0 bindings: home cards, pack catalog, squad preparation, glossary tips, one-button import
+document.getElementById('homeCards').addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;e.stopPropagation();if(t.dataset.guideClose){finishGuide();return;}if(t.dataset.go){if(window.PROFlow)window.PROFlow.show(t.dataset.go);return;}if(t.dataset.next!==undefined){const a=(document.getElementById('homeCards')._acts||[])[Number(t.dataset.next)];if(a)goTo(a.view,a);}});
+document.getElementById('squadPrep').addEventListener('click',e=>{const t=e.target.closest('button');if(!t||battleRunning)return;if(t.dataset.autoSquad){applyAutoSquad();return;}if(t.dataset.prepRepair){repairUnit(t.dataset.prepRepair);return;}if(t.dataset.prepRemove){selected=selected.filter(x=>x!==t.dataset.prepRemove);render();}});
+document.getElementById('squadPrep').addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.prepPilot&&t.value)assignPilot(t.dataset.prepPilot,t.value);});
+let tipTimer=null;function showTip(key){const box=document.getElementById('tipBox');if(!box||!GLOSSARY[key])return;box.textContent=GLOSSARY[key];box.hidden=false;clearTimeout(tipTimer);tipTimer=setTimeout(()=>{box.hidden=true;},6000);}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.tip-btn');if(b){e.stopPropagation();e.preventDefault();showTip(b.dataset.tip);return;}const box=document.getElementById('tipBox');if(box&&!box.hidden&&!e.target.closest('#tipBox'))box.hidden=true;},true);
 document.getElementById('clearBtn').onclick=()=>{if(!battleRunning){selected=[];render();}};
 document.getElementById('repairBtn').onclick=repairAll;
 document.getElementById('importBundleBtn').onclick=()=>document.getElementById('bundleFileInput').click();
@@ -1351,6 +1473,7 @@ document.getElementById('fatigueToggle').onchange=e=>{state.settings.fatigue=!!e
 document.getElementById('exportSaveBtn').onclick=()=>{const d=new Date(),stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;downloadText(`pro_save_${stamp}.json`,JSON.stringify(exportSaveData()));lastNotice='セーブデータを書き出しました';render();};
 document.getElementById('importSaveBtn').onclick=()=>document.getElementById('saveFileInput').click();
 document.getElementById('saveFileInput').onchange=async e=>{const f=e.target.files?.[0];e.target.value='';if(!f||battleRunning)return;try{const data=JSON.parse(await f.text());if(!confirm(`セーブデータを読み込みますか？\n現在の進行と追加パックは置き換わります。\n書き出し日時: ${data?.exportedAt||'不明'}`))return;importSaveData(data);lastNotice='セーブデータを読み込みました';render();}catch(err){alert('読み込めませんでした: '+err.message);}};
+window.PROGame={render,reopenGuide,importAnyFiles,addCatalogPack,removePack:removeImportedBundlePack,applyAutoSquad};
 showScreen('base');
 ensureUnitState();
 render();
@@ -1367,20 +1490,31 @@ const focusPage=(page)=>{const h=page.querySelector('h1,h2,.card-title');if(h){h
 const links=()=>{const box=el('div','flow-links');[['index.html','ゲーム'],['unit_maker.html','Unit Maker'],['mission_maker.html','Mission Maker'],['item_maker.html','Item Maker'],['combined_maker.html','統合メーカー'],['maker_hub.html','メーカー入口']].forEach(([href,t])=>{const a=el('a','',t);a.href=href;a.target='_blank';a.rel='noopener';box.append(a);});return box;};
 
 const wrap=document.querySelector('#baseScreen .wrap'),grid=wrap.querySelector('.grid'),panels=[...grid.children],units=panels[0],missions=panels[1],items=wrap.querySelector('.item-panel'),growth=wrap.querySelector('.growth-panel'),shop=wrap.querySelector('.shop-panel'),lab=wrap.querySelector('.lab-panel'),records=wrap.querySelector('.records-panel');
-const data=el('section','flow-page panel'),review=el('section','flow-page panel'),nav=el('nav','flow-nav');nav.setAttribute('aria-label','基地画面');
-data.append(heading('データ管理'),el('p','flow-lead','ユニット・作戦・アイテムのパックを追加・管理します。'));
-wrap.querySelectorAll('.data-tools').forEach(e=>data.append(e));data.append(links());
+const data=el('section','flow-page panel'),review=el('section','flow-page panel'),packs=el('section','flow-page panel'),nav=el('nav','flow-nav');nav.setAttribute('aria-label','基地画面');
+data.append(heading('データ管理'),el('p','flow-lead','自作データの読み込み、セーブの書き出し・読み込み、設定を行います。'));
+// One button for every kind of data file (1.11.0); the per-type tools move into a folded section.
+const any=el('div','data-tools any-import');any.innerHTML='<h2>📂 データファイルを読み込む</h2><p class="sub">ユニット・作戦・アイテム・統合パック・セーブのどれでもOK。中身を見て自動で振り分けます。同梱の拡張パックは「拡張パック」画面からワンタップで追加できます。</p><div class="controls"><button type="button" class="primary" id="anyImportBtn">ファイルを選ぶ</button><input id="anyFileInput" type="file" accept=".js,.json,text/javascript,application/javascript,application/json" multiple hidden></div>';data.append(any);
+const saveTools=wrap.querySelector('.save-tools');if(saveTools)data.append(saveTools);
+const detail=el('details','pack-manager');detail.append(el('summary','','詳しい読み込み・パック管理（種類別）'));wrap.querySelectorAll('.data-tools:not(.any-import):not(.save-tools)').forEach(e=>detail.append(e));data.append(detail);
+const help=el('div','data-tools');const again=button('はじめてガイドをもう一度見る',()=>{if(window.PROGame)window.PROGame.reopenGuide();});help.append(el('h2','','ヘルプ'),again);data.append(help);
+const tech=el('details','pack-manager');tech.append(el('summary','','技術情報'));const ti=document.getElementById('techInfo');if(ti){ti.hidden=false;tech.append(ti);}data.append(tech);data.append(links());
+packs.append(heading('拡張パック'),el('p','flow-lead','同梱の拡張パック・サンプルを「追加する」だけで遊べます。ユニット・作戦・アイテムがまとめて入り、「外す」でいつでも元に戻せます。'));const catalog=el('div','pack-catalog');catalog.setAttribute('id','packCatalog');packs.append(catalog);
 const reset=document.getElementById('resetBtn');if(reset)data.append(reset);
 const start=[...missions.children].find(e=>e.tagName==='H2'&&e.textContent.includes('出撃編成'));
 let node=start;while(node){const next=node.nextSibling;review.append(node);node=next;}
 review.prepend(heading('出撃前の確認'),el('p','flow-lead','味方の状態と敵編成を確認し、準備が整ったら派遣を開始してください。'));
 units.querySelector('h2').textContent='派遣部隊を編成';missions.querySelector('h2').textContent='作戦を選択';items.querySelector('h2').textContent='補給・強化アイテム';
-const views={units,missions,review,items,growth,shop,lab,records,data};Object.values(views).forEach(e=>e.classList.add('flow-page'));
-grid.before(nav);grid.append(review,growth,shop,lab,records,data);
-const buttons={};[['units','01 部隊'],['missions','02 作戦'],['review','03 出撃確認'],['items','アイテム'],['growth','育成'],['shop','ショップ'],['lab','研究・施設'],['records','記録'],['data','データ管理']].forEach(([id,t])=>{buttons[id]=button(t,()=>show(id));nav.append(buttons[id]);});
-function show(id,focus=true){Object.entries(views).forEach(([k,e])=>e.hidden=k!==id);Object.entries(buttons).forEach(([k,b])=>{if(k===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(focus)focusPage(views[id]);}
+const views={units,missions,review,items,growth,shop,lab,records,packs,data};Object.values(views).forEach(e=>e.classList.add('flow-page'));
+grid.before(nav);grid.append(review,growth,shop,lab,records,packs,data);
+// 1.11.0: grouped menu — 出撃 / 基地 / その他 (group labels are CSS, so the buttons stay the nav's only children)
+const buttons={};[['units','01 部隊','出撃'],['missions','02 作戦'],['review','03 出撃確認'],['growth','育成','基地'],['items','アイテム'],['shop','ショップ'],['lab','研究・施設'],['packs','拡張パック','その他'],['records','記録'],['data','データ管理']].forEach(([id,t,group])=>{buttons[id]=button(t,()=>show(id));if(group)buttons[id].setAttribute('data-group',group);nav.append(buttons[id]);});
+function show(id,focus=true){if(!views[id])return;Object.entries(views).forEach(([k,e])=>e.hidden=k!==id);Object.entries(buttons).forEach(([k,b])=>{if(k===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(buttons[id]&&buttons[id].scrollIntoView&&nav.scrollWidth>nav.clientWidth)buttons[id].scrollIntoView({block:'nearest',inline:'center'});if(focus)focusPage(views[id]);}
+window.PROFlow={show};
+const anyBtn=document.getElementById('anyImportBtn'),anyInput=document.getElementById('anyFileInput');if(anyBtn&&anyInput){anyBtn.onclick=()=>anyInput.click();anyInput.onchange=async()=>{const files=[...(anyInput.files||[])];anyInput.value='';if(files.length&&window.PROGame)await window.PROGame.importAnyFiles(files);};}
+catalog.onclick=async e=>{const t=e.target.closest('button');if(!t||!window.PROGame)return;if(t.dataset.packAdd)await window.PROGame.addCatalogPack(t.dataset.packAdd);if(t.dataset.packRemove)window.PROGame.removePack(t.dataset.packRemove);};
+if(window.PROGame)window.PROGame.render();
 function footer(page,choices){const f=el('div','flow-footer');choices.forEach(([id,t])=>f.append(button(t,()=>show(id))));page.append(f);}
-footer(units,[['items','補給・強化へ'],['missions','作戦選択へ →']]);footer(missions,[['units','← 部隊編成へ'],['review','出撃確認へ →']]);footer(review,[['units','部隊を変更'],['missions','作戦を変更']]);footer(items,[['units','← 部隊編成へ'],['growth','育成へ']]);footer(growth,[['units','← 部隊編成へ'],['items','アイテムへ']]);footer(shop,[['items','アイテムへ'],['lab','研究・施設へ']]);footer(lab,[['shop','ショップへ'],['growth','育成へ']]);
+footer(packs,[['units','← 部隊編成へ'],['missions','作戦選択へ →']]);footer(units,[['items','補給・強化へ'],['missions','作戦選択へ →']]);footer(missions,[['units','← 部隊編成へ'],['review','出撃確認へ →']]);footer(review,[['units','部隊を変更'],['missions','作戦を変更']]);footer(items,[['units','← 部隊編成へ'],['growth','育成へ']]);footer(growth,[['units','← 部隊編成へ'],['items','アイテムへ']]);footer(shop,[['items','アイテムへ'],['lab','研究・施設へ']]);footer(lab,[['shop','ショップへ'],['growth','育成へ']]);
 show('units',false);
 })();
 

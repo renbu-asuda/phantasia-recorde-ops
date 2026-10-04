@@ -1,4 +1,4 @@
-/* PRO maker editor 1.3.0 — schema-driven forms, easy/expert mode, reference pickers, plain-language
+/* PRO maker editor 1.4.0 — schema-driven forms, easy/expert mode, reference pickers, plain-language
  * descriptions, strength and difficulty estimates, friendly validation, simulator and damage calculator.
  * Uses only element properties and on* handlers so it also runs in the lightweight test DOM. */
 (function(root){'use strict';
@@ -266,16 +266,10 @@ function describeSkill(s){
 const STANDARD=Object.freeze({id:'standard',name:'標準歩兵',tags:['歩兵','生身'],hp:3000,atk:500,def:0,mob:500,acc:500,skills:[],weapons:[C.weapon(C.weaponDefaults)],deploy:{player:true,enemy:true}});
 function describeWeapon(w,unit){try{const a=battleUnit(unit||STANDARD),ww=C.weapon(w),r=B.damagePreview(a,ww,STANDARD);const parts=[`標準的な敵（HP3000）に命中率${Math.round(r.hitRate*100)}%、1回の攻撃で平均${r.expected}ダメージ（撃破まで約${Number.isFinite(r.actionsToKill)?r.actionsToKill:'∞'}回）`];if(ww.targetCount>1)parts.push(`最大${ww.targetCount}体を同時に攻撃`);if(ww.attackType==='melee')parts.push('近接（前衛がいる間は後衛に届かない）');if(ww.usesPerBattle)parts.push(`1戦闘${ww.usesPerBattle}回まで`);if(ww.cooldown)parts.push(`撃った後${ww.cooldown}TURN待つ`);if(ww.defPiercePct)parts.push(`DEFを${ww.defPiercePct}%無視`);for(const t of C.weaponEffectsText(ww))parts.push(t);return parts.join('。')+'。';}catch(e){return '武装の設定を確認してください: '+e.message;}}
 // Strength relative to the standard infantry: damage per action × actions it survives.
-function unitPower(u){
-  const a=battleUnit(u);const ws=a.weapons,total=ws.reduce((s,w)=>s+Math.max(.01,w.weight),0);
-  let dmg=0;for(const w of ws)dmg+=B.damagePreview(a,w,STANDARD).expected*Math.min(w.targetCount,3)*(Math.max(.01,w.weight)/total)*(1+.04*Math.min(4,w.effects?.length||0));
-  const taken=Math.max(1,B.damagePreview(STANDARD,STANDARD.weapons[0],a).expected);
-  return dmg*(a.hp/taken);
-}
-let STD_POWER=0;
-// Square root of (damage × survival) keeps the scale intuitive: 2.0 ≈ worth two standard soldiers.
-function powerRatio(u){if(!STD_POWER)STD_POWER=unitPower(STANDARD);return Math.sqrt(unitPower(u)/STD_POWER);}
-function starRating(u){let r=1;try{r=powerRatio(u);}catch(e){return {stars:0,ratio:0,text:'能力を確認してください'};}const stars=r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;return {stars,ratio:r,text:`${'★'.repeat(stars)}${'☆'.repeat(5-stars)}（標準歩兵 約${r>=10?Math.round(r):r.toFixed(1)}体分の強さ・スキル除く）`};}
+function unitPower(u){return B.unitPower(battleUnit(u));}
+// Square root of (damage × survival) keeps the scale intuitive: 2.0 ≈ worth two standard soldiers. (Formula lives in PROBattle 1.2.0.)
+function powerRatio(u){return B.powerRatio(battleUnit(u));}
+function starRating(u){let r=1;try{r=powerRatio(u);}catch(e){return {stars:0,ratio:0,text:'能力を確認してください'};}const stars=B.starCount(r);return {stars,ratio:r,text:`${'★'.repeat(stars)}${'☆'.repeat(5-stars)}（標準歩兵 約${r>=10?Math.round(r):r.toFixed(1)}体分の強さ・スキル除く）`};}
 const RANKS=['E','D','C','B','A','S','SS'];
 async function missionDifficulty(m,defs,squad,o={}){
   const mission=battleMission(m),ids=C.missionEnemyIds(mission),missing=ids.filter(id=>!defs[id]);if(!mission.enemies.length)return {ok:false,message:'敵編成が空です。'};if(missing.length)return {ok:false,message:'敵のデータが見つかりません: '+missing.join(', ')};
@@ -350,5 +344,5 @@ function refsFrom(src){const label=x=>`${x.name||x.id}（${x.id}）`;return (kin
   switch(kind){case 'units':return units.map(u=>[u.id,label(u)]);case 'enemies':return units.filter(u=>u.deploy?.enemy).map(u=>[u.id,label(u)]);case 'players':return units.filter(u=>u.deploy?.player!==false).map(u=>[u.id,label(u)]);case 'lockedUnits':{const l=units.filter(u=>u.recruit?.locked);return (l.length?l:units.filter(u=>u.deploy?.player!==false)).map(u=>[u.id,label(u)]);}
   case 'missions':return missions.map(m=>[m.id,label(m)]);case 'items':return items.map(i=>[i.id,label(i)]);case 'keyItems':{const k=items.filter(i=>i.key);return (k.length?k:items).map(i=>[i.id,label(i)]);}case 'pricedItems':{const p=items.filter(i=>i.price);return (p.length?p:items).map(i=>[i.id,label(i)]);}
   case 'research':return research.map(r=>[r.id,label(r)]);case 'nodes':{const nodes=src.nodes?.()||[];return nodes.filter(n=>n.id!==obj?.id).map(n=>[n.id,`${n.skill?.name||n.id}（${n.id}）`]);}}return null;};}
-root.PROEditor=Object.freeze({version:'1.3.0',weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
+root.PROEditor=Object.freeze({version:'1.4.0',weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
 })(window);

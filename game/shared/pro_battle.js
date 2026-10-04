@@ -1,4 +1,4 @@
-/* PRO battle engine 1.1.0 — shared by the game and the makers' simulator. Plain script, file:// compatible.
+/* PRO battle engine 1.2.0 — shared by the game and the makers' simulator. Plain script, file:// compatible.
  * Pure combat rules: no DOM access. Presentation happens through ctx.hooks; randomness through ctx.rng. */
 (function(root){'use strict';
 const C=root.PROCore;
@@ -313,5 +313,14 @@ function damagePreview(att,weapon,def,mission){
   const avgHits=(weapon.hitsMin+weapon.hitsMax)/2*hit,expected=avgHit*avgHits;
   return {hitRate:hit,critRate:crit,perHitMin:Math.round(per[0]),perHitAvg:Math.round(per[1]),perHitMax:Math.round(per[2]),critHit:Math.round(per[1]*1.5),avgHits,expected:Math.round(expected),actionsToKill:expected>0?Math.ceil(d.hp/expected):Infinity,terrainHit};
 }
-root.PROBattle=Object.freeze({version:'1.1.0',weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+// ---- strength estimate (1.11.0, shared by the game and the makers) ----
+// damage per action × actions survived against standard infantry; sqrt keeps the scale intuitive (2.0 ≈ two standard soldiers).
+const STANDARD_UNIT=Object.freeze({id:'standard',name:'標準歩兵',tags:['歩兵','生身'],hp:3000,atk:500,def:0,mob:500,acc:500,skills:[],weapons:[C.weapon(C.weaponDefaults)],deploy:{player:true,enemy:true}});
+function unitPower(a){const ws=(a.weapons&&a.weapons.length)?a.weapons:[BASIC_WEAPON],total=ws.reduce((s,w)=>s+Math.max(.01,w.weight),0);
+  let dmg=0;for(const w of ws)dmg+=damagePreview(a,w,STANDARD_UNIT).expected*Math.min(w.targetCount,3)*(Math.max(.01,w.weight)/total)*(1+.04*Math.min(4,w.effects?.length||0));
+  const taken=Math.max(1,damagePreview(STANDARD_UNIT,STANDARD_UNIT.weapons[0],a).expected);return dmg*(a.hp/taken);}
+let STD_POWER=0;
+function powerRatio(a){if(!STD_POWER)STD_POWER=unitPower(STANDARD_UNIT);return Math.sqrt(unitPower(a)/STD_POWER);}
+function starCount(r){return r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;}
+root.PROBattle=Object.freeze({version:'1.2.0',STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);

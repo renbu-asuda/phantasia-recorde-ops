@@ -1,3 +1,12 @@
+# Toolkit 1.11.0 追加API
+
+- `PROBattle`（1.2.0）: `STANDARD_UNIT` / `unitPower(unit)` / `powerRatio(unit)` / `starCount(ratio)`。正規化済みのユニット（ゲームの UNIT_MASTER や `PROEditor.battleUnit` の結果）を渡します。`PROEditor.starRating` / `powerRatio` もこれを使います。
+- ゲームの拡張パック画面は `PACK_CATALOG`（`packId` / `file` / `name` / `kind` / `desc`）を一覧表示し、`<script src="file?v=版">` で読み込みます。読み込み前の `window.VAIS_*` は退避・復元します。カタログの packId は重複させないでください。
+- 「データファイルを読み込む」は `detectDataKind(text)` で bundle / unit / mission / item / save を判定します。
+- セーブ `state.settings.guideDone`（はじめてガイドを閉じたか）を追加。
+
+---
+
 # Toolkit 1.10.4 読み込みチェック
 
 - 各ページは共通ファイルを `?v=<版>` 付きで読み込みます。本体スクリプトの直前の `<script data-pro-guard>` が `PROCore` などの有無と最低バージョンを確認し、足りなければ `#proBootError` に案内を出して `window.__PRO_BOOT_FAILED` に理由の配列を入れます。

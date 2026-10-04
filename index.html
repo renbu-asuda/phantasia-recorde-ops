@@ -3,13 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<script data-pro-view>/* 1.10.5: PC表示切り替え（ブラウザのPC版表示がなくても使える）とLINE内ブラウザの案内。共通JSに頼らない */(function(){var K='pro_view_mode',mode='mobile';try{mode=localStorage.getItem(K)==='pc'?'pc':'mobile';}catch(e){}if(window.__PRO_VIEW_FORCE)mode=window.__PRO_VIEW_FORCE;
+<script data-pro-view>/* 1.10.5: PC表示切り替え（ブラウザのPC版表示がなくても使える）とLINE内ブラウザの案内。1.11.0: 文字サイズ。共通JSに頼らない */(function(){var K='pro_view_mode',TK='pro_text_size',mode='mobile',text='normal';try{mode=localStorage.getItem(K)==='pc'?'pc':'mobile';text=localStorage.getItem(TK)==='large'?'large':'normal';}catch(e){}if(window.__PRO_VIEW_FORCE)mode=window.__PRO_VIEW_FORCE;if(window.__PRO_TEXT_FORCE)text=window.__PRO_TEXT_FORCE;
+if(text==='large'&&document.documentElement){document.documentElement.classList.add('pro-text-large');var st=document.createElement('style');st.textContent='html.pro-text-large body{zoom:1.15}';(document.head||document.documentElement).appendChild(st);}
+function setText(t){try{localStorage.setItem(TK,t);}catch(e){window.__PRO_TEXT_FORCE=t;}try{location.reload();}catch(e){}}
 var meta=document.querySelector('meta[name=viewport]');if(meta&&mode==='pc')meta.setAttribute('content','width=1280');
 function set(m){try{localStorage.setItem(K,m);}catch(e){window.__PRO_VIEW_FORCE=m;}if(meta)meta.setAttribute('content',m==='pc'?'width=1280':'width=device-width,initial-scale=1');try{location.reload();}catch(e){}}
 var line=/ Line\//.test(navigator.userAgent||'');
 function externalUrl(){var u=location.href.replace(/#.*$/,'');return u+(u.indexOf('?')<0?'?':'&')+'openExternalBrowser=1';}
-window.PROView={mode:mode,set:set,isLine:line,externalUrl:externalUrl};
-function ui(){var slot=document.getElementById('viewModeSlot');if(slot&&!slot.firstChild){var b=document.createElement('button');b.type='button';b.className='view-mode-btn';b.textContent=mode==='pc'?'📱 スマホ表示':'🖥 PC表示';b.title=mode==='pc'?'スマホ向けの表示に戻す':'画面を広く使うPC向けの表示にする';b.setAttribute('style','font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid #3d5a73;background:#10202e;color:#cfe6f5;cursor:pointer;white-space:nowrap');b.onclick=function(){set(mode==='pc'?'mobile':'pc');};slot.appendChild(b);}
+window.PROView={mode:mode,set:set,text:text,setText:setText,isLine:line,externalUrl:externalUrl};
+function ui(){var slot=document.getElementById('viewModeSlot');if(slot&&!slot.firstChild){var b=document.createElement('button');b.type='button';b.className='view-mode-btn';b.textContent=mode==='pc'?'📱 スマホ表示':'🖥 PC表示';b.title=mode==='pc'?'スマホ向けの表示に戻す':'画面を広く使うPC向けの表示にする';b.setAttribute('style','font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid #3d5a73;background:#10202e;color:#cfe6f5;cursor:pointer;white-space:nowrap');b.onclick=function(){set(mode==='pc'?'mobile':'pc');};slot.appendChild(b);var tb=document.createElement('button');tb.type='button';tb.className='text-size-btn';tb.textContent=text==='large'?'Aa 文字：標準':'Aa 文字：大';tb.title='文字の大きさを切り替える';tb.setAttribute('style',b.getAttribute('style')+';margin-left:6px');tb.onclick=function(){setText(text==='large'?'normal':'large');};slot.appendChild(tb);}
 if(line&&!document.getElementById('proLineNotice')){var d=document.createElement('div');d.id='proLineNotice';d.setAttribute('role','note');d.setAttribute('style','margin:10px;padding:12px 14px;border:2px solid #f0c040;border-radius:10px;background:#2e2610;color:#fff3cf;font:14px/1.7 system-ui,sans-serif');var t=document.createElement('div');t.textContent='LINEの中のブラウザで開いています。ここではZIPのダウンロードができず、セーブも普段のブラウザとは別になります。';var a=document.createElement('a');a.href=externalUrl();a.textContent='▶ ブラウザで開き直す';a.setAttribute('style','display:inline-block;margin-top:6px;padding:6px 12px;border-radius:8px;background:#f0c040;color:#2a2000;font-weight:bold;text-decoration:none');d.appendChild(t);d.appendChild(a);document.body.insertBefore(d,document.body.firstChild);}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ui);else ui();})();</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -47,7 +49,7 @@ footer{margin-top:28px;color:#6f8396;font-size:12px}
   <div class="cards">
     <a class="card primary" href="game/index.html"><b>▶ ゲームを遊ぶ</b><span>部隊を編成して作戦に派遣。戦闘は自動で進みます。</span></a>
     <a class="card" href="game/maker_hub.html"><b>✎ データを作る（メーカー）</b><span>テンプレートを選ぶだけで、ユニット・作戦・アイテムを作れます。</span></a>
-    <a class="card" href="dist/fantasia_record_ops_toolkit_v1.10.5.zip"><b>⬇ ZIPをダウンロード</b><span>オフラインで遊びたい人向け（Android・パソコン）。v1.10.5</span></a>
+    <a class="card" href="dist/fantasia_record_ops_toolkit_v1.11.0.zip"><b>⬇ ZIPをダウンロード</b><span>オフラインで遊びたい人向け（Android・パソコン）。v1.11.0</span></a>
   </div>
 
   <section>
@@ -55,7 +57,7 @@ footer{margin-top:28px;color:#6f8396;font-size:12px}
     <ol>
       <li>「ゲームを遊ぶ」を開きます。</li>
       <li>「01 部隊」でユニットを選び、「02 作戦」で作戦を選んで、「03 出撃確認」で派遣開始。</li>
-      <li>新要素をまとめて試すなら、ゲームの「データ管理 → 統合JSを読み込む」で <code>samples/pro_190_feature_sample.js</code> を読み込みます（ZIPに入っています）。武装の追加効果（1.10.1）は <code>samples/pro_1101_weapon_effects_sample.js</code>、パイロットとユニットの統合（1.10.2）は <code>samples/pro_1102_pilot_sample.js</code> で試せます。</li>
+      <li>拡張パック（ブラック・ブレットなど）やサンプルは、ゲームの「拡張パック」画面で「＋ 追加する」を押すだけで遊べます。ファイルから読み込む場合は、ゲームの「データ管理 → データファイルを読み込む」で <code>samples/pro_190_feature_sample.js</code> を読み込みます（ZIPに入っています）。武装の追加効果（1.10.1）は <code>samples/pro_1101_weapon_effects_sample.js</code>、パイロットとユニットの統合（1.10.2）は <code>samples/pro_1102_pilot_sample.js</code> で試せます。</li>
     </ol>
   </section>
 
@@ -87,7 +89,7 @@ footer{margin-top:28px;color:#6f8396;font-size:12px}
     <p class="note">このゲームとツールは、AIを使って制作しています。プログラム・データ・説明文の多くはAIが生成し、作者が確認・調整して公開しています。1.8.4 以降の改修は、AIコーディングアシスタント「Claude Code」（Anthropic）で行いました。不具合が残っている可能性があるので、見つけたら教えてください。</p>
   </section>
 
-  <footer>Fantasia Record Ops (PRO) Toolkit 1.10.5 ・ AIを使って制作</footer>
+  <footer>Fantasia Record Ops (PRO) Toolkit 1.11.0 ・ AIを使って制作</footer>
 </main>
 </body>
 </html>
