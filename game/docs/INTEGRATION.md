@@ -1,3 +1,30 @@
+# Toolkit 1.12.3 攻撃属性「幻想」（Unit Schema 5 / Item Schema 4 / Bundle Schema 5）
+
+武装の `damageType` と、耐性スキルの `resistType` に **`fantasy`（幻想）** を追加しました。属性は戦闘の計算には関わらず、ラベル・色・耐性の一致判定にだけ使われます（物理・ビーム・特殊と同じ扱い）。
+
+| `damageType` | 表示 | `resistType`（耐性の対象。上の4つ＋下の2つ） | 表示 |
+| --- | --- | --- | --- |
+| `physical` | 物理 | `melee` | 近接 |
+| `beam` | ビーム | `ranged` | 射撃 |
+| `special` | 特殊 | | |
+| `fantasy` | 幻想 | | |
+
+- 共通の定義は `PROCore.DAMAGE_TYPES` / `PROCore.RESIST_TYPES`。検証・ラベル・メーカーの選択肢はすべてここから作ります。
+- **幻想を使ったデータは新しい Schema 番号で書き出されます**（旧ゲームが黙って「特殊」「物理」として読まないようにするため）。幻想の武装・耐性スキル（スキルツリー・装備品・アイテムで習得するものを含む）がある場合だけです。
+
+| 種類 | 幻想を使わない | 幻想を使った |
+| --- | --- | --- |
+| Unit Pack | 今までどおり（2〜4） | **Unit Schema 5** |
+| Item Pack | 今までどおり（2・3） | **Item Schema 4** |
+| 統合パック | 今までどおり（1〜4） | **Bundle Schema 5** |
+
+1.12.2 以前のゲームはこれらを「未対応のschemaVersion」として拒否します。1.12.3 以降のゲームは、未知の属性（例: `holy`）を黙って置き換えず、「属性『holy』は未対応です」と知らせて読み込みを止めます。
+
+- `PROBattle`（1.4.0）: 戦闘の `ctx.effects` に `{resistCount, resistSaved, tagCount, tagBonus}`（耐性で軽減した回数と量、タグ特効の回数と追加ダメージ）。戦闘ログの行末に「耐性で -N」「特効 +N」が付きます。
+- `PROEditor`（1.6.0）/ `PROTemplates`（1.3.0）: 耐性テンプレートは物理・ビーム・特殊・幻想・近接・射撃の6種、武装テンプレートに「幻想弾幕」。
+
+---
+
 # Toolkit 1.12.0 作戦データの追加項目（Mission Schema 3 / Bundle Schema 4）
 
 使ったときだけ Schema が上がります（使わなければ Mission 1・2 / Bundle 1～3 のまま）。1.11.0 以前のゲームは Schema 3 の作戦パック・Schema 4 の統合パックを読み込めません。

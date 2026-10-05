@@ -110,7 +110,7 @@ function shrinkImage(file,size){return new Promise((resolve,reject)=>{const read
 
 // ---- field sets ----
 // `advanced:true` fields sit behind 「詳細設定を開く」 in easy mode. `ref` fields pick IDs from loaded data.
-const RESIST={physical:'物理',beam:'ビーム',special:'特殊',melee:'近接',ranged:'射撃'};
+const RESIST=C.RESIST_TYPES;
 const T=()=>root.PROTemplates;
 const skillPresets=()=>(T()?.skills||[]).map(t=>({label:`${t.label}：${t.desc}`,make:(o,a)=>T().skillByKey(t.key,(a||[]).map(x=>x.id))}));
 const weaponPresets=()=>(T()?.weapons||[]).map(t=>({label:`${t.label}：${t.desc}`,make:()=>T().weaponByKey(t.key)}));
@@ -124,7 +124,7 @@ function skillFields(){return [
   {key:'name',label:'スキル名',type:'text',keep:true},
   {key:'trigger',label:'いつ発動する？',type:'select',choices:C.triggers,rerender:true,onSet:o=>{if(!C.allowed[o.trigger]?.includes(o.effect))o.effect=C.allowed[o.trigger][0];}},
   {key:'effect',label:'何が起きる？',type:'select',choices:o=>Object.fromEntries((C.allowed[o.trigger]||[]).map(x=>[x,C.skillEffects[x]])),rerender:true,onSet:o=>{if(o.effect==='weapon_resist_pct'&&!o.resistType)o.resistType='physical';}},
-  {key:'resistType',label:'耐性対象',type:'select',choices:RESIST,show:o=>o.effect==='weapon_resist_pct'},
+  {key:'resistType',label:'どの攻撃に強い？（耐性の対象）',type:'select',choices:RESIST,show:o=>o.effect==='weapon_resist_pct',help:'物理・ビーム・特殊・幻想はその属性の武装に、近接・射撃は攻撃方式に効きます。'},
   {key:'value',label:'効果の大きさ',type:'number',keep:true},{key:'chance',label:'発動率 %',type:'number',min:0,max:100,keep:true},
   ...skillExtFields(),
   {key:'maxUses',label:'1戦闘の発動回数（0=無制限）',type:'number',min:0,keep:true,advanced:true},
@@ -165,7 +165,7 @@ function weaponEffectFields(){return [
   skillExtFields().find(f=>f.key==='cond')
 ];}
 function weaponFields(){return [
-  {key:'name',label:'武装名',type:'text',keep:true},{key:'attackType',label:'攻撃方式',type:'select',choices:{melee:'近接',ranged:'射撃'}},{key:'damageType',label:'属性',type:'select',choices:{physical:'物理',beam:'ビーム',special:'特殊'}},
+  {key:'name',label:'武装名',type:'text',keep:true},{key:'attackType',label:'攻撃方式',type:'select',choices:{melee:'近接',ranged:'射撃'}},{key:'damageType',label:'属性',type:'select',choices:C.DAMAGE_TYPES},
   ...[['powerPct','威力 %'],['accuracyPt','命中補正 pt'],['critPt','CRIT補正 pt'],['targetCount','対象数'],['weight','抽選ウェイト'],['minDamage','最低ダメージ'],['hitsMin','最小HIT'],['hitsMax','最大HIT'],['hitPowerPct','1HIT威力 %']].map(([key,label])=>({key,label,type:'number',keep:true,advanced:true})),
   ...weaponExtFields(),{key:'note',label:'メモ',type:'text',advanced:true}
 ];}
@@ -277,7 +277,7 @@ const STAT_NAME={atk:'ATK',def:'DEF',mob:'MOB（機動）',acc:'ACC（照準）'
 function describeSkill(s){
   if(!s)return '';const v=s.value,hostile=C.HOSTILE_EFFECTS.includes(s.effect),tgt=TARGET_TEXT[s.target||(hostile?'opponent':'self')];
   const buff=/^(atk|def|mob|acc)_(up|down)_pct$/.exec(s.effect);
-  const body={damage_up_pct:`与えるダメージを${v}%上げる`,hit_up_pt:`命中率を${v}ポイント上げる`,crit_up_pt:`クリティカル率を${v}ポイント上げる`,enemy_hit_down_pt:`相手の命中率を${Math.abs(v)}ポイント下げる`,damage_reduce_pct:`受けるダメージを${Math.abs(v)}%減らす`,weapon_resist_pct:`${RESIST[s.resistType]||'指定'}の攻撃から受けるダメージを${Math.abs(v)}%減らす`,
+  const body={damage_up_pct:`与えるダメージを${v}%上げる`,hit_up_pt:`命中率を${v}ポイント上げる`,crit_up_pt:`クリティカル率を${v}ポイント上げる`,enemy_hit_down_pt:`相手の命中率を${Math.abs(v)}ポイント下げる`,damage_reduce_pct:`受けるダメージを${Math.abs(v)}%減らす`,weapon_resist_pct:`${RESIST[s.resistType]||'指定'}${['melee','ranged'].includes(s.resistType)?'':'属性'}の攻撃から受けるダメージを${Math.abs(v)}%減らす`,
     heal_maxhp_pct:`${tgt}のHPを最大HPの${v}%回復する`,heal_flat:`${tgt}のHPを${v}回復する`,def_pierce_pct:`相手のDEFを${v}%無視する`,tag_damage_up_pct:`「${s.tag||'?'}」を持つ相手へのダメージを${v}%上げる`,guts:`HP${Math.max(1,v||1)}で踏みとどまる`,counter:`威力${v}%で反撃する`,shield:`${tgt}に${v}ダメージを防ぐバリアを張る`,extra_action:'もう一度行動する',taunt:`${tgt}が狙われやすくなる（+${v}%）`,stun:`${tgt}を行動不能にする`,burn:`${tgt}を炎上させる（毎TURN ${v}ダメージ）`}[s.effect]||(buff?`${tgt}の${STAT_NAME[buff[1]]}を${Math.abs(v)}%${buff[2]==='up'?'上げる':'下げる'}`:C.skillEffects[s.effect]||s.effect);
   const cond=s.cond&&COND_TEXT[s.cond.type]?COND_TEXT[s.cond.type](s.cond)+'、':'';
   const extras=[];if(C.DURATION_EFFECTS.includes(s.effect)){const d=s.duration||(s.effect==='stun'?1:2);extras.push(s.effect==='stun'?`${d}回`:d>=99?'戦闘終了まで':`${d}TURN`);}
@@ -285,7 +285,7 @@ function describeSkill(s){
   return `${TRIGGER_TEXT[s.trigger]||s.trigger}、${cond}${body}${extras.length?`（${extras.join('・')}）`:''}。`;
 }
 const STANDARD=Object.freeze({id:'standard',name:'標準歩兵',tags:['歩兵','生身'],hp:3000,atk:500,def:0,mob:500,acc:500,skills:[],weapons:[C.weapon(C.weaponDefaults)],deploy:{player:true,enemy:true}});
-function describeWeapon(w,unit){try{const a=battleUnit(unit||STANDARD),ww=C.weapon(w),r=B.damagePreview(a,ww,STANDARD);const parts=[`標準的な敵（HP3000）に命中率${Math.round(r.hitRate*100)}%、1回の攻撃で平均${r.expected}ダメージ（撃破まで約${Number.isFinite(r.actionsToKill)?r.actionsToKill:'∞'}回）`];if(ww.targetCount>1)parts.push(`最大${ww.targetCount}体を同時に攻撃`);if(ww.attackType==='melee')parts.push('近接（前衛がいる間は後衛に届かない）');if(ww.usesPerBattle)parts.push(`1戦闘${ww.usesPerBattle}回まで`);if(ww.cooldown)parts.push(`撃った後${ww.cooldown}TURN待つ`);if(ww.defPiercePct)parts.push(`DEFを${ww.defPiercePct}%無視`);for(const t of C.weaponEffectsText(ww))parts.push(t);return parts.join('。')+'。';}catch(e){return '武装の設定を確認してください: '+e.message;}}
+function describeWeapon(w,unit){try{const a=battleUnit(unit||STANDARD),ww=C.weapon(w),r=B.damagePreview(a,ww,STANDARD);const parts=[`【${B.weaponTypeLabel(ww)}】標準的な敵（HP3000）に命中率${Math.round(r.hitRate*100)}%、1回の攻撃で平均${r.expected}ダメージ（撃破まで約${Number.isFinite(r.actionsToKill)?r.actionsToKill:'∞'}回）`];if(ww.targetCount>1)parts.push(`最大${ww.targetCount}体を同時に攻撃`);if(ww.attackType==='melee')parts.push('近接（前衛がいる間は後衛に届かない）');if(ww.usesPerBattle)parts.push(`1戦闘${ww.usesPerBattle}回まで`);if(ww.cooldown)parts.push(`撃った後${ww.cooldown}TURN待つ`);if(ww.defPiercePct)parts.push(`DEFを${ww.defPiercePct}%無視`);for(const t of C.weaponEffectsText(ww))parts.push(t);return parts.join('。')+'。';}catch(e){return '武装の設定を確認してください: '+e.message;}}
 // Strength relative to the standard infantry: damage per action × actions it survives.
 function unitPower(u){return B.unitPower(battleUnit(u));}
 // Square root of (damage × survival) keeps the scale intuitive: 2.0 ≈ worth two standard soldiers. (Formula lives in PROBattle 1.2.0.)
@@ -476,5 +476,5 @@ function refsFrom(src){const label=x=>`${x.name||x.id}（${x.id}）`;return (kin
   switch(kind){case 'units':return units.map(u=>[u.id,label(u)]);case 'enemies':return units.filter(u=>u.deploy?.enemy).map(u=>[u.id,label(u)]);case 'players':return units.filter(u=>u.deploy?.player!==false).map(u=>[u.id,label(u)]);case 'lockedUnits':{const l=units.filter(u=>u.recruit?.locked);return (l.length?l:units.filter(u=>u.deploy?.player!==false)).map(u=>[u.id,label(u)]);}
   case 'missions':return missions.map(m=>[m.id,label(m)]);case 'items':return items.map(i=>[i.id,label(i)]);case 'keyItems':{const k=items.filter(i=>i.key);return (k.length?k:items).map(i=>[i.id,label(i)]);}case 'pricedItems':{const p=items.filter(i=>i.price);return (p.length?p:items).map(i=>[i.id,label(i)]);}
   case 'research':return research.map(r=>[r.id,label(r)]);case 'nodes':{const nodes=src.nodes?.()||[];return nodes.filter(n=>n.id!==obj?.id).map(n=>[n.id,`${n.skill?.name||n.id}（${n.id}）`]);}}return null;};}
-root.PROEditor=Object.freeze({version:'1.5.0',numberInput,normNum,selectOf,labelNames,formationBox,compactWave,objectiveEditor,terrainOptions,terrainEffectOf,terrainEditor,TERRAIN_FIELDS,testBattle,squadFor,WIN_TYPES,WAVE_WHEN,weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
+root.PROEditor=Object.freeze({version:'1.6.0',numberInput,normNum,selectOf,labelNames,formationBox,compactWave,objectiveEditor,terrainOptions,terrainEffectOf,terrainEditor,TERRAIN_FIELDS,testBattle,squadFor,WIN_TYPES,WAVE_WHEN,weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
 })(window);

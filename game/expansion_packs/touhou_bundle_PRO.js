@@ -1,4 +1,4 @@
-/* PRO 拡張パック — 東方Project（統合パック Bundle Schema 4 / Toolkit 1.12.0 以降）
+/* PRO 拡張パック — 東方Project（統合パック Bundle Schema 5 / Toolkit 1.12.3 以降）
  * 東方Projectの二次創作です（非公式・非営利）。原作: 上海アリス幻樂団（ZUN）。上海アリス幻樂団様とは関係ありません。
  * キャラクター・スペルカード名などの権利は原作者に帰属します。原作の画像・音楽・文章は使っていません。
  * ゲームの「拡張パック」画面で「東方Project」を追加するか、「データ管理 → 統合JSを読み込む」で読み込んでください。
@@ -6,6 +6,7 @@
  * 収録: 仲間にできるキャラクター42人（ユニットは敵として出るときの強化版37体と敵専用の9体を含めて88体）／作戦12本（紅霧・春雪・永夜・風神録・地霊殿・星蓮船・神霊廟の異変＋EX＋宴会）／アイテム10種／研究4種／地形6種
  * 設計メモ:
  *   - 基準は一般歩兵 HP3000 / ATK500 / DEF0 / MOB500 / ACC500。はじめは霊夢と魔理沙だけ。異変を解決すると、その異変のキャラクターが仲間になる。
+ *   - 弾幕・スペルカードは「幻想」属性（1.12.3 で追加。それより古いゲームでは読み込めません）。霊夢・紫・白蓮・神子は幻想耐性を持つ。
  *   - スペルカードは「1戦闘の使用回数」がある強力な武装。霊夢のお札は「妖怪」タグの相手によく効く。
  *   - 蓬莱人（永琳・輝夜・妹紅）は倒れても耐える。吸血鬼はHPを吸い、毎TURN再生する。
  *   - データは統合メーカー（combined_maker.html）で読み込み・確認して書き出したものです。
@@ -13,7 +14,7 @@
  */
 window.VAIS_BUNDLE_PACK = {
   "format": "VAIS_OUTER_OPS_BUNDLE_PACK",
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "packId": "touhou",
   "packName": "東方Project 拡張パック（二次創作）",
   "units": [
@@ -55,13 +56,24 @@ window.VAIS_BUNDLE_PACK = {
           "chance": 100,
           "maxUses": 0,
           "note": "理屈ではなく勘で当てる。"
+        },
+        {
+          "id": "th-s-reimu-resist",
+          "name": "幻想への耐性",
+          "trigger": "when_targeted",
+          "effect": "weapon_resist_pct",
+          "value": 15,
+          "chance": 100,
+          "maxUses": 0,
+          "note": "幻想の力には慣れている。",
+          "resistType": "fantasy"
         }
       ],
       "weapons": [
         {
           "name": "ホーミングアミュレット",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "相手を追いかけるお札。妖怪によく効く。",
           "powerPct": 95,
           "accuracyPt": 35,
@@ -99,7 +111,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "霊符「夢想封印」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "色とりどりの光弾が相手を追う、博麗の巫女の代名詞。",
           "powerPct": 150,
           "accuracyPt": 40,
@@ -124,7 +136,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "神霊「夢想封印 瞬」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "瞬時に放つ高威力の封印。",
           "powerPct": 240,
           "accuracyPt": 30,
@@ -255,7 +267,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "マジックミサイル",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "星形の魔力弾を撃ち込む。",
           "powerPct": 120,
           "accuracyPt": 10,
@@ -309,7 +321,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "星符「ドラゴンメテオ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "星の雨を降らせる。",
           "powerPct": 170,
           "accuracyPt": 5,
@@ -415,7 +427,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "小弾",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 100,
           "accuracyPt": 10,
@@ -551,7 +563,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "霊弾",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 105,
           "accuracyPt": 10,
@@ -594,7 +606,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "跳ね弾",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 100,
           "accuracyPt": 10,
@@ -706,7 +718,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "怨念弾",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 10,
@@ -756,7 +768,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "欲の光",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 100,
           "accuracyPt": 15,
@@ -808,7 +820,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "ナイトバード",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 105,
           "accuracyPt": 10,
@@ -839,7 +851,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "闇符「ディマーケイション」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 10,
@@ -925,7 +937,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "アイシクルショット",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 105,
           "accuracyPt": 10,
@@ -940,7 +952,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "氷符「アイシクルフォール」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -957,7 +969,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "凍符「パーフェクトフリーズ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "弾をまとめて凍らせる。",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -1060,7 +1072,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "彩符「彩光乱舞」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -1077,7 +1089,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "華符「芳華絢爛」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 5,
@@ -1153,7 +1165,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "火符「アグニシャイン」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -1179,7 +1191,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "水符「プリンセスウンディネ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 15,
@@ -1194,7 +1206,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "日符「ロイヤルフレア」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "小さな太陽を生み出す大魔法。",
           "powerPct": 260,
           "accuracyPt": 5,
@@ -1403,7 +1415,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "紅符「スカーレットシュート」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -1525,7 +1537,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "禁忌「フォーオブアカインド」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "4人に分身して撃つ。",
           "powerPct": 140,
           "accuracyPt": 15,
@@ -1540,7 +1552,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "QED「495年の波紋」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 160,
           "accuracyPt": 5,
@@ -1616,7 +1628,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "蒼符「博愛の仏蘭西人形」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 115,
           "accuracyPt": 15,
@@ -1631,7 +1643,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "咒詛「首吊り蓬莱人形」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -1648,7 +1660,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "紅符「紅毛の和蘭人形」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 125,
           "accuracyPt": 10,
@@ -1715,7 +1727,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "騒符「ライブポルターガイスト」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "三人の合奏が辺りを揺らす。",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -1732,7 +1744,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "弦楽「嵐のアンサンブル」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 10,
@@ -1923,7 +1935,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "亡郷「亡我郷」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 15,
@@ -1947,7 +1959,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "華霊「バタフライディルージョン」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 20,
@@ -1962,7 +1974,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "桜符「完全なる墨染の桜」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 200,
           "accuracyPt": 10,
@@ -2041,7 +2053,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "式神「十二神将の宴」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -2073,7 +2085,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "式神「仙狐思念」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 15,
@@ -2142,13 +2154,24 @@ window.VAIS_BUNDLE_PACK = {
           "maxUses": 1,
           "note": "",
           "target": "allies"
+        },
+        {
+          "id": "th-s-yukari-resist",
+          "name": "幻想への耐性",
+          "trigger": "when_targeted",
+          "effect": "weapon_resist_pct",
+          "value": 20,
+          "chance": 100,
+          "maxUses": 0,
+          "note": "幻想の側の住人。",
+          "resistType": "fantasy"
         }
       ],
       "weapons": [
         {
           "name": "紫奥義「弾幕結界」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 180,
           "accuracyPt": 15,
@@ -2165,7 +2188,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "結界「生と死の境界」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 200,
           "accuracyPt": 15,
@@ -2187,7 +2210,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "境符「四重結界」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 20,
@@ -2252,7 +2275,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "蛍符「地上の流星」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 10,
@@ -2267,7 +2290,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "蠢符「ナイトバグトルネード」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -2332,7 +2355,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "声符「梟の夜鳴声」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 10,
@@ -2347,7 +2370,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "夜盲「夜雀の歌」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "歌声で相手を鳥目にする。",
           "powerPct": 120,
           "accuracyPt": 15,
@@ -2433,7 +2456,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "産霊「ファーストピラミッド」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -2546,7 +2569,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "狂視「狂視調律」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 15,
@@ -2572,7 +2595,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "散符「真実の月（インビジブルフルムーン）」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -2648,7 +2671,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "天丸「壺中の天地」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 15,
@@ -2665,7 +2688,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "神符「天人の系譜」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 180,
           "accuracyPt": 20,
@@ -2680,7 +2703,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "天文「天網蜘網捕蝶の法」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 20,
@@ -2756,7 +2779,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "難題「龍の頸の玉 -五色の弾丸-」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 15,
@@ -2771,7 +2794,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "神宝「蓬莱の玉の枝 -夢色の郷-」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 230,
           "accuracyPt": 10,
@@ -2788,7 +2811,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「永夜返し」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -2865,7 +2888,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "不死「火の鳥 -鳳翼天翔-」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -2889,7 +2912,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "蓬莱「凱風快晴 -フジヤマヴォルケイノ-」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 250,
           "accuracyPt": 5,
@@ -2906,7 +2929,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "滅罪「正直者の死」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 160,
           "accuracyPt": 15,
@@ -2999,7 +3022,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "洪水「ウーズフラッディング」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -3016,7 +3039,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "水符「河童のポロロッカ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 115,
           "accuracyPt": 15,
@@ -3092,7 +3115,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "疾風「風神少女」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 15,
@@ -3107,7 +3130,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「幻想風靡」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "目にも止まらぬ速さで駆け抜ける。",
           "powerPct": 210,
           "accuracyPt": 20,
@@ -3124,7 +3147,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "旋符「紅葉扇風」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 10,
@@ -3199,7 +3222,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "秘術「グレイソーマタージ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 15,
@@ -3214,7 +3237,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "奇跡「客星の明るすぎる夜」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 220,
           "accuracyPt": 10,
@@ -3231,7 +3254,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "開海「海が割れる日」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -3339,7 +3362,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「マウンテン・オブ・フェイス」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -3406,7 +3429,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "祟符「ミシャグジさま」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 15,
@@ -3430,7 +3453,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "土着神「ケロちゃん風雨に負けず」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -3447,7 +3470,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "開宴「二拝二拍一拝」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 180,
           "accuracyPt": 15,
@@ -3629,7 +3652,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "想起「テリブルスーヴニール」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "相手の心にあるトラウマを呼び起こす。",
           "powerPct": 150,
           "accuracyPt": 20,
@@ -3655,7 +3678,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "想起の弾幕",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 25,
@@ -3733,7 +3756,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "猫符「キャッツウォーク」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 115,
           "accuracyPt": 15,
@@ -3748,7 +3771,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "贖罪「旧地獄の針山」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -3765,7 +3788,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「死灰復燃」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -3850,7 +3873,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "核熱「ニュークリアフュージョン」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 250,
           "accuracyPt": 5,
@@ -3977,7 +4000,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "本能「イドの解放」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -3992,7 +4015,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「嫌われ者のフィロソフィ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -4009,7 +4032,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "抑制「スーパーエゴ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 15,
@@ -4074,7 +4097,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "視符「ナズーリンペンデュラム」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 20,
@@ -4089,7 +4112,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "捜符「レアメタルディテクター」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 15,
@@ -4275,7 +4298,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "湊符「幽霊船の港」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -4444,6 +4467,17 @@ window.VAIS_BUNDLE_PACK = {
           "chance": 100,
           "maxUses": 0,
           "note": ""
+        },
+        {
+          "id": "th-s-byakuren-resist",
+          "name": "幻想への耐性",
+          "trigger": "when_targeted",
+          "effect": "weapon_resist_pct",
+          "value": 15,
+          "chance": 100,
+          "maxUses": 0,
+          "note": "法力で幻想の攻撃を受け流す。",
+          "resistType": "fantasy"
         }
       ],
       "weapons": [
@@ -4465,7 +4499,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「魔法銀河系」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 180,
           "accuracyPt": 10,
@@ -4482,7 +4516,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "飛鉢「フライングファンタスティカ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -4548,7 +4582,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "正体不明「忿怒のレッドUFO襲来」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -4563,7 +4597,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「遊星よりの弾幕X」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -4580,7 +4614,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "鵺符「弾幕キメラ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 160,
           "accuracyPt": 15,
@@ -4678,7 +4712,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "回復「ヒールバイデザイア」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 100,
           "accuracyPt": 10,
@@ -4733,7 +4767,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "邪符「ヤンシャオグイ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 15,
@@ -4750,7 +4784,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "入魔「ゾウフォルゥモォ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 15,
@@ -4842,7 +4876,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "天符「雨の磐舟」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -4859,7 +4893,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "炎符「桜井寺炎上」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -4937,6 +4971,17 @@ window.VAIS_BUNDLE_PACK = {
           "chance": 100,
           "maxUses": 0,
           "note": ""
+        },
+        {
+          "id": "th-s-miko-resist",
+          "name": "幻想への耐性",
+          "trigger": "when_targeted",
+          "effect": "weapon_resist_pct",
+          "value": 15,
+          "chance": 100,
+          "maxUses": 0,
+          "note": "欲を聞き分ける耳は、幻想にも惑わされない。",
+          "resistType": "fantasy"
         }
       ],
       "weapons": [
@@ -4958,7 +5003,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "名誉「十二階の色彩」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 15,
@@ -4973,7 +5018,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「星降る神霊廟」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 180,
           "accuracyPt": 15,
@@ -5050,7 +5095,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "変化「二ッ岩家の裁き」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 15,
@@ -5065,7 +5110,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "狸符「満月のポンポコリン」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -5082,7 +5127,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "変化「百鬼妖界の門」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -5145,7 +5190,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "ナイトバード",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 105,
           "accuracyPt": 10,
@@ -5176,7 +5221,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "闇符「ディマーケイション」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 10,
@@ -5251,7 +5296,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "アイシクルショット",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 105,
           "accuracyPt": 10,
@@ -5266,7 +5311,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "氷符「アイシクルフォール」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -5283,7 +5328,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "凍符「パーフェクトフリーズ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "弾をまとめて凍らせる。",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -5375,7 +5420,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "彩符「彩光乱舞」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -5392,7 +5437,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "華符「芳華絢爛」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 5,
@@ -5457,7 +5502,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "火符「アグニシャイン」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -5483,7 +5528,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "水符「プリンセスウンディネ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 15,
@@ -5498,7 +5543,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "日符「ロイヤルフレア」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "小さな太陽を生み出す大魔法。",
           "powerPct": 260,
           "accuracyPt": 5,
@@ -5685,7 +5730,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "紅符「スカーレットシュート」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -5796,7 +5841,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "禁忌「フォーオブアカインド」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "4人に分身して撃つ。",
           "powerPct": 140,
           "accuracyPt": 15,
@@ -5811,7 +5856,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "QED「495年の波紋」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 160,
           "accuracyPt": 5,
@@ -5876,7 +5921,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "蒼符「博愛の仏蘭西人形」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 115,
           "accuracyPt": 15,
@@ -5891,7 +5936,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "咒詛「首吊り蓬莱人形」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -5908,7 +5953,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "紅符「紅毛の和蘭人形」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 125,
           "accuracyPt": 10,
@@ -6068,7 +6113,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "騒符「ライブポルターガイスト」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "三人の合奏が辺りを揺らす。",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -6085,7 +6130,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "弦楽「嵐のアンサンブル」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 10,
@@ -6150,7 +6195,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "亡郷「亡我郷」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 15,
@@ -6174,7 +6219,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "華霊「バタフライディルージョン」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 20,
@@ -6189,7 +6234,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "桜符「完全なる墨染の桜」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 200,
           "accuracyPt": 10,
@@ -6257,7 +6302,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "式神「十二神将の宴」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -6289,7 +6334,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "式神「仙狐思念」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 15,
@@ -6344,7 +6389,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "蛍符「地上の流星」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 10,
@@ -6359,7 +6404,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "蠢符「ナイトバグトルネード」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -6413,7 +6458,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "声符「梟の夜鳴声」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 110,
           "accuracyPt": 10,
@@ -6428,7 +6473,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "夜盲「夜雀の歌」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "歌声で相手を鳥目にする。",
           "powerPct": 120,
           "accuracyPt": 15,
@@ -6507,7 +6552,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "狂視「狂視調律」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 15,
@@ -6533,7 +6578,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "散符「真実の月（インビジブルフルムーン）」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -6598,7 +6643,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "天丸「壺中の天地」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 15,
@@ -6615,7 +6660,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "神符「天人の系譜」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 180,
           "accuracyPt": 20,
@@ -6630,7 +6675,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "天文「天網蜘網捕蝶の法」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 20,
@@ -6695,7 +6740,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "難題「龍の頸の玉 -五色の弾丸-」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 15,
@@ -6710,7 +6755,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "神宝「蓬莱の玉の枝 -夢色の郷-」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 230,
           "accuracyPt": 10,
@@ -6727,7 +6772,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「永夜返し」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -6793,7 +6838,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "不死「火の鳥 -鳳翼天翔-」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -6817,7 +6862,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "蓬莱「凱風快晴 -フジヤマヴォルケイノ-」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 250,
           "accuracyPt": 5,
@@ -6834,7 +6879,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "滅罪「正直者の死」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 160,
           "accuracyPt": 15,
@@ -6916,7 +6961,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "洪水「ウーズフラッディング」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -6933,7 +6978,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "水符「河童のポロロッカ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 115,
           "accuracyPt": 15,
@@ -6998,7 +7043,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "疾風「風神少女」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 15,
@@ -7013,7 +7058,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「幻想風靡」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "目にも止まらぬ速さで駆け抜ける。",
           "powerPct": 210,
           "accuracyPt": 20,
@@ -7030,7 +7075,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "旋符「紅葉扇風」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 10,
@@ -7094,7 +7139,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "秘術「グレイソーマタージ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 15,
@@ -7109,7 +7154,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "奇跡「客星の明るすぎる夜」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 220,
           "accuracyPt": 10,
@@ -7126,7 +7171,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "開海「海が割れる日」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -7223,7 +7268,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「マウンテン・オブ・フェイス」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -7387,7 +7432,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "想起「テリブルスーヴニール」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "相手の心にあるトラウマを呼び起こす。",
           "powerPct": 150,
           "accuracyPt": 20,
@@ -7413,7 +7458,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "想起の弾幕",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 25,
@@ -7480,7 +7525,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "猫符「キャッツウォーク」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 115,
           "accuracyPt": 15,
@@ -7495,7 +7540,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "贖罪「旧地獄の針山」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -7512,7 +7557,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「死灰復燃」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -7586,7 +7631,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "核熱「ニュークリアフュージョン」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 250,
           "accuracyPt": 5,
@@ -7702,7 +7747,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "本能「イドの解放」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -7717,7 +7762,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「嫌われ者のフィロソフィ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -7734,7 +7779,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "抑制「スーパーエゴ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 15,
@@ -7788,7 +7833,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "視符「ナズーリンペンデュラム」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 120,
           "accuracyPt": 20,
@@ -7803,7 +7848,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "捜符「レアメタルディテクター」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 15,
@@ -7967,7 +8012,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "湊符「幽霊船の港」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 10,
@@ -8109,7 +8154,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "正体不明「忿怒のレッドUFO襲来」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -8124,7 +8169,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「遊星よりの弾幕X」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -8141,7 +8186,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "鵺符「弾幕キメラ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 160,
           "accuracyPt": 15,
@@ -8200,6 +8245,17 @@ window.VAIS_BUNDLE_PACK = {
           "chance": 100,
           "maxUses": 0,
           "note": ""
+        },
+        {
+          "id": "th-s-byakuren-resist",
+          "name": "幻想への耐性",
+          "trigger": "when_targeted",
+          "effect": "weapon_resist_pct",
+          "value": 15,
+          "chance": 100,
+          "maxUses": 0,
+          "note": "法力で幻想の攻撃を受け流す。",
+          "resistType": "fantasy"
         }
       ],
       "weapons": [
@@ -8221,7 +8277,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「魔法銀河系」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 180,
           "accuracyPt": 10,
@@ -8238,7 +8294,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "飛鉢「フライングファンタスティカ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 140,
           "accuracyPt": 10,
@@ -8293,7 +8349,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "邪符「ヤンシャオグイ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 15,
@@ -8310,7 +8366,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "入魔「ゾウフォルゥモォ」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 130,
           "accuracyPt": 15,
@@ -8391,7 +8447,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "天符「雨の磐舟」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -8408,7 +8464,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "炎符「桜井寺炎上」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 10,
@@ -8475,6 +8531,17 @@ window.VAIS_BUNDLE_PACK = {
           "chance": 100,
           "maxUses": 0,
           "note": ""
+        },
+        {
+          "id": "th-s-miko-resist",
+          "name": "幻想への耐性",
+          "trigger": "when_targeted",
+          "effect": "weapon_resist_pct",
+          "value": 15,
+          "chance": 100,
+          "maxUses": 0,
+          "note": "欲を聞き分ける耳は、幻想にも惑わされない。",
+          "resistType": "fantasy"
         }
       ],
       "weapons": [
@@ -8496,7 +8563,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "名誉「十二階の色彩」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 15,
@@ -8511,7 +8578,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "「星降る神霊廟」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 180,
           "accuracyPt": 15,
@@ -8577,7 +8644,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "変化「二ッ岩家の裁き」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 150,
           "accuracyPt": 15,
@@ -8592,7 +8659,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "狸符「満月のポンポコリン」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,
@@ -8609,7 +8676,7 @@ window.VAIS_BUNDLE_PACK = {
         {
           "name": "変化「百鬼妖界の門」",
           "attackType": "ranged",
-          "damageType": "special",
+          "damageType": "fantasy",
           "note": "",
           "powerPct": 170,
           "accuracyPt": 10,

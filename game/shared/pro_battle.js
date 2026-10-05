@@ -23,7 +23,7 @@ function prepare(u){
 }
 function combatant(def,side,combatId,extra={}){return prepare({...def,side,currentHp:def.hp,maxHp:def.hp,alive:true,skillUses:{},combatId,...extra});}
 function createContext(o){
-  const ctx={allies:o.allies,enemies:o.enemies,mission:o.mission||null,terrain:C.terrainMods(o.mission),turn:o.turn||0,stats:o.stats||{},rng:o.rng||(()=>Math.random()),hooks:{...NOOP_HOOKS,...(o.hooks||{})},enemyDefs:o.enemyDefs||{},unitDefs:o.unitDefs||{},killLog:o.killLog||[],pending:[],aborted:false,spawnCount:o.enemies.length};
+  const ctx={allies:o.allies,enemies:o.enemies,mission:o.mission||null,terrain:C.terrainMods(o.mission),turn:o.turn||0,stats:o.stats||{},rng:o.rng||(()=>Math.random()),hooks:{...NOOP_HOOKS,...(o.hooks||{})},enemyDefs:o.enemyDefs||{},unitDefs:o.unitDefs||{},killLog:o.killLog||[],pending:[],aborted:false,spawnCount:o.enemies.length,effects:{resistCount:0,resistSaved:0,tagCount:0,tagBonus:0}};
   for(const u of [...ctx.allies,...ctx.enemies])prepare(u);
   return ctx;
 }
@@ -74,7 +74,7 @@ function applyEvent(ctx,u,sk,info){
   return '';
 }
 function triggerSkills(ctx,u,trigger,info={}){
-  const result={damageMult:1,hitAdd:0,critAdd:0,incomingHitAdd:0,damageTakenMult:1,defPierce:0,tagBonus:[]};
+  const result={damageMult:1,hitAdd:0,critAdd:0,incomingHitAdd:0,damageTakenMult:1,resistMult:1,defPierce:0,tagBonus:[]};
   if(!u.alive)return result;
   for(const sk of u.skills||[]){
     if(sk.trigger!==trigger||!skillReady(ctx,u,sk,info))continue;
@@ -88,7 +88,7 @@ function triggerSkills(ctx,u,trigger,info={}){
     }else if(trigger==='when_targeted'){
       if(sk.effect==='enemy_hit_down_pt'){result.incomingHitAdd-=Math.abs(sk.value)/100;detail=`敵命中 -${Math.abs(sk.value)}pt`;applied=true;}
       else if(sk.effect==='damage_reduce_pct'){result.damageTakenMult=Math.max(.05,result.damageTakenMult*Math.max(0,1-Math.abs(sk.value)/100));detail=`全ダメージ -${Math.abs(sk.value)}%`;applied=true;}
-      else if(sk.effect==='weapon_resist_pct'&&weaponMatchesResist(info.weapon,sk.resistType)){result.damageTakenMult=Math.max(.05,result.damageTakenMult*Math.max(0,1-Math.abs(sk.value)/100));detail=`${resistTypeLabel(sk.resistType)}耐性 ${Math.abs(sk.value)}%`;applied=true;}
+      else if(sk.effect==='weapon_resist_pct'&&weaponMatchesResist(info.weapon,sk.resistType)){const rm=Math.max(0,1-Math.abs(sk.value)/100);result.resistMult*=rm;result.damageTakenMult=Math.max(.05,result.damageTakenMult*rm);detail=`${resistTypeLabel(sk.resistType)}耐性 ${Math.abs(sk.value)}%`;applied=true;}
     }else if(sk.effect==='guts'){
       if(trigger==='on_death'&&u.currentHp<=0){u.currentHp=Math.max(1,Math.min(u.maxHp,Math.round(sk.value||1)));detail=`根性で踏みとどまった（HP ${u.currentHp}）`;applied=true;}
     }else if(sk.effect==='counter'){
@@ -99,10 +99,10 @@ function triggerSkills(ctx,u,trigger,info={}){
   return result;
 }
 function triggerRoundSkills(ctx,units,trigger){for(const u of units)if(u.alive)triggerSkills(ctx,u,trigger,{});}
-function damageTypeLabel(type){return type==='physical'?'物理':type==='beam'?'ビーム':type==='special'?'特殊':'不明';}
+function damageTypeLabel(type){return Object.hasOwn(C.DAMAGE_TYPES,type)?C.DAMAGE_TYPES[type]:'不明';}
 function attackTypeLabel(type){return type==='melee'?'近接':type==='ranged'?'射撃':'不明';}
-function resistTypeLabel(type){return ['physical','beam','special'].includes(type)?damageTypeLabel(type):attackTypeLabel(type);}
-function weaponMatchesResist(w,type){return ['physical','beam','special'].includes(type)?w?.damageType===type:['melee','ranged'].includes(type)?w?.attackType===type:false;}
+function resistTypeLabel(type){return Object.hasOwn(C.DAMAGE_TYPES,type)?C.DAMAGE_TYPES[type]:attackTypeLabel(type);}
+function weaponMatchesResist(w,type){return Object.hasOwn(C.DAMAGE_TYPES,type)?w?.damageType===type:['melee','ranged'].includes(type)?w?.attackType===type:false;}
 function weaponTypeLabel(w){return `${attackTypeLabel(w.attackType)}・${damageTypeLabel(w.damageType)}`;}
 
 // ---- weapons and targets ----
@@ -167,7 +167,7 @@ function handleDeath(ctx,u,killer){
 async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
   const H=ctx.hooks;
   await H.actionStart(attacker,weapon,targets,opts);
-  let actionHits=0,actionDmg=0,killCount=0,actionCrits=0,lastKilled=null,lastCritTarget=null;
+  let actionResist=0,actionTag=0,actionHits=0,actionDmg=0,killCount=0,actionCrits=0,lastKilled=null,lastCritTarget=null;
   const attackerStat=statFor(ctx,attacker);if(!opts.counter){attackerStat.actions++;markWeaponUsed(ctx,attacker,weapon);}
   let attackMods=opts.counter?emptyMods():triggerSkills(ctx,attacker,'before_attack',{weapon,targets,allies:ctx.allies,enemies:ctx.enemies,opponent:targets[0]});
   if(!opts.counter&&weapon.effects?.length)attackMods=mergeMods(attackMods,weaponEffects(ctx,attacker,weapon,'before',{weapon,targets,opponent:targets[0]}));
@@ -189,10 +189,10 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
       const def=eff(ctx,target,'def')*(1-pierce/100);
       let raw=Math.max(perHitMin,(eff(ctx,attacker,'atk')*(weapon.powerPct/100)-def)*(weapon.hitPowerPct/100)*rand(ctx,.90,1.10));
       raw*=attackMods.damageMult;
-      for(const b of attackMods.tagBonus)if(tagsOf(target).includes(b.tag))raw*=Math.max(0,1+b.pct/100);
+      {const before=raw;for(const b of attackMods.tagBonus)if(tagsOf(target).includes(b.tag))raw*=Math.max(0,1+b.pct/100);if(raw>before+.5){const g=Math.round(raw-before);ctx.effects.tagCount++;ctx.effects.tagBonus+=g;actionTag+=g;}}
       if(opts.scale!==undefined)raw*=opts.scale;
       if(crit){raw*=1.5;targetCrits++;actionCrits++;lastCritTarget=target;}
-      raw*=defenseMods.damageTakenMult;
+      {const rm=defenseMods.resistMult||1,withoutResist=raw*(defenseMods.damageTakenMult/rm);raw*=defenseMods.damageTakenMult;if(rm<1&&withoutResist>raw+.5){const sv=Math.round(withoutResist-raw);ctx.effects.resistCount++;ctx.effects.resistSaved+=sv;actionResist+=sv;}}
       let dmg=Math.max(0,Math.round(raw));
       if(target.status?.shield>0){const ab=Math.min(target.status.shield,dmg);target.status.shield-=ab;dmg-=ab;absorbed+=ab;}
       target.currentHp-=dmg;targetHits++;targetDmg+=dmg;actionHits++;actionDmg+=dmg;attackerStat.hits++;attackerStat.damage+=dmg;statFor(ctx,target).damageTaken+=dmg;
@@ -205,7 +205,7 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
   }
   const targetNames=targets.map(t=>esc(t.name)).join(' / ');
   const absorbedTotal=targetResults.reduce((s,r)=>s+r.absorbed,0);
-  const summary=actionHits?`${actionHits} HIT / ${actionDmg} TOTAL DMG${killCount?` / ${killCount} DOWN`:''}${absorbedTotal?` / バリア吸収 ${absorbedTotal}`:''}`:`0 HIT / MISS`;
+  const summary=actionHits?`${actionHits} HIT / ${actionDmg} TOTAL DMG${killCount?` / ${killCount} DOWN`:''}${absorbedTotal?` / バリア吸収 ${absorbedTotal}`:''}${actionResist?` / 耐性で -${actionResist}`:''}${actionTag?` / 特効 +${actionTag}`:''}`:`0 HIT / MISS`;
   H.log(`<span class="weapon">[${opts.counter?'反撃 ':''}${esc(weapon.name)} / ${esc(weaponTypeLabel(weapon))}]</span> ${esc(attacker.name)} → ${targetNames} : ${summary}`,actionCrits?'crit':'hit');
   if(targetResults.length>1){for(const r of targetResults){H.log(`　${esc(r.target.name)} : ${r.hits} HIT / ${r.damage} DMG${r.down?' / DOWN':''}`,r.down?'kill':'hit');}}
   if(!opts.counter&&weapon.effects?.length)weaponEffects(ctx,attacker,weapon,'after',{weapon,targets,hitTargets:targetResults.filter(r=>r.hits>0).map(r=>r.target),critTargets:targetResults.filter(r=>r.crits>0).map(r=>r.target),hits:actionHits,damage:actionDmg,crits:actionCrits,kills:killCount,opponent:targets.find(t=>t.alive)||targets[0]});
@@ -347,5 +347,5 @@ function unitPower(a){const ws=(a.weapons&&a.weapons.length)?a.weapons:[BASIC_WE
 let STD_POWER=0;
 function powerRatio(a){if(!STD_POWER)STD_POWER=unitPower(STANDARD_UNIT);return Math.sqrt(unitPower(a)/STD_POWER);}
 function starCount(r){return r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;}
-root.PROBattle=Object.freeze({version:'1.3.0',DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+root.PROBattle=Object.freeze({version:'1.4.0',DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);

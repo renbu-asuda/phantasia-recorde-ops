@@ -23,6 +23,7 @@ const weapons=[
   {key:'armorbreaker',label:'アーマーブレイカー',desc:'当たると相手のDEFを20%下げる（2TURN）。装甲車に+30%。',weapon:W({name:'アーマーブレイカー',powerPct:180,accuracyPt:5,weight:.8,minDamage:80,usesPerBattle:3,fxColor:'#ffb347',effects:[{timing:'before',effect:'tag_damage_up_pct',value:30,tag:'装甲車'},{timing:'after',effect:'def_down_pct',value:20,when:'hit',duration:2}]})},
   {key:'shocklance',label:'ショックランス',desc:'近接の電撃槍。当たると30%の確率で相手をスタン。',weapon:W({name:'ショックランス',attackType:'melee',damageType:'special',powerPct:110,accuracyPt:15,hitsMin:1,hitsMax:2,hitPowerPct:60,minDamage:50,fxColor:'#c9a0ff',effects:[{timing:'after',effect:'stun',value:0,when:'hit',chance:30}]})},
   {key:'napalm',label:'ナパーム弾',desc:'最大3体を攻撃し、当たった敵を炎上させる（毎TURN 80・3TURN）。1戦闘2回まで。',weapon:W({name:'ナパーム弾',damageType:'special',powerPct:90,accuracyPt:0,targetCount:3,weight:.6,hitPowerPct:70,minDamage:40,usesPerBattle:2,fxColor:'#ff6a2a',effects:[{timing:'after',effect:'burn',value:80,when:'hit',duration:3}]})},
+  {key:'fantasybarrage',label:'幻想弾幕',desc:'最大3体を狙う幻想属性の弾幕。幻想耐性のある相手には効きにくい。1戦闘に3回まで。',weapon:W({name:'幻想弾幕',damageType:'fantasy',powerPct:110,accuracyPt:10,targetCount:3,weight:.8,hitPowerPct:55,minDamage:50,usesPerBattle:3,fxColor:'#ff9ae6'})},
   {key:'drainblade',label:'ドレインブレード',desc:'近接の連撃。与えたダメージの30%を回復する。',weapon:W({name:'ドレインブレード',attackType:'melee',powerPct:90,accuracyPt:15,critPt:5,hitsMin:2,hitsMax:3,hitPowerPct:45,minDamage:30,fxColor:'#ff4f6d',effects:[{timing:'after',effect:'drain_pct',value:30}]})},
   {key:'commandflag',label:'指揮用信号弾',desc:'攻撃のあと、味方全体のACCを15%上げる（2TURN）。',weapon:W({name:'指揮用信号弾',powerPct:60,accuracyPt:10,weight:.5,minDamage:30,cooldown:2,fxColor:'#9cff6a',effects:[{timing:'after',effect:'acc_up_pct',value:15,target:'allies',duration:2}]})},
   {key:'focusrifle',label:'集中狙撃銃',desc:'撃つ前に命中+20pt・CRIT+10pt。撃破したら再行動。',weapon:W({name:'集中狙撃銃',powerPct:150,accuracyPt:15,critPt:10,minDamage:80,fxColor:'#e8f06a',effects:[{timing:'before',effect:'hit_up_pt',value:20},{timing:'before',effect:'crit_up_pt',value:10},{timing:'after',effect:'extra_action',value:0,when:'kill'}]})}
@@ -50,6 +51,10 @@ const skills=[
   {key:'ironwall',label:'鉄壁',desc:'攻撃されるとき、30%の確率で受けるダメージを20%減らす。',skill:S({name:'鉄壁',trigger:'when_targeted',effect:'damage_reduce_pct',value:20,chance:30})},
   {key:'physresist',label:'物理耐性',desc:'物理武器から受けるダメージを30%減らす。',skill:S({name:'物理耐性',trigger:'when_targeted',effect:'weapon_resist_pct',value:30,resistType:'physical'})},
   {key:'beamresist',label:'ビーム耐性',desc:'ビーム武器から受けるダメージを30%減らす。',skill:S({name:'ビーム耐性',trigger:'when_targeted',effect:'weapon_resist_pct',value:30,resistType:'beam'})},
+  {key:'specialresist',label:'特殊耐性',desc:'特殊属性の武器から受けるダメージを30%減らす。',skill:S({name:'特殊耐性',trigger:'when_targeted',effect:'weapon_resist_pct',value:30,resistType:'special'})},
+  {key:'fantasyresist',label:'幻想耐性',desc:'幻想属性の武器から受けるダメージを30%減らす。',skill:S({name:'幻想耐性',trigger:'when_targeted',effect:'weapon_resist_pct',value:30,resistType:'fantasy'})},
+  {key:'meleeresist',label:'近接耐性',desc:'近接武器から受けるダメージを30%減らす。',skill:S({name:'近接耐性',trigger:'when_targeted',effect:'weapon_resist_pct',value:30,resistType:'melee'})},
+  {key:'rangedresist',label:'射撃耐性',desc:'射撃武器から受けるダメージを30%減らす。',skill:S({name:'射撃耐性',trigger:'when_targeted',effect:'weapon_resist_pct',value:30,resistType:'ranged'})},
   {key:'rage',label:'激昂',desc:'HPが50%以下になると、ATKが30%上がる（戦闘終了まで）。',skill:S({name:'激昂',trigger:'turn_start',effect:'atk_up_pct',value:30,maxUses:1,duration:99,cond:{type:'hp_below',value:50}})},
   {key:'jamming',label:'ジャミング',desc:'毎TURNのはじめに50%の確率で、敵全体の命中を10%下げる。',skill:S({name:'ジャミング',trigger:'turn_start',effect:'acc_down_pct',value:10,chance:50,target:'enemies',duration:1})}
 ];
@@ -148,5 +153,5 @@ const research=[
 ];
 function makeResearch(key,name,ctx={},existingIds=[]){const t=research.find(x=>x.key===key)||research[0];return {id:autoId('research',existingIds),...t.make(ctx),...(name?{name}:{})};}
 function makeTreeNode(skillKey,existingIds=[]){return {id:autoId('node',existingIds),cost:1,minLevel:1,requires:[],skill:skillByKey(skillKey)};}
-root.PROTemplates=Object.freeze({version:'1.2.0',makePilotUnit,weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
+root.PROTemplates=Object.freeze({version:'1.3.0',makePilotUnit,weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
 })(window);
