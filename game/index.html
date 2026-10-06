@@ -477,7 +477,8 @@ function validateBundlePack(raw){
   const unitPack=validatePack({...meta,format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,units:bundle.units,weapons:bundle.weapons,skills:bundle.skills,pilots:bundle.pilots});
   const units=unitPack.units;
   const missions=validateMissionPack({...meta,format:MISSION_PACK_FORMAT,schemaVersion:MISSION_PACK_SCHEMA,missions:bundle.missions}).missions;
-  const itemPack=validateItemPack({...meta,format:ITEM_PACK_FORMAT,schemaVersion:ITEM_PACK_SCHEMA,items:bundle.items,research:bundle.research});
+  // 1.14.2: equipment that links to the pack's skill / weapon data is expanded here, so the rest of the game sees plain skills and weapons.
+  const itemPack=validateItemPack({...meta,format:ITEM_PACK_FORMAT,schemaVersion:ITEM_PACK_SCHEMA,items:bundle.items.map(i=>C.materializeItem(i,bundle.weapons,bundle.skills)),research:bundle.research});
   const items=itemPack.items;
   const enemyIds=new Set(units.filter(u=>u.deploy.enemy).map(u=>u.id)),unitIds=new Set(units.map(u=>u.id)),itemIds=new Set(items.map(i=>i.id));
   for(const mission of missions){
