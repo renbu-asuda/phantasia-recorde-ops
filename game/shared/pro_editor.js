@@ -1,4 +1,4 @@
-/* PRO maker editor 1.5.0 — schema-driven forms, easy/expert mode, reference pickers, plain-language
+/* PRO maker editor 1.8.1 — schema-driven forms, easy/expert mode, reference pickers, plain-language
  * descriptions, strength and difficulty estimates, friendly validation, simulator and damage calculator.
  * 1.5.0: minus-friendly number input, front/back formation editor, wave editor, win/lose condition editor,
  * terrain list + pack terrain editor, one-battle test with a readable log.
@@ -20,7 +20,7 @@ const MODE_KEY='pro_maker_mode';
 function mode(){try{return localStorage.getItem(MODE_KEY)==='expert'?'expert':'easy';}catch(e){return 'easy';}}
 function applyMode(){const b=document.body;if(b&&b.classList){b.classList.toggle('mode-easy',mode()==='easy');b.classList.toggle('mode-expert',mode()==='expert');}}
 function setMode(m){try{localStorage.setItem(MODE_KEY,m==='expert'?'expert':'easy');}catch(e){}applyMode();}
-function newSkill(){return {id:'skill_'+rid(),name:'新しいスキル',trigger:'before_attack',effect:'damage_up_pct',value:10,chance:100,maxUses:0,note:''};}
+function newSkill(){return {id:creationId('skill',[],'skill_'+rid()),name:'新しいスキル',trigger:'before_attack',effect:'damage_up_pct',value:10,chance:100,maxUses:0,note:''};}
 function newWeapon(){return {...C.clone(C.weaponDefaults),baseAtk:250,useUnitAtk:true};}
 
 // 1.13.0: tag input — each tag is a chip with ×; type a tag and press ＋ or Enter. Pasted text with commas is split.
@@ -39,7 +39,7 @@ function tagInput(parent,values,onChange,o={}){
 function freshIds(x,top=true){
   if(Array.isArray(x)){x.forEach(v=>freshIds(v,false));return x;}
   if(!x||typeof x!=='object')return x;
-  if(typeof x.id==='string'&&(x.trigger||top)){const base=x.id.replace(/_[a-z0-9]{6}$/,'')||'id';x.id=`${base}_${rid()}`;}
+  if(typeof x.id==='string'&&(x.trigger||top)){const base=x.id.replace(/_[a-z0-9]{6}$/,'')||'id';x.id=creationId(x.trigger?'skill':x.skill?'node':base.split(/[-_]/)[0],[],`${base}_${rid()}`);}
   else if(top&&typeof x.name==='string'&&x.attackType){x.name=`${x.name}（複製）`;}
   for(const v of Object.values(x))if(v&&typeof v==='object')freshIds(v,false);
   return x;
@@ -65,7 +65,7 @@ function form(container,obj,fields,onChange,opts={}){
     case 'color':{const l=wrap(parent,f),i=el('input');i.type='color';i.value=/^#[0-9a-f]{6}$/i.test(obj[k]||'')?obj[k]:'#ffaa33';i.setAttribute('aria-label',f.label);i.oninput=()=>{obj[k]=i.value;changed();};i.onchange=i.oninput;l.append(i,btn('色をリセット',()=>{delete obj[k];redraw();changed();}));help(l,f);return;}
     case 'select':{const l=wrap(parent,f),s=el('select');s.setAttribute('aria-label',f.label||k);const opts=[...(f.empty!==undefined?[['',f.empty]]:[]),...Object.entries(choicesOf(f,obj)||{})];for(const [v,t] of opts){const o=el('option',undefined,t);o.value=v;s.append(o);}s.value=obj[k]??'';s.onchange=()=>{if(s.value===''&&f.empty!==undefined)delete obj[k];else obj[k]=s.value;if(f.onSet)f.onSet(obj);after(f);};l.append(s);help(l,f);return;}
     case 'check':{const l=el('label','pro-check'),x=el('input');x.type='checkbox';x.checked=!!obj[k];x.onchange=()=>{if(x.checked)obj[k]=true;else delete obj[k];after(f);};l.append(x,el('span',undefined,f.label));parent.append(l);help(l,f);return;}
-    case 'number':{const l=wrap(parent,f),i=el('input');i.type='number';i.step=f.step||'any';if(f.min!==undefined)i.min=f.min;if(f.max!==undefined)i.max=f.max;if(f.placeholder)i.placeholder=f.placeholder;i.value=obj[k]??'';const set=()=>{const v=normNum(i.value);if(v!==i.value)i.value=v;if(v===''){if(f.keep)obj[k]=0;else delete obj[k];}else{const x=Number(v);if(!Number.isFinite(x))return;obj[k]=x;}changed();};i.oninput=set;i.onchange=()=>{set();if(f.rerender)redraw();};l.append(i);numberInput(i,set);help(l,f);return;}
+    case 'number':{const l=wrap(parent,f),i=el('input');i.type='number';i.step=f.step||'any';const min=typeof f.min==='function'?f.min(obj):f.min??0,max=typeof f.max==='function'?f.max(obj):f.max;i.min=min;if(max!==undefined)i.max=max;if(f.placeholder)i.placeholder=f.placeholder;i.value=obj[k]??'';const set=()=>{const v=normNum(i.value);if(v!==i.value)i.value=v;if(v===''){if(f.keep)obj[k]=0;else delete obj[k];}else{const x=Number(v);if(!Number.isFinite(x))return;obj[k]=x;}changed();};i.oninput=set;i.onchange=()=>{set();if(f.rerender)redraw();};l.append(i);numberInput(i,set);help(l,f);return;}
     case 'tags':{const l=wrap(parent,f);tagInput(l,obj[k],v=>{setVal(obj,k,v,f.keepEmptyArray);changed();},{label:f.label,placeholder:f.placeholder});help(l,f);return;}
     case 'ids':case 'rowlist':{const l=wrap(parent,f),i=el('input');i.type='text';i.placeholder=f.placeholder||(f.type==='rowlist'?'front, back, front':'カンマ区切り');i.value=(obj[k]||[]).join(', ');i.oninput=()=>{setVal(obj,k,splitList(i.value),f.keepEmptyArray);changed();};l.append(i);help(l,f);return;}
     case 'textarea':{const l=wrap(parent,f),t=el('textarea');t.value=obj[k]??'';t.oninput=()=>{setVal(obj,k,t.value);changed();};l.append(t);help(l,f);return;}
@@ -74,7 +74,7 @@ function form(container,obj,fields,onChange,opts={}){
     case 'counts':{const l=wrap(parent,f),t=el('textarea');t.placeholder='item_id: 2';t.value=Object.entries(obj[k]||{}).map(([id,n])=>`${id}: ${n}`).join('\n');t.oninput=()=>{const out={};for(const line of t.value.split('\n')){const m=line.match(/^\s*([^:：×x\s]+)\s*[:：×x]\s*(\d+)\s*$/);if(m)out[m[1]]=Number(m[2]);}setVal(obj,k,out);changed();};l.append(t);help(l,f);return;}
     case 'json':{const l=wrap(parent,f),t=el('textarea');t.value=obj[k]===undefined?'':JSON.stringify(obj[k],null,1);t.oninput=()=>{if(!t.value.trim()){delete obj[k];t.className='';changed();return;}try{obj[k]=JSON.parse(t.value);t.className='';changed();}catch(e){t.className='pro-invalid';}};l.append(t);help(l,f);return;}
     case 'days':{const box=el('fieldset','pro-days');box.append(el('legend',undefined,f.label));const days=new Set(obj[k]||[]);C.days.forEach((d,i)=>{const l=el('label','pro-check'),x=el('input');x.type='checkbox';x.checked=days.has(i);x.onchange=()=>{if(x.checked)days.add(i);else days.delete(i);setVal(obj,k,[...days].sort());changed();};l.append(x,el('span',undefined,d));box.append(l);});parent.append(box);help(box,f);return;}
-    case 'statmap':{const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));const g=el('div','pro-fields');box.append(g);const cur=obj[k]||{};for(const s of C.STAT_KEYS){const l=el('label','pro-field'),i=el('input');l.append(el('span','pro-label',STAT_LABELS[s]));i.type='number';i.step='any';i.value=cur[s]??'';i.oninput=()=>{const m={...(obj[k]||{})};if(i.value===''||Number(i.value)===0)delete m[s];else m[s]=Number(i.value);setVal(obj,k,m);changed();};l.append(i);g.append(l);}help(box,f);parent.append(box);return;}
+    case 'statmap':{const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));const g=el('div','pro-fields');box.append(g);const cur=obj[k]||{};for(const s of C.STAT_KEYS){const l=el('label','pro-field'),i=el('input');l.append(el('span','pro-label',STAT_LABELS[s]));i.type='number';i.min=0;i.max=1000000;i.step='any';i.value=cur[s]??'';i.oninput=()=>{const m={...(obj[k]||{})};if(i.value===''||Number(i.value)===0)delete m[s];else m[s]=Number(i.value);setVal(obj,k,m);changed();};l.append(i);g.append(l);}help(box,f);parent.append(box);return;}
     case 'image':{const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));const prev=el('img','pro-image');if(obj[k])prev.src=obj[k];else prev.hidden=true;const input=el('input');input.type='file';input.accept='image/png,image/jpeg,image/webp,image/gif';input.onchange=async()=>{const file=input.files&&input.files[0];if(!file)return;try{obj[k]=await shrinkImage(file,f.size||128);redraw();changed();}catch(e){alert('画像を読み込めません: '+e.message);}};box.append(prev,input);if(obj[k])box.append(btn('画像を削除',()=>{delete obj[k];redraw();changed();}));help(box,f);parent.append(box);return;}
     case 'object':{
       const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));parent.append(box);help(box,f);
@@ -147,14 +147,14 @@ function skillExtFields(){return [
   {key:'tag',label:'特効タグ（このタグを持つ敵へのダメージが上がる）',type:'text',show:o=>o.effect==='tag_damage_up_pct'},
   {key:'target',label:'効果対象',type:'select',empty:'自動（強化・回復は自分、弱体は相手）',choices:C.skillTargets,show:o=>C.TARGETED_EFFECTS.includes(o.effect)},
   {key:'duration',label:'持続TURN（スタンは行動不能回数）',type:'number',min:1,max:99,show:o=>C.DURATION_EFFECTS.includes(o.effect)},
-  {key:'cond',label:'追加の発動条件',type:'object',advanced:true,emptyWhen:o=>!o.type,fields:[{key:'type',label:'条件',type:'select',empty:'なし',choices:C.conditions,rerender:true},{key:'value',label:'条件値',type:'number',show:o=>o.type&&o.type!=='target_tag'},{key:'tag',label:'条件タグ',type:'text',show:o=>o.type==='target_tag'}]}
+  {key:'cond',label:'追加の発動条件',type:'object',advanced:true,emptyWhen:o=>!o.type,fields:[{key:'type',label:'条件',type:'select',empty:'なし',choices:C.conditions,rerender:true},{key:'value',label:'条件値',type:'number',min:0,max:1000000,show:o=>o.type&&o.type!=='target_tag'},{key:'tag',label:'条件タグ',type:'text',show:o=>o.type==='target_tag'}]}
 ];}
 function skillFields(){return [
   {key:'name',label:'スキル名',type:'text',keep:true},
   {key:'trigger',label:'いつ発動する？',type:'select',choices:C.triggers,rerender:true,onSet:o=>{if(!C.allowed[o.trigger]?.includes(o.effect))o.effect=C.allowed[o.trigger][0];}},
   {key:'effect',label:'何が起きる？',type:'select',choices:o=>Object.fromEntries((C.allowed[o.trigger]||[]).map(x=>[x,C.skillEffects[x]])),rerender:true,onSet:o=>{if(o.effect==='weapon_resist_pct'&&!o.resistType)o.resistType='physical';}},
   {key:'resistType',label:'どの攻撃に強い？（耐性の対象）',type:'select',choices:RESIST,show:o=>o.effect==='weapon_resist_pct',help:'物理・ビーム・特殊・幻想はその属性の武装に、近接・射撃は攻撃方式に効きます。'},
-  {key:'value',label:'効果の大きさ',type:'number',keep:true},{key:'chance',label:'発動率 %',type:'number',min:0,max:100,keep:true},
+  {key:'value',label:'効果の大きさ（回復は負数でダメージ）',type:'number',min:o=>C.effectValueRange(o.effect).min,max:o=>C.effectValueRange(o.effect).max,keep:true},{key:'chance',label:'発動率 %',type:'number',min:0,max:100,keep:true},
   ...skillExtFields(),
   {key:'maxUses',label:'1戦闘の発動回数（0=無制限）',type:'number',min:0,keep:true,advanced:true},
   {key:'id',label:'スキルID',type:'text',advanced:true},{key:'note',label:'メモ',type:'text',advanced:true}
@@ -187,7 +187,7 @@ const WEAPON_OWN_EFFECTS=[...(C.WEAPON_BEFORE_ONLY||[]),...(C.WEAPON_AFTER_ONLY|
 function weaponEffectFields(){return [
   {key:'timing',label:'タイミング',type:'select',choices:{before:'使用前（ダメージ計算の前）',after:'使用後（攻撃が終わった後）'},rerender:true,onSet:o=>{if(!C.weaponEffectsAllowed[o.timing].includes(o.effect))o.effect=C.weaponEffectsAllowed[o.timing][0];if(o.timing!=='after')delete o.when;}},
   {key:'effect',label:'何が起きる？',type:'select',choices:o=>Object.fromEntries((C.weaponEffectsAllowed[o.timing]||[]).map(x=>[x,C.weaponEffectLabels[x]])),rerender:true,onSet:o=>{if(o.effect==='tag_damage_up_pct'&&!o.tag)o.tag='装甲車';if(WEAPON_OWN_EFFECTS.includes(o.effect))delete o.target;}},
-  {key:'value',label:'効果の大きさ',type:'number',min:0,keep:true,show:o=>!['stun','extra_action'].includes(o.effect)},
+  {key:'value',label:'効果の大きさ（回復は負数でダメージ）',type:'number',min:o=>C.effectValueRange(o.effect,true).min,max:o=>C.effectValueRange(o.effect,true).max,keep:true,show:o=>!['stun','extra_action'].includes(o.effect)},
   {key:'when',label:'発動のきっかけ',type:'select',empty:'いつでも',choices:{hit:C.weaponWhen.hit,crit:C.weaponWhen.crit,kill:C.weaponWhen.kill},show:o=>o.timing==='after'},
   {key:'chance',label:'発動率 %（空欄=100%）',type:'number',min:0,max:100},
   {key:'target',label:'効果対象',type:'select',empty:'自動（弱体はこの攻撃の対象、強化・回復は自分）',choices:C.weaponEffectTargets,show:o=>!WEAPON_OWN_EFFECTS.includes(o.effect)},
@@ -197,7 +197,7 @@ function weaponEffectFields(){return [
 ];}
 function weaponFields(){return [
   {key:'name',label:'武装名',type:'text',keep:true},{key:'attackType',label:'攻撃方式',type:'select',choices:{melee:'近接',ranged:'射撃'}},{key:'damageType',label:'属性',type:'select',choices:C.DAMAGE_TYPES},
-  ...[['powerPct','威力 %'],['accuracyPt','命中補正 pt'],['critPt','CRIT補正 pt'],['targetCount','対象数'],['weight','抽選ウェイト'],['minDamage','最低ダメージ'],['hitsMin','最小HIT'],['hitsMax','最大HIT'],['hitPowerPct','1HIT威力 %']].map(([key,label])=>({key,label,type:'number',keep:true,advanced:true})),
+  ...[['powerPct','威力 %'],['accuracyPt','命中補正 pt'],['critPt','CRIT補正 pt'],['targetCount','対象数'],['weight','抽選ウェイト'],['minDamage','最低ダメージ'],['hitsMin','最小HIT'],['hitsMax','最大HIT'],['hitPowerPct','1HIT威力 %']].map(([key,label])=>({key,label,type:'number',...C.weaponValueRange(key),step:C.weaponValueRange(key).integer?1:'any',keep:true,advanced:true})),
   ...weaponExtFields(),{key:'note',label:'メモ',type:'text',advanced:true}
 ];}
 function unitExtFields(){return [
@@ -207,7 +207,7 @@ function unitExtFields(){return [
   {key:'noFire',label:'解雇できない（重要ユニット）',type:'check',help:'ゲームのユニット一覧に「解雇する」ボタンを出しません。'},
   {key:'row',label:'標準の隊列',type:'select',empty:'前衛（標準）',choices:{back:'後衛'},help:'前衛は狙われやすく、後衛は前衛がいる間は近接攻撃を受けません。'},
   {key:'recruit',label:'加入条件',type:'object',emptyWhen:o=>!o.locked,fields:[{key:'locked',label:'最初は部隊にいない（作戦クリア・アイテム・研究で加入）',type:'check',rerender:true},{key:'missionId',label:'この作戦をクリアすると加入（任意）',type:'ref',ref:'missions',empty:'（作戦クリアでは加入しない）',show:o=>o.locked},{key:'note',label:'加入条件のメモ',type:'text',show:o=>o.locked,advanced:true}]},
-  {key:'skillTree',label:'スキルツリー（レベルアップで得るSPで解放）',type:'list',max:32,addLabel:'白紙のノードを追加',presets:(T()?.skills||[]).map(t=>({label:`${t.label}：${t.desc}`,make:(o,a)=>{const n=T().makeTreeNode(t.key,(a||[]).map(x=>x.id));n.cost=Math.min(3,1+Math.floor(a.length/2));n.minLevel=1+a.length*2;return n;}})),itemLabel:(n,i)=>`ノード${i+1}: ${n.skill?.name||''}`,factory:()=>({id:'node_'+rid(),cost:1,minLevel:1,requires:[],skill:newSkill()}),fields:[{key:'cost',label:'必要SP',type:'number',min:0,keep:true},{key:'minLevel',label:'必要レベル',type:'number',min:1,keep:true},{key:'requires',label:'先に解放が必要なノード',type:'ref',ref:'nodes',multi:true,keepEmptyArray:true},{key:'skill',label:'習得スキル',type:'skill'},{key:'id',label:'ノードID',type:'text',advanced:true}]},
+  {key:'skillTree',label:'スキルツリー（レベルアップで得るSPで解放）',type:'list',max:32,addLabel:'白紙のノードを追加',presets:(T()?.skills||[]).map(t=>({label:`${t.label}：${t.desc}`,make:(o,a)=>{const n=T().makeTreeNode(t.key,(a||[]).map(x=>x.id));n.cost=Math.min(3,1+Math.floor(a.length/2));n.minLevel=1+a.length*2;return n;}})),itemLabel:(n,i)=>`ノード${i+1}: ${n.skill?.name||''}`,factory:()=>({id:creationId('node',[],'node_'+rid()),cost:1,minLevel:1,requires:[],skill:newSkill()}),fields:[{key:'cost',label:'必要SP',type:'number',min:0,keep:true},{key:'minLevel',label:'必要レベル',type:'number',min:1,keep:true},{key:'requires',label:'先に解放が必要なノード',type:'ref',ref:'nodes',multi:true,keepEmptyArray:true},{key:'skill',label:'習得スキル',type:'skill'},{key:'id',label:'ノードID',type:'text',advanced:true}]},
   {key:'crew',label:'パイロット',type:'select',empty:C.crews.optional+'（標準）',choices:{none:C.crews.none,required:C.crews.required},rerender:true,onSet:o=>{if(o.crew==='required')delete o.pilotProfile;},help:'「パイロットが必要」にすると、パイロットが乗っていないと出撃できません（敵として出るときは不要）。'},
   {key:'pilotProfile',label:'パイロットとして乗る',type:'object',toggle:'このユニットはパイロットとして他のユニット（機体）に乗れる',show:o=>o.crew!=='required',factory:()=>({stats:{acc:20},skills:[],growthPct:2}),help:'自分で出撃することも、機体に乗って補正を与えることもできます。乗っている間は機体と一緒に経験値・疲労・負傷を受けます。',fields:[
     ...pilotFields().filter(f=>['stats','aptitude','skills'].includes(f.key)),
@@ -224,7 +224,7 @@ function pilotFields(){return [
   {key:'image',label:'顔画像',type:'image'},
   {key:'tags',label:'タグ（カンマ区切り）',type:'tags',keepEmptyArray:true,advanced:true},{key:'id',label:'パイロットID',type:'text',advanced:true},{key:'note',label:'メモ',type:'text',advanced:true}
 ];}
-function newPilot(){return {id:'pilot_'+rid(),name:'新しいパイロット',tags:[],stats:{acc:20},skills:[]};}
+function newPilot(){return {id:creationId('pilot',[],'pilot_'+rid()),name:'新しいパイロット',tags:[],stats:{acc:20},skills:[]};}
 function ruleFields(type){if(type==='turn_limit')return [{key:'value',label:'このTURNまでに勝てなければ敗北',type:'number',min:1,max:300,keep:true}];if(type==='reinforce')return [{key:'turn',label:'出現TURN',type:'number',min:1,max:300,keep:true},{key:'enemies',label:'援軍の敵',type:'ref',ref:'enemies',multi:true,ordered:true,keepEmptyArray:true}];return [{key:'allTags',label:'全員がすべて持つタグ',type:'tags'},{key:'anyTags',label:'全員がどれか1つ持つタグ',type:'tags'},{key:'noneTags',label:'持っていると出撃不可のタグ',type:'tags'}];}
 function missionExtFields(){return [
   {key:'objective',label:'勝敗条件',type:'objective',help:'勝ち方を1つ選び、必要なら「護衛」や「TURN制限」を足します。下の「勝敗条件の確認」に、ゲームで表示される文章が出ます。'},
@@ -266,13 +266,13 @@ function hireFields(){return [
   {key:'note',label:'紹介文（雇用画面に出ます）',type:'text'},
   {key:'id',label:'雇用候補ID',type:'text',advanced:true}
 ];}
-function newHire(unitId=''){return {id:'hire_'+rid(),unitId,cost:1000};}
+function newHire(unitId=''){return {id:creationId('hire',[],'hire_'+rid()),unitId,cost:1000};}
 // 1.13.0: one input for drop rates — "50", "50%" or "1/8". Returns {chance} or {odds} (null when invalid).
 function dropRateInput(parent,drop,onChange){const i=el('input');i.type='text';i.inputMode='text';i.placeholder='例: 50 / 50% / 1/8';i.value=Array.isArray(drop.odds)?`${drop.odds[0]}/${drop.odds[1]}`:(drop.chance??'');i.setAttribute('aria-label','ドロップ率（%か分数）');const hint=el('small','pro-help','');
   const show=()=>{try{hint.textContent=C.dropRateText(drop);}catch(e){hint.textContent='';}};
   i.oninput=()=>{const r=C.parseDropRate(i.value);if(!r){i.className='pro-invalid';hint.textContent='「50」「50%」「1/8」のように入力してください';return;}i.className='';delete drop.chance;delete drop.odds;Object.assign(drop,r);show();onChange&&onChange(drop);};
   parent.append(i,hint);show();return i;}
-function newResearch(){return {id:'research_'+rid(),name:'新しい研究',desc:'',cost:{credits:1000},requires:[],unlock:{}};}
+function newResearch(){return {id:creationId('research',[],'research_'+rid()),name:'新しい研究',desc:'',cost:{credits:1000},requires:[],unlock:{}};}
 const NEW_EFFECTS=['add_tag','remove_tag','sortie_buff','loot_box','remove_skill','remove_weapon','recruit_unit','exp_gain','skill_point','equip_slot'];
 function effectDefaults(type){switch(type){case 'add_tag':return {type,tag:'改造'};case 'remove_tag':return {type,tag:'生身'};case 'sortie_buff':return {type,stat:'atk',value:20};case 'loot_box':return {type,table:[{itemId:'item-0001',weight:1,min:1,max:1}]};case 'remove_skill':case 'remove_weapon':return {type};case 'recruit_unit':return {type,unitId:'unit-0001'};case 'exp_gain':return {type,value:100};case 'skill_point':return {type,value:1};case 'equip_slot':return {type,value:1};}return null;}
 function effectFields(type){switch(type){
@@ -332,7 +332,7 @@ function describeSkill(s){
   if(!s)return '';const v=s.value,hostile=C.HOSTILE_EFFECTS.includes(s.effect),tgt=TARGET_TEXT[s.target||(hostile?'opponent':'self')];
   const buff=/^(atk|def|mob|acc)_(up|down)_pct$/.exec(s.effect);
   const body={damage_up_pct:`与えるダメージを${v}%上げる`,hit_up_pt:`命中率を${v}ポイント上げる`,crit_up_pt:`クリティカル率を${v}ポイント上げる`,enemy_hit_down_pt:`相手の命中率を${Math.abs(v)}ポイント下げる`,damage_reduce_pct:`受けるダメージを${Math.abs(v)}%減らす`,weapon_resist_pct:`${RESIST[s.resistType]||'指定'}${['melee','ranged'].includes(s.resistType)?'':'属性'}の攻撃から受けるダメージを${Math.abs(v)}%減らす`,
-    heal_maxhp_pct:`${tgt}のHPを最大HPの${v}%回復する`,heal_flat:`${tgt}のHPを${v}回復する`,def_pierce_pct:`相手のDEFを${v}%無視する`,tag_damage_up_pct:`「${s.tag||'?'}」を持つ相手へのダメージを${v}%上げる`,guts:`HP${Math.max(1,v||1)}で踏みとどまる`,counter:`威力${v}%で反撃する`,shield:`${tgt}に${v}ダメージを防ぐバリアを張る`,extra_action:'もう一度行動する',taunt:`${tgt}が狙われやすくなる（+${v}%）`,stun:`${tgt}を行動不能にする`,burn:`${tgt}を炎上させる（毎TURN ${v}ダメージ）`}[s.effect]||(buff?`${tgt}の${STAT_NAME[buff[1]]}を${Math.abs(v)}%${buff[2]==='up'?'上げる':'下げる'}`:C.skillEffects[s.effect]||s.effect);
+    heal_maxhp_pct:`${tgt}に${C.hpEffectText(s.effect,v)}`,heal_flat:`${tgt}に${C.hpEffectText(s.effect,v)}`,def_pierce_pct:`相手のDEFを${v}%無視する`,tag_damage_up_pct:`「${s.tag||'?'}」を持つ相手へのダメージを${v}%上げる`,guts:`HP${Math.max(1,v||1)}で踏みとどまる`,counter:`威力${v}%で反撃する`,shield:`${tgt}に${v}ダメージを防ぐバリアを張る`,extra_action:'もう一度行動する',taunt:`${tgt}が狙われやすくなる（+${v}%）`,stun:`${tgt}を行動不能にする`,burn:`${tgt}を炎上させる（毎TURN ${v}ダメージ）`}[s.effect]||(buff?`${tgt}の${STAT_NAME[buff[1]]}を${Math.abs(v)}%${buff[2]==='up'?'上げる':'下げる'}`:C.skillEffects[s.effect]||s.effect);
   const cond=s.cond&&COND_TEXT[s.cond.type]?COND_TEXT[s.cond.type](s.cond)+'、':'';
   const extras=[];if(C.DURATION_EFFECTS.includes(s.effect)){const d=s.duration||(s.effect==='stun'?1:2);extras.push(s.effect==='stun'?`${d}回`:d>=99?'戦闘終了まで':`${d}TURN`);}
   if(s.chance<100)extras.push(`発動率${s.chance}%`);if(s.maxUses>0)extras.push(`1戦闘${s.maxUses}回まで`);
@@ -359,17 +359,21 @@ async function missionDifficulty(m,defs,squad,o={}){
 // ---- 1.5.0: shared inputs for missions ----
 function selectOf(list,value,label,placeholder='（選んでください）'){const s=el('select');s.setAttribute('aria-label',label);const opts2=[...(placeholder===null?[]:[['',placeholder]]),...list];if(value&&!list.some(([v])=>v===value))opts2.push([value,value+'（未読込）']);for(const [v,t] of opts2){const o=el('option',undefined,t);o.value=v;s.append(o);}s.value=value||(placeholder===null&&list[0]?list[0][0]:'');return s;}
 // "名前（id）" labels from refsFrom → {id: 名前}
-function labelNames(list){const out={};for(const [v,t] of list||[])out[v]=String(t).replace(/（[^（）]*）$/,'')||v;return out;}
+function labelNames(list){const out={};for(const [v,t,name] of list||[])out[v]=String(name??String(t).replace(/ \/ HP [\d,／]+(?:（[^（）]*）)?$/,'').replace(/（[^（）]*）$/,''))||v;return out;}
 // Full-width digits / minus signs (Japanese IME) become plain ASCII.
 function normNum(v){return String(v??'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[－−ー‐―]/g,'-').replace(/[．。]/g,'.').replace(/[,，\s]/g,'');}
-function allowsNegative(i){const m=(i.getAttribute?i.getAttribute('min'):null)??i.min;return m===null||m===undefined||m===''||Number(m)<0;}
-// Phone number keyboards often have no "-": fields that accept negatives become decimal text inputs with a ± button.
-function numberInput(i,onSet,parent){if(!i||i._proNum)return i;i._proNum=true;if(!allowsNegative(i))return i;
-  i.type='text';i.setAttribute('inputmode','decimal');i.setAttribute('data-pro-num','1');i.setAttribute('autocomplete','off');
-  const b=btn('±',()=>{let v=normNum(i.value);v=v.startsWith('-')?v.slice(1):'-'+v;i.value=v;if(onSet)onSet();else{for(const type of ['input','change']){if(typeof Event==='function'&&i.dispatchEvent)i.dispatchEvent(new Event(type,{bubbles:true}));else if(i['on'+type])i['on'+type]();}}},'pro-sign');
+function allowsNegative(i){const m=(i.getAttribute?i.getAttribute('min'):null)??i.min;return m!==null&&m!==undefined&&m!==''&&Number(m)<0;}
+// Re-evaluate whenever an effect changes; only explicitly signed fields get a ± button.
+function numberInput(i,onSet,parent){if(!i)return i;i._proNum=true;if(onSet)i._proNumSet=onSet;
+  const signed=allowsNegative(i);if(i._proSign){i._proSign.hidden=!signed;if(!signed){i.type='number';i.removeAttribute('data-pro-num');}else{i.type='text';i.setAttribute('data-pro-num','1');}return i;}
+  if(!signed)return i;i.type='text';i.setAttribute('inputmode','decimal');i.setAttribute('data-pro-num','1');i.setAttribute('autocomplete','off');
+  const b=btn('±',()=>{if(!allowsNegative(i))return;let v=normNum(i.value);v=v.startsWith('-')?v.slice(1):'-'+v;i.value=v;
+    if(i._proNumSet)i._proNumSet();else{for(const type of ['input','change']){if(typeof Event==='function'&&i.dispatchEvent)i.dispatchEvent(new Event(type,{bubbles:true}));else if(i['on'+type])i['on'+type]();}}},'pro-sign');i._proSign=b;
   b.setAttribute('aria-label','プラスとマイナスを切り替え');b.title='プラス／マイナスを切り替え';
-  const p=i.parentNode;if(p&&typeof p.insertBefore==='function'){const w=el('span','pro-num');p.insertBefore(w,i);w.append(i,b);}else if(parent)parent.append(b);
-  return i;}
+  const p=i.parentNode;if(p&&typeof p.insertBefore==='function'){const w=el('span','pro-num');p.insertBefore(w,i);w.append(i,b);}else if(parent)parent.append(b);return i;
+}
+function effectNumberInput(i,effect,weaponEffect=false,onSet){const r=C.effectValueRange(effect,weaponEffect);i.min=r.min;i.max=r.max;return numberInput(i,onSet);}
+function unitChoices(units,currentHp){const counts=new Map();for(const u of units)counts.set(u.name,(counts.get(u.name)||0)+1);return units.map(u=>{const hp=Number(u.hp)||0,now=currentHp?currentHp(u):undefined;return [u.id,`${u.name||u.id} / HP ${now===undefined?'':Math.round(now).toLocaleString()+'／'}${hp.toLocaleString()}${counts.get(u.name)>1?'（'+u.id+'）':''}`,u.name||u.id];});}
 const WIN_TYPES={annihilate:'殲滅（敵を全部倒す）',boss:'ボス撃破（決めた敵を倒す）',defense:'防衛（決めたTURNまで耐える）'};
 const WAVE_WHEN={cleared:'前の敵がいなくなったら',turn:'決まったTURNになったら',remaining:'敵が残り少なくなったら',bossHp:'ボスのHPが減ったら'};
 const WAVE_DEFAULT={turn:3,remaining:2,bossHp:50};
@@ -380,7 +384,7 @@ function compactWave(w){const enemies=[...(w.enemies||[])],rws=enemies.map((_,i)
 // Front / back lanes. ids and rws are edited in place; onChange is called after each edit.
 function formationBox(parent,ids,rws,list,onChange,o={}){const box=el('div','pro-formation');parent.append(box);const max=o.max||8;
   const sync=()=>{rws.length=ids.length;for(let i=0;i<ids.length;i++)rws[i]=rws[i]==='back'?'back':'front';};
-  const nameOf=id=>{if(!list)return id;const hit=list.find(([v])=>v===id);return hit?String(hit[1]).replace(/（[^（）]*）$/,''):id+'（未読込）';};
+  const nameOf=id=>{if(!list)return id;const hit=list.find(([v])=>v===id);return hit?hit[2]??String(hit[1]).replace(/ \/ HP [\d,／]+(?:（[^（）]*）)?$/,'').replace(/（[^（）]*）$/,''):id+'（未読込）';};
   const commit=()=>{sync();onChange();draw();};
   function draw(){sync();box.replaceChildren();
     for(const [row,label,hint] of [['front','前衛','先に狙われます。近接攻撃が届きます。'],['back','後衛','前衛がいる間、近接攻撃は届きません。']]){
@@ -462,7 +466,7 @@ async function testBattle(m,defs,squad,o={}){
 function upgradeNumbers(node){if(node&&node.querySelectorAll)for(const i of node.querySelectorAll('input[type="number"]'))numberInput(i);}
 if(typeof document!=='undefined'&&typeof document.addEventListener==='function'&&typeof MutationObserver!=='undefined'){
   document.addEventListener('input',e=>{const t=e.target;if(t&&t._proNum&&t.type==='text'){const v=normNum(t.value);if(v!==t.value)t.value=v;}},true);
-  const start=()=>{upgradeNumbers(document.body);new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes){if(n.nodeType!==1)continue;if(n.matches&&n.matches('input[type="number"]'))numberInput(n);else upgradeNumbers(n);}}).observe(document.body,{childList:true,subtree:true});};
+  const start=()=>{upgradeNumbers(document.body);new MutationObserver(ms=>{for(const m of ms){if(m.type==='attributes'){numberInput(m.target);continue;}for(const n of m.addedNodes){if(n.nodeType!==1)continue;if(n.matches&&n.matches('input[type="number"]'))numberInput(n);else upgradeNumbers(n);}}}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['min']});};
   if(document.body)start();else document.addEventListener('DOMContentLoaded',start);}
 // ---- friendly validation ----
 const FRIENDLY=[
@@ -513,6 +517,42 @@ function templatePicker(container,o){
   container.append(box);return box;
 }
 // ---- automatic ID repair: fixes empty, invalid and duplicate IDs and rewrites references ----
+// 1.14.1: maker preferences, independent of exported pack data and existing IDs.
+const ID_PREF_KEY='pro_id_presets_v1',ID_KINDS={unit:'ユニット',weapon:'武装',mission:'作戦',item:'アイテム',research:'研究',hire:'雇用',skill:'スキル',node:'ツリーノード',pilot:'パイロット'};
+let idPrefsMemory={presets:[],active:{}},idPrefsUnsaved=false;const generatedPatternIds=new Set(),idSources=[];function registerIdSource(get){idSources.push(get);}function existingMakerIds(){const ids=[];const walk=x=>{if(!x||typeof x!=='object')return;if(typeof x.id==='string')ids.push(x.id);for(const v of Object.values(x))if(v&&typeof v==='object')walk(v);};for(const get of idSources)try{walk(get());}catch(e){}return ids;}
+function idPreferences(){if(!idPrefsUnsaved){try{const p=JSON.parse(localStorage.getItem(ID_PREF_KEY)||'null');if(p&&Array.isArray(p.presets)&&p.active&&typeof p.active==='object')idPrefsMemory=p;}catch(e){}}return C.clone(idPrefsMemory);}
+function validateIdPreset(p){if(!p||!String(p.name||'').trim())throw new Error('プリセット名を入力してください');if(!Array.isArray(p.parts)||!p.parts.length)throw new Error('区画を1つ以上追加してください');if(!['','-','_'].includes(p.separator))throw new Error('区切りは -・_・なしから選んでください');if(!Number.isSafeInteger(p.start)||p.start<1||p.start>1000000000||!Number.isInteger(p.width)||p.width<1||p.width>12)throw new Error('連番は開始値1～10億、桁数1～12で指定してください');for(const part of p.parts){if(!['text','kind','counter'].includes(part.type))throw new Error('区画の種類が不正です');if(part.type==='text'&&!/^[a-zA-Z0-9_-]+$/.test(part.value||''))throw new Error('固定文字列には英数字・_・-を入力してください');}const id=renderIdPattern(p,'unit',p.start);if(!C.safeId(id))throw new Error('生成されるIDが不正です');return p;}
+function saveIdPreferences(p){for(const x of p.presets)validateIdPreset(x);idPrefsMemory=C.clone(p);try{localStorage.setItem(ID_PREF_KEY,JSON.stringify(idPrefsMemory));idPrefsUnsaved=false;return true;}catch(e){idPrefsUnsaved=true;return false;}}
+function renderIdPattern(p,prefix,n){return p.parts.map(x=>x.type==='kind'?prefix:x.type==='counter'?String(n).padStart(p.width,'0'):x.value).join(p.separator);}
+function activeIdPreset(prefix){const p=idPreferences(),kind=prefix.split(/[-_]/)[0];return p.presets.find(x=>x.id===p.active[kind])||null;}
+function patternId(prefix,existing=[]){const p=activeIdPreset(prefix);if(!p)return null;validateIdPreset(p);const used=new Set([...existing,...existingMakerIds(),...generatedPatternIds]),hasCounter=p.parts.some(x=>x.type==='counter');
+  for(let n=p.start;n<p.start+100000;n++){let id=renderIdPattern(p,prefix,n);if(!hasCounter&&n>p.start)id+='-'+String(n-p.start+1).padStart(p.width,'0');if(C.safeId(id)&&!used.has(id)){generatedPatternIds.add(id);return id;}}throw new Error('IDの空きがありません。プリセットの開始値か文字列を変更してください');
+}
+function creationId(prefix,existing,fallback){return patternId(prefix,existing)||fallback;}
+function idPresetEditor(parent){
+  const panel=el('details','pro-id-presets'),body=el('div','pro-id-body');panel.append(el('summary',undefined,'IDプリセット（区画数を自由に設定）'),body);parent.append(panel);
+  let kind='unit',selected='',draft=null,message='';
+  const fresh=()=>({id:'preset_'+rid(),name:'新しいプリセット',separator:'-',start:1,width:4,parts:[{type:'text',value:'renbu'},{type:'kind'},{type:'counter'}]});
+  function draw(){const prefs=idPreferences();body.replaceChildren();body.append(el('p','pro-help','固定文字列・種類・連番の区画を自由に追加、削除、並べ替えできます。保存して種類ごとに適用すると、新規作成・複製に使われます。既存IDは維持します。'));
+    const row=el('div','pro-row'),target=selectOf(Object.entries(ID_KINDS),kind,'IDプリセットの対象',null);target.onchange=()=>{kind=target.value;selected=prefs.active[kind]||'';draft=C.clone(prefs.presets.find(x=>x.id===selected)||fresh());draw();};
+    const select=selectOf(prefs.presets.map(p=>[p.id,p.name]),selected,'編集するIDプリセット','新しいプリセット');select.onchange=()=>{selected=select.value;draft=C.clone(prefs.presets.find(x=>x.id===selected)||fresh());message='';draw();};row.append(target,select);body.append(row);
+    if(!draft){selected=prefs.active[kind]||'';draft=C.clone(prefs.presets.find(x=>x.id===selected)||fresh());select.value=selected;}
+    const status=el('p','pro-help',`適用中: ${prefs.presets.find(x=>x.id===prefs.active[kind])?.name||'標準のID生成'}`);body.append(status);
+    const controls=el('div','pro-fields');body.append(controls);
+    function input(label,key,type='text'){const l=el('label','pro-field'),i=el('input');l.append(el('span','pro-label',label));i.type=type;i.setAttribute('aria-label',label);if(type==='number'){i.min=1;i.step=1;i.max=key==='width'?12:1000000000;}i.value=draft[key];i.oninput=()=>{draft[key]=type==='number'?Number(i.value):i.value;preview();};l.append(i);controls.append(l);return i;}
+    input('プリセット名','name');const separator=selectOf([['-','ハイフン -'],['_','アンダースコア _'],['','区切りなし']],draft.separator,'IDの区切り',null);separator.onchange=()=>{draft.separator=separator.value;preview();};const l=el('label','pro-field');l.append(el('span','pro-label','区切り'),separator);controls.append(l);input('連番の開始値','start','number');input('連番の桁数','width','number');
+    const parts=el('div','pro-id-parts');body.append(parts);
+    draft.parts.forEach((part,i)=>{const r=el('div','pro-row');r.append(el('b',undefined,`${i+1}.`));const t=selectOf([['text','固定文字列'],['kind','種類（unit等）'],['counter','連番']],part.type,`ID区画${i+1}の種類`,null);t.onchange=()=>{part.type=t.value;if(part.type==='text')part.value||='text';draw();};r.append(t);
+      if(part.type==='text'){const v=el('input');v.type='text';v.value=part.value||'';v.setAttribute('aria-label',`ID区画${i+1}の文字列`);v.oninput=()=>{part.value=v.value;preview();};r.append(v);}
+      const up=btn('↑',()=>{[draft.parts[i-1],draft.parts[i]]=[draft.parts[i],draft.parts[i-1]];draw();});up.disabled=i===0;up.setAttribute('aria-label',`ID区画${i+1}を前へ`);
+      const down=btn('↓',()=>{[draft.parts[i+1],draft.parts[i]]=[draft.parts[i],draft.parts[i+1]];draw();});down.disabled=i===draft.parts.length-1;down.setAttribute('aria-label',`ID区画${i+1}を後へ`);
+      const remove=btn('削除',()=>{draft.parts.splice(i,1);draw();},'flow-btn danger');remove.setAttribute('aria-label',`ID区画${i+1}を削除`);r.append(up,down,remove);parts.append(r);});
+    body.append(btn('＋ 区画を追加',()=>{draft.parts.push({type:'text',value:'text'});draw();}));const example=el('div','pro-output');example.setAttribute('aria-label','ID生成プレビュー');body.append(example);
+    function preview(){try{validateIdPreset(draft);example.textContent='生成例: '+renderIdPattern(draft,kind,draft.start);example.className='pro-output';}catch(e){example.textContent=e.message;example.className='pro-output pro-invalid';}}preview();
+    const actions=el('div','pro-row');actions.append(btn('保存してこの種類に適用',()=>{try{validateIdPreset(draft);const next=idPreferences(),i=next.presets.findIndex(x=>x.id===draft.id);if(i<0)next.presets.push(C.clone(draft));else next.presets[i]=C.clone(draft);next.active[kind]=draft.id;const saved=saveIdPreferences(next);selected=draft.id;message=saved?'保存しました。次の新規作成・複製から適用します。':'この画面では適用しました。ブラウザへの保存に失敗しました。';draw();}catch(e){message=e.message;notice.textContent=message;}}),btn('この種類への適用を解除',()=>{const next=idPreferences();delete next.active[kind];saveIdPreferences(next);message='標準のID生成に戻しました。';draw();}),btn('プリセットを削除',()=>{const next=idPreferences();next.presets=next.presets.filter(x=>x.id!==draft.id);for(const k of Object.keys(next.active))if(next.active[k]===draft.id)delete next.active[k];saveIdPreferences(next);selected='';draft=fresh();message='プリセットを削除しました。';draw();},'flow-btn danger'));body.append(actions);const notice=el('p','pro-help',message);notice.setAttribute('role','status');body.append(notice);
+  }draw();return panel;
+}
+
 function autoId(prefix,existing){return root.PROTemplates?root.PROTemplates.autoId(prefix,existing):`${prefix}-${rid()}`;}
 function fixIds(pack){
   const renamed=[],maps={weapons:{},units:{},missions:{},items:{},pilots:{},research:{}},prefix={weapons:'weapon',units:'unit',missions:'mission',items:'item',pilots:'pilot',research:'research'};
@@ -527,9 +567,9 @@ function fixIds(pack){
 }
 // Reference lists for pickers built from whatever data a maker has loaded.
 function refsFrom(src){const label=x=>`${x.name||x.id}（${x.id}）`;return (kind,obj)=>{const units=src.units?.()||[],missions=src.missions?.()||[],items=src.items?.()||[],research=src.research?.()||[];
-  switch(kind){case 'units':return units.map(u=>[u.id,label(u)]);case 'enemies':return units.filter(u=>u.deploy?.enemy).map(u=>[u.id,label(u)]);case 'players':return units.filter(u=>u.deploy?.player!==false).map(u=>[u.id,label(u)]);case 'lockedUnits':{const l=units.filter(u=>u.recruit?.locked);return (l.length?l:units.filter(u=>u.deploy?.player!==false)).map(u=>[u.id,label(u)]);}
+  switch(kind){case 'units':return unitChoices(units);case 'enemies':return unitChoices(units.filter(u=>u.deploy?.enemy));case 'players':return unitChoices(units.filter(u=>u.deploy?.player!==false));case 'lockedUnits':{const l=units.filter(u=>u.recruit?.locked);return unitChoices(l.length?l:units.filter(u=>u.deploy?.player!==false));}
   case 'missions':return missions.map(m=>[m.id,label(m)]);case 'items':return items.map(i=>[i.id,label(i)]);case 'keyItems':{const k=items.filter(i=>i.key);return (k.length?k:items).map(i=>[i.id,label(i)]);}case 'pricedItems':{const p=items.filter(i=>i.price);return (p.length?p:items).map(i=>[i.id,label(i)]);}
   case 'research':return research.map(r=>[r.id,label(r)]);case 'nodes':{const nodes=src.nodes?.()||[];return nodes.filter(n=>n.id!==obj?.id).map(n=>[n.id,`${n.skill?.name||n.id}（${n.id}）`]);}}return null;};}
-root.PROEditor=Object.freeze({version:'1.8.0',tagInput,freshIds,duplicateOf,hireFields,newHire,hiddenField,dropRateInput,numberInput,normNum,selectOf,labelNames,formationBox,compactWave,objectiveEditor,terrainOptions,terrainEffectOf,terrainEditor,TERRAIN_FIELDS,testBattle,squadFor,WIN_TYPES,WAVE_WHEN,weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
+root.PROEditor=Object.freeze({version:'1.8.1',registerIdSource,idPreferences,saveIdPreferences,validateIdPreset,renderIdPattern,patternId,creationId,idPresetEditor,effectNumberInput,unitChoices,tagInput,freshIds,duplicateOf,hireFields,newHire,hiddenField,dropRateInput,numberInput,normNum,selectOf,labelNames,formationBox,compactWave,objectiveEditor,terrainOptions,terrainEffectOf,terrainEditor,TERRAIN_FIELDS,testBattle,squadFor,WIN_TYPES,WAVE_WHEN,weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
 })(window);
 

@@ -82,7 +82,7 @@ const tiers=[
   {key:'boss',label:'ボス',desc:'HP×3・その他×1.5',hp:3,other:1.5}
 ];
 const factions={player:{label:'味方として使う',deploy:{player:true,enemy:false}},enemy:{label:'敵として出す',deploy:{player:false,enemy:true}},both:{label:'味方・敵の両方',deploy:{player:true,enemy:true}}};
-function autoId(prefix,existing){const used=new Set(existing||[]);for(let n=1;n<100000;n++){const id=`${prefix}-${String(n).padStart(4,'0')}`;if(!used.has(id))return id;}return `${prefix}-${Date.now().toString(36)}`;}
+function autoId(prefix,existing){const custom=root.PROEditor?.patternId(prefix,existing);if(custom)return custom;const used=new Set(existing||[]);for(let n=1;n<100000;n++){const id=`${prefix}-${String(n).padStart(4,'0')}`;if(!used.has(id))return id;}return `${prefix}-${Date.now().toString(36)}`;}
 function weaponByKey(k){const t=weapons.find(x=>x.key===k);if(!t)return null;const w=clone(t.weapon);w.useUnitAtk=true;w.baseAtk=w.attackType==='melee'?0:250;if(w.attackType==='melee')w.powerPct*=2;return w;}
 function skillByKey(k,existingIds=[]){const t=skills.find(x=>x.key===k);if(!t)return null;return {id:autoId('skill-'+k,existingIds),...clone(t.skill)};}
 function makeUnit(key,tierKey='normal',factionKey='both',name='',existingIds=[]){
@@ -153,6 +153,6 @@ const research=[
 ];
 function makeResearch(key,name,ctx={},existingIds=[]){const t=research.find(x=>x.key===key)||research[0];return {id:autoId('research',existingIds),...t.make(ctx),...(name?{name}:{})};}
 function makeTreeNode(skillKey,existingIds=[]){return {id:autoId('node',existingIds),cost:1,minLevel:1,requires:[],skill:skillByKey(skillKey)};}
-root.PROTemplates=Object.freeze({version:'1.4.0',makePilotUnit,weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
+root.PROTemplates=Object.freeze({version:'1.4.1',makePilotUnit,weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
 })(window);
 

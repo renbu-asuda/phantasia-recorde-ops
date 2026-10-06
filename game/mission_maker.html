@@ -14,7 +14,7 @@ window.PROView={mode:mode,set:set,text:text,setText:setText,isLine:line,external
 function ui(){var slot=document.getElementById('viewModeSlot');if(slot&&!slot.firstChild){var b=document.createElement('button');b.type='button';b.className='view-mode-btn';b.textContent=mode==='pc'?'📱 スマホ表示':'🖥 PC表示';b.title=mode==='pc'?'スマホ向けの表示に戻す':'画面を広く使うPC向けの表示にする';b.setAttribute('style','font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid #3d5a73;background:#10202e;color:#cfe6f5;cursor:pointer;white-space:nowrap');b.onclick=function(){set(mode==='pc'?'mobile':'pc');};slot.appendChild(b);var tb=document.createElement('button');tb.type='button';tb.className='text-size-btn';tb.textContent=text==='large'?'Aa 文字：標準':'Aa 文字：大';tb.title='文字の大きさを切り替える';tb.setAttribute('style',b.getAttribute('style')+';margin-left:6px');tb.onclick=function(){setText(text==='large'?'normal':'large');};slot.appendChild(tb);}
 if(line&&!document.getElementById('proLineNotice')){var d=document.createElement('div');d.id='proLineNotice';d.setAttribute('role','note');d.setAttribute('style','margin:10px;padding:12px 14px;border:2px solid #f0c040;border-radius:10px;background:#2e2610;color:#fff3cf;font:14px/1.7 system-ui,sans-serif');var t=document.createElement('div');t.textContent='LINEの中のブラウザで開いています。ここではZIPのダウンロードができず、セーブも普段のブラウザとは別になります。';var a=document.createElement('a');a.href=externalUrl();a.textContent='▶ ブラウザで開き直す';a.setAttribute('style','display:inline-block;margin-top:6px;padding:6px 12px;border-radius:8px;background:#f0c040;color:#2a2000;font-weight:bold;text-decoration:none');d.appendChild(t);d.appendChild(a);document.body.insertBefore(d,document.body.firstChild);}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ui);else ui();})();</script>
-<title>ファンタジア・レコード・オプス (PRO) Mission Maker 1.16.0</title>
+<title>ファンタジア・レコード・オプス (PRO) Mission Maker 1.16.1</title>
 <style>
 :root{
   --bg:#071019;--panel:#0d1823;--panel2:#101f2d;--line:#24384a;--text:#e8f0f7;--muted:#91a3b4;
@@ -58,16 +58,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 @media(max-width:760px){.editor-head{position:sticky;top:0;z-index:10;background:#0d1823f5}.actions .btn{min-height:38px}}
 
 </style>
-<link rel="stylesheet" href="shared/maker.css?v=1.14.0">
-<script src="shared/pro_core.js?v=1.14.0"></script>
-<script src="shared/maker_core.js?v=1.14.0"></script>
-<script src="shared/pro_battle.js?v=1.14.0"></script>
-<script src="shared/pro_templates.js?v=1.14.0"></script>
-<script src="shared/pro_editor.js?v=1.14.0"></script>
+<link rel="stylesheet" href="shared/maker.css?v=1.14.1">
+<script src="shared/pro_core.js?v=1.14.1"></script>
+<script src="shared/maker_core.js?v=1.14.1"></script>
+<script src="shared/pro_battle.js?v=1.14.1"></script>
+<script src="shared/pro_templates.js?v=1.14.1"></script>
+<script src="shared/pro_editor.js?v=1.14.1"></script>
 </head>
 <body>
 <div class="topbar"><div class="toprow">
-  <div class="brand">PRO <span style="color:var(--accent)">MISSION MAKER</span><small>v1.16.0 / タグは入力して＋・ドロップ率は分数もOK・未解放の作戦を隠せる / 前衛・後衛と追加ウェーブを見ながら作れる・テスト戦闘つき / Game 1.14.0</small><div id="modeBox"></div><span id="viewModeSlot" style="display:inline-block;margin-top:4px"></span></div>
+  <div class="brand">PRO <span style="color:var(--accent)">MISSION MAKER</span><small>v1.16.1 / タグは入力して＋・ドロップ率は分数もOK・未解放の作戦を隠せる / 前衛・後衛と追加ウェーブを見ながら作れる・テスト戦闘つき / Game 1.14.1</small><div id="modeBox"></div><span id="viewModeSlot" style="display:inline-block;margin-top:4px"></span></div>
   <div class="actions">
     <button class="btn ghost" id="newPackBtn">新規パック</button>
     <button class="btn" id="loadBaseBtn">同梱基本作戦を読み込む</button>
@@ -181,10 +181,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 </main>
 <div id="toast" class="toast"></div>
 
-<script src="outer_ops_units.js?v=1.14.0" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
-<script src="outer_ops_missions.js?v=1.14.0" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
-<script src="outer_ops_items.js?v=1.14.0" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
-<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.6.0','shared/pro_core.js'],['PROBattle','1.5.0','shared/pro_battle.js'],['PROEditor','1.8.0','shared/pro_editor.js'],['PROTemplates','1.4.0','shared/pro_templates.js'],['PROMaker','1.1.0','shared/maker_core.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
+<script src="outer_ops_units.js?v=1.14.1" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_missions.js?v=1.14.1" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_items.js?v=1.14.1" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
+<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.6.1','shared/pro_core.js'],['PROBattle','1.5.1','shared/pro_battle.js'],['PROEditor','1.8.1','shared/pro_editor.js'],['PROTemplates','1.4.1','shared/pro_templates.js'],['PROMaker','1.1.1','shared/maker_core.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
 <script>
 (()=>{
 'use strict';
@@ -211,7 +211,8 @@ function duplicateIds(items){const seen=new Set(),dups=new Set();for(const x of 
 function parseObject(text,marker,format,arrayKey){const obj=extractAssignedObject(text,marker);if(obj.format!==format)throw new Error('対応するPROパックではありません。');if(![1,2,3,4].includes(Number(obj.schemaVersion)))throw new Error('未対応のschemaVersionです（このメーカーより新しい形式かもしれません）。');if(!Array.isArray(obj[arrayKey]))throw new Error(arrayKey+' 配列がありません。');const dups=duplicateIds(obj[arrayKey]);if(dups.length)throw new Error(`${arrayKey} 内のIDが重複しています: ${dups.join(', ')}`);return obj;}
 function normalizeDrop(d){const o={itemId:String(d?.itemId||'')};if(Array.isArray(d?.odds))o.odds=[Number(d.odds[0]),Number(d.odds[1])];else o.chance=Number(d?.chance??0);o.min=Number(d?.min??1);o.max=Number(d?.max??1);return o;}
 function normalizeMission(m){const enemies=Array.isArray(m.enemies)?m.enemies.map(String).filter(Boolean).slice(0,MAX_SLOTS):[];const rules=Array.isArray(m.rules)?m.rules.map(r=>typeof r==='string'?r:clone(r)).filter(r=>typeof r!=='string'||r.trim()):[];const tags=Array.isArray(m.tags)?m.tags.map(String).map(x=>x.trim()).filter(Boolean):[];return {id:String(m.id||''),name:String(m.name||''),diff:String(m.diff||'C'),reward:Math.max(0,Math.floor(n(m.reward,0))),desc:String(m.desc||''),enemies,maxDeploy:Math.max(1,Math.min(8,Math.floor(n(m.maxDeploy,8)))),terrain:String(m.terrain||'標準'),rules,tags,drops:Array.isArray(m.drops)?m.drops.map(normalizeDrop):[],...E.pick(m,E.MISSION_EXT_KEYS)};}
-function newMission(){let i=pack.missions.length+1,id='mission_'+i;while(pack.missions.some(m=>m.id===id)){i++;id='mission_'+i;}return {id,name:'新規作戦',diff:'E',reward:1000,desc:'',enemies:[],maxDeploy:8,terrain:'標準',rules:[],tags:[],drops:[]};}
+E.registerIdSource(()=>pack);
+function newMission(){const id=E.autoId('mission',pack.missions.map(m=>m.id));return {id,name:'新規作戦',diff:'E',reward:1000,desc:'',enemies:[],maxDeploy:8,terrain:'標準',rules:[],tags:[],drops:[]};}
 function readMissionPack(text){const bundle=text.includes('VAIS_BUNDLE_PACK')?window.PROCore.bundlePack(window.PROCore.parse(text,'VAIS_BUNDLE_PACK')):null;const o=bundle?{format:MFORMAT,schemaVersion:SCHEMA,packId:'bundle_'+bundle.packId,packName:bundle.packName+'（作戦のみ）',missions:bundle.missions,terrains:bundle.terrains}:parseObject(text,'VAIS_MISSION_PACK',MFORMAT,'missions');return {format:MFORMAT,schemaVersion:SCHEMA,packId:String(o.packId||'imported_missions'),packName:String(o.packName||o.packId||'Imported Missions'),missions:o.missions.map(normalizeMission),terrains:C.terrainList(o.terrains)};}
 function readUnitPack(text){const bundle=text.includes('VAIS_BUNDLE_PACK')?window.PROCore.bundlePack(window.PROCore.parse(text,'VAIS_BUNDLE_PACK')):null;const o=bundle?{format:UFORMAT,schemaVersion:2,packId:'bundle_'+bundle.packId,packName:bundle.packName,units:bundle.units,weapons:bundle.weapons}:extractAssignedObject(text,'VAIS_UNIT_PACK');if(o.format!==UFORMAT)throw new Error('対応するPROユニットパックではありません。');if(!UNIT_SCHEMAS.has(Number(o.schemaVersion)))throw new Error('未対応のUnit schemaVersionです。');if(!Array.isArray(o.units))throw new Error('units 配列がありません。');const dups=duplicateIds(o.units);if(dups.length)throw new Error(`units 内のIDが重複しています: ${dups.join(', ')}`);return {packId:String(o.packId||'units'),packName:String(o.packName||o.packId||'Units'),units:window.PROCore.pilotsToUnits(o.units,o.pilots).units.map(u=>normalizeUnit(C.resolveUnitWeapons(u,o.weapons))).filter(Boolean)};}
 function readItemPack(text){const bundle=text.includes('VAIS_BUNDLE_PACK')?window.PROCore.bundlePack(window.PROCore.parse(text,'VAIS_BUNDLE_PACK')):null;return window.PROCore.itemPack(bundle?{format:IFORMAT,schemaVersion:2,packId:'bundle_'+bundle.packId,packName:bundle.packName,items:bundle.items}:window.PROCore.parse(text,'VAIS_ITEM_PACK'));}
@@ -270,7 +271,7 @@ $('applyDifficultyBtn').onclick=()=>{const m=pack.missions[selectedIndex];if(!m|
 $('addTemplateBtn').onclick=openPicker;
 E.modeToggle($('modeBox'),()=>{if(selectedIndex>=0)loadEditor();});
 E.guide($('guideBox'),'mission','はじめての方へ（3ステップ）',['「データを読み込む」で敵に使うユニットJS（と、ドロップ用のアイテムJS）を読み込みます。同梱のサンプルは最初から読み込み済みです。','「テンプレートから作る」で作戦の種類とRANKを選びます。「難易度の目安」で勝率とおすすめ報酬を確認できます。','「確認・書き出し」でJSを保存 → ゲームの「データ管理 → 作戦JSをインポート」で読み込みます。']);
-$('duplicateBtn').onclick=()=>{if(selectedIndex<0)return;syncCurrent();const c=clone(pack.missions[selectedIndex]);c.id=c.id+'_copy';c.name=c.name+' コピー';pack.missions.splice(selectedIndex+1,0,c);selectedIndex++;renderList();loadEditor();scheduleDraftSave();};
+$('duplicateBtn').onclick=()=>{if(selectedIndex<0)return;syncCurrent();const c=clone(pack.missions[selectedIndex]);c.id=E.autoId('mission',pack.missions.map(m=>m.id));c.name=c.name+' コピー';pack.missions.splice(selectedIndex+1,0,c);selectedIndex++;renderList();loadEditor();scheduleDraftSave();};
 $('deleteBtn').onclick=()=>{if(selectedIndex<0)return;if(!confirm(`「${pack.missions[selectedIndex].name}」を削除しますか？`))return;pack.missions.splice(selectedIndex,1);selectedIndex=Math.min(selectedIndex,pack.missions.length-1);renderList();loadEditor();scheduleDraftSave();};
 $('missionSearch').oninput=renderList;$('unitSearch').oninput=renderCatalog;
 ['m_id','m_name','m_diff','m_reward','m_desc','m_tags','m_maxDeploy','m_rules'].forEach(id=>$(id).addEventListener('input',()=>updateAll()));

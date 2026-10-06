@@ -1,4 +1,4 @@
-/* PRO battle engine 1.3.0 — shared by the game and the makers' simulator. Plain script, file:// compatible.
+/* PRO battle engine 1.5.1 — shared by the game and the makers' simulator. Plain script, file:// compatible.
  * Pure combat rules: no DOM access. Presentation happens through ctx.hooks; randomness through ctx.rng. */
 (function(root){'use strict';
 const C=root.PROCore;
@@ -46,10 +46,21 @@ function condOk(ctx,u,sk,info){const c=sk.cond;if(!c)return true;switch(c.type){
   case 'target_tag':return !!info.opponent&&tagsOf(info.opponent).includes(c.tag);
   case 'allies_le':return sideOf(ctx,u).filter(alive).length<=c.value;case 'enemies_le':return oppOf(ctx,u).filter(alive).length<=c.value;}return true;}
 function skillReady(ctx,u,sk,info){if(sk.maxUses>0&&skillUses(u,sk.id)>=sk.maxUses)return false;if(!condOk(ctx,u,sk,info))return false;return chance(ctx,clamp(sk.chance,0,100)/100);}
-function healAmount(u,sk){if(!u.alive||u.currentHp>=u.maxHp)return 0;let amount=0;if(sk.effect==='heal_maxhp_pct')amount=Math.max(1,Math.round(u.maxHp*sk.value/100));if(sk.effect==='heal_flat')amount=Math.max(1,Math.round(sk.value));if(!amount)return 0;const before=u.currentHp;u.currentHp=Math.min(u.maxHp,u.currentHp+amount);return Math.round(u.currentHp-before);}
+// Signed HP effects bypass DEF/shields; damage still uses death/guts/kill accounting.
+function healAmount(u,sk){if(!u.alive||!sk.value||(sk.value<0&&u.currentHp<=0))return 0;const raw=sk.effect==='heal_maxhp_pct'?u.maxHp*sk.value/100:sk.value;const amount=Math.sign(raw)*Math.max(1,Math.round(Math.abs(raw)));const before=u.currentHp;u.currentHp=clamp(u.currentHp+amount,0,u.maxHp);return Math.round(u.currentHp-before);}
+function applyHpEvent(ctx,u,sk,info){
+  if((ctx.hpEffectDepth||0)>=16)return '';ctx.hpEffectDepth=(ctx.hpEffectDepth||0)+1;
+  try{const ts=skillTargets(ctx,u,sk,info),affected=[];let total=0;
+    for(const t of ts){const delta=healAmount(t,sk);if(!delta)continue;affected.push(t);total+=Math.abs(delta);
+      if(delta<0){const damage=-delta;statFor(ctx,t).damageTaken+=damage;const killer=u.side!==t.side?u:null;if(killer)statFor(ctx,killer).damage+=damage;
+        ctx.hooks.popDamage(t,damage,false,1);if(t.currentHp<=0&&handleDeath(ctx,t,killer)&&killer&&killer.alive)triggerSkills(ctx,killer,'on_kill',{kills:1,opponent:t,hpEffect:true});}
+    }
+    if(!total)return '';ctx.hooks.render();const action=sk.value<0?'ダメージ':'HP回復';return affected.length===1&&affected[0]===u?`${total} ${action}`:`${names(affected)} に合計${total} ${action}`;
+  }finally{ctx.hpEffectDepth--;}
+}
 function pickRandom(ctx,arr){return arr.length?arr[Math.floor(ctx.rng()*arr.length)]:null;}
 function skillTargets(ctx,u,sk,info){
-  const hostile=C.HOSTILE_EFFECTS.includes(sk.effect),mode=sk.target||(hostile?'opponent':'self');
+  const hostile=C.HOSTILE_EFFECTS.includes(sk.effect)||(C.SIGNED_HP_EFFECTS.includes(sk.effect)&&sk.value<0),mode=sk.target||(C.HOSTILE_EFFECTS.includes(sk.effect)?'opponent':'self');
   const own=sideOf(ctx,u).filter(alive),opp=oppOf(ctx,u).filter(alive);
   switch(mode){
   case 'self':return u.alive?[u]:[];
@@ -64,7 +75,7 @@ function skillTargets(ctx,u,sk,info){
 const names=list=>list.map(x=>x.name).join('・');
 function applyEvent(ctx,u,sk,info){
   const e=sk.effect,dur=sk.duration||(e==='stun'?1:2);
-  if(e==='heal_maxhp_pct'||e==='heal_flat'){const ts=skillTargets(ctx,u,sk,info);let total=0;const healed=[];for(const t of ts){const h=healAmount(t,sk);if(h>0){total+=h;healed.push(t);}}if(!total)return '';return healed.length===1&&healed[0]===u?`${total} HP回復`:`${names(healed)} を合計${total} HP回復`;}
+  if(C.SIGNED_HP_EFFECTS.includes(e))return applyHpEvent(ctx,u,sk,info);
   if(e==='shield'){const ts=skillTargets(ctx,u,sk,info);if(!ts.length||sk.value<=0)return '';for(const t of ts)t.status.shield=(t.status.shield||0)+Math.round(sk.value);return `${names(ts)} にバリア ${Math.round(sk.value)}`;}
   if(e==='extra_action'){if(u.extraTurn===ctx.turn||u.extraActions>0)return '';u.extraActions=1;return '再行動';}
   if(e==='taunt'){const ts=skillTargets(ctx,u,sk,info);if(!ts.length)return '';for(const t of ts)t.status.taunt={pct:Math.max(0,sk.value),turns:dur};return `${names(ts)} が挑発（${dur}TURN）`;}
@@ -77,8 +88,9 @@ function triggerSkills(ctx,u,trigger,info={}){
   const result={damageMult:1,hitAdd:0,critAdd:0,incomingHitAdd:0,damageTakenMult:1,resistMult:1,defPierce:0,tagBonus:[]};
   if(!u.alive)return result;
   for(const sk of u.skills||[]){
+    if(!u.alive)break;
     if(sk.trigger!==trigger||!skillReady(ctx,u,sk,info))continue;
-    let applied=false,detail='';
+    let applied=false,detail='',preConsumed=false;
     if(trigger==='before_attack'){
       if(sk.effect==='damage_up_pct'){result.damageMult*=Math.max(0,1+sk.value/100);detail=`与ダメージ +${sk.value}%`;applied=true;}
       else if(sk.effect==='hit_up_pt'){result.hitAdd+=sk.value/100;detail=`命中 +${sk.value}pt`;applied=true;}
@@ -93,8 +105,8 @@ function triggerSkills(ctx,u,trigger,info={}){
       if(trigger==='on_death'&&u.currentHp<=0){u.currentHp=Math.max(1,Math.min(u.maxHp,Math.round(sk.value||1)));detail=`根性で踏みとどまった（HP ${u.currentHp}）`;applied=true;}
     }else if(sk.effect==='counter'){
       const target=info.opponent;if(target&&target.alive&&target.side!==u.side&&!info.counter){ctx.pending.push({unit:u,target,scale:Math.max(0,sk.value)/100});detail=`反撃 ${sk.value}%`;applied=true;}
-    }else{detail=applyEvent(ctx,u,sk,info);applied=!!detail;}
-    if(applied){consumeSkill(u,sk);ctx.hooks.logSkill(u,sk,detail);}
+    }else{if(C.SIGNED_HP_EFFECTS.includes(sk.effect)&&sk.value){consumeSkill(u,sk);preConsumed=true;}detail=applyEvent(ctx,u,sk,info);applied=!!detail;}
+    if(preConsumed&&!applied)u.skillUses[sk.id]--;if(applied){if(!preConsumed)consumeSkill(u,sk);ctx.hooks.logSkill(u,sk,detail);}
   }
   return result;
 }
@@ -156,7 +168,8 @@ function mergeMods(a,b){return {...a,damageMult:a.damageMult*b.damageMult,hitAdd
 
 // ---- resolution ----
 function handleDeath(ctx,u,killer){
-  triggerSkills(ctx,u,'on_death',{opponent:killer});
+  if(!u.alive||u._resolvingDeath)return false;u._resolvingDeath=true;
+  try{triggerSkills(ctx,u,'on_death',{opponent:killer});}finally{delete u._resolvingDeath;}
   if(u.currentHp>0)return false;
   u.currentHp=0;u.alive=false;
   ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn});
@@ -174,15 +187,17 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
   const terrainHit=(weapon.attackType==='melee'?ctx.terrain.meleeHitPt:ctx.terrain.rangedHitPt)||0;
   const targetResults=[];
   for(const target of targets){
+    if(!attacker.alive)break;
     if(!target.alive)continue;
     const attempts=Math.max(1,Math.floor(rand(ctx,weapon.hitsMin,weapon.hitsMax+1)));
     attackerStat.shots+=attempts;
     const defenseMods=triggerSkills(ctx,target,'when_targeted',{attacker,weapon,allies:ctx.allies,enemies:ctx.enemies,opponent:attacker});
+    if(!attacker.alive)break;if(!target.alive)continue;
     const baseHit=clamp(baseHitRate(eff(ctx,attacker,'acc'),eff(ctx,target,'mob'),weapon.accuracyPt+terrainHit)+attackMods.hitAdd+defenseMods.incomingHitAdd,.05,.95);
     const pierce=clamp(num(weapon.defPiercePct,0)+attackMods.defPierce,0,100);
     let targetHits=0,targetDmg=0,targetCrits=0,absorbed=0;
     for(let shot=0;shot<attempts;shot++){
-      if(!target.alive)break;
+      if(!target.alive||!attacker.alive)break;
       if(!chance(ctx,baseHit))continue;
       const critRate=clamp(.05+weapon.critPt/100+attackMods.critAdd,.01,.50),crit=chance(ctx,critRate);
       const perHitMin=Math.max(0,Math.round(weapon.minDamage));
@@ -347,6 +362,6 @@ function unitPower(a){const ws=(a.weapons&&a.weapons.length)?a.weapons:[BASIC_WE
 let STD_POWER=0;
 function powerRatio(a){if(!STD_POWER)STD_POWER=unitPower(STANDARD_UNIT);return Math.sqrt(unitPower(a)/STD_POWER);}
 function starCount(r){return r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;}
-root.PROBattle=Object.freeze({version:'1.5.0',DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+root.PROBattle=Object.freeze({version:'1.5.1',DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);
 

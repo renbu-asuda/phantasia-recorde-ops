@@ -78,3 +78,7 @@ body.mode-easy .adv{display:none!important}
 .pro-tag-chip{display:inline-flex;align-items:center;gap:4px;background:#173248;border:1px solid #3f6f8c;border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;max-width:100%;overflow-wrap:anywhere}
 .pro-tag-x{min-width:30px;min-height:30px;border:0;border-radius:999px;background:#2a4a63;color:#fff;font-weight:900;cursor:pointer}
 .pro-tag-add{display:flex;gap:6px}.pro-tag-add input{flex:1;min-width:0}.pro-tag-plus{min-width:44px;font-size:18px;padding:4px 12px}
+
+/* ID patterns are shared maker preferences. */
+.flow-links .pro-id-presets{flex-basis:100%;width:100%;text-align:left;border:1px solid var(--border,#394358);border-radius:10px;padding:12px;box-sizing:border-box}
+.pro-id-presets summary{cursor:pointer;font-weight:700}.pro-id-body{margin-top:12px}.pro-id-parts .pro-row{margin:8px 0;flex-wrap:wrap}.pro-id-parts input{flex:1;min-width:120px}.pro-id-parts select{max-width:200px}.pro-id-parts button{flex:none}
