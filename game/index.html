@@ -327,19 +327,19 @@ body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relativ
 
 <div id="storyOverlay" class="story-overlay" role="dialog" aria-modal="true" aria-labelledby="storyTitle" hidden><div class="story-card"><div id="storyTitle" class="result-kicker"></div><div id="storySpeaker" class="story-speaker"></div><div id="storyText" class="story-text"></div><div class="story-foot"><span id="storyProgress" class="sub"></span><div class="result-actions"><button id="storySkip" class="secondary" type="button">スキップ</button><button id="storyNext" class="primary" type="button">次へ</button></div></div></div></div>
 
-<script src="shared/pro_core.js?v=1.14.1"></script>
-<script src="shared/pro_battle.js?v=1.14.1"></script>
-<script src="outer_ops_units.js?v=1.14.1" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
-<script src="outer_ops_missions.js?v=1.14.1" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
-<script src="outer_ops_items.js?v=1.14.1" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
-<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.6.1','shared/pro_core.js'],['PROBattle','1.5.1','shared/pro_battle.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
+<script src="shared/pro_core.js?v=1.14.2"></script>
+<script src="shared/pro_battle.js?v=1.14.2"></script>
+<script src="outer_ops_units.js?v=1.14.2" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_missions.js?v=1.14.2" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_items.js?v=1.14.2" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
+<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.7.0','shared/pro_core.js'],['PROBattle','1.5.1','shared/pro_battle.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
 <script>
 (() => {
 'use strict';
 const C=window.PROCore,B=window.PROBattle;
 const UNIT_PACK_FORMAT = 'VAIS_OUTER_OPS_UNIT_PACK';
 const UNIT_PACK_SCHEMA = 7;
-const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3,4,5,6,7]);
+const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3,4,5,6,7,8]);
 const IMPORTED_PACKS_KEY = 'vais_outer_ops_imported_unit_packs_v1';
 const MISSION_PACK_FORMAT = 'VAIS_OUTER_OPS_MISSION_PACK';
 const MISSION_PACK_SCHEMA = 2;
@@ -349,7 +349,7 @@ const ITEM_PACK_FORMAT = 'VAIS_OUTER_OPS_ITEM_PACK';
 const ITEM_PACK_SCHEMA = 6;
 const IMPORTED_ITEM_PACKS_KEY = 'vais_outer_ops_imported_item_packs_v1';
 const IMPORTED_BUNDLE_PACKS_KEY = 'pro_imported_bundle_packs_v1';
-const GAME_VERSION = '1.14.1';
+const GAME_VERSION = '1.14.2';
 
 function storageGet(key,fallback=null){try{const v=localStorage.getItem(key);return v===null?fallback:v;}catch(e){console.warn('localStorage read failed',e);return fallback;}}
 function storageSet(key,value){try{localStorage.setItem(key,value);return true;}catch(e){console.warn('localStorage write failed',e);return false;}}
@@ -447,7 +447,7 @@ function normalizeUnit(u={}){
     hp:Math.max(1,Math.floor(num(u.hp,3000))), atk:Math.max(0,num(u.atk,500)), def:Math.max(0,num(u.def,0)),
     mob:Math.max(0,num(u.mob,500)), acc:Math.max(0,num(u.acc,500)),
     weapons:Array.isArray(u.weapons)&&u.weapons.length?u.weapons.map(normalizeWeapon):[normalizeWeapon({name:'標準攻撃'})],
-    ...(u.weaponIds?{weaponIds:[...u.weaponIds]}:{}),...C.unitExt(u,String(u.id))
+    ...(u.skillIds?{skillIds:[...u.skillIds]}:{}),...(u.weaponIds?{weaponIds:[...u.weaponIds]}:{}),...C.unitExt(u,String(u.id))
   };
 }
 function validatePack(pack){
@@ -457,10 +457,10 @@ function validatePack(pack){
   if(!pack.packId)throw new Error('packId がありません。');
   if(!Array.isArray(pack.units))throw new Error('units 配列がありません。');
   // 1.10.2: legacy pilots become units that can fight on their own or ride other units.
-  const units=C.pilotsToUnits(pack.units,pack.pilots).units.map(u=>normalizeUnit(C.resolveUnitWeapons(u,pack.weapons)));assertUniqueIds(units,'unit');
+  const skillMasters=C.skillList(pack.skills);const units=C.pilotsToUnits(pack.units,pack.pilots).units.map(u=>normalizeUnit(C.resolveUnitData(u,pack.weapons,skillMasters)));assertUniqueIds(units,'unit');
   for(const u of units){assertUniqueIds(u.skills||[],`${u.id} の skill`);}
   const hires=C.hireList(pack.hires);
-  return {format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),units,...(pack.weapons?.length?{weapons:C.weaponList(pack.weapons)}:{}),...(hires.length?{hires}:{})};
+  return {format:UNIT_PACK_FORMAT,schemaVersion:skillMasters.length||units.some(C.unitIsV8)?8:UNIT_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),units,...(skillMasters.length?{skills:skillMasters}:{}),...(pack.weapons?.length?{weapons:C.weaponList(pack.weapons)}:{}),...(hires.length?{hires}:{})};
 }
 function extractPackFromJs(text){return validatePack(extractAssignedObject(text,'VAIS_UNIT_PACK'));}
 function loadImportedUnitPacks(){
@@ -474,7 +474,7 @@ function normalizeItem(item){return C.item(item);}
 function validateItemPack(pack){return C.itemPack(pack);}
 function validateBundlePack(raw){
   const bundle=C.bundlePack(raw),meta={packId:'bundle:'+bundle.packId,packName:bundle.packName,_bundle:true};
-  const unitPack=validatePack({...meta,format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,units:bundle.units,weapons:bundle.weapons,pilots:bundle.pilots});
+  const unitPack=validatePack({...meta,format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,units:bundle.units,weapons:bundle.weapons,skills:bundle.skills,pilots:bundle.pilots});
   const units=unitPack.units;
   const missions=validateMissionPack({...meta,format:MISSION_PACK_FORMAT,schemaVersion:MISSION_PACK_SCHEMA,missions:bundle.missions}).missions;
   const itemPack=validateItemPack({...meta,format:ITEM_PACK_FORMAT,schemaVersion:ITEM_PACK_SCHEMA,items:bundle.items,research:bundle.research});
@@ -489,7 +489,7 @@ function validateBundlePack(raw){
 }
 function extractBundlePackFromJs(text){return validateBundlePack(C.parse(text,'VAIS_BUNDLE_PACK'));}
 function loadImportedBundlePacks(){try{const raw=JSON.parse(storageGet(IMPORTED_BUNDLE_PACKS_KEY,'[]')||'[]');return Array.isArray(raw)?raw.flatMap(p=>{try{return [validateBundlePack(p)];}catch(e){console.warn('Ignored invalid stored bundle pack',e);return [];}}):[];}catch(e){console.warn('Stored bundle packs could not be read',e);return [];}}
-function bundleComponent(bundle,key,schema,format){const extra=key==='units'?{...(bundle.weapons?{weapons:bundle.weapons}:{}),...(bundle.pilots?{pilots:bundle.pilots}:{}),...(bundle.hires?{hires:bundle.hires}:{})}:key==='items'&&bundle.research?{research:bundle.research}:{};return {_bundle:true,format,schemaVersion:schema,packId:'bundle:'+bundle.packId,packName:bundle.packName,[key]:bundle[key],...extra};}
+function bundleComponent(bundle,key,schema,format){const extra=key==='units'?{...(bundle.skills?{skills:bundle.skills}:{}),...(bundle.weapons?{weapons:bundle.weapons}:{}),...(bundle.pilots?{pilots:bundle.pilots}:{}),...(bundle.hires?{hires:bundle.hires}:{})}:key==='items'&&bundle.research?{research:bundle.research}:{};return {_bundle:true,format,schemaVersion:schema,packId:'bundle:'+bundle.packId,packName:bundle.packName,[key]:bundle[key],...extra};}
 function extractItemPackFromJs(text){return validateItemPack(extractAssignedObject(text,'VAIS_ITEM_PACK'));}
 function loadImportedItemPacks(){try{const raw=JSON.parse(storageGet(IMPORTED_ITEM_PACKS_KEY,'[]')||'[]');return Array.isArray(raw)?raw.flatMap(p=>{try{return [validateItemPack(p)];}catch(e){console.warn('Ignored invalid item pack',e);return [];}}):[];}catch(e){console.warn('Stored item packs could not be read',e);return [];}}
 function saveImportedItemPacks(list=importedItemPacks){return storageSet(IMPORTED_ITEM_PACKS_KEY,JSON.stringify(list));}
