@@ -83,15 +83,15 @@ const tiers=[
 ];
 const factions={player:{label:'味方として使う',deploy:{player:true,enemy:false}},enemy:{label:'敵として出す',deploy:{player:false,enemy:true}},both:{label:'味方・敵の両方',deploy:{player:true,enemy:true}}};
 function autoId(prefix,existing){const used=new Set(existing||[]);for(let n=1;n<100000;n++){const id=`${prefix}-${String(n).padStart(4,'0')}`;if(!used.has(id))return id;}return `${prefix}-${Date.now().toString(36)}`;}
-function weaponByKey(k){const t=weapons.find(x=>x.key===k);return t?clone(t.weapon):null;}
+function weaponByKey(k){const t=weapons.find(x=>x.key===k);if(!t)return null;const w=clone(t.weapon);w.useUnitAtk=true;w.baseAtk=w.attackType==='melee'?0:250;if(w.attackType==='melee')w.powerPct*=2;return w;}
 function skillByKey(k,existingIds=[]){const t=skills.find(x=>x.key===k);if(!t)return null;return {id:autoId('skill-'+k,existingIds),...clone(t.skill)};}
 function makeUnit(key,tierKey='normal',factionKey='both',name='',existingIds=[]){
   const t=units.find(x=>x.key===key)||units[0],tier=tiers.find(x=>x.key===tierKey)||tiers[1],f=factions[factionKey]||factions.both;
   const [hp,atk,def,mob,acc]=t.stats,r=(v,m,step)=>Math.max(0,Math.round(v*m/step)*step);
   const skillIds=[];const sk=t.skills.map(k=>{const s=skillByKey(k,skillIds);skillIds.push(s.id);return s;});
   return {id:autoId('unit',existingIds),name:name||t.label.replace(/（.*?）/,''),role:t.role,pilot:'',mark:t.mark,tags:[...t.tags],ability:'',deploy:{...f.deploy},
-    hp:Math.max(100,r(hp,tier.hp,100)),atk:r(atk,tier.other,10),def:r(def,tier.other,10),mob:r(mob,tierKey==='boss'?1:tier.other,10),acc:r(acc,tierKey==='boss'?1.1:tier.other,10),
-    skills:sk,weapons:t.weapons.map(weaponByKey),...(t.row?{row:t.row}:{}),...(t.ai?{ai:clone(t.ai)}:{}),...(t.crew?{crew:t.crew}:{}),...(t.pilotProfile?{pilotProfile:clone(t.pilotProfile)}:{})};
+    hp:Math.max(100,r(hp,tier.hp,100)),atk:r(atk/2,tier.other,5),def:r(def,tier.other,10),mob:r(mob,tierKey==='boss'?1:tier.other,10),acc:r(acc,tierKey==='boss'?1.1:tier.other,10),
+    skills:sk,weapons:t.weapons.map(k=>{const w=weaponByKey(k);if(w.attackType==='ranged')w.baseAtk=r(atk/2,tier.other,5);return w;}),...(t.row?{row:t.row}:{}),...(t.ai?{ai:clone(t.ai)}:{}),...(t.crew?{crew:t.crew}:{}),...(t.pilotProfile?{pilotProfile:clone(t.pilotProfile)}:{})};
 }
 // ---- items (ctx: {itemIds, units:[{id,recruit}], researchIds}) ----
 const I=(o)=>({desc:'',...o});
@@ -146,12 +146,13 @@ const pilots=[
 ];
 function makePilot(key,name,existingIds=[]){const t=pilots.find(x=>x.key===key)||pilots[0];return {id:autoId('pilot',existingIds),...t.make(),...(name?{name}:{})};}
 // Pilot templates as units (1.10.2): standard infantry-class body plus the pilot bonuses.
-function makePilotUnit(key,name,existingIds=[]){const p=makePilot(key,name,[]);const u=C.pilotToUnit({...p,id:'p'},new Set());return {...u,id:autoId('unit',existingIds)};}
+function makePilotUnit(key,name,existingIds=[]){const p=makePilot(key,name,[]);const u=C.pilotToUnit({...p,id:'p'},new Set());return {...u,atk:Math.round(u.atk/2),weapons:u.weapons.map(w=>({...w,baseAtk:250,useUnitAtk:true})),id:autoId('unit',existingIds)};}
 const research=[
   {key:'shop',label:'ショップ解放',desc:'完了するとアイテムがショップに並ぶ。',make:ctx=>({name:'新装備の開発',desc:'ショップに新しいアイテムが並ぶ。',cost:{credits:1500},requires:[],unlock:{items:(ctx.pricedItemIds||[]).slice(0,1)}})},
   {key:'recruit',label:'ユニット加入',desc:'完了すると加入条件付きのユニットが仲間になる。',make:ctx=>({name:'新戦力の配備',desc:'新しいユニットが加入する。',cost:{credits:3000},requires:[],unlock:{units:(ctx.lockedUnitIds||[]).slice(0,1)}})}
 ];
 function makeResearch(key,name,ctx={},existingIds=[]){const t=research.find(x=>x.key===key)||research[0];return {id:autoId('research',existingIds),...t.make(ctx),...(name?{name}:{})};}
 function makeTreeNode(skillKey,existingIds=[]){return {id:autoId('node',existingIds),cost:1,minLevel:1,requires:[],skill:skillByKey(skillKey)};}
-root.PROTemplates=Object.freeze({version:'1.3.0',makePilotUnit,weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
+root.PROTemplates=Object.freeze({version:'1.4.0',makePilotUnit,weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
 })(window);
+

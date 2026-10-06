@@ -1,7 +1,7 @@
-/* PRO 1.13.1 基本データ — Unit Schema 6 / Mission Schema 4 / Item Schema 5 / Bundle Schema 6。 */
+/* PRO 1.14.0: 武装マスター・ATK参照と基礎攻撃力。 */
 window.VAIS_BUNDLE_PACK = {
   "format": "VAIS_OUTER_OPS_BUNDLE_PACK",
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "packId": "pro-core",
   "packName": "基本データ",
   "units": [
@@ -20,43 +20,11 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": false
       },
       "hp": 3000,
-      "atk": 500,
+      "atk": 250,
       "def": 0,
       "mob": 500,
       "acc": 500,
       "skills": [],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 100,
-          "accuracyPt": 15,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 50,
-          "hitsMin": 1,
-          "hitsMax": 4,
-          "hitPowerPct": 25,
-          "name": "E90"
-        },
-        {
-          "attackType": "melee",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 80,
-          "accuracyPt": 20,
-          "critPt": 10,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 2,
-          "hitsMax": 3,
-          "hitPowerPct": 45,
-          "name": "ナイフ"
-        }
-      ],
       "skillTree": [
         {
           "id": "core-n-jackal-aim",
@@ -114,7 +82,11 @@ window.VAIS_BUNDLE_PACK = {
         }
       ],
       "noFire": true,
-      "equipSlots": 2
+      "equipSlots": 2,
+      "weaponIds": [
+        "core-w-001",
+        "core-w-002"
+      ]
     },
     {
       "id": "core-u-tiger",
@@ -131,7 +103,7 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": false
       },
       "hp": 3300,
-      "atk": 550,
+      "atk": 275,
       "def": 0,
       "mob": 450,
       "acc": 470,
@@ -148,41 +120,11 @@ window.VAIS_BUNDLE_PACK = {
           "duration": 2
         }
       ],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 90,
-          "accuracyPt": 5,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 2,
-          "hitsMax": 5,
-          "hitPowerPct": 20,
-          "name": "サブマシンガン"
-        },
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 120,
-          "accuracyPt": 0,
-          "critPt": 0,
-          "targetCount": 3,
-          "weight": 0.6,
-          "minDamage": 40,
-          "hitsMin": 1,
-          "hitsMax": 1,
-          "hitPowerPct": 80,
-          "name": "グレネード",
-          "usesPerBattle": 2,
-          "fxColor": "#ff9a3c"
-        }
-      ],
-      "equipSlots": 2
+      "equipSlots": 2,
+      "weaponIds": [
+        "core-w-003",
+        "core-w-004"
+      ]
     },
     {
       "id": "core-u-fox",
@@ -200,7 +142,7 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": false
       },
       "hp": 2800,
-      "atk": 460,
+      "atk": 230,
       "def": 0,
       "mob": 600,
       "acc": 500,
@@ -226,47 +168,11 @@ window.VAIS_BUNDLE_PACK = {
           "note": ""
         }
       ],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 100,
-          "accuracyPt": 15,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 50,
-          "hitsMin": 1,
-          "hitsMax": 4,
-          "hitPowerPct": 25,
-          "name": "E90"
-        },
-        {
-          "attackType": "melee",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 90,
-          "accuracyPt": 15,
-          "critPt": 5,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 2,
-          "hitsMax": 3,
-          "hitPowerPct": 45,
-          "name": "ドレインブレード",
-          "fxColor": "#ff4f6d",
-          "effects": [
-            {
-              "timing": "after",
-              "effect": "drain_pct",
-              "value": 30
-            }
-          ]
-        }
-      ],
-      "equipSlots": 2
+      "equipSlots": 2,
+      "weaponIds": [
+        "core-w-001",
+        "core-w-005"
+      ]
     },
     {
       "id": "core-u-turtle",
@@ -283,7 +189,7 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": false
       },
       "hp": 3500,
-      "atk": 580,
+      "atk": 290,
       "def": 100,
       "mob": 350,
       "acc": 500,
@@ -310,56 +216,11 @@ window.VAIS_BUNDLE_PACK = {
           "duration": 3
         }
       ],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 90,
-          "accuracyPt": 5,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 2,
-          "hitsMax": 5,
-          "hitPowerPct": 20,
-          "name": "サブマシンガン"
-        },
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 180,
-          "accuracyPt": 5,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 0.8,
-          "minDamage": 80,
-          "hitsMin": 1,
-          "hitsMax": 1,
-          "hitPowerPct": 100,
-          "name": "アーマーブレイカー",
-          "usesPerBattle": 3,
-          "fxColor": "#ffb347",
-          "effects": [
-            {
-              "timing": "before",
-              "effect": "tag_damage_up_pct",
-              "value": 30,
-              "tag": "装甲車"
-            },
-            {
-              "timing": "after",
-              "effect": "def_down_pct",
-              "value": 20,
-              "when": "hit",
-              "duration": 2
-            }
-          ]
-        }
-      ],
-      "equipSlots": 2
+      "equipSlots": 2,
+      "weaponIds": [
+        "core-w-006",
+        "core-w-007"
+      ]
     },
     {
       "id": "core-u-mina",
@@ -377,7 +238,7 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": false
       },
       "hp": 2900,
-      "atk": 420,
+      "atk": 210,
       "def": 0,
       "mob": 520,
       "acc": 520,
@@ -394,25 +255,11 @@ window.VAIS_BUNDLE_PACK = {
           "target": "weakest_ally"
         }
       ],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 90,
-          "accuracyPt": 10,
-          "critPt": 5,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 1,
-          "hitsMax": 2,
-          "hitPowerPct": 60,
-          "name": "ハンドガン"
-        }
-      ],
       "row": "back",
-      "equipSlots": 2
+      "equipSlots": 2,
+      "weaponIds": [
+        "core-w-008"
+      ]
     },
     {
       "id": "core-u-kai",
@@ -430,28 +277,11 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": false
       },
       "hp": 2600,
-      "atk": 450,
+      "atk": 225,
       "def": 0,
       "mob": 560,
       "acc": 580,
       "skills": [],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 90,
-          "accuracyPt": 10,
-          "critPt": 5,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 1,
-          "hitsMax": 2,
-          "hitPowerPct": 60,
-          "name": "ハンドガン"
-        }
-      ],
       "crew": "none",
       "row": "back",
       "pilotProfile": {
@@ -479,7 +309,10 @@ window.VAIS_BUNDLE_PACK = {
         ],
         "growthPct": 3
       },
-      "equipSlots": 2
+      "equipSlots": 2,
+      "weaponIds": [
+        "core-w-009"
+      ]
     },
     {
       "id": "core-u-strider",
@@ -496,57 +329,18 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": false
       },
       "hp": 6000,
-      "atk": 700,
+      "atk": 350,
       "def": 200,
       "mob": 550,
       "acc": 520,
       "skills": [],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "beam",
-          "note": "",
-          "powerPct": 130,
-          "accuracyPt": 15,
-          "critPt": 5,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 80,
-          "hitsMin": 1,
-          "hitsMax": 2,
-          "hitPowerPct": 70,
-          "name": "ビームライフル",
-          "fxColor": "#5ad8ff"
-        },
-        {
-          "attackType": "melee",
-          "damageType": "special",
-          "note": "",
-          "powerPct": 110,
-          "accuracyPt": 15,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 50,
-          "hitsMin": 1,
-          "hitsMax": 2,
-          "hitPowerPct": 60,
-          "name": "ショックランス",
-          "fxColor": "#c9a0ff",
-          "effects": [
-            {
-              "timing": "after",
-              "effect": "stun",
-              "value": 0,
-              "when": "hit",
-              "chance": 30
-            }
-          ]
-        }
-      ],
       "crew": "required",
       "sortieCost": 120,
-      "equipSlots": 3
+      "equipSlots": 3,
+      "weaponIds": [
+        "core-w-010",
+        "core-w-011"
+      ]
     },
     {
       "id": "core-u-truck",
@@ -569,24 +363,10 @@ window.VAIS_BUNDLE_PACK = {
       "mob": 300,
       "acc": 300,
       "skills": [],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 30,
-          "accuracyPt": 10,
-          "critPt": 5,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 1,
-          "hitsMax": 2,
-          "hitPowerPct": 60,
-          "name": "自衛火器"
-        }
-      ],
-      "equipSlots": 0
+      "equipSlots": 0,
+      "weaponIds": [
+        "core-w-012"
+      ]
     },
     {
       "id": "core-u-rin",
@@ -604,43 +384,11 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": false
       },
       "hp": 2800,
-      "atk": 430,
+      "atk": 215,
       "def": 0,
       "mob": 620,
       "acc": 540,
       "skills": [],
-      "weapons": [
-        {
-          "attackType": "melee",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 80,
-          "accuracyPt": 20,
-          "critPt": 10,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 2,
-          "hitsMax": 3,
-          "hitPowerPct": 45,
-          "name": "ナイフ"
-        },
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 90,
-          "accuracyPt": 10,
-          "critPt": 5,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 1,
-          "hitsMax": 2,
-          "hitPowerPct": 60,
-          "name": "ハンドガン"
-        }
-      ],
       "crew": "none",
       "pilotProfile": {
         "stats": {
@@ -666,7 +414,11 @@ window.VAIS_BUNDLE_PACK = {
         "missionId": "core-m-03",
         "note": "「輸送車護衛」をクリアすると加入"
       },
-      "equipSlots": 2
+      "equipSlots": 2,
+      "weaponIds": [
+        "core-w-002",
+        "core-w-013"
+      ]
     },
     {
       "id": "core-u-guardian",
@@ -684,7 +436,7 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": false
       },
       "hp": 8000,
-      "atk": 650,
+      "atk": 325,
       "def": 350,
       "mob": 420,
       "acc": 500,
@@ -701,60 +453,17 @@ window.VAIS_BUNDLE_PACK = {
           "resistType": "physical"
         }
       ],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 100,
-          "accuracyPt": 10,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 50,
-          "hitsMin": 2,
-          "hitsMax": 4,
-          "hitPowerPct": 30,
-          "name": "機関砲"
-        },
-        {
-          "attackType": "ranged",
-          "damageType": "beam",
-          "note": "",
-          "powerPct": 150,
-          "accuracyPt": 5,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 0.7,
-          "minDamage": 80,
-          "hitsMin": 1,
-          "hitsMax": 1,
-          "hitPowerPct": 100,
-          "name": "チャージ砲",
-          "cooldown": 1,
-          "fxColor": "#7fd6ff",
-          "effects": [
-            {
-              "timing": "before",
-              "effect": "atk_up_pct",
-              "value": 30,
-              "duration": 1
-            },
-            {
-              "timing": "after",
-              "effect": "recoil_pct",
-              "value": 5
-            }
-          ]
-        }
-      ],
       "crew": "required",
       "recruit": {
         "locked": true,
         "note": "研究「重装機ガーディアン配備」で加入"
       },
       "sortieCost": 200,
-      "equipSlots": 4
+      "equipSlots": 4,
+      "weaponIds": [
+        "core-w-014",
+        "core-w-015"
+      ]
     },
     {
       "id": "core-e-trooper",
@@ -771,29 +480,15 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": true
       },
       "hp": 3000,
-      "atk": 500,
+      "atk": 250,
       "def": 0,
       "mob": 500,
       "acc": 500,
       "skills": [],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 100,
-          "accuracyPt": 15,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 50,
-          "hitsMin": 1,
-          "hitsMax": 4,
-          "hitPowerPct": 25,
-          "name": "E90"
-        }
-      ],
-      "equipSlots": 0
+      "equipSlots": 0,
+      "weaponIds": [
+        "core-w-001"
+      ]
     },
     {
       "id": "core-e-raider",
@@ -810,44 +505,16 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": true
       },
       "hp": 3200,
-      "atk": 540,
+      "atk": 270,
       "def": 20,
       "mob": 540,
       "acc": 480,
       "skills": [],
-      "weapons": [
-        {
-          "attackType": "melee",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 80,
-          "accuracyPt": 20,
-          "critPt": 10,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 2,
-          "hitsMax": 3,
-          "hitPowerPct": 45,
-          "name": "ナイフ"
-        },
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 90,
-          "accuracyPt": 5,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 30,
-          "hitsMin": 2,
-          "hitsMax": 5,
-          "hitPowerPct": 20,
-          "name": "サブマシンガン"
-        }
-      ],
-      "equipSlots": 0
+      "equipSlots": 0,
+      "weaponIds": [
+        "core-w-002",
+        "core-w-016"
+      ]
     },
     {
       "id": "core-e-sniper",
@@ -864,33 +531,19 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": true
       },
       "hp": 2600,
-      "atk": 600,
+      "atk": 300,
       "def": 0,
       "mob": 480,
       "acc": 650,
       "skills": [],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 160,
-          "accuracyPt": 25,
-          "critPt": 10,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 80,
-          "hitsMin": 1,
-          "hitsMax": 1,
-          "hitPowerPct": 100,
-          "name": "狙撃銃"
-        }
-      ],
       "row": "back",
       "ai": {
         "target": "lowest_hp"
       },
-      "equipSlots": 0
+      "equipSlots": 0,
+      "weaponIds": [
+        "core-w-017"
+      ]
     },
     {
       "id": "core-e-apc",
@@ -907,7 +560,7 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": true
       },
       "hp": 7000,
-      "atk": 600,
+      "atk": 300,
       "def": 300,
       "mob": 350,
       "acc": 480,
@@ -924,50 +577,11 @@ window.VAIS_BUNDLE_PACK = {
           "resistType": "physical"
         }
       ],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "physical",
-          "note": "",
-          "powerPct": 100,
-          "accuracyPt": 10,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 50,
-          "hitsMin": 2,
-          "hitsMax": 4,
-          "hitPowerPct": 30,
-          "name": "機関砲"
-        },
-        {
-          "attackType": "ranged",
-          "damageType": "special",
-          "note": "",
-          "powerPct": 90,
-          "accuracyPt": 0,
-          "critPt": 0,
-          "targetCount": 3,
-          "weight": 0.6,
-          "minDamage": 40,
-          "hitsMin": 1,
-          "hitsMax": 1,
-          "hitPowerPct": 70,
-          "name": "ナパーム弾",
-          "usesPerBattle": 2,
-          "fxColor": "#ff6a2a",
-          "effects": [
-            {
-              "timing": "after",
-              "effect": "burn",
-              "value": 80,
-              "when": "hit",
-              "duration": 3
-            }
-          ]
-        }
-      ],
-      "equipSlots": 0
+      "equipSlots": 0,
+      "weaponIds": [
+        "core-w-018",
+        "core-w-019"
+      ]
     },
     {
       "id": "core-e-mech",
@@ -984,56 +598,17 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": true
       },
       "hp": 6500,
-      "atk": 680,
+      "atk": 340,
       "def": 200,
       "mob": 500,
       "acc": 520,
       "skills": [],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "beam",
-          "note": "",
-          "powerPct": 130,
-          "accuracyPt": 15,
-          "critPt": 5,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 80,
-          "hitsMin": 1,
-          "hitsMax": 2,
-          "hitPowerPct": 70,
-          "name": "ビームライフル",
-          "fxColor": "#5ad8ff"
-        },
-        {
-          "attackType": "melee",
-          "damageType": "special",
-          "note": "",
-          "powerPct": 110,
-          "accuracyPt": 15,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 50,
-          "hitsMin": 1,
-          "hitsMax": 2,
-          "hitPowerPct": 60,
-          "name": "ショックランス",
-          "fxColor": "#c9a0ff",
-          "effects": [
-            {
-              "timing": "after",
-              "effect": "stun",
-              "value": 0,
-              "when": "hit",
-              "chance": 30
-            }
-          ]
-        }
-      ],
       "crew": "required",
-      "equipSlots": 0
+      "equipSlots": 0,
+      "weaponIds": [
+        "core-w-020",
+        "core-w-011"
+      ]
     },
     {
       "id": "core-e-commander",
@@ -1051,7 +626,7 @@ window.VAIS_BUNDLE_PACK = {
         "enemy": true
       },
       "hp": 12000,
-      "atk": 820,
+      "atk": 410,
       "def": 250,
       "mob": 520,
       "acc": 600,
@@ -1082,74 +657,513 @@ window.VAIS_BUNDLE_PACK = {
           }
         }
       ],
-      "weapons": [
-        {
-          "attackType": "ranged",
-          "damageType": "beam",
-          "note": "",
-          "powerPct": 130,
-          "accuracyPt": 15,
-          "critPt": 5,
-          "targetCount": 1,
-          "weight": 1,
-          "minDamage": 80,
-          "hitsMin": 1,
-          "hitsMax": 2,
-          "hitPowerPct": 70,
-          "name": "ビームライフル",
-          "fxColor": "#5ad8ff"
-        },
-        {
-          "attackType": "ranged",
-          "damageType": "special",
-          "note": "",
-          "powerPct": 110,
-          "accuracyPt": 5,
-          "critPt": 0,
-          "targetCount": 4,
-          "weight": 1,
-          "minDamage": 40,
-          "hitsMin": 1,
-          "hitsMax": 1,
-          "hitPowerPct": 60,
-          "name": "ミサイル",
-          "usesPerBattle": 3,
-          "fxColor": "#ff4fd8"
-        },
-        {
-          "attackType": "ranged",
-          "damageType": "beam",
-          "note": "",
-          "powerPct": 150,
-          "accuracyPt": 5,
-          "critPt": 0,
-          "targetCount": 1,
-          "weight": 0.7,
-          "minDamage": 80,
-          "hitsMin": 1,
-          "hitsMax": 1,
-          "hitPowerPct": 100,
-          "name": "チャージ砲",
-          "cooldown": 1,
-          "fxColor": "#7fd6ff",
-          "effects": [
-            {
-              "timing": "before",
-              "effect": "atk_up_pct",
-              "value": 30,
-              "duration": 1
-            },
-            {
-              "timing": "after",
-              "effect": "recoil_pct",
-              "value": 5
-            }
-          ]
-        }
-      ],
       "row": "back",
       "exp": 400,
-      "equipSlots": 0
+      "equipSlots": 0,
+      "weaponIds": [
+        "core-w-021",
+        "core-w-022",
+        "core-w-023"
+      ]
+    }
+  ],
+  "weapons": [
+    {
+      "id": "core-w-001",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 100,
+      "accuracyPt": 15,
+      "critPt": 0,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 50,
+      "hitsMin": 1,
+      "hitsMax": 4,
+      "hitPowerPct": 25,
+      "name": "E90",
+      "useUnitAtk": true,
+      "baseAtk": 250
+    },
+    {
+      "id": "core-w-002",
+      "attackType": "melee",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 160,
+      "accuracyPt": 20,
+      "critPt": 10,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 30,
+      "hitsMin": 2,
+      "hitsMax": 3,
+      "hitPowerPct": 45,
+      "name": "ナイフ",
+      "useUnitAtk": true,
+      "baseAtk": 0
+    },
+    {
+      "id": "core-w-003",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 90,
+      "accuracyPt": 5,
+      "critPt": 0,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 30,
+      "hitsMin": 2,
+      "hitsMax": 5,
+      "hitPowerPct": 20,
+      "name": "サブマシンガン",
+      "useUnitAtk": true,
+      "baseAtk": 275
+    },
+    {
+      "id": "core-w-004",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 120,
+      "accuracyPt": 0,
+      "critPt": 0,
+      "targetCount": 3,
+      "weight": 0.6,
+      "minDamage": 40,
+      "hitsMin": 1,
+      "hitsMax": 1,
+      "hitPowerPct": 80,
+      "name": "グレネード",
+      "usesPerBattle": 2,
+      "fxColor": "#ff9a3c",
+      "useUnitAtk": true,
+      "baseAtk": 275
+    },
+    {
+      "id": "core-w-005",
+      "attackType": "melee",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 180,
+      "accuracyPt": 15,
+      "critPt": 5,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 30,
+      "hitsMin": 2,
+      "hitsMax": 3,
+      "hitPowerPct": 45,
+      "name": "ドレインブレード",
+      "fxColor": "#ff4f6d",
+      "effects": [
+        {
+          "timing": "after",
+          "effect": "drain_pct",
+          "value": 30
+        }
+      ],
+      "useUnitAtk": true,
+      "baseAtk": 0
+    },
+    {
+      "id": "core-w-006",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 90,
+      "accuracyPt": 5,
+      "critPt": 0,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 30,
+      "hitsMin": 2,
+      "hitsMax": 5,
+      "hitPowerPct": 20,
+      "name": "サブマシンガン",
+      "useUnitAtk": false,
+      "baseAtk": 580
+    },
+    {
+      "id": "core-w-007",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 180,
+      "accuracyPt": 5,
+      "critPt": 0,
+      "targetCount": 1,
+      "weight": 0.8,
+      "minDamage": 80,
+      "hitsMin": 1,
+      "hitsMax": 1,
+      "hitPowerPct": 100,
+      "name": "アーマーブレイカー",
+      "usesPerBattle": 3,
+      "fxColor": "#ffb347",
+      "effects": [
+        {
+          "timing": "before",
+          "effect": "tag_damage_up_pct",
+          "value": 30,
+          "tag": "装甲車"
+        },
+        {
+          "timing": "after",
+          "effect": "def_down_pct",
+          "value": 20,
+          "when": "hit",
+          "duration": 2
+        }
+      ],
+      "useUnitAtk": false,
+      "baseAtk": 580
+    },
+    {
+      "id": "core-w-008",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 90,
+      "accuracyPt": 10,
+      "critPt": 5,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 30,
+      "hitsMin": 1,
+      "hitsMax": 2,
+      "hitPowerPct": 60,
+      "name": "ハンドガン",
+      "useUnitAtk": false,
+      "baseAtk": 420
+    },
+    {
+      "id": "core-w-009",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 90,
+      "accuracyPt": 10,
+      "critPt": 5,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 30,
+      "hitsMin": 1,
+      "hitsMax": 2,
+      "hitPowerPct": 60,
+      "name": "ハンドガン",
+      "useUnitAtk": false,
+      "baseAtk": 450
+    },
+    {
+      "id": "core-w-010",
+      "attackType": "ranged",
+      "damageType": "beam",
+      "note": "",
+      "powerPct": 130,
+      "accuracyPt": 15,
+      "critPt": 5,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 80,
+      "hitsMin": 1,
+      "hitsMax": 2,
+      "hitPowerPct": 70,
+      "name": "ビームライフル",
+      "fxColor": "#5ad8ff",
+      "useUnitAtk": false,
+      "baseAtk": 700
+    },
+    {
+      "id": "core-w-011",
+      "attackType": "melee",
+      "damageType": "special",
+      "note": "",
+      "powerPct": 220,
+      "accuracyPt": 15,
+      "critPt": 0,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 50,
+      "hitsMin": 1,
+      "hitsMax": 2,
+      "hitPowerPct": 60,
+      "name": "ショックランス",
+      "fxColor": "#c9a0ff",
+      "effects": [
+        {
+          "timing": "after",
+          "effect": "stun",
+          "value": 0,
+          "when": "hit",
+          "chance": 30
+        }
+      ],
+      "useUnitAtk": true,
+      "baseAtk": 0
+    },
+    {
+      "id": "core-w-012",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 30,
+      "accuracyPt": 10,
+      "critPt": 5,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 30,
+      "hitsMin": 1,
+      "hitsMax": 2,
+      "hitPowerPct": 60,
+      "name": "自衛火器",
+      "useUnitAtk": false,
+      "baseAtk": 0
+    },
+    {
+      "id": "core-w-013",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 90,
+      "accuracyPt": 10,
+      "critPt": 5,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 30,
+      "hitsMin": 1,
+      "hitsMax": 2,
+      "hitPowerPct": 60,
+      "name": "ハンドガン",
+      "useUnitAtk": false,
+      "baseAtk": 430
+    },
+    {
+      "id": "core-w-014",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 100,
+      "accuracyPt": 10,
+      "critPt": 0,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 50,
+      "hitsMin": 2,
+      "hitsMax": 4,
+      "hitPowerPct": 30,
+      "name": "機関砲",
+      "useUnitAtk": false,
+      "baseAtk": 650
+    },
+    {
+      "id": "core-w-015",
+      "attackType": "ranged",
+      "damageType": "beam",
+      "note": "",
+      "powerPct": 150,
+      "accuracyPt": 5,
+      "critPt": 0,
+      "targetCount": 1,
+      "weight": 0.7,
+      "minDamage": 80,
+      "hitsMin": 1,
+      "hitsMax": 1,
+      "hitPowerPct": 100,
+      "name": "チャージ砲",
+      "cooldown": 1,
+      "fxColor": "#7fd6ff",
+      "effects": [
+        {
+          "timing": "before",
+          "effect": "atk_up_pct",
+          "value": 30,
+          "duration": 1
+        },
+        {
+          "timing": "after",
+          "effect": "recoil_pct",
+          "value": 5
+        }
+      ],
+      "useUnitAtk": true,
+      "baseAtk": 325
+    },
+    {
+      "id": "core-w-016",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 90,
+      "accuracyPt": 5,
+      "critPt": 0,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 30,
+      "hitsMin": 2,
+      "hitsMax": 5,
+      "hitPowerPct": 20,
+      "name": "サブマシンガン",
+      "useUnitAtk": false,
+      "baseAtk": 540
+    },
+    {
+      "id": "core-w-017",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 160,
+      "accuracyPt": 25,
+      "critPt": 10,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 80,
+      "hitsMin": 1,
+      "hitsMax": 1,
+      "hitPowerPct": 100,
+      "name": "狙撃銃",
+      "useUnitAtk": false,
+      "baseAtk": 600
+    },
+    {
+      "id": "core-w-018",
+      "attackType": "ranged",
+      "damageType": "physical",
+      "note": "",
+      "powerPct": 100,
+      "accuracyPt": 10,
+      "critPt": 0,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 50,
+      "hitsMin": 2,
+      "hitsMax": 4,
+      "hitPowerPct": 30,
+      "name": "機関砲",
+      "useUnitAtk": false,
+      "baseAtk": 600
+    },
+    {
+      "id": "core-w-019",
+      "attackType": "ranged",
+      "damageType": "special",
+      "note": "",
+      "powerPct": 90,
+      "accuracyPt": 0,
+      "critPt": 0,
+      "targetCount": 3,
+      "weight": 0.6,
+      "minDamage": 40,
+      "hitsMin": 1,
+      "hitsMax": 1,
+      "hitPowerPct": 70,
+      "name": "ナパーム弾",
+      "usesPerBattle": 2,
+      "fxColor": "#ff6a2a",
+      "effects": [
+        {
+          "timing": "after",
+          "effect": "burn",
+          "value": 80,
+          "when": "hit",
+          "duration": 3
+        }
+      ],
+      "useUnitAtk": false,
+      "baseAtk": 600
+    },
+    {
+      "id": "core-w-020",
+      "attackType": "ranged",
+      "damageType": "beam",
+      "note": "",
+      "powerPct": 130,
+      "accuracyPt": 15,
+      "critPt": 5,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 80,
+      "hitsMin": 1,
+      "hitsMax": 2,
+      "hitPowerPct": 70,
+      "name": "ビームライフル",
+      "fxColor": "#5ad8ff",
+      "useUnitAtk": false,
+      "baseAtk": 680
+    },
+    {
+      "id": "core-w-021",
+      "attackType": "ranged",
+      "damageType": "beam",
+      "note": "",
+      "powerPct": 130,
+      "accuracyPt": 15,
+      "critPt": 5,
+      "targetCount": 1,
+      "weight": 1,
+      "minDamage": 80,
+      "hitsMin": 1,
+      "hitsMax": 2,
+      "hitPowerPct": 70,
+      "name": "ビームライフル",
+      "fxColor": "#5ad8ff",
+      "useUnitAtk": true,
+      "baseAtk": 410
+    },
+    {
+      "id": "core-w-022",
+      "attackType": "ranged",
+      "damageType": "special",
+      "note": "",
+      "powerPct": 110,
+      "accuracyPt": 5,
+      "critPt": 0,
+      "targetCount": 4,
+      "weight": 1,
+      "minDamage": 40,
+      "hitsMin": 1,
+      "hitsMax": 1,
+      "hitPowerPct": 60,
+      "name": "ミサイル",
+      "usesPerBattle": 3,
+      "fxColor": "#ff4fd8",
+      "useUnitAtk": true,
+      "baseAtk": 410
+    },
+    {
+      "id": "core-w-023",
+      "attackType": "ranged",
+      "damageType": "beam",
+      "note": "",
+      "powerPct": 150,
+      "accuracyPt": 5,
+      "critPt": 0,
+      "targetCount": 1,
+      "weight": 0.7,
+      "minDamage": 80,
+      "hitsMin": 1,
+      "hitsMax": 1,
+      "hitPowerPct": 100,
+      "name": "チャージ砲",
+      "cooldown": 1,
+      "fxColor": "#7fd6ff",
+      "effects": [
+        {
+          "timing": "before",
+          "effect": "atk_up_pct",
+          "value": 30,
+          "duration": 1
+        },
+        {
+          "timing": "after",
+          "effect": "recoil_pct",
+          "value": 5
+        }
+      ],
+      "useUnitAtk": true,
+      "baseAtk": 410
     }
   ],
   "missions": [
@@ -1723,7 +1737,9 @@ window.VAIS_BUNDLE_PACK = {
               "effect": "recoil_pct",
               "value": 5
             }
-          ]
+          ],
+          "baseAtk": 250,
+          "useUnitAtk": true
         }
       },
       "price": 2500,

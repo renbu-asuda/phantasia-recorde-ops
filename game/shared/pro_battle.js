@@ -187,7 +187,7 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
       const critRate=clamp(.05+weapon.critPt/100+attackMods.critAdd,.01,.50),crit=chance(ctx,critRate);
       const perHitMin=Math.max(0,Math.round(weapon.minDamage));
       const def=eff(ctx,target,'def')*(1-pierce/100);
-      let raw=Math.max(perHitMin,(eff(ctx,attacker,'atk')*(weapon.powerPct/100)-def)*(weapon.hitPowerPct/100)*rand(ctx,.90,1.10));
+      let raw=Math.max(perHitMin,(C.weaponAttack(weapon,eff(ctx,attacker,'atk'))-def)*(weapon.hitPowerPct/100)*rand(ctx,.90,1.10));
       raw*=attackMods.damageMult;
       {const before=raw;for(const b of attackMods.tagBonus)if(tagsOf(target).includes(b.tag))raw*=Math.max(0,1+b.pct/100);if(raw>before+.5){const g=Math.round(raw-before);ctx.effects.tagCount++;ctx.effects.tagBonus+=g;actionTag+=g;}}
       if(opts.scale!==undefined)raw*=opts.scale;
@@ -333,19 +333,20 @@ function damagePreview(att,weapon,def,mission){
   const sure=(weapon.effects||[]).filter(e=>e.timing==='before'&&(e.chance??100)>=100&&!e.cond);
   const m=sure.length?weaponEffects(ctx,a,{...weapon,effects:sure},'before',{weapon,targets:[d],opponent:d}):emptyMods();let tagMult=1;for(const b of m.tagBonus)if(tagsOf(d).includes(b.tag))tagMult*=Math.max(0,1+b.pct/100);
   const hit=clamp(baseHitRate(eff(ctx,a,'acc'),eff(ctx,d,'mob'),weapon.accuracyPt+terrainHit)+m.hitAdd,.05,.95),crit=clamp(.05+weapon.critPt/100+m.critAdd,.01,.5);
-  const defv=eff(ctx,d,'def')*(1-clamp(num(weapon.defPiercePct,0)+m.defPierce,0,100)/100),core=(eff(ctx,a,'atk')*(weapon.powerPct/100)-defv)*(weapon.hitPowerPct/100)*m.damageMult*tagMult;
+  const defv=eff(ctx,d,'def')*(1-clamp(num(weapon.defPiercePct,0)+m.defPierce,0,100)/100),core=(C.weaponAttack(weapon,eff(ctx,a,'atk'))-defv)*(weapon.hitPowerPct/100)*m.damageMult*tagMult;
   const per=[.9,1,1.1].map(f=>Math.max(weapon.minDamage,core*f));const avgHit=per[1]*(1+.5*crit);
   const avgHits=(weapon.hitsMin+weapon.hitsMax)/2*hit,expected=avgHit*avgHits;
   return {hitRate:hit,critRate:crit,perHitMin:Math.round(per[0]),perHitAvg:Math.round(per[1]),perHitMax:Math.round(per[2]),critHit:Math.round(per[1]*1.5),avgHits,expected:Math.round(expected),actionsToKill:expected>0?Math.ceil(d.hp/expected):Infinity,terrainHit};
 }
 // ---- strength estimate (1.11.0, shared by the game and the makers) ----
 // damage per action × actions survived against standard infantry; sqrt keeps the scale intuitive (2.0 ≈ two standard soldiers).
-const STANDARD_UNIT=Object.freeze({id:'standard',name:'標準歩兵',tags:['歩兵','生身'],hp:3000,atk:500,def:0,mob:500,acc:500,skills:[],weapons:[C.weapon(C.weaponDefaults)],deploy:{player:true,enemy:true}});
+const STANDARD_UNIT=Object.freeze({id:'standard',name:'標準歩兵',tags:['歩兵','生身'],hp:3000,atk:250,def:0,mob:500,acc:500,skills:[],weapons:[C.weapon({...C.weaponDefaults,baseAtk:250,useUnitAtk:true})],deploy:{player:true,enemy:true}});
 function unitPower(a){const ws=(a.weapons&&a.weapons.length)?a.weapons:[BASIC_WEAPON],total=ws.reduce((s,w)=>s+Math.max(.01,w.weight),0);
   let dmg=0;for(const w of ws)dmg+=damagePreview(a,w,STANDARD_UNIT).expected*Math.min(w.targetCount,3)*(Math.max(.01,w.weight)/total)*(1+.04*Math.min(4,w.effects?.length||0));
   const taken=Math.max(1,damagePreview(STANDARD_UNIT,STANDARD_UNIT.weapons[0],a).expected);return dmg*(a.hp/taken);}
 let STD_POWER=0;
 function powerRatio(a){if(!STD_POWER)STD_POWER=unitPower(STANDARD_UNIT);return Math.sqrt(unitPower(a)/STD_POWER);}
 function starCount(r){return r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;}
-root.PROBattle=Object.freeze({version:'1.4.0',DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+root.PROBattle=Object.freeze({version:'1.5.0',DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);
+

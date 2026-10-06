@@ -14,7 +14,7 @@ window.PROView={mode:mode,set:set,text:text,setText:setText,isLine:line,external
 function ui(){var slot=document.getElementById('viewModeSlot');if(slot&&!slot.firstChild){var b=document.createElement('button');b.type='button';b.className='view-mode-btn';b.textContent=mode==='pc'?'📱 スマホ表示':'🖥 PC表示';b.title=mode==='pc'?'スマホ向けの表示に戻す':'画面を広く使うPC向けの表示にする';b.setAttribute('style','font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid #3d5a73;background:#10202e;color:#cfe6f5;cursor:pointer;white-space:nowrap');b.onclick=function(){set(mode==='pc'?'mobile':'pc');};slot.appendChild(b);var tb=document.createElement('button');tb.type='button';tb.className='text-size-btn';tb.textContent=text==='large'?'Aa 文字：標準':'Aa 文字：大';tb.title='文字の大きさを切り替える';tb.setAttribute('style',b.getAttribute('style')+';margin-left:6px');tb.onclick=function(){setText(text==='large'?'normal':'large');};slot.appendChild(tb);}
 if(line&&!document.getElementById('proLineNotice')){var d=document.createElement('div');d.id='proLineNotice';d.setAttribute('role','note');d.setAttribute('style','margin:10px;padding:12px 14px;border:2px solid #f0c040;border-radius:10px;background:#2e2610;color:#fff3cf;font:14px/1.7 system-ui,sans-serif');var t=document.createElement('div');t.textContent='LINEの中のブラウザで開いています。ここではZIPのダウンロードができず、セーブも普段のブラウザとは別になります。';var a=document.createElement('a');a.href=externalUrl();a.textContent='▶ ブラウザで開き直す';a.setAttribute('style','display:inline-block;margin-top:6px;padding:6px 12px;border-radius:8px;background:#f0c040;color:#2a2000;font-weight:bold;text-decoration:none');d.appendChild(t);d.appendChild(a);document.body.insertBefore(d,document.body.firstChild);}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ui);else ui();})();</script>
-<title>ファンタジア・レコード・オプス (PRO) - 1.13.1</title>
+<title>ファンタジア・レコード・オプス (PRO) - 1.14.0</title>
 <style>
 :root{
   --bg:#070b10; --panel:#111923; --panel2:#172230; --line:#2c3a4b;
@@ -138,7 +138,7 @@ body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relativ
 <section id="baseScreen" class="screen active">
   <div class="wrap">
     <div class="topbar">
-      <div class="brand"><h1>ファンタジア・レコード・オプス</h1><small>PRO / 自動派遣戦闘 1.13.1</small></div>
+      <div class="brand"><h1>ファンタジア・レコード・オプス</h1><small>PRO / 自動派遣戦闘 1.14.0</small></div>
       <div class="wallet"><div class="credit">資金 <span id="credits">0</span></div><div class="credit today-box" id="todayBox" title="曜日の条件がある作戦は、この曜日に出撃できます">今日: <b id="todayText">-</b></div><span id="viewModeSlot" style="margin-right:6px"></span><button class="reset" id="resetBtn">初期化</button></div>
     </div>
 
@@ -247,7 +247,7 @@ body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relativ
     </section>
     <div class="data-tools save-tools"><h2>セーブデータ・設定</h2><p class="sub">進行状況と追加パックをJSONファイルに書き出し、機種変更やバックアップに使えます。</p><div class="controls"><button id="exportSaveBtn" class="secondary" type="button">セーブを書き出す</button><button id="importSaveBtn" class="secondary" type="button">セーブを読み込む</button><input id="saveFileInput" type="file" accept=".json,application/json" hidden></div><label class="toggle-line"><input id="fatigueToggle" type="checkbox" checked> 疲労・負傷ルール（出撃で疲労がたまり、撃破されると数日休養が必要）</label><div id="saveStatus" class="data-status"></div></div>
     <div class="data-tools bundle-tools"><h2>統合パック</h2><p class="sub">ユニット・作戦・アイテムをまとめたJSを一度に読み込みます。更新・解除もパック単位です。</p><div class="controls"><button id="importBundleBtn" class="secondary">統合JSを読み込む</button><input id="bundleFileInput" type="file" accept=".js,.json,text/javascript,application/javascript" multiple hidden></div><div id="bundleDataStatus" class="data-status"></div><div id="bundlePackManager" class="pack-manager-body"></div></div>
-    <div class="foot">Fantasia Record Ops (PRO) 1.13.1</div>
+    <div class="foot">Fantasia Record Ops (PRO) 1.14.0</div>
     <div id="tipBox" class="tip-box" role="status" hidden></div>
     <div id="techInfo" hidden>MGSPW OUTER OPS inspired / Unit Pack Schema 6・Mission Schema 4・Item Schema 5・Bundle Schema 6（旧Schema読込互換）</div>
   </div>
@@ -327,29 +327,29 @@ body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relativ
 
 <div id="storyOverlay" class="story-overlay" role="dialog" aria-modal="true" aria-labelledby="storyTitle" hidden><div class="story-card"><div id="storyTitle" class="result-kicker"></div><div id="storySpeaker" class="story-speaker"></div><div id="storyText" class="story-text"></div><div class="story-foot"><span id="storyProgress" class="sub"></span><div class="result-actions"><button id="storySkip" class="secondary" type="button">スキップ</button><button id="storyNext" class="primary" type="button">次へ</button></div></div></div></div>
 
-<script src="shared/pro_core.js?v=1.13.1"></script>
-<script src="shared/pro_battle.js?v=1.13.1"></script>
-<script src="outer_ops_units.js?v=1.13.1" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
-<script src="outer_ops_missions.js?v=1.13.1" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
-<script src="outer_ops_items.js?v=1.13.1" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
-<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.5.0','shared/pro_core.js'],['PROBattle','1.4.0','shared/pro_battle.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
+<script src="shared/pro_core.js?v=1.14.0"></script>
+<script src="shared/pro_battle.js?v=1.14.0"></script>
+<script src="outer_ops_units.js?v=1.14.0" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_missions.js?v=1.14.0" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_items.js?v=1.14.0" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
+<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.6.0','shared/pro_core.js'],['PROBattle','1.5.0','shared/pro_battle.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
 <script>
 (() => {
 'use strict';
 const C=window.PROCore,B=window.PROBattle;
 const UNIT_PACK_FORMAT = 'VAIS_OUTER_OPS_UNIT_PACK';
-const UNIT_PACK_SCHEMA = 6;
-const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3,4,5,6]);
+const UNIT_PACK_SCHEMA = 7;
+const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3,4,5,6,7]);
 const IMPORTED_PACKS_KEY = 'vais_outer_ops_imported_unit_packs_v1';
 const MISSION_PACK_FORMAT = 'VAIS_OUTER_OPS_MISSION_PACK';
 const MISSION_PACK_SCHEMA = 2;
 const SUPPORTED_MISSION_SCHEMAS = new Set([1,2,3,4]);
 const IMPORTED_MISSION_PACKS_KEY = 'vais_outer_ops_imported_mission_packs_v1';
 const ITEM_PACK_FORMAT = 'VAIS_OUTER_OPS_ITEM_PACK';
-const ITEM_PACK_SCHEMA = 5;
+const ITEM_PACK_SCHEMA = 6;
 const IMPORTED_ITEM_PACKS_KEY = 'vais_outer_ops_imported_item_packs_v1';
 const IMPORTED_BUNDLE_PACKS_KEY = 'pro_imported_bundle_packs_v1';
-const GAME_VERSION = '1.13.1';
+const GAME_VERSION = '1.14.0';
 
 function storageGet(key,fallback=null){try{const v=localStorage.getItem(key);return v===null?fallback:v;}catch(e){console.warn('localStorage read failed',e);return fallback;}}
 function storageSet(key,value){try{localStorage.setItem(key,value);return true;}catch(e){console.warn('localStorage write failed',e);return false;}}
@@ -447,7 +447,7 @@ function normalizeUnit(u={}){
     hp:Math.max(1,Math.floor(num(u.hp,3000))), atk:Math.max(0,num(u.atk,500)), def:Math.max(0,num(u.def,0)),
     mob:Math.max(0,num(u.mob,500)), acc:Math.max(0,num(u.acc,500)),
     weapons:Array.isArray(u.weapons)&&u.weapons.length?u.weapons.map(normalizeWeapon):[normalizeWeapon({name:'標準攻撃'})],
-    ...C.unitExt(u,String(u.id))
+    ...(u.weaponIds?{weaponIds:[...u.weaponIds]}:{}),...C.unitExt(u,String(u.id))
   };
 }
 function validatePack(pack){
@@ -457,10 +457,10 @@ function validatePack(pack){
   if(!pack.packId)throw new Error('packId がありません。');
   if(!Array.isArray(pack.units))throw new Error('units 配列がありません。');
   // 1.10.2: legacy pilots become units that can fight on their own or ride other units.
-  const units=C.pilotsToUnits(pack.units,pack.pilots).units.map(normalizeUnit);assertUniqueIds(units,'unit');
+  const units=C.pilotsToUnits(pack.units,pack.pilots).units.map(u=>normalizeUnit(C.resolveUnitWeapons(u,pack.weapons)));assertUniqueIds(units,'unit');
   for(const u of units){assertUniqueIds(u.skills||[],`${u.id} の skill`);}
   const hires=C.hireList(pack.hires);
-  return {format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),units,...(hires.length?{hires}:{})};
+  return {format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),units,...(pack.weapons?.length?{weapons:C.weaponList(pack.weapons)}:{}),...(hires.length?{hires}:{})};
 }
 function extractPackFromJs(text){return validatePack(extractAssignedObject(text,'VAIS_UNIT_PACK'));}
 function loadImportedUnitPacks(){
@@ -474,7 +474,7 @@ function normalizeItem(item){return C.item(item);}
 function validateItemPack(pack){return C.itemPack(pack);}
 function validateBundlePack(raw){
   const bundle=C.bundlePack(raw),meta={packId:'bundle:'+bundle.packId,packName:bundle.packName,_bundle:true};
-  const unitPack=validatePack({...meta,format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,units:bundle.units,pilots:bundle.pilots});
+  const unitPack=validatePack({...meta,format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,units:bundle.units,weapons:bundle.weapons,pilots:bundle.pilots});
   const units=unitPack.units;
   const missions=validateMissionPack({...meta,format:MISSION_PACK_FORMAT,schemaVersion:MISSION_PACK_SCHEMA,missions:bundle.missions}).missions;
   const itemPack=validateItemPack({...meta,format:ITEM_PACK_FORMAT,schemaVersion:ITEM_PACK_SCHEMA,items:bundle.items,research:bundle.research});
@@ -489,7 +489,7 @@ function validateBundlePack(raw){
 }
 function extractBundlePackFromJs(text){return validateBundlePack(C.parse(text,'VAIS_BUNDLE_PACK'));}
 function loadImportedBundlePacks(){try{const raw=JSON.parse(storageGet(IMPORTED_BUNDLE_PACKS_KEY,'[]')||'[]');return Array.isArray(raw)?raw.flatMap(p=>{try{return [validateBundlePack(p)];}catch(e){console.warn('Ignored invalid stored bundle pack',e);return [];}}):[];}catch(e){console.warn('Stored bundle packs could not be read',e);return [];}}
-function bundleComponent(bundle,key,schema,format){const extra=key==='units'?{...(bundle.pilots?{pilots:bundle.pilots}:{}),...(bundle.hires?{hires:bundle.hires}:{})}:key==='items'&&bundle.research?{research:bundle.research}:{};return {_bundle:true,format,schemaVersion:schema,packId:'bundle:'+bundle.packId,packName:bundle.packName,[key]:bundle[key],...extra};}
+function bundleComponent(bundle,key,schema,format){const extra=key==='units'?{...(bundle.weapons?{weapons:bundle.weapons}:{}),...(bundle.pilots?{pilots:bundle.pilots}:{}),...(bundle.hires?{hires:bundle.hires}:{})}:key==='items'&&bundle.research?{research:bundle.research}:{};return {_bundle:true,format,schemaVersion:schema,packId:'bundle:'+bundle.packId,packName:bundle.packName,[key]:bundle[key],...extra};}
 function extractItemPackFromJs(text){return validateItemPack(extractAssignedObject(text,'VAIS_ITEM_PACK'));}
 function loadImportedItemPacks(){try{const raw=JSON.parse(storageGet(IMPORTED_ITEM_PACKS_KEY,'[]')||'[]');return Array.isArray(raw)?raw.flatMap(p=>{try{return [validateItemPack(p)];}catch(e){console.warn('Ignored invalid item pack',e);return [];}}):[];}catch(e){console.warn('Stored item packs could not be read',e);return [];}}
 function saveImportedItemPacks(list=importedItemPacks){return storageSet(IMPORTED_ITEM_PACKS_KEY,JSON.stringify(list));}
@@ -502,7 +502,7 @@ function rebuildItemMaster(){
 }
 function normalizeDrop(d={}){
   if(!/^[a-zA-Z0-9_-]+$/.test(String(d.itemId||''))||['__proto__','constructor','prototype'].includes(String(d.itemId)))throw new Error('drops.itemId は英数字・_・-で指定してください。');
-  if(d.odds!==undefined)return C.drop(d,String(d.itemId)); // 1.13.1: exact odds such as 1/8
+  if(d.odds!==undefined)return C.drop(d,String(d.itemId)); // 1.14.0: exact odds such as 1/8
   const chanceValue=Number(d.chance),minValue=Number(d.min),maxValue=Number(d.max);
   if(!Number.isFinite(chanceValue)||chanceValue<0||chanceValue>100||!Number.isInteger(minValue)||minValue<1||!Number.isInteger(maxValue)||maxValue<minValue||maxValue>999)throw new Error(`${d.itemId}: drops は chance 0～100 / min 1以上 / max 999以下で、min <= max にしてください。`);
   return {itemId:String(d.itemId),chance:chanceValue,min:minValue,max:maxValue};
@@ -560,7 +560,7 @@ function rebuildUnitMasters(){
   UNIT_INDEX=Object.fromEntries(units.map(u=>[u.id,u]));
   // Pilots are player units with a pilotProfile (keyed by unit ID).
   PILOT_MASTER=Object.fromEntries(BASE_UNIT_MASTER.filter(u=>u.pilotProfile).map(u=>[u.id,{id:u.id,name:u.name,...u.pilotProfile,profile:u.pilotProfile,_packName:u._packName}]));
-  // 1.13.1: hire offers from unit packs and bundles (same id: the pack loaded later wins)
+  // 1.14.0: hire offers from unit packs and bundles (same id: the pack loaded later wins)
   HIRE_MASTER={};for(const pack of packs)for(const h of pack.hires||[])HIRE_MASTER[h.id]={...h,_packName:pack.packName};
   loadedUnitPacks=packs;
 }
@@ -676,7 +676,7 @@ function normalizeExtState(saved){
   const r=plainObject(saved.records),base=freshRecords();
   return {
     levels:mapEntries(saved.levels,v=>({lv:intIn(v?.lv,1,MAX_LEVEL,1),exp:intIn(v?.exp,0,1e9,0),sp:intIn(v?.sp,0,9999,0)})),
-    // 1.13.1: owned units are instances {uid, base, name?, slotMod?}; the first copy's uid is the base id, so older per-id data keeps working
+    // 1.14.0: owned units are instances {uid, base, name?, slotMod?}; the first copy's uid is the base id, so older per-id data keeps working
     roster:normalizeRoster(saved.roster),joined:idArray(saved.joined),
     equip:mapEntries(saved.equip,v=>Array.isArray(v)?Array.from({length:Math.min(MAX_EQUIP_SLOTS,v.length)},(_,i)=>typeof v[i]==='string'&&C.safeId(v[i])?v[i]:null):undefined),
     pilots:mapEntries(saved.pilots,v=>typeof v==='string'&&C.safeId(v)?v:undefined),
@@ -801,7 +801,7 @@ function missionLockReason(m){
   if(m.days?.length&&!m.days.includes(today()))return '出撃できる曜日: '+m.days.map(d=>C.days[d]).join('・');
   return '';
 }
-// 1.13.1: a hidden mission stays out of the list until its prerequisite missions / key items are met (weekday locks never hide).
+// 1.14.0: a hidden mission stays out of the list until its prerequisite missions / key items are met (weekday locks never hide).
 function missionHidden(m){if(!m?.hidden)return false;const r=m.requires;return !!(r?.missions?.some(id=>!missionCleared(id))||r?.items?.some(id=>!((state.items[id]||0)>0)));}
 function visibleMissions(){return MISSIONS.filter(m=>!missionHidden(m));}
 function deployRules(m){const tagRule=(m.rules||[]).find(r=>r&&r.type==='deploy_tags');const ban=C.terrainMods(m).banTags||[];return {tagRule,ban};}
@@ -955,7 +955,7 @@ function renderUnits(){
   UNIT_MASTER.forEach(u=>{const cur=state.units[u.id]?.hp??u.hp,ratio=cur/u.hp,riding=boardingOf(u.id),needPilot=crewOf(u)==='required'&&!u.pilotId,block=sortieBlock(u.id)||(riding?`${unitName(riding)}に搭乗中`:'')||(needPilot?'要パイロット（未搭乗）':''),d=document.createElement('div');d.className='unit'+(selected.includes(u.id)?' selected':'')+(cur<=0||block?' disabled':'');
     const baseVsStd=baseHitRate(u.acc,700,0);
     const cost=repairCost(u.hp-cur),row=state.rows[u.id]||u.row||'front',info=levelInfo(u.id),fat=fatigueOf(u.id);
-    d.innerHTML=`<div class="row"><div class="unit-head">${unitThumb(u)}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub" style="margin:2px 0">${esc(u.role||'')} ${u.pilotId?`/ 搭乗: ${esc(u.pilot)}（Lv${u.pilotLv}）`:u.pilot?`/ ${esc(u.pilot)}`:''}${crewOf(u)==='required'?' <span class="crew-badge">要パイロット</span>':''}${u.pilotProfile?' <span class="crew-badge pilot">パイロット</span>':''}</div></div></div><span class="tag">${esc(u._packName||'CORE')}</span></div><div class="unit-summary"><span class="power-stars">${starText(unitStrength(u).stars)}</span>${tip('power')}<span class="hp-text">HP ${Math.ceil(cur).toLocaleString()} / ${u.hp.toLocaleString()}</span>${u.sortieCost?`<span class="cost-badge">出撃 ${u.sortieCost.toLocaleString()}</span>`:''}<span class="row-badge ${row}">${row==='back'?'後衛':'前衛'}</span>${tip('row')}${fatigueOn()&&fat?`<span class="${fat>=FATIGUE_TIRED?'warn-badge':''}">疲労 ${fat}</span>`:''}${block?`<span class="bad-badge">${esc(block)}</span>`:''}</div><div class="hpbar"><div class="hpfill ${hpClass(ratio)}" style="width:${ratio*100}%"></div></div><details class="unit-more"${openUnitDetails.has(u.id)?' open':''}><summary>詳しく（能力・武装・スキル）</summary><div class="stats"><div class="stat"><b>${Math.ceil(cur)}</b><span>HP ${tip('hp')}</span></div><div class="stat"><b>${u.atk}</b><span>ATK ${outerGrade(u.atk)} ${tip('atk')}</span></div><div class="stat"><b>${u.def}</b><span>DEF ${outerGrade(u.def)} ${tip('def')}</span></div><div class="stat"><b>${u.mob}</b><span>MOB ${outerGrade(u.mob)} ${tip('mob')}</span></div><div class="stat"><b>${u.acc}</b><span>ACC ${outerGrade(u.acc)} ${tip('acc')}</span></div></div><div class="unit-extra"><span>タグ ${esc(u.tags?.join('・')||'なし')}</span><span>武装 ${u.weapons.length}</span><span>装備枠 ${slotsOf(u.id)}</span>${u.sortieCost?`<span>出撃費用 ${u.sortieCost.toLocaleString()}</span>`:''}${Object.entries(state.upgrades?.[u.id]||{}).filter(([,v])=>v>0).map(([k,v])=>`<span>強化 ${k==='hp'?'最大HP':k.toUpperCase()} +${v}</span>`).join('')}<span>命中の目安（機動700の相手に）${pct(baseVsStd)}%</span>${u.skills?.length?`<span>SKILL ${esc(u.skills.map(x=>x.name).join(' / '))}</span>`:(u.ability?`<span>${esc(u.ability)}</span>`:'')}</div><div class="weapon-title">WEAPONS ${tip('attr')}</div><div class="weapon-list">${u.weapons.map(w=>`<span class="weapon-chip ${weaponClass(w)}">${esc(w.name)} / ${weaponTypeLabel(w)}${w.usesPerBattle?` / ${w.usesPerBattle}回`:''}${w.cooldown?` / 待機${w.cooldown}`:''}${w.effects?.length?` / 効果${w.effects.length}`:''}</span>`).join('')}</div>${u.weapons.some(w=>w.effects?.length)?`<div class="weapon-fx">${u.weapons.filter(w=>w.effects?.length).map(w=>`<div><b>${esc(w.name)}</b> ${esc(C.weaponEffectsText(w).join(' ／ '))}</div>`).join('')}</div>`:''}<div class="unit-manage"><button type="button" class="rename-btn secondary" ${battleRunning?'disabled':''}>呼び名を変える</button>${u.noFire?'<span class="sub">解雇不可（重要ユニット）</span>':`<button type="button" class="fire-btn danger" ${battleRunning||state.roster.length<=1?'disabled':''}>解雇する</button>`}</div></details><div class="unit-actions"><button class="row-toggle secondary" ${battleRunning?'disabled':''}>${row==='back'?'前衛にする':'後衛にする'}</button>${cost?`<button class="repair-one" ${battleRunning||state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}${state.credits<cost?'（資金不足）':''}</button>`:''}</div>`;
+    d.innerHTML=`<div class="row"><div class="unit-head">${unitThumb(u)}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub" style="margin:2px 0">${esc(u.role||'')} ${u.pilotId?`/ 搭乗: ${esc(u.pilot)}（Lv${u.pilotLv}）`:u.pilot?`/ ${esc(u.pilot)}`:''}${crewOf(u)==='required'?' <span class="crew-badge">要パイロット</span>':''}${u.pilotProfile?' <span class="crew-badge pilot">パイロット</span>':''}</div></div></div><span class="tag">${esc(u._packName||'CORE')}</span></div><div class="unit-summary"><span class="power-stars">${starText(unitStrength(u).stars)}</span>${tip('power')}<span class="hp-text">HP ${Math.ceil(cur).toLocaleString()} / ${u.hp.toLocaleString()}</span>${u.sortieCost?`<span class="cost-badge">出撃 ${u.sortieCost.toLocaleString()}</span>`:''}<span class="row-badge ${row}">${row==='back'?'後衛':'前衛'}</span>${tip('row')}${fatigueOn()&&fat?`<span class="${fat>=FATIGUE_TIRED?'warn-badge':''}">疲労 ${fat}</span>`:''}${block?`<span class="bad-badge">${esc(block)}</span>`:''}</div><div class="hpbar"><div class="hpfill ${hpClass(ratio)}" style="width:${ratio*100}%"></div></div><details class="unit-more"${openUnitDetails.has(u.id)?' open':''}><summary>詳しく（能力・武装・スキル）</summary><div class="stats"><div class="stat"><b>${Math.ceil(cur)}</b><span>HP ${tip('hp')}</span></div><div class="stat"><b>${u.atk}</b><span>ATK ${outerGrade(u.atk)} ${tip('atk')}</span></div><div class="stat"><b>${u.def}</b><span>DEF ${outerGrade(u.def)} ${tip('def')}</span></div><div class="stat"><b>${u.mob}</b><span>MOB ${outerGrade(u.mob)} ${tip('mob')}</span></div><div class="stat"><b>${u.acc}</b><span>ACC ${outerGrade(u.acc)} ${tip('acc')}</span></div></div><div class="unit-extra"><span>タグ ${esc(u.tags?.join('・')||'なし')}</span><span>武装 ${u.weapons.length}</span><span>装備枠 ${slotsOf(u.id)}</span>${u.sortieCost?`<span>出撃費用 ${u.sortieCost.toLocaleString()}</span>`:''}${Object.entries(state.upgrades?.[u.id]||{}).filter(([,v])=>v>0).map(([k,v])=>`<span>強化 ${k==='hp'?'最大HP':k.toUpperCase()} +${v}</span>`).join('')}<span>命中の目安（機動700の相手に）${pct(baseVsStd)}%</span>${u.skills?.length?`<span>SKILL ${esc(u.skills.map(x=>x.name).join(' / '))}</span>`:(u.ability?`<span>${esc(u.ability)}</span>`:'')}</div><div class="weapon-title">WEAPONS ${tip('attr')}</div><div class="weapon-list">${u.weapons.map(w=>`<span class="weapon-chip ${weaponClass(w)}">${esc(w.name)} / ${weaponTypeLabel(w)} / (${w.useUnitAtk===false?0:u.atk}＋${w.baseAtk||0})×${w.powerPct}%${w.usesPerBattle?` / ${w.usesPerBattle}回`:''}${w.cooldown?` / 待機${w.cooldown}`:''}${w.effects?.length?` / 効果${w.effects.length}`:''}</span>`).join('')}</div>${u.weapons.some(w=>w.effects?.length)?`<div class="weapon-fx">${u.weapons.filter(w=>w.effects?.length).map(w=>`<div><b>${esc(w.name)}</b> ${esc(C.weaponEffectsText(w).join(' ／ '))}</div>`).join('')}</div>`:''}<div class="unit-manage"><button type="button" class="rename-btn secondary" ${battleRunning?'disabled':''}>呼び名を変える</button>${u.noFire?'<span class="sub">解雇不可（重要ユニット）</span>':`<button type="button" class="fire-btn danger" ${battleRunning||state.roster.length<=1?'disabled':''}>解雇する</button>`}</div></details><div class="unit-actions"><button class="row-toggle secondary" ${battleRunning?'disabled':''}>${row==='back'?'前衛にする':'後衛にする'}</button>${cost?`<button class="repair-one" ${battleRunning||state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}${state.credits<cost?'（資金不足）':''}</button>`:''}</div>`;
     d.onclick=()=>{if(battleRunning||cur<=0||block)return;if(selected.includes(u.id))selected=selected.filter(x=>x!==u.id);else{const m=MISSIONS.find(x=>x.id===selectedMission),limit=m?m.maxDeploy:MAX_SLOTS;if(selected.length<Math.min(MAX_SLOTS,limit))selected.push(u.id);}render();};
     const more=d.querySelector('.unit-more');if(more){more.addEventListener('click',e=>e.stopPropagation());more.addEventListener('toggle',()=>{if(more.open)openUnitDetails.add(u.id);else openUnitDetails.delete(u.id);});}
     d.querySelector('.repair-one')?.addEventListener('click',e=>{e.stopPropagation();repairUnit(u.id);});
@@ -1251,7 +1251,7 @@ function assignPilot(unitId,pilotId){
   if(pilotId){state.pilots[unitId]=pilotId;selected=selected.filter(x=>x!==pilotId);}else delete state.pilots[unitId];
   return commitChange(pilotId?`${u.name} に ${unitName(pilotId)} が搭乗`:`${u.name} のパイロットを降ろしました`);
 }
-// ---- 1.13.1: hire, fire and rename unit instances ----
+// ---- 1.14.0: hire, fire and rename unit instances ----
 function fireBlock(uid){const u=UNIT_MASTER.find(x=>x.id===uid);if(!u)return 'ユニットがいません';if(u.noFire)return `${u.name}は解雇できません（重要ユニット）`;if(state.roster.length<=1)return '最後の1体は解雇できません';return '';}
 function fireUnit(uid,ask=true){
   if(battleRunning)return false;const u=UNIT_MASTER.find(x=>x.id===uid);if(!u||!inRoster(uid))return false;
@@ -1438,7 +1438,7 @@ function renderMissionDetail(m){
 // ===== 1.11.0: user-friendly helpers (guide, next actions, pack catalog, glossary, mission assist) =====
 const GLOSSARY={
   hp:'HP: 体力。0になると撃破され、その戦闘では行動できません。',
-  atk:'ATK: 攻撃力。与えるダメージの大きさに影響します。',
+  atk:'ATK: ユニットの攻撃力。ATK参照ありの武装は、ATKと武装基礎攻撃力の合計で計算します。参照なしの武装は基礎攻撃力のみです。',
   def:'DEF: 防御力。受けるダメージを減らします。',
   mob:'MOB: 機動力。攻撃をかわしやすくなり、行動順も早くなります。',
   acc:'ACC: 照準。攻撃が当たりやすくなります（相手のMOBと比べて命中率が決まります）。',

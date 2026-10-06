@@ -1,3 +1,27 @@
+# Toolkit 1.14.0: 武装マスターと攻撃力
+
+新しい武装項目は `baseAtk`（0～1000000の数値、未設定は0）と `useUnitAtk`（boolean、未設定はtrue）。
+攻撃力は `((useUnitAtk === false ? 0 : 現在ATK) + baseAtk) * powerPct / 100`。
+この後にDEF・1HIT倍率・乱数・スキル・最低ダメージ・CRITを従来の順序で適用する。
+
+例: ATK250、基礎250、威力100%なら参照ありで500。参照なしなら250。
+ATK参照なし・基礎0でも、武装のminDamageが0以外なら最低ダメージは発生する。
+
+統合/ユニットパックの `weapons` に `{id, name, ...武装項目}` を格納し、各ユニットは `weaponIds: ["weapon-rifle"]` で選ぶ。
+```js
+weapons: [{ id: "weapon-rifle", name: "ライフル", attackType: "ranged", damageType: "physical", baseAtk: 250, useUnitAtk: true, powerPct: 100 }],
+units: [{ id: "soldier", name: "歩兵", hp: 3000, atk: 250, def: 0, mob: 500, acc: 500, weaponIds: ["weapon-rifle"] }]
+```
+
+参照は同じパックの武装マスター内で解決する。欠損・重複ID・同じIDの二重装備はエラー。
+`weaponIds` がある場合はその参照が優先される。ゲーム内の正規化キャッシュには解決済み `weapons` が併存するが、統合メーカーの書き出しではキャッシュを保存しない。
+旧ユニットの `weapons: [{name, ...}]` もそのまま使用可能。統合メーカーでは読み込み時にマスター化する（ATK・威力の自動変更はしない）。
+Unit Makerでの個別書き出しは武装を展開するため、外部武装ファイルは不要。
+アイテムの追加武装や装備品の武装は従来の埋め込み形式で、baseAtk/useUnitAtkを利用可能。
+
+新項目/マスターを使用したUnitはSchema7、ItemはSchema6、BundleはSchema7。新項目を使わない旧パックは以前のSchemaで保存可能。Missionは変更なし。
+既存セーブのユニットID・名簿・個別強化・武装習得・装備は維持する。基本データのATKと成長値は変更されるため、ATK依存の育成効果は新しい参照式に従う。
+
 # Toolkit 1.13.0 雇用・個体・出撃費用・装備枠（Unit Schema 6 / Mission Schema 4 / Item Schema 5 / Bundle Schema 6）
 
 ## 雇用候補 `hires`（ユニットパック・統合パックの直下、最大200）
@@ -532,3 +556,4 @@ node tests/test_ui.cjs
 ```
 
 UIテストは軽量DOM模擬環境です。ブラウザ描画・Androidタッチ・ファイルダウンロード自体の実機テストではありません。
+

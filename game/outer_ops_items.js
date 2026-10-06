@@ -1,7 +1,7 @@
-/* PRO 1.13.1 基本データ — Unit Schema 6 / Mission Schema 4 / Item Schema 5 / Bundle Schema 6。 */
+/* PRO 1.14.0: 武装マスター・ATK参照と基礎攻撃力。 */
 window.VAIS_ITEM_PACK = {
   "format": "VAIS_OUTER_OPS_ITEM_PACK",
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "packId": "pro-core",
   "packName": "基本データ",
   "items": [
@@ -134,7 +134,9 @@ window.VAIS_ITEM_PACK = {
               "effect": "recoil_pct",
               "value": 5
             }
-          ]
+          ],
+          "baseAtk": 250,
+          "useUnitAtk": true
         }
       },
       "price": 2500,
