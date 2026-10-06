@@ -1,6 +1,4 @@
-/* PRO 1.13.0 基本データ（アイテム・研究）— ゲームに最初から入っているデータです。
- * 最新の形式（Unit Schema 6 / Mission Schema 3 / Item Schema 5）です。
- * 作り方の参考にどうぞ。メーカーで読み込めば、そのまま編集できます。 */
+/* PRO 1.13.1 基本データ — Unit Schema 6 / Mission Schema 4 / Item Schema 5 / Bundle Schema 6。 */
 window.VAIS_ITEM_PACK = {
   "format": "VAIS_OUTER_OPS_ITEM_PACK",
   "schemaVersion": 5,
@@ -196,13 +194,47 @@ window.VAIS_ITEM_PACK = {
       "shop": {
         "requiresResearch": "core-r-shop"
       }
+    },
+    {
+      "id": "core-i-fantasy-armor",
+      "name": "幻想防護装甲",
+      "desc": "装備中、幻想属性の攻撃によるダメージを20%減らす。DEF+40。",
+      "requires": {
+        "noneTags": [
+          "生身"
+        ]
+      },
+      "price": 2400,
+      "shop": {
+        "requiresResearch": "core-r-shop"
+      },
+      "equip": {
+        "slot": "accessory",
+        "stats": {
+          "def": 40
+        },
+        "skills": [
+          {
+            "id": "core-s-fantasy-resist",
+            "name": "幻想耐性",
+            "trigger": "when_targeted",
+            "effect": "weapon_resist_pct",
+            "resistType": "fantasy",
+            "value": 20,
+            "chance": 100,
+            "maxUses": 0,
+            "note": ""
+          }
+        ],
+        "weapons": []
+      }
     }
   ],
   "research": [
     {
       "id": "core-r-shop",
       "name": "新装備の開発",
-      "desc": "増加装甲と武装キットがショップに並ぶ。",
+      "desc": "増加装甲・チャージ砲の武装キット・拡張装備ラック・幻想防護装甲がショップに並ぶ。ストライダーの追加雇用も解放される。",
       "cost": {
         "credits": 2000,
         "items": {}
@@ -213,7 +245,8 @@ window.VAIS_ITEM_PACK = {
         "items": [
           "core-i-armor",
           "core-i-weaponkit",
-          "core-i-rack"
+          "core-i-rack",
+          "core-i-fantasy-armor"
         ],
         "grantItems": {}
       }

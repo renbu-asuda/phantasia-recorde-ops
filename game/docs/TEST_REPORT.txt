@@ -1,3 +1,10 @@
+PRO Toolkit 1.13.1 検証
+- Node.jsで全33本を実行: 32本PASS。
+- test_ui.cjsはタグ入力の旧oninput呼び出しで停止。変更前のHTMLでも同じエラーを再現。今回のデータ変更とは独立した既存テストの問題。
+- test_default_1131: 全基本データと統合サンプルの一致、分数確率、装備枠、作戦非表示の解放、幻想防護装甲の研究解放・使用条件を検証。
+- test_base_data: 起動・初戦クリア・全作戦の勝率・パイロット・研究を検証。
+- 拡張パックの内容は変更なし。
+
 PRO Toolkit 1.13.0 検証報告
 
 全32テストPASS（新規 test_roster / test_hire / test_maker_inputs）。
@@ -271,3 +278,4 @@ Node.js 24のVMによる処理テストおよび簡易DOMによるUI構造テス
 Android実機と実ブラウザの表示確認は未実施。
 通常は node tests/<テスト名>.cjs で実行。test_ui.cjsはPython3も使用。
 環境の子プロセス制限に対し、今回のUI検証は同じPython HTMLParserで生成した一時DOMをPRO_TEST_TREE_DIR経由で入力した。
+

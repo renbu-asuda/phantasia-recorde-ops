@@ -1,6 +1,4 @@
-/* PRO 1.13.0 基本データ（ユニット）— ゲームに最初から入っているデータです。
- * 最新の形式（Unit Schema 6 / Mission Schema 3 / Item Schema 5）です。
- * 作り方の参考にどうぞ。メーカーで読み込めば、そのまま編集できます。 */
+/* PRO 1.13.1 基本データ — Unit Schema 6 / Mission Schema 4 / Item Schema 5 / Bundle Schema 6。 */
 window.VAIS_UNIT_PACK = {
   "format": "VAIS_OUTER_OPS_UNIT_PACK",
   "schemaVersion": 6,
@@ -12,7 +10,6 @@ window.VAIS_UNIT_PACK = {
       "name": "ジャッカル",
       "role": "歩兵",
       "mark": "JCK",
-      "pilot": "",
       "tags": [
         "歩兵",
         "生身"
@@ -116,14 +113,14 @@ window.VAIS_UNIT_PACK = {
           }
         }
       ],
-      "noFire": true
+      "noFire": true,
+      "equipSlots": 2
     },
     {
       "id": "core-u-tiger",
       "name": "タイガー",
       "role": "突撃兵",
       "mark": "TGR",
-      "pilot": "",
       "tags": [
         "歩兵",
         "生身"
@@ -184,14 +181,14 @@ window.VAIS_UNIT_PACK = {
           "usesPerBattle": 2,
           "fxColor": "#ff9a3c"
         }
-      ]
+      ],
+      "equipSlots": 2
     },
     {
       "id": "core-u-fox",
       "name": "フォックス",
       "role": "偵察兵",
       "mark": "FOX",
-      "pilot": "",
       "tags": [
         "歩兵",
         "生身",
@@ -268,14 +265,14 @@ window.VAIS_UNIT_PACK = {
             }
           ]
         }
-      ]
+      ],
+      "equipSlots": 2
     },
     {
       "id": "core-u-turtle",
       "name": "タートル",
       "role": "重装兵",
       "mark": "TRT",
-      "pilot": "",
       "tags": [
         "歩兵",
         "生身"
@@ -361,14 +358,14 @@ window.VAIS_UNIT_PACK = {
             }
           ]
         }
-      ]
+      ],
+      "equipSlots": 2
     },
     {
       "id": "core-u-mina",
       "name": "ミナ",
       "role": "衛生兵",
       "mark": "MIN",
-      "pilot": "",
       "tags": [
         "歩兵",
         "生身",
@@ -414,14 +411,14 @@ window.VAIS_UNIT_PACK = {
           "name": "ハンドガン"
         }
       ],
-      "row": "back"
+      "row": "back",
+      "equipSlots": 2
     },
     {
       "id": "core-u-kai",
       "name": "カイ",
       "role": "パイロット",
       "mark": "KAI",
-      "pilot": "",
       "tags": [
         "歩兵",
         "生身",
@@ -481,14 +478,14 @@ window.VAIS_UNIT_PACK = {
           }
         ],
         "growthPct": 3
-      }
+      },
+      "equipSlots": 2
     },
     {
       "id": "core-u-strider",
       "name": "ストライダー",
       "role": "機動兵器",
       "mark": "STR",
-      "pilot": "",
       "tags": [
         "機動兵器",
         "機械"
@@ -548,14 +545,14 @@ window.VAIS_UNIT_PACK = {
         }
       ],
       "crew": "required",
-      "sortieCost": 120
+      "sortieCost": 120,
+      "equipSlots": 3
     },
     {
       "id": "core-u-truck",
       "name": "輸送車",
       "role": "非戦闘員",
       "mark": "TRK",
-      "pilot": "",
       "tags": [
         "車両",
         "機械",
@@ -588,14 +585,14 @@ window.VAIS_UNIT_PACK = {
           "hitPowerPct": 60,
           "name": "自衛火器"
         }
-      ]
+      ],
+      "equipSlots": 0
     },
     {
       "id": "core-u-rin",
       "name": "リン",
       "role": "パイロット",
       "mark": "RIN",
-      "pilot": "",
       "tags": [
         "歩兵",
         "生身",
@@ -668,14 +665,14 @@ window.VAIS_UNIT_PACK = {
         "locked": true,
         "missionId": "core-m-03",
         "note": "「輸送車護衛」をクリアすると加入"
-      }
+      },
+      "equipSlots": 2
     },
     {
       "id": "core-u-guardian",
       "name": "ガーディアン",
       "role": "重装機",
       "mark": "GRD",
-      "pilot": "",
       "tags": [
         "機動兵器",
         "機械",
@@ -756,14 +753,14 @@ window.VAIS_UNIT_PACK = {
         "locked": true,
         "note": "研究「重装機ガーディアン配備」で加入"
       },
-      "sortieCost": 200
+      "sortieCost": 200,
+      "equipSlots": 4
     },
     {
       "id": "core-e-trooper",
       "name": "敵歩兵",
       "role": "歩兵",
       "mark": "ETR",
-      "pilot": "",
       "tags": [
         "歩兵",
         "生身"
@@ -795,14 +792,14 @@ window.VAIS_UNIT_PACK = {
           "hitPowerPct": 25,
           "name": "E90"
         }
-      ]
+      ],
+      "equipSlots": 0
     },
     {
       "id": "core-e-raider",
       "name": "敵突撃兵",
       "role": "突撃兵",
       "mark": "ERD",
-      "pilot": "",
       "tags": [
         "歩兵",
         "生身"
@@ -849,14 +846,14 @@ window.VAIS_UNIT_PACK = {
           "hitPowerPct": 20,
           "name": "サブマシンガン"
         }
-      ]
+      ],
+      "equipSlots": 0
     },
     {
       "id": "core-e-sniper",
       "name": "敵狙撃兵",
       "role": "狙撃兵",
       "mark": "ESN",
-      "pilot": "",
       "tags": [
         "歩兵",
         "生身"
@@ -892,14 +889,14 @@ window.VAIS_UNIT_PACK = {
       "row": "back",
       "ai": {
         "target": "lowest_hp"
-      }
+      },
+      "equipSlots": 0
     },
     {
       "id": "core-e-apc",
       "name": "敵装甲車",
       "role": "装甲車",
       "mark": "EAP",
-      "pilot": "",
       "tags": [
         "装甲車",
         "機械"
@@ -969,14 +966,14 @@ window.VAIS_UNIT_PACK = {
             }
           ]
         }
-      ]
+      ],
+      "equipSlots": 0
     },
     {
       "id": "core-e-mech",
       "name": "敵機動兵器",
       "role": "機動兵器",
       "mark": "EMC",
-      "pilot": "",
       "tags": [
         "機動兵器",
         "機械"
@@ -1035,14 +1032,14 @@ window.VAIS_UNIT_PACK = {
           ]
         }
       ],
-      "crew": "required"
+      "crew": "required",
+      "equipSlots": 0
     },
     {
       "id": "core-e-commander",
       "name": "敵指揮官機",
       "role": "指揮官機",
       "mark": "CMD",
-      "pilot": "",
       "tags": [
         "機動兵器",
         "機械",
@@ -1151,7 +1148,8 @@ window.VAIS_UNIT_PACK = {
         }
       ],
       "row": "back",
-      "exp": 400
+      "exp": 400,
+      "equipSlots": 0
     }
   ],
   "hires": [

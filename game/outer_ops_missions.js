@@ -1,9 +1,7 @@
-/* PRO 1.12.0 基本データ（作戦）— ゲームに最初から入っているデータです。
- * 最新の形式（Unit Schema 4 / Mission Schema 3 / Item Schema 3）で作り直しました。
- * 作り方の参考にどうぞ。メーカーで読み込めば、そのまま編集できます。 */
+/* PRO 1.13.1 基本データ — Unit Schema 6 / Mission Schema 4 / Item Schema 5 / Bundle Schema 6。 */
 window.VAIS_MISSION_PACK = {
   "format": "VAIS_OUTER_OPS_MISSION_PACK",
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "packId": "pro-core",
   "packName": "基本データ",
   "missions": [
@@ -163,9 +161,12 @@ window.VAIS_MISSION_PACK = {
         },
         {
           "itemId": "core-i-crate",
-          "chance": 50,
           "min": 1,
-          "max": 1
+          "max": 1,
+          "odds": [
+            1,
+            2
+          ]
         }
       ],
       "stars": [
@@ -315,7 +316,8 @@ window.VAIS_MISSION_PACK = {
           "type": "hp_ge",
           "value": 40
         }
-      ]
+      ],
+      "hidden": true
     },
     {
       "id": "core-m-06",
@@ -400,7 +402,8 @@ window.VAIS_MISSION_PACK = {
           "value": 50,
           "label": "親衛隊"
         }
-      ]
+      ],
+      "hidden": true
     },
     {
       "id": "core-m-07",
@@ -432,9 +435,12 @@ window.VAIS_MISSION_PACK = {
       "drops": [
         {
           "itemId": "core-i-manual",
-          "chance": 50,
           "min": 1,
-          "max": 1
+          "max": 1,
+          "odds": [
+            1,
+            2
+          ]
         }
       ]
     }
