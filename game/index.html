@@ -14,7 +14,7 @@ window.PROView={mode:mode,set:set,text:text,setText:setText,isLine:line,external
 function ui(){var slot=document.getElementById('viewModeSlot');if(slot&&!slot.firstChild){var b=document.createElement('button');b.type='button';b.className='view-mode-btn';b.textContent=mode==='pc'?'📱 スマホ表示':'🖥 PC表示';b.title=mode==='pc'?'スマホ向けの表示に戻す':'画面を広く使うPC向けの表示にする';b.setAttribute('style','font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid #3d5a73;background:#10202e;color:#cfe6f5;cursor:pointer;white-space:nowrap');b.onclick=function(){set(mode==='pc'?'mobile':'pc');};slot.appendChild(b);var tb=document.createElement('button');tb.type='button';tb.className='text-size-btn';tb.textContent=text==='large'?'Aa 文字：標準':'Aa 文字：大';tb.title='文字の大きさを切り替える';tb.setAttribute('style',b.getAttribute('style')+';margin-left:6px');tb.onclick=function(){setText(text==='large'?'normal':'large');};slot.appendChild(tb);}
 if(line&&!document.getElementById('proLineNotice')){var d=document.createElement('div');d.id='proLineNotice';d.setAttribute('role','note');d.setAttribute('style','margin:10px;padding:12px 14px;border:2px solid #f0c040;border-radius:10px;background:#2e2610;color:#fff3cf;font:14px/1.7 system-ui,sans-serif');var t=document.createElement('div');t.textContent='LINEの中のブラウザで開いています。ここではZIPのダウンロードができず、セーブも普段のブラウザとは別になります。';var a=document.createElement('a');a.href=externalUrl();a.textContent='▶ ブラウザで開き直す';a.setAttribute('style','display:inline-block;margin-top:6px;padding:6px 12px;border-radius:8px;background:#f0c040;color:#2a2000;font-weight:bold;text-decoration:none');d.appendChild(t);d.appendChild(a);document.body.insertBefore(d,document.body.firstChild);}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ui);else ui();})();</script>
-<title>ファンタジア・レコード・オプス (PRO) - 1.12.3</title>
+<title>ファンタジア・レコード・オプス (PRO) - 1.13.0</title>
 <style>
 :root{
   --bg:#070b10; --panel:#111923; --panel2:#172230; --line:#2c3a4b;
@@ -80,6 +80,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 /* Task-focused navigation: all files remain standalone. */
 [hidden]{display:none!important}
+.today-box b{color:#ffd166}.day-ok{color:#7ee787}.day-ng{color:#ff9b93}.cost-badge{color:#ffd166}.unit-manage{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}.unit-manage .danger,.danger{background:#5a1d22;border-color:#ff6b6b;color:#ffe3e3}.hire-row.locked{opacity:.75}.hire-row small.good{color:#7ee787}.info-pill.bad{border-color:#ff6b6b}
 .flow-nav{display:flex;gap:6px;flex-wrap:wrap;padding:12px 0;margin:0 0 20px;border-bottom:1px solid #294354}
 .flow-btn{min-height:44px;padding:10px 16px;border:0;border-radius:8px;background:#142b3a;color:#c3d6e4;font:inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
 .flow-btn[aria-current="page"],.flow-btn.flow-primary{background:#8bd8ff;color:#072031;font-weight:800}
@@ -137,8 +138,8 @@ body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relativ
 <section id="baseScreen" class="screen active">
   <div class="wrap">
     <div class="topbar">
-      <div class="brand"><h1>ファンタジア・レコード・オプス</h1><small>PRO / 自動派遣戦闘 1.12.3</small></div>
-      <div class="wallet"><div class="credit">資金 <span id="credits">0</span></div><span id="viewModeSlot" style="margin-right:6px"></span><button class="reset" id="resetBtn">初期化</button></div>
+      <div class="brand"><h1>ファンタジア・レコード・オプス</h1><small>PRO / 自動派遣戦闘 1.13.0</small></div>
+      <div class="wallet"><div class="credit">資金 <span id="credits">0</span></div><div class="credit today-box" id="todayBox" title="曜日の条件がある作戦は、この曜日に出撃できます">今日: <b id="todayText">-</b></div><span id="viewModeSlot" style="margin-right:6px"></span><button class="reset" id="resetBtn">初期化</button></div>
     </div>
 
     <div class="grid">
@@ -212,6 +213,11 @@ body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relativ
       <div class="item-controls"><label for="growthTarget">ユニット</label><select id="growthTarget" aria-label="育成するユニット"></select><button id="restBtn" class="secondary" type="button">休養（1日待機）</button></div>
       <div id="growthView" class="growth-view"></div>
     </section>
+    <section class="panel hire-panel">
+      <h2>雇用</h2>
+      <div class="sub">資金を払って仲間を雇います。同じユニットを何体でも雇え、2体目からは「#2」のように番号がつきます（呼び名は部隊の「詳しく」で変えられます）。作戦クリアや研究で雇える仲間が増えます。解雇しても雇用費は戻りません。</div>
+      <div id="hireList" class="item-list"></div>
+    </section>
     <section class="panel shop-panel">
       <h2>ショップ</h2>
       <div class="sub">資金でアイテムを購入します。研究や作戦クリアで品ぞろえが増えます。売却は価格の半額です。</div>
@@ -241,9 +247,9 @@ body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relativ
     </section>
     <div class="data-tools save-tools"><h2>セーブデータ・設定</h2><p class="sub">進行状況と追加パックをJSONファイルに書き出し、機種変更やバックアップに使えます。</p><div class="controls"><button id="exportSaveBtn" class="secondary" type="button">セーブを書き出す</button><button id="importSaveBtn" class="secondary" type="button">セーブを読み込む</button><input id="saveFileInput" type="file" accept=".json,application/json" hidden></div><label class="toggle-line"><input id="fatigueToggle" type="checkbox" checked> 疲労・負傷ルール（出撃で疲労がたまり、撃破されると数日休養が必要）</label><div id="saveStatus" class="data-status"></div></div>
     <div class="data-tools bundle-tools"><h2>統合パック</h2><p class="sub">ユニット・作戦・アイテムをまとめたJSを一度に読み込みます。更新・解除もパック単位です。</p><div class="controls"><button id="importBundleBtn" class="secondary">統合JSを読み込む</button><input id="bundleFileInput" type="file" accept=".js,.json,text/javascript,application/javascript" multiple hidden></div><div id="bundleDataStatus" class="data-status"></div><div id="bundlePackManager" class="pack-manager-body"></div></div>
-    <div class="foot">Fantasia Record Ops (PRO) 1.12.3</div>
+    <div class="foot">Fantasia Record Ops (PRO) 1.13.0</div>
     <div id="tipBox" class="tip-box" role="status" hidden></div>
-    <div id="techInfo" hidden>MGSPW OUTER OPS inspired / Unit Pack Schema 5・Mission Schema 3・Item Schema 4・Bundle Schema 5（旧Schema読込互換）</div>
+    <div id="techInfo" hidden>MGSPW OUTER OPS inspired / Unit Pack Schema 6・Mission Schema 4・Item Schema 5・Bundle Schema 6（旧Schema読込互換）</div>
   </div>
 </section>
 
@@ -321,29 +327,29 @@ body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relativ
 
 <div id="storyOverlay" class="story-overlay" role="dialog" aria-modal="true" aria-labelledby="storyTitle" hidden><div class="story-card"><div id="storyTitle" class="result-kicker"></div><div id="storySpeaker" class="story-speaker"></div><div id="storyText" class="story-text"></div><div class="story-foot"><span id="storyProgress" class="sub"></span><div class="result-actions"><button id="storySkip" class="secondary" type="button">スキップ</button><button id="storyNext" class="primary" type="button">次へ</button></div></div></div></div>
 
-<script src="shared/pro_core.js?v=1.12.3"></script>
-<script src="shared/pro_battle.js?v=1.12.3"></script>
-<script src="outer_ops_units.js?v=1.12.3" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
-<script src="outer_ops_missions.js?v=1.12.3" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
-<script src="outer_ops_items.js?v=1.12.3" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
-<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.4.0','shared/pro_core.js'],['PROBattle','1.4.0','shared/pro_battle.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
+<script src="shared/pro_core.js?v=1.13.0"></script>
+<script src="shared/pro_battle.js?v=1.13.0"></script>
+<script src="outer_ops_units.js?v=1.13.0" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_missions.js?v=1.13.0" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
+<script src="outer_ops_items.js?v=1.13.0" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
+<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.5.0','shared/pro_core.js'],['PROBattle','1.4.0','shared/pro_battle.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
 <script>
 (() => {
 'use strict';
 const C=window.PROCore,B=window.PROBattle;
 const UNIT_PACK_FORMAT = 'VAIS_OUTER_OPS_UNIT_PACK';
-const UNIT_PACK_SCHEMA = 5;
-const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3,4,5]);
+const UNIT_PACK_SCHEMA = 6;
+const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3,4,5,6]);
 const IMPORTED_PACKS_KEY = 'vais_outer_ops_imported_unit_packs_v1';
 const MISSION_PACK_FORMAT = 'VAIS_OUTER_OPS_MISSION_PACK';
 const MISSION_PACK_SCHEMA = 2;
-const SUPPORTED_MISSION_SCHEMAS = new Set([1,2,3]);
+const SUPPORTED_MISSION_SCHEMAS = new Set([1,2,3,4]);
 const IMPORTED_MISSION_PACKS_KEY = 'vais_outer_ops_imported_mission_packs_v1';
 const ITEM_PACK_FORMAT = 'VAIS_OUTER_OPS_ITEM_PACK';
-const ITEM_PACK_SCHEMA = 4;
+const ITEM_PACK_SCHEMA = 5;
 const IMPORTED_ITEM_PACKS_KEY = 'vais_outer_ops_imported_item_packs_v1';
 const IMPORTED_BUNDLE_PACKS_KEY = 'pro_imported_bundle_packs_v1';
-const GAME_VERSION = '1.12.3';
+const GAME_VERSION = '1.13.0';
 
 function storageGet(key,fallback=null){try{const v=localStorage.getItem(key);return v===null?fallback:v;}catch(e){console.warn('localStorage read failed',e);return fallback;}}
 function storageSet(key,value){try{localStorage.setItem(key,value);return true;}catch(e){console.warn('localStorage write failed',e);return false;}}
@@ -373,6 +379,7 @@ let BASE_UNIT_MASTER = [];
 let ENEMY_MASTER = {};
 let UNIT_INDEX = {};
 let PILOT_MASTER = {};
+let HIRE_MASTER = {};
 let loadedUnitPacks = [];
 let MISSIONS = [];
 let loadedMissionPacks = [];
@@ -452,7 +459,8 @@ function validatePack(pack){
   // 1.10.2: legacy pilots become units that can fight on their own or ride other units.
   const units=C.pilotsToUnits(pack.units,pack.pilots).units.map(normalizeUnit);assertUniqueIds(units,'unit');
   for(const u of units){assertUniqueIds(u.skills||[],`${u.id} の skill`);}
-  return {format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),units};
+  const hires=C.hireList(pack.hires);
+  return {format:UNIT_PACK_FORMAT,schemaVersion:UNIT_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),units,...(hires.length?{hires}:{})};
 }
 function extractPackFromJs(text){return validatePack(extractAssignedObject(text,'VAIS_UNIT_PACK'));}
 function loadImportedUnitPacks(){
@@ -481,7 +489,7 @@ function validateBundlePack(raw){
 }
 function extractBundlePackFromJs(text){return validateBundlePack(C.parse(text,'VAIS_BUNDLE_PACK'));}
 function loadImportedBundlePacks(){try{const raw=JSON.parse(storageGet(IMPORTED_BUNDLE_PACKS_KEY,'[]')||'[]');return Array.isArray(raw)?raw.flatMap(p=>{try{return [validateBundlePack(p)];}catch(e){console.warn('Ignored invalid stored bundle pack',e);return [];}}):[];}catch(e){console.warn('Stored bundle packs could not be read',e);return [];}}
-function bundleComponent(bundle,key,schema,format){const extra=key==='units'&&bundle.pilots?{pilots:bundle.pilots}:key==='items'&&bundle.research?{research:bundle.research}:{};return {_bundle:true,format,schemaVersion:schema,packId:'bundle:'+bundle.packId,packName:bundle.packName,[key]:bundle[key],...extra};}
+function bundleComponent(bundle,key,schema,format){const extra=key==='units'?{...(bundle.pilots?{pilots:bundle.pilots}:{}),...(bundle.hires?{hires:bundle.hires}:{})}:key==='items'&&bundle.research?{research:bundle.research}:{};return {_bundle:true,format,schemaVersion:schema,packId:'bundle:'+bundle.packId,packName:bundle.packName,[key]:bundle[key],...extra};}
 function extractItemPackFromJs(text){return validateItemPack(extractAssignedObject(text,'VAIS_ITEM_PACK'));}
 function loadImportedItemPacks(){try{const raw=JSON.parse(storageGet(IMPORTED_ITEM_PACKS_KEY,'[]')||'[]');return Array.isArray(raw)?raw.flatMap(p=>{try{return [validateItemPack(p)];}catch(e){console.warn('Ignored invalid item pack',e);return [];}}):[];}catch(e){console.warn('Stored item packs could not be read',e);return [];}}
 function saveImportedItemPacks(list=importedItemPacks){return storageSet(IMPORTED_ITEM_PACKS_KEY,JSON.stringify(list));}
@@ -494,6 +502,7 @@ function rebuildItemMaster(){
 }
 function normalizeDrop(d={}){
   if(!/^[a-zA-Z0-9_-]+$/.test(String(d.itemId||''))||['__proto__','constructor','prototype'].includes(String(d.itemId)))throw new Error('drops.itemId は英数字・_・-で指定してください。');
+  if(d.odds!==undefined)return C.drop(d,String(d.itemId)); // 1.13.0: exact odds such as 1/8
   const chanceValue=Number(d.chance),minValue=Number(d.min),maxValue=Number(d.max);
   if(!Number.isFinite(chanceValue)||chanceValue<0||chanceValue>100||!Number.isInteger(minValue)||minValue<1||!Number.isInteger(maxValue)||maxValue<minValue||maxValue>999)throw new Error(`${d.itemId}: drops は chance 0～100 / min 1以上 / max 999以下で、min <= max にしてください。`);
   return {itemId:String(d.itemId),chance:chanceValue,min:minValue,max:maxValue};
@@ -551,6 +560,8 @@ function rebuildUnitMasters(){
   UNIT_INDEX=Object.fromEntries(units.map(u=>[u.id,u]));
   // Pilots are player units with a pilotProfile (keyed by unit ID).
   PILOT_MASTER=Object.fromEntries(BASE_UNIT_MASTER.filter(u=>u.pilotProfile).map(u=>[u.id,{id:u.id,name:u.name,...u.pilotProfile,profile:u.pilotProfile,_packName:u._packName}]));
+  // 1.13.0: hire offers from unit packs and bundles (same id: the pack loaded later wins)
+  HIRE_MASTER={};for(const pack of packs)for(const h of pack.hires||[])HIRE_MASTER[h.id]={...h,_packName:pack.packName};
   loadedUnitPacks=packs;
 }
 function unitDataStatus(){
@@ -616,7 +627,7 @@ const LEGACY_SAVE_KEYS = ['vais_outer_ops_proto_v03'];
 const MAX_SLOTS = 8;
 const SPEED_DELAY = {slow:700, normal:240, fast:100, turbo:20};
 const STATS = ['hp','atk','def','mob','acc'];
-const MAX_LEVEL = 50, EQUIP_SLOTS = 2, FATIGUE_SORTIE = 20, FATIGUE_REST = 25, FATIGUE_TIRED = 50, FATIGUE_EXHAUSTED = 80, INJURY_BATTLES = 2;
+const MAX_LEVEL = 50, EQUIP_SLOTS = 2, MAX_EQUIP_SLOTS = 8, FATIGUE_SORTIE = 20, FATIGUE_REST = 25, FATIGUE_TIRED = 50, FATIGUE_EXHAUSTED = 80, INJURY_BATTLES = 2;
 const FACILITIES = {
   med:{name:'医務室',desc:lv=>lv?`待機中の「生身」ユニットが1日ごとにHP ${lv*10}% 回復${lv>=2?'・負傷が早く治る':''}`:'未建設',cost:[3000,8000,20000]},
   hangar:{name:'整備場',desc:lv=>lv?`修理費 -${lv*15}% ／ 待機中の生身以外のユニットがHP ${lv*5}% 回復`:'未建設',cost:[3000,8000,20000]},
@@ -641,6 +652,9 @@ const ACHIEVEMENTS = [
 // Declared before loadState() runs: the save loader depends on these.
 const RESERVED=['__proto__','constructor','prototype'];
 const safeKey=k=>typeof k==='string'&&k.length>0&&!RESERVED.includes(k);
+const UID_RE=/^[a-zA-Z0-9_-]{1,80}$/;
+function uidArray(raw,max=999){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&UID_RE.test(x)&&safeKey(x)))].slice(0,max):[];}
+function normalizeRoster(raw){if(!Array.isArray(raw))return [];const seen=new Set(),out=[];for(const e of raw){if(!e||typeof e!=='object'||typeof e.uid!=='string'||!UID_RE.test(e.uid)||!safeKey(e.uid)||!C.safeId(e.base)||seen.has(e.uid))continue;seen.add(e.uid);const o={uid:e.uid,base:e.base};if(typeof e.name==='string'&&e.name.trim())o.name=e.name.trim().slice(0,20);const sm=intIn(e.slotMod,-8,8,0);if(sm)o.slotMod=sm;out.push(o);}return out.slice(0,999);}
 let state = loadState(), selected = [], selectedMission = null, battleRunning = false;
 let battleControl = {speed:'normal', paused:false, stepTokens:0, gateResolve:null, skip:false};
 let visualState = {activeId:null,targetIds:[],weaponById:{}};
@@ -654,7 +668,7 @@ function intIn(v,min,max,fallback){const n=Math.floor(num(v,fallback));return Ma
 function idArray(raw,max=999){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&C.safeId(x)))].slice(0,max):[];}
 function stringArray(raw,max=16){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&x.trim()).map(x=>x.trim().slice(0,32)))].slice(0,max):[];}
 function freshRecords(){return {battles:0,wins:0,losses:0,draws:0,kills:0,purchases:0,enemyKills:{},enemyNames:{},itemsFound:{},itemNames:{}};}
-function freshExtState(){return {levels:{},equip:{},pilots:{},tree:{},tagMods:{},sortieBuffs:{},itemUses:{},fatigue:{},injury:{},rows:{},recruited:[],research:[],facilities:{med:0,hangar:0,training:0},missions:{},records:freshRecords(),achievements:[],presets:[],settings:{fatigue:true},day:0};}
+function freshExtState(){return {roster:[],joined:[],levels:{},equip:{},pilots:{},tree:{},tagMods:{},sortieBuffs:{},itemUses:{},fatigue:{},injury:{},rows:{},recruited:[],research:[],facilities:{med:0,hangar:0,training:0},missions:{},records:freshRecords(),achievements:[],presets:[],settings:{fatigue:true},day:0};}
 // New games start with one of the base pack's first healing item (1.10.3: no hard-coded item ID).
 function starterItems(){const it=(window.VAIS_ITEM_PACK?.items||[]).find(i=>/^heal_/.test(i.effect?.type||''));return it?{[it.id]:1}:{};}
 function defaultState(){return {credits:2500,units:Object.fromEntries(BASE_UNIT_MASTER.map(u=>[u.id,{hp:u.hp}])),items:starterItems(),upgrades:{},grants:{},...freshExtState()};}
@@ -662,7 +676,9 @@ function normalizeExtState(saved){
   const r=plainObject(saved.records),base=freshRecords();
   return {
     levels:mapEntries(saved.levels,v=>({lv:intIn(v?.lv,1,MAX_LEVEL,1),exp:intIn(v?.exp,0,1e9,0),sp:intIn(v?.sp,0,9999,0)})),
-    equip:mapEntries(saved.equip,v=>Array.isArray(v)?Array.from({length:EQUIP_SLOTS},(_,i)=>typeof v[i]==='string'&&C.safeId(v[i])?v[i]:null):undefined),
+    // 1.13.0: owned units are instances {uid, base, name?, slotMod?}; the first copy's uid is the base id, so older per-id data keeps working
+    roster:normalizeRoster(saved.roster),joined:idArray(saved.joined),
+    equip:mapEntries(saved.equip,v=>Array.isArray(v)?Array.from({length:Math.min(MAX_EQUIP_SLOTS,v.length)},(_,i)=>typeof v[i]==='string'&&C.safeId(v[i])?v[i]:null):undefined),
     pilots:mapEntries(saved.pilots,v=>typeof v==='string'&&C.safeId(v)?v:undefined),
     tree:mapEntries(saved.tree,v=>idArray(v,64)),
     tagMods:mapEntries(saved.tagMods,v=>({add:stringArray(v?.add),remove:stringArray(v?.remove)})),
@@ -676,7 +692,7 @@ function normalizeExtState(saved){
     missions:mapEntries(saved.missions,v=>({clears:intIn(v?.clears,0,1e9,0),best:intIn(v?.best,0,999,0),stars:Array.from({length:3},(_,i)=>!!v?.stars?.[i])})),
     records:{...base,...Object.fromEntries(['battles','wins','losses','draws','kills','purchases'].map(k=>[k,intIn(r[k],0,1e12,0)])),enemyKills:mapEntries(r.enemyKills,v=>intIn(v,0,1e12,0)),enemyNames:mapEntries(r.enemyNames,v=>String(v).slice(0,60)),itemsFound:mapEntries(r.itemsFound,v=>intIn(v,0,1e12,0)),itemNames:mapEntries(r.itemNames,v=>String(v).slice(0,60))},
     achievements:idArray(saved.achievements),
-    presets:Array.isArray(saved.presets)?saved.presets.slice(0,3).map((p,i)=>p&&typeof p==='object'?{name:String(p.name||`プリセット${i+1}`).slice(0,30),selected:idArray(p.selected,MAX_SLOTS),rows:mapEntries(p.rows,v=>v==='back'?'back':'front')}:null):[],
+    presets:Array.isArray(saved.presets)?saved.presets.slice(0,3).map((p,i)=>p&&typeof p==='object'?{name:String(p.name||`プリセット${i+1}`).slice(0,30),selected:uidArray(p.selected,MAX_SLOTS),rows:mapEntries(p.rows,v=>v==='back'?'back':'front')}:null):[],
     settings:{fatigue:saved.settings?.fatigue!==false,guideDone:saved.settings?.guideDone===true},
     day:intIn(saved.day,0,1e9,0)
   };
@@ -685,7 +701,7 @@ function normalizeState(saved,base=defaultState()){
   saved=plainObject(saved);
   const inventory=saved.items&&typeof saved.items==='object'&&!Array.isArray(saved.items)?saved.items:base.items;
   const items=Object.fromEntries(Object.entries(inventory).filter(([id])=>/^[a-zA-Z0-9_-]+$/.test(id)&&!RESERVED.includes(id)).map(([id,count])=>[id,Math.max(0,Math.floor(num(count,0)))]));
-  return {credits:Math.max(0,num(saved.credits,base.credits)),units:{...base.units,...mapEntries(saved.units,v=>v&&typeof v==='object'?{hp:num(v.hp,0)}:undefined)},items,upgrades:normalizeUpgrades(saved.upgrades),grants:normalizeGrants(saved.grants),...normalizeExtState(saved)};
+  return {v:2,credits:Math.max(0,num(saved.credits,base.credits)),units:{...base.units,...mapEntries(saved.units,v=>v&&typeof v==='object'?{hp:num(v.hp,0)}:undefined)},items,upgrades:normalizeUpgrades(saved.upgrades),grants:normalizeGrants(saved.grants),...normalizeExtState(saved)};
 }
 function loadState(){
   const base=defaultState();
@@ -700,38 +716,53 @@ function normalizeUpgrades(raw){return Object.fromEntries(Object.entries(raw&&ty
 function normalizeGrants(raw){const out=Object.create(null);if(!raw||typeof raw!=='object')return out;for(const [id,g] of Object.entries(raw)){if(RESERVED.includes(id))continue;const skills=[],weapons=[];for(const x of (Array.isArray(g?.skills)?g.skills:[])){try{const sk=C.skill(x);if(!skills.some(y=>y.id===sk.id))skills.push(sk);}catch(e){}}for(const x of (Array.isArray(g?.weapons)?g.weapons:[])){try{const w=C.weapon(x);if(!weapons.some(y=>y.name===w.name))weapons.push(w);}catch(e){}}out[id]={skills,weapons};}return out;}
 
 // ---- derived unit stats: base + upgrades + level + equipment + pilot + skill tree ----
-function baseUnit(id){return BASE_UNIT_MASTER.find(u=>u.id===id)||null;}
+function rosterEntry(uid){return (state.roster||[]).find(e=>e.uid===uid)||null;}
+function baseOf(uid){return rosterEntry(uid)?.base||(typeof uid==='string'?uid.replace(/__\d+$/,''):uid);}
+function baseUnit(id){const b=baseOf(id);return BASE_UNIT_MASTER.find(u=>u.id===b)||null;}
+function inRoster(uid){return (state.roster||[]).some(e=>e.uid===uid);}
+function copiesOf(base){return (state.roster||[]).filter(e=>e.base===base).length;}
+function uidNumber(e){const m=String(e.uid).match(/__(\d+)$/);return m?Number(m[1]):1;}
+function freeUid(base){if(!inRoster(base))return base;let n=2;while(inRoster(`${base}__${n}`))n++;return `${base}__${n}`;}
+function unitName(uid){const e=rosterEntry(uid),u=baseUnit(uid);if(!u)return uid;if(e?.name)return e.name;return e&&copiesOf(e.base)>1?`${u.name} #${uidNumber(e)}`:u.name;}
+function slotsOf(uid){const u=baseUnit(uid),e=rosterEntry(uid);return clamp((u?.equipSlots??EQUIP_SLOTS)+(e?.slotMod||0),0,MAX_EQUIP_SLOTS);}
+function sortieCostOf(uid){return Math.max(0,Number(baseUnit(uid)?.sortieCost)||0);}
+function sortieCostTotal(ids){return ids.reduce((s,id)=>s+sortieCostOf(id),0);}
+// Units that join for free (no recruit lock, or unlocked by a mission / research / item) enter the roster once.
+function syncRoster(){if(!Array.isArray(state.roster))state.roster=[];if(!Array.isArray(state.joined))state.joined=[];for(const u of BASE_UNIT_MASTER){if(state.joined.includes(u.id)||!isRecruited(u))continue;state.roster.push({uid:freeUid(u.id),base:u.id});state.joined.push(u.id);}}
+// Overflowing equipment (fewer slots, or a dismissed unit) goes back to the inventory.
+function trimEquip(uid){const list=state.equip[uid];if(!list)return;const n=slotsOf(uid);for(let i=n;i<list.length;i++)if(list[i])state.items[list[i]]=(state.items[list[i]]||0)+1;if(list.length>n)list.length=n;if(!list.some(Boolean))delete state.equip[uid];}
 function levelInfo(id){return state.levels[id]||{lv:1,exp:0,sp:0};}
 function levelOf(id){return levelInfo(id).lv;}
 function expToNext(lv){return 100*lv;}
 function growthOf(u){if(u.growth)return {hp:u.growth.hp||0,atk:u.growth.atk||0,def:u.growth.def||0,mob:u.growth.mob||0,acc:u.growth.acc||0};return {hp:Math.max(1,Math.round(u.hp*.04)),atk:Math.round(u.atk*.03),def:Math.round(u.def*.03),mob:Math.round(u.mob*.02),acc:Math.round(u.acc*.02)};}
 function isRecruited(u){return !u.recruit?.locked||state.recruited.includes(u.id);}
-function equippedItems(id){return (state.equip[id]||[]).map(x=>x&&ITEM_MASTER[x]).filter(i=>i?.equip);}
+function equippedItems(id){return (state.equip[id]||[]).slice(0,slotsOf(id)).map(x=>x&&ITEM_MASTER[x]).filter(i=>i?.equip);}
 function crewOf(u){return C.crewOf(u);}
 // A pilot unit rides at most one unit; that unit must accept a pilot and must not itself be riding something.
-function pilotAssignable(unitId,pilotId){const u=UNIT_INDEX[unitId],p=PILOT_MASTER[pilotId],pu=BASE_UNIT_MASTER.find(x=>x.id===pilotId);if(!u||!p||!pu||unitId===pilotId||!u.deploy.player)return false;if(crewOf(u)==='none'||!isRecruited(pu)||!isRecruited(u))return false;if(boardingOf(unitId))return false;if(state.pilots[pilotId])return false;return true;}
+function pilotAssignable(unitId,pilotId){const u=baseUnit(unitId),p=PILOT_MASTER[baseOf(pilotId)];if(!u||!p||unitId===pilotId||!u.deploy.player)return false;if(crewOf(u)==='none'||!inRoster(pilotId)||!inRoster(unitId))return false;if(boardingOf(unitId))return false;if(state.pilots[pilotId])return false;return true;}
 function boardingOf(pilotId){const hit=Object.entries(state.pilots||{}).find(([,v])=>v===pilotId);return hit?hit[0]:null;}
-function pilotFor(id){const pid=state.pilots[id],p=PILOT_MASTER[pid];if(!p)return null;const lv=levelOf(pid);return {...p,lv,stats:C.pilotBonus(p.profile,lv)};}
-function cleanPilots(){for(const [k,v] of Object.entries(state.pilots||{})){const u=UNIT_INDEX[k],pu=BASE_UNIT_MASTER.find(x=>x.id===v);if(!u||!PILOT_MASTER[v]||!pu||k===v||crewOf(u)==='none'||!isRecruited(pu)||state.pilots[v])delete state.pilots[k];}}
-function treeSkills(u){const got=new Set(state.tree[u.id]||[]);return (u.skillTree||[]).filter(n=>got.has(n.id)).map(n=>n.skill);}
-function tagsWithMods(u){const m=state.tagMods[u.id];let tags=[...(u.tags||[])];if(m){tags=tags.filter(t=>!m.remove.includes(t));for(const t of m.add)if(!tags.includes(t))tags.push(t);}return tags;}
+function pilotFor(id){const pid=state.pilots[id],p=PILOT_MASTER[baseOf(pid)];if(!p||!inRoster(pid))return null;const lv=levelOf(pid);return {...p,id:pid,name:unitName(pid),lv,stats:C.pilotBonus(p.profile,lv)};}
+function cleanPilots(){for(const [k,v] of Object.entries(state.pilots||{})){const u=baseUnit(k);if(!u||!inRoster(k)||!inRoster(v)||!PILOT_MASTER[baseOf(v)]||k===v||crewOf(u)==='none'||state.pilots[v])delete state.pilots[k];}}
+function treeSkills(u,uid=u.id){const got=new Set(state.tree[uid]||[]);return (u.skillTree||[]).filter(n=>got.has(n.id)).map(n=>n.skill);}
+function tagsWithMods(u,uid=u.id){const m=state.tagMods[uid];let tags=[...(u.tags||[])];if(m){tags=tags.filter(t=>!m.remove.includes(t));for(const t of m.add)if(!tags.includes(t))tags.push(t);}return tags;}
 function dedupe(list,key){const seen=new Set();return list.filter(x=>{const k=key(x);if(seen.has(k))return false;seen.add(k);return true;});}
 function applyUnitUpgrades(){
-  state.upgrades=normalizeUpgrades(state.upgrades);state.grants=normalizeGrants(state.grants);cleanPilots();
-  UNIT_MASTER=BASE_UNIT_MASTER.filter(isRecruited).map(u=>{
-    const bonuses=Object.hasOwn(state.upgrades,u.id)?state.upgrades[u.id]:{},g=state.grants[u.id]||{skills:[],weapons:[]};
-    const lv=levelOf(u.id),growth=growthOf(u),eq=equippedItems(u.id),pilot=pilotFor(u.id),tags=tagsWithMods(u),stats={};
+  state.upgrades=normalizeUpgrades(state.upgrades);state.grants=normalizeGrants(state.grants);
+  syncRoster();cleanPilots(); // the roster first: an older save's pilots must not be dropped before their units join
+  UNIT_MASTER=state.roster.map(e=>{const u=BASE_UNIT_MASTER.find(b=>b.id===e.base);if(!u)return null;const uid=e.uid;
+    const bonuses=Object.hasOwn(state.upgrades,uid)?state.upgrades[uid]:{},g=state.grants[uid]||{skills:[],weapons:[]};
+    const lv=levelOf(uid),growth=growthOf(u),eq=equippedItems(uid),pilot=pilotFor(uid),tags=tagsWithMods(u,uid),stats={};
     for(const k of STATS){let v=u[k]+(bonuses[k]||0)+(growth[k]||0)*(lv-1);for(const i of eq)v+=i.equip.stats[k]||0;if(pilot)v+=pilot.stats[k]||0;stats[k]=k==='hp'?Math.max(1,v):Math.max(0,v);}
     if(pilot?.aptitude?.pct&&pilot.aptitude.tags.some(t=>tags.includes(t)))for(const k of ['atk','mob','acc'])stats[k]=Math.round(stats[k]*(1+pilot.aptitude.pct/100));
-    const skills=dedupe([...u.skills,...g.skills,...treeSkills(u),...eq.flatMap(i=>i.equip.skills),...(pilot?.skills||[])],x=>x.id);
+    const skills=dedupe([...u.skills,...g.skills,...treeSkills(u,uid),...eq.flatMap(i=>i.equip.skills),...(pilot?.skills||[])],x=>x.id);
     const weapons=dedupe([...u.weapons,...g.weapons,...eq.flatMap(i=>i.equip.weapons)],x=>x.name);
-    return {...u,...stats,tags,skills,weapons,level:lv,...(pilot?{pilotId:pilot.id,pilot:pilot.name,pilotLv:pilot.lv}:{})};
-  });
+    return {...u,...stats,id:uid,baseId:u.id,name:unitName(uid),tags,skills,weapons,level:lv,equipSlots:slotsOf(uid),sortieCost:sortieCostOf(uid),...(pilot?{pilotId:pilot.id,pilot:pilot.name,pilotLv:pilot.lv}:{})};
+  }).filter(Boolean);
 }
 function ensureUnitState(){
   applyUnitUpgrades();
   if(!state.units)state.units={};
-  UNIT_MASTER.forEach(u=>{
+  UNIT_MASTER.forEach(u=>{trimEquip(u.id);
     if(!state.units[u.id])state.units[u.id]={hp:u.hp};
     state.units[u.id].hp=clamp(num(state.units[u.id].hp,u.hp),0,u.hp);
   });
@@ -770,18 +801,22 @@ function missionLockReason(m){
   if(m.days?.length&&!m.days.includes(today()))return '出撃できる曜日: '+m.days.map(d=>C.days[d]).join('・');
   return '';
 }
+// 1.13.0: a hidden mission stays out of the list until its prerequisite missions / key items are met (weekday locks never hide).
+function missionHidden(m){if(!m?.hidden)return false;const r=m.requires;return !!(r?.missions?.some(id=>!missionCleared(id))||r?.items?.some(id=>!((state.items[id]||0)>0)));}
+function visibleMissions(){return MISSIONS.filter(m=>!missionHidden(m));}
 function deployRules(m){const tagRule=(m.rules||[]).find(r=>r&&r.type==='deploy_tags');const ban=C.terrainMods(m).banTags||[];return {tagRule,ban};}
 function deployProblem(m,ids){
   const {tagRule,ban}=deployRules(m);
   for(const id of ids){const u=UNIT_MASTER.find(x=>x.id===id);if(!u)return '出撃できないユニットが含まれています。';
     const block=sortieBlock(id);if(block)return `${u.name}: ${block}`;
-    const riding=boardingOf(id);if(riding)return `${u.name}: ${UNIT_INDEX[riding]?.name||riding}に搭乗中です（単独では出撃できません）`;
+    const riding=boardingOf(id);if(riding)return `${u.name}: ${unitName(riding)}に搭乗中です（単独では出撃できません）`;
     const pilot=pilotFor(id);if(crewOf(u)==='required'&&!pilot)return `${u.name}: パイロットが必要です（「育成」でパイロットを搭乗させてください）`;
     if(pilot){const pb=sortieBlock(pilot.id);if(pb)return `${u.name}: パイロット ${pilot.name} が${pb}`;}
     if(m.requires?.minLevel&&levelOf(id)<m.requires.minLevel)return `${u.name}: Lv${m.requires.minLevel}以上が必要`;
     const banned=ban.filter(t=>u.tags.includes(t));if(banned.length)return `${u.name}: 地形「${m.terrain}」では「${banned.join('・')}」は出撃不可`;
     if(tagRule){const ok=C.checkRequirements(tagRule,u);if(!ok.ok)return `${u.name}: 出撃制限 ${ok.reason}`;}
   }
+  const cost=sortieCostTotal(ids);if(cost>state.credits)return `出撃費用 ${cost.toLocaleString()} が資金 ${state.credits.toLocaleString()} を超えています（資金がマイナスになるため出撃できません）`;
   return '';
 }
 function rankValue(diff){const d=String(diff||'').toUpperCase().trim(),base={E:1,D:2,C:3,B:4,A:5,S:6}[d[0]];if(!base)return 3;const extraS=d.startsWith('S')?(d.match(/^S+/)[0].length-1):0;return base+extraS+(d.includes('+')?.5:0);}
@@ -833,11 +868,11 @@ function renderResultScreen(outcome,mission,gained,repairEstimate,allies,turns){
 }
 
 function render(){
-  ensureUnitState();selected=selected.filter(id=>UNIT_MASTER.some(u=>u.id===id)&&canSortie(id));document.getElementById('credits').textContent=state.credits.toLocaleString(); renderUnits(); renderMissions(); renderSquad(); renderItems(); unitDataStatus(); missionDataStatus();itemDataStatus();
+  ensureUnitState();selected=selected.filter(id=>UNIT_MASTER.some(u=>u.id===id)&&canSortie(id));document.getElementById('credits').textContent=state.credits.toLocaleString();{const t=document.getElementById('todayText');if(t)t.textContent=C.days[today()]+'曜日';} renderUnits(); renderMissions(); renderSquad(); renderItems(); unitDataStatus(); missionDataStatus();itemDataStatus();
   const activeMission=MISSIONS.find(m=>m.id===selectedMission);
   document.getElementById('deployBtn').disabled=battleRunning||selected.length===0||!activeMission||selected.length>activeMission.maxDeploy||!missionAvailable(activeMission)||!!missionLockReason(activeMission)||!!deployProblem(activeMission,selected); document.getElementById('repairBtn').disabled=battleRunning;
   renderPackManagers();renderItemPackManager();renderBundlePackManager();updateDeployReadiness(activeMission);updateBattleControls();
-  renderGrowth();renderShop();renderLab();renderRecords();renderPresets();renderSaveTools();renderMissionDetail(activeMission);
+  renderGrowth();renderHire();renderShop();renderLab();renderRecords();renderPresets();renderSaveTools();renderMissionDetail(activeMission);
   renderHomeCards();renderPackCatalog();renderSquadPrep();if(typeof document.getElementById('missionList')?.closest==='function')scheduleEstimates();
   const notice=document.getElementById('itemNotice');if(notice){notice.hidden=!lastNotice;notice.textContent=lastNotice;}
 }
@@ -851,6 +886,7 @@ function planItem(item,u){
  if(item.limitPerUnit&&(state.itemUses[u.id]?.[item.id]||0)>=item.limitPerUnit)return {ok:false,reason:`このユニットには使用できません（1体${item.limitPerUnit}回まで・使用済み）`};
  const copy=C.clone(u),bonuses={...(state.upgrades[u.id]||{})},grants=C.clone(state.grants[u.id]||{skills:[],weapons:[]});
  const tagMods=C.clone(state.tagMods[u.id]||{add:[],remove:[]}),sortie=C.clone(state.sortieBuffs[u.id]||[]),level={...levelInfo(u.id)},recruits=[],loot=[];
+ const slotBase=baseUnit(u.id)?.equipSlots??EQUIP_SLOTS;let slotMod=rosterEntry(u.id)?.slotMod||0;
  let hp=state.units[u.id].hp,credits=state.credits,expGain=0,tags=[...copy.tags];
  function addStat(k,v){if(!Number.isSafeInteger(v)||v<=0||!Number.isFinite(copy[k]+v)||copy[k]+v>Number.MAX_SAFE_INTEGER)throw new Error('能力値が上限を超えます');copy[k]+=v;bonuses[k]=(bonuses[k]||0)+v;if(k==='hp')hp+=v;}
  try{for(const raw of C.itemEffects(item)){const e=C.effect(raw);switch(e.type){
@@ -872,7 +908,8 @@ function planItem(item,u){
  case 'recruit_unit':{const t=baseUnit(e.unitId);if(!t)throw new Error('加入するユニットのデータが未読込です');if(!t.recruit?.locked||state.recruited.includes(t.id)||recruits.includes(t.id))throw new Error(`${t.name}は既に部隊にいます`);recruits.push(t.id);break;}
  case 'exp_gain':if(level.lv>=MAX_LEVEL)throw new Error('最大レベルです');expGain+=e.value;break;
  case 'skill_point':level.sp+=e.value;break;
- }}return {ok:true,hp,credits,bonuses,grants,unit:copy,tagMods,sortie,level,expGain,recruits,loot};}catch(err){return {ok:false,reason:err.message};}
+ case 'equip_slot':{const before=clamp(slotBase+slotMod,0,MAX_EQUIP_SLOTS),after=clamp(before+e.value,0,MAX_EQUIP_SLOTS);if(after===before)throw new Error(e.value>0?`装備枠はこれ以上増やせません（最大${MAX_EQUIP_SLOTS}）`:'装備枠はこれ以上減らせません');slotMod=after-slotBase;break;}
+ }}return {ok:true,hp,credits,bonuses,grants,unit:copy,tagMods,sortie,level,expGain,recruits,loot,slotMod};}catch(err){return {ok:false,reason:err.message};}
 }
 function rollLoot(table){const total=table.reduce((s,r)=>s+r.weight,0);let r=Math.random()*total;for(const row of table){r-=row.weight;if(r<0||row===table[table.length-1]){const n=row.min+Math.floor(Math.random()*(row.max-row.min+1));return {itemId:row.itemId,count:n};}}return null;}
 function commitPlan(item,u,plan,first){
@@ -884,6 +921,7 @@ function commitPlan(item,u,plan,first){
  const before=levelInfo(u.id);if(plan.level.sp!==before.sp||plan.level.lv!==before.lv||plan.level.exp!==before.exp||state.levels[u.id])state.levels[u.id]=plan.level;
  const notes=[];
  if(plan.expGain){const ups=addExp(u.id,plan.expGain);if(ups)notes.push(`${u.name} Lv${levelOf(u.id)}にアップ`);}
+ {const e=rosterEntry(u.id);if(e&&(e.slotMod||0)!==plan.slotMod){const before=slotsOf(u.id);if(plan.slotMod)e.slotMod=plan.slotMod;else delete e.slotMod;trimEquip(u.id);notes.push(`${u.name} の装備枠 ${before}→${slotsOf(u.id)}`);}}
  if(item.limitPerUnit){state.itemUses[u.id]=state.itemUses[u.id]||{};state.itemUses[u.id][item.id]=(state.itemUses[u.id][item.id]||0)+1;}
  if(first){for(const id of plan.recruits){state.recruited.push(id);notes.push(`${baseUnit(id)?.name||id} が加入`);}for(const table of plan.loot){const got=rollLoot(table);if(got){state.items[got.itemId]=(state.items[got.itemId]||0)+got.count;recordItem(got.itemId,got.count);notes.push(`箱から ${ITEM_MASTER[got.itemId]?.name||got.itemId} ×${got.count}`);}}}
  return notes;
@@ -908,20 +946,22 @@ function useItem(id,targetId){
 function itemDataStatus(){const base=!!window.VAIS_ITEM_PACK,missing=[...new Set(MISSIONS.flatMap(m=>(m.drops||[]).map(d=>d.itemId)).filter(id=>!ITEM_MASTER[id]))];document.getElementById('itemDataStatus').innerHTML=`基本JS: ${base?'読込済み':'未読込'} / ${Object.keys(ITEM_MASTER).length} items / 研究 ${Object.keys(RESEARCH_MASTER).length} / 追加パック ${importedItemPacks.length}${missing.length?`<br>⚠ 作戦のドロップ参照不足: ${esc(missing.join(', '))}`:''}${!base?'<br>同梱 outer_ops_items.js を手動でインポートできます。':''}`;}
 function renderItemPackManager(){const el=document.getElementById('itemPackManager');el.innerHTML=loadedItemPacks.map(p=>`<div class="pack-row ${p._base?'base':''}"><div><div class="pack-name">${esc(p.packName)}</div><div class="pack-meta">${esc(p.packId)} / ${p.items.length} items${p.research?.length?` / 研究 ${p.research.length}`:''}</div></div>${p._bundle?'<span class="pack-meta">統合パックで管理</span>':p._base?'':`<button data-remove-item-pack="${esc(p.packId)}">解除</button>`}</div>`).join('')||'<div class="log-empty">読み込み済みパックなし</div>';el.querySelectorAll('[data-remove-item-pack]').forEach(b=>b.onclick=()=>removeImportedItemPack(b.dataset.removeItemPack));}
 function removeImportedItemPack(packId){if(battleRunning)return;const p=importedItemPacks.find(x=>x.packId===packId);if(!p||!confirm(`アイテムパック「${p.packName}」を解除しますか？\n所持数は残り、再読込すると使用できます。`))return;const next=importedItemPacks.filter(x=>x.packId!==packId);if(!saveImportedItemPacks(next)){alert(STORAGE_FAIL_MESSAGE);return;}importedItemPacks=next;rebuildItemMaster();render();}
-function rollMissionDrops(mission){const found=[];for(const drop of mission.drops||[]){const item=ITEM_MASTER[drop.itemId];if(!item){log(`DROP SKIPPED: 未読込アイテム ${esc(drop.itemId)}`,'sys');continue;}if(!chance(drop.chance/100))continue;const count=drop.min+Math.floor(Math.random()*(drop.max-drop.min+1));state.items[item.id]=(state.items[item.id]||0)+count;recordItem(item.id,count);found.push({id:item.id,name:item.name,count});log(`ITEM GET: ${esc(item.name)} ×${count}`,'sys');}return found;}
+function rollMissionDrops(mission){const found=[];for(const drop of mission.drops||[]){const item=ITEM_MASTER[drop.itemId];if(!item){log(`DROP SKIPPED: 未読込アイテム ${esc(drop.itemId)}`,'sys');continue;}if(!chance(C.dropChance(drop)))continue;const count=drop.min+Math.floor(Math.random()*(drop.max-drop.min+1));state.items[item.id]=(state.items[item.id]||0)+count;recordItem(item.id,count);found.push({id:item.id,name:item.name,count});log(`ITEM GET: ${esc(item.name)} ×${count}`,'sys');}return found;}
 function unitThumb(u,cls='unit-thumb'){return u.image?`<img class="${cls}" src="${esc(u.image)}" alt="">`:'';}
 const openUnitDetails=new Set(); // keeps 「詳しく」 open across re-renders
 function renderUnits(){
   const el=document.getElementById('unitList');el.innerHTML='';
   if(!UNIT_MASTER.length){el.innerHTML='<div class="empty">味方ユニットデータがありません。</div>';return;}
-  UNIT_MASTER.forEach(u=>{const cur=state.units[u.id]?.hp??u.hp,ratio=cur/u.hp,riding=boardingOf(u.id),needPilot=crewOf(u)==='required'&&!u.pilotId,block=sortieBlock(u.id)||(riding?`${UNIT_INDEX[riding]?.name||riding}に搭乗中`:'')||(needPilot?'要パイロット（未搭乗）':''),d=document.createElement('div');d.className='unit'+(selected.includes(u.id)?' selected':'')+(cur<=0||block?' disabled':'');
+  UNIT_MASTER.forEach(u=>{const cur=state.units[u.id]?.hp??u.hp,ratio=cur/u.hp,riding=boardingOf(u.id),needPilot=crewOf(u)==='required'&&!u.pilotId,block=sortieBlock(u.id)||(riding?`${unitName(riding)}に搭乗中`:'')||(needPilot?'要パイロット（未搭乗）':''),d=document.createElement('div');d.className='unit'+(selected.includes(u.id)?' selected':'')+(cur<=0||block?' disabled':'');
     const baseVsStd=baseHitRate(u.acc,700,0);
     const cost=repairCost(u.hp-cur),row=state.rows[u.id]||u.row||'front',info=levelInfo(u.id),fat=fatigueOf(u.id);
-    d.innerHTML=`<div class="row"><div class="unit-head">${unitThumb(u)}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub" style="margin:2px 0">${esc(u.role||'')} ${u.pilotId?`/ 搭乗: ${esc(u.pilot)}（Lv${u.pilotLv}）`:u.pilot?`/ ${esc(u.pilot)}`:''}${crewOf(u)==='required'?' <span class="crew-badge">要パイロット</span>':''}${u.pilotProfile?' <span class="crew-badge pilot">パイロット</span>':''}</div></div></div><span class="tag">${esc(u._packName||'CORE')}</span></div><div class="unit-summary"><span class="power-stars">${starText(unitStrength(u).stars)}</span>${tip('power')}<span class="hp-text">HP ${Math.ceil(cur).toLocaleString()} / ${u.hp.toLocaleString()}</span><span class="row-badge ${row}">${row==='back'?'後衛':'前衛'}</span>${tip('row')}${fatigueOn()&&fat?`<span class="${fat>=FATIGUE_TIRED?'warn-badge':''}">疲労 ${fat}</span>`:''}${block?`<span class="bad-badge">${esc(block)}</span>`:''}</div><div class="hpbar"><div class="hpfill ${hpClass(ratio)}" style="width:${ratio*100}%"></div></div><details class="unit-more"${openUnitDetails.has(u.id)?' open':''}><summary>詳しく（能力・武装・スキル）</summary><div class="stats"><div class="stat"><b>${Math.ceil(cur)}</b><span>HP ${tip('hp')}</span></div><div class="stat"><b>${u.atk}</b><span>ATK ${outerGrade(u.atk)} ${tip('atk')}</span></div><div class="stat"><b>${u.def}</b><span>DEF ${outerGrade(u.def)} ${tip('def')}</span></div><div class="stat"><b>${u.mob}</b><span>MOB ${outerGrade(u.mob)} ${tip('mob')}</span></div><div class="stat"><b>${u.acc}</b><span>ACC ${outerGrade(u.acc)} ${tip('acc')}</span></div></div><div class="unit-extra"><span>タグ ${esc(u.tags?.join('・')||'なし')}</span><span>武装 ${u.weapons.length}</span>${Object.entries(state.upgrades?.[u.id]||{}).filter(([,v])=>v>0).map(([k,v])=>`<span>強化 ${k==='hp'?'最大HP':k.toUpperCase()} +${v}</span>`).join('')}<span>命中の目安（機動700の相手に）${pct(baseVsStd)}%</span>${u.skills?.length?`<span>SKILL ${esc(u.skills.map(x=>x.name).join(' / '))}</span>`:(u.ability?`<span>${esc(u.ability)}</span>`:'')}</div><div class="weapon-title">WEAPONS ${tip('attr')}</div><div class="weapon-list">${u.weapons.map(w=>`<span class="weapon-chip ${weaponClass(w)}">${esc(w.name)} / ${weaponTypeLabel(w)}${w.usesPerBattle?` / ${w.usesPerBattle}回`:''}${w.cooldown?` / 待機${w.cooldown}`:''}${w.effects?.length?` / 効果${w.effects.length}`:''}</span>`).join('')}</div>${u.weapons.some(w=>w.effects?.length)?`<div class="weapon-fx">${u.weapons.filter(w=>w.effects?.length).map(w=>`<div><b>${esc(w.name)}</b> ${esc(C.weaponEffectsText(w).join(' ／ '))}</div>`).join('')}</div>`:''}</details><div class="unit-actions"><button class="row-toggle secondary" ${battleRunning?'disabled':''}>${row==='back'?'前衛にする':'後衛にする'}</button>${cost?`<button class="repair-one" ${battleRunning||state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}${state.credits<cost?'（資金不足）':''}</button>`:''}</div>`;
+    d.innerHTML=`<div class="row"><div class="unit-head">${unitThumb(u)}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub" style="margin:2px 0">${esc(u.role||'')} ${u.pilotId?`/ 搭乗: ${esc(u.pilot)}（Lv${u.pilotLv}）`:u.pilot?`/ ${esc(u.pilot)}`:''}${crewOf(u)==='required'?' <span class="crew-badge">要パイロット</span>':''}${u.pilotProfile?' <span class="crew-badge pilot">パイロット</span>':''}</div></div></div><span class="tag">${esc(u._packName||'CORE')}</span></div><div class="unit-summary"><span class="power-stars">${starText(unitStrength(u).stars)}</span>${tip('power')}<span class="hp-text">HP ${Math.ceil(cur).toLocaleString()} / ${u.hp.toLocaleString()}</span>${u.sortieCost?`<span class="cost-badge">出撃 ${u.sortieCost.toLocaleString()}</span>`:''}<span class="row-badge ${row}">${row==='back'?'後衛':'前衛'}</span>${tip('row')}${fatigueOn()&&fat?`<span class="${fat>=FATIGUE_TIRED?'warn-badge':''}">疲労 ${fat}</span>`:''}${block?`<span class="bad-badge">${esc(block)}</span>`:''}</div><div class="hpbar"><div class="hpfill ${hpClass(ratio)}" style="width:${ratio*100}%"></div></div><details class="unit-more"${openUnitDetails.has(u.id)?' open':''}><summary>詳しく（能力・武装・スキル）</summary><div class="stats"><div class="stat"><b>${Math.ceil(cur)}</b><span>HP ${tip('hp')}</span></div><div class="stat"><b>${u.atk}</b><span>ATK ${outerGrade(u.atk)} ${tip('atk')}</span></div><div class="stat"><b>${u.def}</b><span>DEF ${outerGrade(u.def)} ${tip('def')}</span></div><div class="stat"><b>${u.mob}</b><span>MOB ${outerGrade(u.mob)} ${tip('mob')}</span></div><div class="stat"><b>${u.acc}</b><span>ACC ${outerGrade(u.acc)} ${tip('acc')}</span></div></div><div class="unit-extra"><span>タグ ${esc(u.tags?.join('・')||'なし')}</span><span>武装 ${u.weapons.length}</span><span>装備枠 ${slotsOf(u.id)}</span>${u.sortieCost?`<span>出撃費用 ${u.sortieCost.toLocaleString()}</span>`:''}${Object.entries(state.upgrades?.[u.id]||{}).filter(([,v])=>v>0).map(([k,v])=>`<span>強化 ${k==='hp'?'最大HP':k.toUpperCase()} +${v}</span>`).join('')}<span>命中の目安（機動700の相手に）${pct(baseVsStd)}%</span>${u.skills?.length?`<span>SKILL ${esc(u.skills.map(x=>x.name).join(' / '))}</span>`:(u.ability?`<span>${esc(u.ability)}</span>`:'')}</div><div class="weapon-title">WEAPONS ${tip('attr')}</div><div class="weapon-list">${u.weapons.map(w=>`<span class="weapon-chip ${weaponClass(w)}">${esc(w.name)} / ${weaponTypeLabel(w)}${w.usesPerBattle?` / ${w.usesPerBattle}回`:''}${w.cooldown?` / 待機${w.cooldown}`:''}${w.effects?.length?` / 効果${w.effects.length}`:''}</span>`).join('')}</div>${u.weapons.some(w=>w.effects?.length)?`<div class="weapon-fx">${u.weapons.filter(w=>w.effects?.length).map(w=>`<div><b>${esc(w.name)}</b> ${esc(C.weaponEffectsText(w).join(' ／ '))}</div>`).join('')}</div>`:''}<div class="unit-manage"><button type="button" class="rename-btn secondary" ${battleRunning?'disabled':''}>呼び名を変える</button>${u.noFire?'<span class="sub">解雇不可（重要ユニット）</span>':`<button type="button" class="fire-btn danger" ${battleRunning||state.roster.length<=1?'disabled':''}>解雇する</button>`}</div></details><div class="unit-actions"><button class="row-toggle secondary" ${battleRunning?'disabled':''}>${row==='back'?'前衛にする':'後衛にする'}</button>${cost?`<button class="repair-one" ${battleRunning||state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}${state.credits<cost?'（資金不足）':''}</button>`:''}</div>`;
     d.onclick=()=>{if(battleRunning||cur<=0||block)return;if(selected.includes(u.id))selected=selected.filter(x=>x!==u.id);else{const m=MISSIONS.find(x=>x.id===selectedMission),limit=m?m.maxDeploy:MAX_SLOTS;if(selected.length<Math.min(MAX_SLOTS,limit))selected.push(u.id);}render();};
     const more=d.querySelector('.unit-more');if(more){more.addEventListener('click',e=>e.stopPropagation());more.addEventListener('toggle',()=>{if(more.open)openUnitDetails.add(u.id);else openUnitDetails.delete(u.id);});}
     d.querySelector('.repair-one')?.addEventListener('click',e=>{e.stopPropagation();repairUnit(u.id);});
     d.querySelector('.row-toggle')?.addEventListener('click',e=>{e.stopPropagation();setRow(u.id,row==='back'?'front':'back');});
+    d.querySelector('.rename-btn')?.addEventListener('click',e=>{e.stopPropagation();renameUnit(u.id);});
+    d.querySelector('.fire-btn')?.addEventListener('click',e=>{e.stopPropagation();fireUnit(u.id);});
     el.appendChild(d);
   });
 }
@@ -936,13 +976,13 @@ function updateObjectiveHud(){if(typeof document==='undefined'||!document.getEle
 function ruleTexts(m){return (m.rules||[]).map(r=>{if(typeof r==='string')return r;if(r.type==='turn_limit')return `${r.value}TURN以内に勝利しないと敗北`;if(r.type==='reinforce')return `${r.turn}TURN目に援軍 ${r.enemies.map(id=>ENEMY_MASTER[id]?.name||id).join('・')}`;if(r.type==='deploy_tags')return '出撃制限 '+C.requirementText(r);return r.name||r.type||'特殊ルール';});}
 function terrainText(m){const t=C.terrainMods(m),fx=C.terrainEffectText(t),known=!!C.terrainDef(m.terrain);return fx==='効果なし'?`${m.terrain}（${known?'効果なし':'未登録の地形・効果なし'}）`:`${m.terrain}（${fx}）`;}
 function starMarks(m){const rec=state.missions[m.id],stars=C.missionStars(m);return stars.map((s,i)=>rec?.stars[i]?'★':'☆').join('');}
-function renderMissions(){const el=document.getElementById('missionList');el.innerHTML='';if(!MISSIONS.length){el.innerHTML='<div class="empty">作戦データがありません。</div>';return;}MISSIONS.forEach(m=>{const available=missionAvailable(m),lock=available?missionLockReason(m):'',enemyNames=m.enemies.map(id=>ENEMY_MASTER[id]?.name||id),tagText=m.tags?.length?m.tags.join(' / '):'なし',rules=ruleTexts(m),dropText=(m.drops||[]).map(d=>`${ITEM_MASTER[d.itemId]?.name||d.itemId} ${d.chance}% ×${d.min}${d.max>d.min?'～'+d.max:''}`).join(' / '),rec=state.missions[m.id];const d=document.createElement('div');d.className='mission'+(selectedMission===m.id?' selected':'')+(available&&!lock?'':' disabled');d.innerHTML=`<div class="row"><div class="name">${esc(m.name)} <span class="stars" title="${esc(C.missionStars(m).map(C.starText).join(' / '))}">${starMarks(m)}</span></div><span class="tag">RANK ${esc(m.diff)}</span></div><div class="sub" style="margin:5px 0">${esc(m.desc)}${available?'':' / 必要な敵ユニットデータが不足'}${lock?` / 🔒 ${esc(lock)}`:''}</div><div class="enemy-roster">${enemyNames.map((n,i)=>`<span class="enemy-chip${m.enemyRows?.[i]==='back'?' back':''}">${esc(n)}${m.enemyRows?.[i]==='back'?'〔後衛〕':''}</span>`).join('')}</div><div class="mission-conds">${(c=>[c.win,c.lose,c.draw].map(x=>`<div>${esc(x)}</div>`).join(''))(missionConds(m))}${m.waves?.length?`<div class="wave-lines">${waveLines(m).map(x=>`<div>${esc(x)}</div>`).join('')}</div>`:''}</div><div class="unit-extra"><span>最初の敵 ${esc(formationOf(m))}</span><span>地形 ${esc(terrainText(m))}</span><span>出撃上限 ${m.maxDeploy}</span>${m.days?.length?`<span>曜日 ${m.days.map(x=>C.days[x]).join('・')}</span>`:''}<span>タグ ${esc(tagText)}</span><span>特殊 ${esc(rules.join(' / ')||'なし')}</span><span>ドロップ ${esc(dropText||'なし')}（勝利時）</span>${rec?.clears?`<span>クリア ${rec.clears}回 / 最短 ${rec.best}TURN</span>`:''}${m.story?'<span>ストーリーあり</span>':''}</div>${available&&!lock?`<div class="win-est" id="est-${m.id}">${(()=>{const ids=estimateSquad(m),v=estimateCache.get(estimateKey(m,ids));return v?estimateHtml(v):'推定勝率 計算中…';})()} ${tip('win')}</div>`:''}<div class="row" style="margin-top:7px"><span>敵 ${m.enemies.length}機${m.waves?.length?` + ${m.waves.length}波`:''}</span><span class="reward">報酬 ${m.reward.toLocaleString()}</span></div>`;d.onclick=()=>{if(!battleRunning&&available&&!lock){selectedMission=m.id;if(selected.length>m.maxDeploy)selected=selected.slice(0,m.maxDeploy);render();}};el.appendChild(d);});}
+function renderMissions(){const el=document.getElementById('missionList');el.innerHTML='';if(!MISSIONS.length){el.innerHTML='<div class="empty">作戦データがありません。</div>';return;}visibleMissions().forEach(m=>{const available=missionAvailable(m),lock=available?missionLockReason(m):'',enemyNames=m.enemies.map(id=>ENEMY_MASTER[id]?.name||id),tagText=m.tags?.length?m.tags.join(' / '):'なし',rules=ruleTexts(m),dropText=(m.drops||[]).map(d=>`${ITEM_MASTER[d.itemId]?.name||d.itemId} ${C.dropRateText(d)} ×${d.min}${d.max>d.min?'～'+d.max:''}`).join(' / '),rec=state.missions[m.id];const d=document.createElement('div');d.className='mission'+(selectedMission===m.id?' selected':'')+(available&&!lock?'':' disabled');d.innerHTML=`<div class="row"><div class="name">${esc(m.name)} <span class="stars" title="${esc(C.missionStars(m).map(C.starText).join(' / '))}">${starMarks(m)}</span></div><span class="tag">RANK ${esc(m.diff)}</span></div><div class="sub" style="margin:5px 0">${esc(m.desc)}${available?'':' / 必要な敵ユニットデータが不足'}${lock?` / 🔒 ${esc(lock)}`:''}</div><div class="enemy-roster">${enemyNames.map((n,i)=>`<span class="enemy-chip${m.enemyRows?.[i]==='back'?' back':''}">${esc(n)}${m.enemyRows?.[i]==='back'?'〔後衛〕':''}</span>`).join('')}</div><div class="mission-conds">${(c=>[c.win,c.lose,c.draw].map(x=>`<div>${esc(x)}</div>`).join(''))(missionConds(m))}${m.waves?.length?`<div class="wave-lines">${waveLines(m).map(x=>`<div>${esc(x)}</div>`).join('')}</div>`:''}</div><div class="unit-extra"><span>最初の敵 ${esc(formationOf(m))}</span><span>地形 ${esc(terrainText(m))}</span><span>出撃上限 ${m.maxDeploy}</span>${m.days?.length?`<span class="${m.days.includes(today())?'day-ok':'day-ng'}">曜日 ${m.days.map(x=>C.days[x]).join('・')}${m.days.includes(today())?'（今日出撃できる）':'（今日は出撃できない）'}</span>`:''}<span>タグ ${esc(tagText)}</span><span>特殊 ${esc(rules.join(' / ')||'なし')}</span><span>ドロップ ${esc(dropText||'なし')}（勝利時）</span>${rec?.clears?`<span>クリア ${rec.clears}回 / 最短 ${rec.best}TURN</span>`:''}${m.story?'<span>ストーリーあり</span>':''}</div>${available&&!lock?`<div class="win-est" id="est-${m.id}">${(()=>{const ids=estimateSquad(m),v=estimateCache.get(estimateKey(m,ids));return v?estimateHtml(v):'推定勝率 計算中…';})()} ${tip('win')}</div>`:''}<div class="row" style="margin-top:7px"><span>敵 ${m.enemies.length}機${m.waves?.length?` + ${m.waves.length}波`:''}</span><span class="reward">報酬 ${m.reward.toLocaleString()}</span></div>`;d.onclick=()=>{if(!battleRunning&&available&&!lock){selectedMission=m.id;if(selected.length>m.maxDeploy)selected=selected.slice(0,m.maxDeploy);render();}};el.appendChild(d);});}
 function renderSquad(){
   const s=document.getElementById('squadView');const selectedUnits=selected.map(id=>UNIT_MASTER.find(u=>u.id===id)).filter(Boolean);
   const slots=Array.from({length:MAX_SLOTS},(_,i)=>selectedUnits[i]?`<span class="chip">${i+1}. ${esc(selectedUnits[i].name)} ${(state.rows[selectedUnits[i].id]||selectedUnits[i].row||'front')==='back'?'〔後〕':'〔前〕'}</span>`:`<span class="chip" style="opacity:.38">${i+1}. EMPTY</span>`);s.innerHTML=slots.join('');
   const totalHp=selectedUnits.reduce((n,u)=>n+(state.units[u.id]?.hp??u.hp),0),avgAcc=selectedUnits.length?Math.round(selectedUnits.reduce((n,u)=>n+u.acc,0)/selectedUnits.length):0,avgMob=selectedUnits.length?Math.round(selectedUnits.reduce((n,u)=>n+u.mob,0)/selectedUnits.length):0,weaponCount=selectedUnits.reduce((n,u)=>n+u.weapons.length,0);
   const m=MISSIONS.find(x=>x.id===selectedMission),deployLimit=m?m.maxDeploy:MAX_SLOTS;
-  document.getElementById('squadSummary').innerHTML=`<div class="info-pill"><b>${selectedUnits.length} / ${deployLimit}</b><span>編成数 / 出撃上限</span></div><div class="info-pill"><b>${Math.round(totalHp).toLocaleString()}</b><span>総HP</span></div><div class="info-pill"><b>${avgAcc} / ${avgMob}</b><span>平均 ACC / MOB</span></div><div class="info-pill"><b>${weaponCount}</b><span>総武装数</span></div>`;
+  document.getElementById('squadSummary').innerHTML=`<div class="info-pill"><b>${selectedUnits.length} / ${deployLimit}</b><span>編成数 / 出撃上限</span></div><div class="info-pill"><b>${Math.round(totalHp).toLocaleString()}</b><span>総HP</span></div><div class="info-pill"><b>${avgAcc} / ${avgMob}</b><span>平均 ACC / MOB</span></div><div class="info-pill"><b>${weaponCount}</b><span>総武装数</span></div><div class="info-pill${sortieCostTotal(selected)>state.credits?' bad':''}"><b>${sortieCostTotal(selected).toLocaleString()}</b><span>出撃費用（勝敗に関係なく消費）</span></div>`;
   document.getElementById('missionView').textContent=m?`選択作戦: ${m.name} / 地形 ${m.terrain} / 敵${Math.min(m.enemies.length,MAX_SLOTS)}機 / 出撃上限 ${m.maxDeploy} / 報酬 ${m.reward}`:'作戦未選択';
   document.getElementById('missionEnemyView').innerHTML=m?m.enemies.map((id,i)=>`<span class="enemy-chip${m.enemyRows?.[i]==='back'?' back':''}">${esc(ENEMY_MASTER[id]?.name||id)}${m.enemyRows?.[i]==='back'?'〔後衛〕':''}</span>`).join(''):'';
 }
@@ -1019,10 +1059,10 @@ function afterBattle(m,ctx,result,roster){
   for(const k of ctx.killLog)if(k.killerSide==='ally'&&k.victimSide==='enemy'){rec.kills++;rec.enemyKills[k.victimKey]=(rec.enemyKills[k.victimKey]||0)+1;rec.enemyNames[k.victimKey]=k.victimName;}
   const base=missionExp(m),mult=win?1:.5;
   // Pilots riding a deployed unit share its experience, fatigue and injury (1.10.2).
-  const crew=roster.map(u=>({u,pilot:u.pilotId&&PILOT_MASTER[u.pilotId]?u.pilotId:null}));
-  for(const {u,pilot} of crew){let gain=Math.round(base*mult*(u.alive?1:.5));for(const k of ctx.killLog)if(k.killer===u.combatId&&k.victimSide==='enemy')gain+=enemyExp(k.victimKey);for(const id of [u.id,pilot].filter(Boolean)){const name=id===u.id?u.name:`${PILOT_MASTER[id].name}（${u.name}に搭乗）`;const ups=addExp(id,gain);report.exp.push({name,gain});if(ups)report.levelUps.push({name:id===u.id?u.name:PILOT_MASTER[id].name,lv:levelOf(id)});}}
+  const crew=roster.map(u=>({u,pilot:u.pilotId&&PILOT_MASTER[baseOf(u.pilotId)]?u.pilotId:null}));
+  for(const {u,pilot} of crew){let gain=Math.round(base*mult*(u.alive?1:.5));for(const k of ctx.killLog)if(k.killer===u.combatId&&k.victimSide==='enemy')gain+=enemyExp(k.victimKey);for(const id of [u.id,pilot].filter(Boolean)){const name=id===u.id?u.name:`${unitName(id)}（${u.name}に搭乗）`;const ups=addExp(id,gain);report.exp.push({name,gain});if(ups)report.levelUps.push({name:id===u.id?u.name:unitName(id),lv:levelOf(id)});}}
   const deployed=new Set(crew.flatMap(({u,pilot})=>[u.id,pilot].filter(Boolean)));passDay(deployed,base);
-  if(fatigueOn())for(const {u,pilot} of crew)for(const id of [u.id,pilot].filter(Boolean)){state.fatigue[id]=clamp(fatigueOf(id)+FATIGUE_SORTIE+(u.alive?0:10),0,100);if(!u.alive){state.injury[id]=INJURY_BATTLES;report.injured.push(id===u.id?u.name:PILOT_MASTER[id].name);}}
+  if(fatigueOn())for(const {u,pilot} of crew)for(const id of [u.id,pilot].filter(Boolean)){state.fatigue[id]=clamp(fatigueOf(id)+FATIGUE_SORTIE+(u.alive?0:10),0,100);if(!u.alive){state.injury[id]=INJURY_BATTLES;report.injured.push(id===u.id?u.name:unitName(id));}}
   for(const u of roster)delete state.sortieBuffs[u.id];
   if(win){
     const mr=missionRecord(m.id);mr.clears++;mr.best=mr.best?Math.min(mr.best,result.turns):result.turns;
@@ -1056,6 +1096,7 @@ async function deploy(){
   const snapshot=JSON.stringify(state);let committed=false;
   try{
   const mission=selectedMissionData;
+  const sortieCost=sortieCostTotal(selected.slice(0,Math.min(MAX_SLOTS,mission.maxDeploy)));state.credits-=sortieCost;
   if(mission.story?.before?.length)await showStory(`${mission.name} / 作戦前`,mission.story.before);
   document.getElementById('returnResultBtn').style.display='none';
   render();
@@ -1069,7 +1110,7 @@ async function deploy(){
   document.getElementById('battleMissionName').textContent=`${mission.name} / RANK ${mission.diff} / ${objectiveText(mission)}`;
   showScreen('battle');
   visualState={activeId:null,targetIds:[],weaponById:{}};renderCombatants(allies,enemies);setAction(null,null,[],mission.name);log(`OPERATION START: ${esc(mission.name)} / 勝利条件: ${esc(objectiveText(mission))}`,'sys');
-  for(const t of ruleTexts(mission))log(`RULE: ${esc(t)}`,'sys');{const c=missionConds(mission);log(esc(`${c.win} ／ ${c.lose} ／ ${c.draw}`),'sys');for(const t of waveLines(mission))log(`WAVE: ${esc(t)}`,'sys');}
+  if(sortieCost)log(`SORTIE COST: 出撃費用 -${sortieCost.toLocaleString()}`,'sys');for(const t of ruleTexts(mission))log(`RULE: ${esc(t)}`,'sys');{const c=missionConds(mission);log(esc(`${c.win} ／ ${c.lose} ／ ${c.draw}`),'sys');for(const t of waveLines(mission))log(`WAVE: ${esc(t)}`,'sys');}
   const ctx=B.createContext({allies,enemies,mission,stats:battleStats,hooks:battleHooks(allies,enemies),enemyDefs:ENEMY_MASTER,unitDefs:UNIT_INDEX});activeBattle=ctx;
   updateObjectiveHud();const result=await B.runBattle(ctx);updateObjectiveHud();activeBattle=null;
   const turns=result.turns,outcome=result.outcome,win=outcome==='win',draw=outcome==='draw',roster=allies.filter(u=>!u.escort);
@@ -1085,6 +1126,7 @@ async function deploy(){
   renderCombatants(allies,enemies);
   renderResultScreen(outcome,mission,gained,repairEstimate,roster,turns);
   if(reason)document.getElementById('resultMeta').textContent+=` / ${reason}`;
+  if(sortieCost)document.getElementById('resultMeta').textContent+=` / 出撃費用 -${sortieCost.toLocaleString()}`;
   document.getElementById('resultDrops').textContent=win?(drops.length?`獲得アイテム: ${drops.map(d=>`${d.name} ×${d.count}`).join(' / ')}`:'獲得アイテム: なし'):'アイテムドロップは作戦成功時のみ';
   renderResultExtras(report,mission);
   {const ef=ctx.effects||{},parts=[];if(ef.resistCount)parts.push(`耐性でダメージを ${Math.round(ef.resistSaved).toLocaleString()} 軽減（${ef.resistCount}回）`);if(ef.tagCount)parts.push(`タグ特効で ${Math.round(ef.tagBonus).toLocaleString()} 追加ダメージ（${ef.tagCount}回）`);const box=document.getElementById('resultEffects');if(box)box.textContent=parts.length?'この戦闘で効いたもの: '+parts.join(' ／ '):'';}
@@ -1181,7 +1223,7 @@ function restDay(){
   const got=checkAchievements();return commitChange(`1日休養しました。疲労・負傷が回復し、施設の効果が適用されました。${got.length?' 実績: '+got.map(a=>a.name).join('・'):''}`);
 }
 function unlockTreeNode(unitId,nodeId){
-  if(battleRunning)return false;const u=baseUnit(unitId),node=u?.skillTree?.find(n=>n.id===nodeId);if(!u||!node||!isRecruited(u))return false;
+  if(battleRunning)return false;const u=baseUnit(unitId),node=u?.skillTree?.find(n=>n.id===nodeId);if(!u||!node||!inRoster(unitId))return false;
   const got=state.tree[unitId]||[],info=levelInfo(unitId);if(got.includes(nodeId))return false;
   if(info.lv<node.minLevel){lastNotice=`Lv${node.minLevel}以上が必要です`;render();return false;}
   if(node.requires.some(r=>!got.includes(r))){lastNotice='前提ノードを先に解放してください';render();return false;}
@@ -1195,8 +1237,8 @@ function resetTree(unitId){
   state.levels[unitId]={...info,sp:info.sp+refund};delete state.tree[unitId];return commitChange(`${u.name} のスキルツリーをリセット（SP ${refund} 返却）`);
 }
 function equipItem(unitId,slot,itemId){
-  if(battleRunning)return false;const u=UNIT_MASTER.find(x=>x.id===unitId);if(!u||slot<0||slot>=EQUIP_SLOTS)return false;
-  const slots=[...(state.equip[unitId]||Array(EQUIP_SLOTS).fill(null))];
+  if(battleRunning)return false;const u=UNIT_MASTER.find(x=>x.id===unitId),n=slotsOf(unitId);if(!u||slot<0||slot>=n)return false;
+  const slots=Array.from({length:n},(_,i)=>(state.equip[unitId]||[])[i]||null);
   if(itemId){const item=ITEM_MASTER[itemId];if(!item?.equip||(state.items[itemId]||0)<=0)return false;const ok=C.checkRequirements(item.requires,u);if(!ok.ok){lastNotice=ok.reason;render();return false;}state.items[itemId]--;}
   const old=slots[slot];if(old)state.items[old]=(state.items[old]||0)+1;
   slots[slot]=itemId||null;if(slots.some(Boolean))state.equip[unitId]=slots;else delete state.equip[unitId];
@@ -1204,10 +1246,62 @@ function equipItem(unitId,slot,itemId){
 }
 function assignPilot(unitId,pilotId){
   if(battleRunning)return false;const u=UNIT_MASTER.find(x=>x.id===unitId);if(!u)return false;
-  if(pilotId){if(!PILOT_MASTER[pilotId])return false;const was=state.pilots[unitId];for(const [k,v] of Object.entries(state.pilots))if(v===pilotId)delete state.pilots[k];if(!pilotAssignable(unitId,pilotId)){if(was)state.pilots[unitId]=was;return false;}}
+  if(pilotId){if(!PILOT_MASTER[baseOf(pilotId)])return false;const was=state.pilots[unitId];for(const [k,v] of Object.entries(state.pilots))if(v===pilotId)delete state.pilots[k];if(!pilotAssignable(unitId,pilotId)){if(was)state.pilots[unitId]=was;return false;}}
   for(const [k,v] of Object.entries(state.pilots))if(v===pilotId)delete state.pilots[k];
   if(pilotId){state.pilots[unitId]=pilotId;selected=selected.filter(x=>x!==pilotId);}else delete state.pilots[unitId];
-  return commitChange(pilotId?`${u.name} に ${PILOT_MASTER[pilotId].name} が搭乗`:`${u.name} のパイロットを降ろしました`);
+  return commitChange(pilotId?`${u.name} に ${unitName(pilotId)} が搭乗`:`${u.name} のパイロットを降ろしました`);
+}
+// ---- 1.13.0: hire, fire and rename unit instances ----
+function fireBlock(uid){const u=UNIT_MASTER.find(x=>x.id===uid);if(!u)return 'ユニットがいません';if(u.noFire)return `${u.name}は解雇できません（重要ユニット）`;if(state.roster.length<=1)return '最後の1体は解雇できません';return '';}
+function fireUnit(uid,ask=true){
+  if(battleRunning)return false;const u=UNIT_MASTER.find(x=>x.id===uid);if(!u||!inRoster(uid))return false;
+  const block=fireBlock(uid);if(block){lastNotice=block;render();return false;}
+  const eq=(state.equip[uid]||[]).filter(Boolean);
+  if(ask&&!confirm(`Lv${levelOf(uid)}の${u.name}を解雇しますか？\n装備${eq.length?`（${eq.map(id=>ITEM_MASTER[id]?.name||id).join('・')}）`:''}はアイテム一覧に戻ります。\nレベル・スキルツリー・強化は失われ、雇用費は戻りません。`))return false;
+  for(const id of eq)state.items[id]=(state.items[id]||0)+1;
+  for(const k of ['units','levels','equip','tree','tagMods','sortieBuffs','itemUses','fatigue','injury','rows','upgrades','grants'])if(state[k]&&Object.hasOwn(state[k],uid))delete state[k][uid];
+  delete state.pilots[uid];for(const [k,v] of Object.entries(state.pilots))if(v===uid)delete state.pilots[k];
+  for(const p of state.presets||[])if(p){p.selected=p.selected.filter(x=>x!==uid);delete p.rows[uid];}
+  selected=selected.filter(x=>x!==uid);openUnitDetails.delete(uid);if(growthTargetId===uid)growthTargetId=null;
+  state.roster=state.roster.filter(e=>e.uid!==uid);
+  return commitChange(`${u.name}を解雇しました${eq.length?'（装備はアイテム一覧に戻りました）':''}`);
+}
+function renameUnit(uid,name){
+  if(battleRunning)return false;const e=rosterEntry(uid),u=baseUnit(uid);if(!e||!u)return false;
+  if(name===undefined){name=prompt(`${unitName(uid)} の呼び名（空欄でもとの名前「${u.name}」に戻します・20文字まで）`,e.name||'');if(name===null)return false;}
+  name=String(name).trim().slice(0,20);if(name)e.name=name;else delete e.name;
+  return commitChange(name?`呼び名を「${name}」にしました`:`呼び名をもとに戻しました`);
+}
+function hireNames(){const n={};for(const m of MISSIONS)n[m.id]=m.name;for(const r of Object.values(RESEARCH_MASTER))n[r.id]=r.name;for(const [id,i] of Object.entries(ITEM_MASTER))n[id]=i.name;return n;}
+function hireUnlocked(h){const r=h.requires||{};return (r.missions||[]).every(missionCleared)&&(r.research||[]).every(id=>state.research.includes(id))&&(r.items||[]).every(id=>(state.items[id]||0)>0)&&(!r.day||state.day>=r.day);}
+function hireUnitDef(h){return BASE_UNIT_MASTER.find(b=>b.id===h.unitId)||null;}
+function hireProblem(h){if(!h)return '雇用候補がありません';const u=hireUnitDef(h);if(!u)return 'ユニットのデータが読み込まれていません';if(!u.deploy?.player)return '味方として出撃できないユニットです';if(!hireUnlocked(h))return '🔒 '+C.hireRequirementText(h,hireNames());if(h.limit&&copiesOf(h.unitId)>=h.limit)return `上限（${h.limit}体）まで雇っています`;if(state.credits<h.cost)return '資金が足りません';return '';}
+function hireVisible(h){return !h.hidden||hireUnlocked(h);}
+function unitRoleKey(u){if((u.skills||[]).some(s=>/heal/.test(s.effect||'')))return '回復';return (u.row||'front')==='back'?'後衛':'前衛';}
+function hireUnit(id,ask=true){
+  if(battleRunning)return false;const h=HIRE_MASTER[id],prob=hireProblem(h);if(prob){if(h){lastNotice=prob;render();}return false;}
+  const u=hireUnitDef(h),sc=Math.max(0,Number(u.sortieCost)||0);
+  if(ask&&!confirm(`${u.name}を雇いますか？\n雇用費 ${h.cost.toLocaleString()}（残りの資金 ${(state.credits-h.cost).toLocaleString()}）${sc?`\n出撃費用: 出撃1回ごとに ${sc.toLocaleString()}`:''}\n解雇しても雇用費は戻りません。`))return false;
+  state.credits-=h.cost;const uid=freeUid(u.id);state.roster.push({uid,base:u.id});
+  return commitChange(`${unitName(uid)} を雇いました${h.cost?`（-${h.cost.toLocaleString()}）`:''}`);
+}
+function renderHire(){
+  const box=document.getElementById('hireList');if(!box)return;box.replaceChildren();
+  const offers=Object.values(HIRE_MASTER).filter(hireVisible);
+  if(!offers.length){box.append(el('p','sub','いま雇えるユニットはいません。作戦をクリアしたり研究を進めたりすると、雇える仲間が増えることがあります。'));return;}
+  const roles=new Set(UNIT_MASTER.map(unitRoleKey));
+  offers.sort((a,b)=>(hireUnlocked(b)-hireUnlocked(a))||(a.cost-b.cost));
+  for(const h of offers){const u=hireUnitDef(h),prob=hireProblem(h),row=el('div','item-row hire-row'+(prob?' locked':'')),info=el('div');
+    if(!u){info.append(el('b','',h.unitId),el('small','',prob));row.append(info);box.append(row);continue;}
+    const st=unitStrength(u).stars,sc=Math.max(0,Number(u.sortieCost)||0),role=unitRoleKey(u),owned=copiesOf(u.id),tags=[];
+    if(hireUnlocked(h)&&!roles.has(role))tags.push(`おすすめ: 部隊にいない役割（${role}）`);
+    info.append(el('b','',`${u.name} ／ 雇用費 ${h.cost?h.cost.toLocaleString():'無料'}`),
+      el('small','',`${starText(st)} ${u.role||''} ／ ${role} ／ HP ${u.hp} ATK ${u.atk} DEF ${u.def} MOB ${u.mob} ACC ${u.acc}`),
+      el('small','',`出撃費用 ${sc?sc.toLocaleString()+'／回':'なし'} ／ 装備枠 ${u.equipSlots??EQUIP_SLOTS} ／ 所持 ${owned}${h.limit?` / 上限 ${h.limit}`:''}${st?` ／ ★1つあたり ${Math.round(h.cost/st).toLocaleString()}`:''}${u.noFire?' ／ 解雇不可':''}`),
+      el('small','',`条件: ${C.hireRequirementText(h,hireNames())}${h.note?' ／ '+h.note:''}`));
+    for(const t of tags)info.append(el('small','good',t));
+    if(prob)info.append(el('small','',prob));
+    row.append(info,actionButton('雇う',()=>hireUnit(h.id),!!prob,'primary'));box.append(row);}
 }
 function shopAvailable(i){
   if(!i?.price)return false;
@@ -1253,7 +1347,7 @@ function loadPreset(i){
   const usable=p.selected.filter(id=>UNIT_MASTER.some(u=>u.id===id)&&canSortie(id));selected=usable.slice(0,limit);
   return commitChange(`プリセット${i+1}を読み込み（${selected.length}機${usable.length<p.selected.length?`・出撃できない${p.selected.length-usable.length}機を除外`:''}）`);
 }
-function exportSaveData(){return {format:'PRO_SAVE',version:1,game:GAME_VERSION,exportedAt:new Date().toISOString(),state,packs:{units:importedUnitPacks,missions:importedMissionPacks,items:importedItemPacks,bundles:importedBundlePacks}};}
+function exportSaveData(){return {format:'PRO_SAVE',version:2,game:GAME_VERSION,exportedAt:new Date().toISOString(),state,packs:{units:importedUnitPacks,missions:importedMissionPacks,items:importedItemPacks,bundles:importedBundlePacks}};}
 function importSaveData(data){
   if(!data||data.format!=='PRO_SAVE')throw new Error('PROのセーブデータではありません');
   const packs=plainObject(data.packs),list=k=>Array.isArray(packs[k])?packs[k]:[];
@@ -1286,17 +1380,17 @@ function renderGrowth(){
   const u=UNIT_MASTER.find(x=>x.id===growthTargetId),base=baseUnit(u.id),info=levelInfo(u.id),growth=growthOf(base);view.replaceChildren();
   const head=el('div','growth-head');head.innerHTML=`${unitThumb(u,'growth-thumb')}<div><div class="name">${esc(u.name)} <span class="lv">Lv${info.lv}</span></div><div class="sub">EXP ${info.lv>=MAX_LEVEL?'MAX':`${info.exp} / ${expToNext(info.lv)}`} ／ スキルポイント ${info.sp} ／ 疲労 ${fatigueOf(u.id)}${injuryOf(u.id)?` ／ 負傷 あと${injuryOf(u.id)}日`:''}</div><div class="sub">HP ${u.hp} / ATK ${u.atk} / DEF ${u.def} / MOB ${u.mob} / ACC ${u.acc}（レベル成長: HP+${growth.hp} ATK+${growth.atk} DEF+${growth.def} MOB+${growth.mob} ACC+${growth.acc}）</div><div class="sub">タグ ${esc(u.tags.join('・')||'なし')}</div></div>`;view.append(head);
   const rowBox=el('div','growth-section');rowBox.append(el('h3','','隊列'),el('p','sub','前衛は狙われやすく、後衛は前衛がいる間は近接攻撃を受けません。'));const row=state.rows[u.id]||u.row||'front';rowBox.append(actionButton(row==='front'?'✓ 前衛':'前衛',()=>setRow(u.id,'front'),row==='front'),actionButton(row==='back'?'✓ 後衛':'後衛',()=>setRow(u.id,'back'),row==='back'));view.append(rowBox);
-  const pilotBox=el('div','growth-section');pilotBox.append(el('h3','','パイロット'));const pilots=Object.values(PILOT_MASTER).filter(p=>p.id!==u.id&&isRecruited(BASE_UNIT_MASTER.find(x=>x.id===p.id)||{})&&!state.pilots[p.id]);
-  if(u.pilotProfile){const lv=levelOf(u.id),b=C.pilotBonus(u.pilotProfile,lv),at=boardingOf(u.id);pilotBox.append(el('p','sub',`パイロットとしての補正（Lv${lv}・成長 +${u.pilotProfile.growthPct}%/Lv）: ${Object.entries(b).map(([k,v])=>`${k.toUpperCase()}+${v}`).join(' ')||'なし'}${u.pilotProfile.aptitude?.pct?` ／ 適性「${u.pilotProfile.aptitude.tags.join('・')}」+${u.pilotProfile.aptitude.pct}%`:''}${u.pilotProfile.skills.length?' ／ スキル '+u.pilotProfile.skills.map(s=>s.name).join('・'):''}${at?` ／ いまは ${UNIT_INDEX[at]?.name||at} に搭乗中`:''}`));if(at)pilotBox.append(actionButton('降りる',()=>assignPilot(at,'')));}
+  const pilotBox=el('div','growth-section');pilotBox.append(el('h3','','パイロット'));const pilots=UNIT_MASTER.filter(p=>p.id!==u.id&&PILOT_MASTER[baseOf(p.id)]&&!state.pilots[p.id]);
+  if(u.pilotProfile){const lv=levelOf(u.id),b=C.pilotBonus(u.pilotProfile,lv),at=boardingOf(u.id);pilotBox.append(el('p','sub',`パイロットとしての補正（Lv${lv}・成長 +${u.pilotProfile.growthPct}%/Lv）: ${Object.entries(b).map(([k,v])=>`${k.toUpperCase()}+${v}`).join(' ')||'なし'}${u.pilotProfile.aptitude?.pct?` ／ 適性「${u.pilotProfile.aptitude.tags.join('・')}」+${u.pilotProfile.aptitude.pct}%`:''}${u.pilotProfile.skills.length?' ／ スキル '+u.pilotProfile.skills.map(s=>s.name).join('・'):''}${at?` ／ いまは ${unitName(at)} に搭乗中`:''}`));if(at)pilotBox.append(actionButton('降りる',()=>assignPilot(at,'')));}
   if(crewOf(u)==='none'){if(!u.pilotProfile)pilotBox.append(el('p','sub','このユニットはパイロットを乗せられません（生身など）。'));}
   else if(state.pilots[u.id]===undefined&&boardingOf(u.id))pilotBox.append(el('p','sub','搭乗中のユニットにはパイロットを乗せられません。'));
   else if(!pilots.length&&!state.pilots[u.id])pilotBox.append(el('p','sub',crewOf(u)==='required'?'このユニットはパイロットが必要です。パイロットになれるユニット（「パイロット」マーク）が加入すると搭乗させられます。':'搭乗できるパイロットがいません。'));
-  else{const sel=el('select','growth-select');sel.setAttribute('aria-label','パイロット');const cur=state.pilots[u.id]&&PILOT_MASTER[state.pilots[u.id]];const list=cur&&!pilots.includes(cur)?[cur,...pilots]:pilots;sel.innerHTML='<option value="">搭乗なし</option>'+list.map(p=>{const at=Object.entries(state.pilots).find(([,v])=>v===p.id);const where=at&&at[0]!==u.id?`（${UNIT_MASTER.find(x=>x.id===at[0])?.name||at[0]}に搭乗中）`:'';return `<option value="${esc(p.id)}">${esc(p.name)}${where}</option>`;}).join('');sel.value=state.pilots[u.id]||'';sel.disabled=battleRunning;sel.onchange=()=>assignPilot(u.id,sel.value);pilotBox.append(sel);
+  else{const sel=el('select','growth-select');sel.setAttribute('aria-label','パイロット');const cur=state.pilots[u.id]&&UNIT_MASTER.find(x=>x.id===state.pilots[u.id]);const list=cur&&!pilots.includes(cur)?[cur,...pilots]:pilots;sel.innerHTML='<option value="">搭乗なし</option>'+list.map(p=>{const at=Object.entries(state.pilots).find(([,v])=>v===p.id);const where=at&&at[0]!==u.id?`（${UNIT_MASTER.find(x=>x.id===at[0])?.name||at[0]}に搭乗中）`:'';return `<option value="${esc(p.id)}">${esc(p.name)}${where}</option>`;}).join('');sel.value=state.pilots[u.id]||'';sel.disabled=battleRunning;sel.onchange=()=>assignPilot(u.id,sel.value);pilotBox.append(sel);
     const p=pilotFor(u.id);if(p)pilotBox.append(el('p','sub',`${esc(p.name)}（Lv${p.lv}）の補正 ${Object.entries(p.stats).map(([k,v])=>`${k.toUpperCase()}+${v}`).join(' ')||'なし'}${p.aptitude?.pct?` ／ 適性「${p.aptitude.tags.join('・')}」でATK・MOB・ACC +${p.aptitude.pct}%${p.aptitude.tags.some(t=>u.tags.includes(t))?'（適用中）':'（対象外）'}`:''}${p.skills.length?' ／ スキル '+p.skills.map(s=>s.name).join('・'):''}`));}
   view.append(pilotBox);
-  const eqBox=el('div','growth-section');eqBox.append(el('h3','',`装備（${EQUIP_SLOTS}枠）`));const slots=state.equip[u.id]||[];const owned=Object.entries(state.items).filter(([id,n])=>n>0&&ITEM_MASTER[id]?.equip);
-  for(let i=0;i<EQUIP_SLOTS;i++){const line=el('div','equip-line'),cur=slots[i]&&ITEM_MASTER[slots[i]];line.append(el('span','',`スロット${i+1}: ${cur?cur.name+' ／ '+C.itemSummary(cur):'なし'}`));const sel=el('select','growth-select');sel.setAttribute('aria-label',`装備スロット${i+1}`);sel.innerHTML='<option value="">— 選択 —</option>'+owned.map(([id,n])=>`<option value="${esc(id)}">${esc(ITEM_MASTER[id].name)} ×${n}</option>`).join('');sel.disabled=battleRunning||!owned.length;sel.onchange=()=>{if(sel.value)equipItem(u.id,i,sel.value);};line.append(sel);if(cur)line.append(actionButton('外す',()=>equipItem(u.id,i,null)));eqBox.append(line);}
-  if(!owned.length)eqBox.append(el('p','sub','所持している装備品はありません。'));view.append(eqBox);
+  const eqBox=el('div','growth-section');const nSlots=slotsOf(u.id);eqBox.append(el('h3','',`装備（${nSlots}枠）`));if(!nSlots)eqBox.append(el('p','sub','このユニットには装備枠がありません（装備枠を増やすアイテムで増やせます）。'));const slots=state.equip[u.id]||[];const owned=Object.entries(state.items).filter(([id,n])=>n>0&&ITEM_MASTER[id]?.equip);
+  for(let i=0;i<nSlots;i++){const line=el('div','equip-line'),cur=slots[i]&&ITEM_MASTER[slots[i]];line.append(el('span','',`スロット${i+1}: ${cur?cur.name+' ／ '+C.itemSummary(cur):'なし'}`));const sel=el('select','growth-select');sel.setAttribute('aria-label',`装備スロット${i+1}`);sel.innerHTML='<option value="">— 選択 —</option>'+owned.map(([id,n])=>`<option value="${esc(id)}">${esc(ITEM_MASTER[id].name)} ×${n}</option>`).join('');sel.disabled=battleRunning||!owned.length;sel.onchange=()=>{if(sel.value)equipItem(u.id,i,sel.value);};line.append(sel);if(cur)line.append(actionButton('外す',()=>equipItem(u.id,i,null)));eqBox.append(line);}
+  if(!owned.length&&nSlots)eqBox.append(el('p','sub','所持している装備品はありません。'));view.append(eqBox);
   const treeBox=el('div','growth-section');treeBox.append(el('h3','','スキルツリー'));const tree=base.skillTree||[],got=state.tree[u.id]||[];
   if(!tree.length)treeBox.append(el('p','sub','このユニットにはスキルツリーがありません。'));
   for(const n of tree){const done=got.includes(n.id),reqOk=n.requires.every(r=>got.includes(r)),line=el('div','tree-node'+(done?' done':''));line.append(el('div','',`${done?'✓ ':''}${n.skill.name}（SP ${n.cost} / Lv${n.minLevel}${n.requires.length?' / 前提 '+n.requires.map(r=>tree.find(x=>x.id===r)?.skill.name||r).join('・'):''}）`),el('small','sub',C.skillText(n.skill)));if(!done)line.append(actionButton('解放',()=>unlockTreeNode(u.id,n.id),!reqOk||info.sp<n.cost||info.lv<n.minLevel));treeBox.append(line);}
@@ -1317,12 +1411,12 @@ function renderLab(){
   const fac=document.getElementById('facilityList'),res=document.getElementById('researchList');if(!fac||!res)return;
   fac.replaceChildren();for(const [key,f] of Object.entries(FACILITIES)){const lv=state.facilities[key],row=el('div','item-row'),info=el('div');info.append(el('b','',`${f.name} Lv${lv}`),el('small','',f.desc(lv)),...(lv<3?[el('small','',`次: ${f.desc(lv+1)}`)]:[]));row.append(info,lv<3?actionButton(`強化 ${f.cost[lv].toLocaleString()}`,()=>upgradeFacility(key),state.credits<f.cost[lv]):el('span','tag','MAX'));fac.append(row);}
   res.replaceChildren();const all=Object.values(RESEARCH_MASTER);if(!all.length)res.append(el('p','sub','研究データがありません（アイテムパックの research で追加できます）。'));
-  for(const r of all){const st=researchStatus(r),row=el('div','item-row'+(st==='done'?' done':'')),info=el('div');const unlock=[...r.unlock.units.map(id=>`加入: ${UNIT_INDEX[id]?.name||id}`),...r.unlock.items.map(id=>`販売: ${ITEM_MASTER[id]?.name||id}`),...Object.entries(r.unlock.grantItems).map(([id,n])=>`支給: ${ITEM_MASTER[id]?.name||id} ×${n}`)].join(' / ');info.append(el('b','',`${st==='done'?'✓ ':st==='locked'?'🔒 ':''}${r.name}`),el('small','',`${r.desc?r.desc+' ／ ':''}費用 ${researchCostText(r)}${unlock?' ／ '+unlock:''}${st==='locked'?' ／ 前提: '+r.requires.map(q=>RESEARCH_MASTER[q]?.name||q).join('・'):''}`));row.append(info);if(st==='open')row.append(actionButton('研究する',()=>doResearch(r.id)));res.append(row);}
+  for(const r of all){const st=researchStatus(r);if(r.hidden&&st==='locked')continue;const row=el('div','item-row'+(st==='done'?' done':'')),info=el('div');const unlock=[...r.unlock.units.map(id=>`加入: ${UNIT_INDEX[id]?.name||id}`),...r.unlock.items.map(id=>`販売: ${ITEM_MASTER[id]?.name||id}`),...Object.entries(r.unlock.grantItems).map(([id,n])=>`支給: ${ITEM_MASTER[id]?.name||id} ×${n}`)].join(' / ');info.append(el('b','',`${st==='done'?'✓ ':st==='locked'?'🔒 ':''}${r.name}`),el('small','',`${r.desc?r.desc+' ／ ':''}費用 ${researchCostText(r)}${unlock?' ／ '+unlock:''}${st==='locked'?' ／ 前提: '+r.requires.map(q=>RESEARCH_MASTER[q]?.name||q).join('・'):''}`));row.append(info);if(st==='open')row.append(actionButton('研究する',()=>doResearch(r.id)));res.append(row);}
 }
 function renderRecords(){
   const sum=document.getElementById('recordSummary');if(!sum)return;const r=state.records;
   sum.innerHTML=`<div class="info-strip"><div class="info-pill"><b>${r.battles}</b><span>出撃</span></div><div class="info-pill"><b>${r.wins} / ${r.draws} / ${r.losses}</b><span>勝 / 分 / 敗</span></div><div class="info-pill"><b>${r.kills}</b><span>撃破</span></div><div class="info-pill"><b>${state.day}</b><span>経過日数</span></div></div>`;
-  document.getElementById('missionRecords').innerHTML=MISSIONS.map(m=>{const rec=state.missions[m.id];return `<div class="record-row"><span>${esc(m.name)}</span><span class="stars">${starMarks(m)}</span><span class="sub">${rec?.clears?`クリア${rec.clears}回 / 最短${rec.best}TURN`:'未クリア'}</span></div>`;}).join('')||'<p class="sub">作戦がありません。</p>';
+  document.getElementById('missionRecords').innerHTML=visibleMissions().map(m=>{const rec=state.missions[m.id];return `<div class="record-row"><span>${esc(m.name)}</span><span class="stars">${starMarks(m)}</span><span class="sub">${rec?.clears?`クリア${rec.clears}回 / 最短${rec.best}TURN`:'未クリア'}</span></div>`;}).join('')||'<p class="sub">作戦がありません。</p>';
   document.getElementById('achievementList').innerHTML=ACHIEVEMENTS.map(a=>{const got=state.achievements.includes(a.id);return `<div class="record-row ${got?'done':''}"><span>${got?'🏆':'・'} ${esc(a.name)}</span><span class="sub">${esc(a.desc)} / 報酬 ${a.reward.toLocaleString()}</span></div>`;}).join('');
   const kills=Object.entries(r.enemyKills).sort((a,b)=>b[1]-a[1]);
   document.getElementById('bestiary').innerHTML=kills.map(([k,n])=>`<div class="record-row"><span>${esc(r.enemyNames[k]||ENEMY_MASTER[k]?.name||k)}</span><span class="sub">撃破 ${n}</span></div>`).join('')||'<p class="sub">まだ敵を撃破していません。</p>';
@@ -1365,13 +1459,14 @@ function goTo(view,opt={}){if(opt.growth){growthTargetId=opt.growth;}if(opt.miss
 // Suggestions for what to do next, most useful first (max 3).
 function nextActions(){
   const out=[],add=(prio,text,view,opt={})=>out.push({prio,text,view,...opt});
-  const freePilot=()=>Object.values(PILOT_MASTER).find(p=>UNIT_MASTER.some(x=>x.id===p.id)&&!boardingOf(p.id)&&!state.pilots[p.id]);
+  const freePilot=()=>UNIT_MASTER.find(p=>PILOT_MASTER[baseOf(p.id)]&&!boardingOf(p.id)&&!state.pilots[p.id]);
   const mech=UNIT_MASTER.find(u=>crewOf(u)==='required'&&!u.pilotId);
   if(mech&&freePilot())add(1,`${mech.name}にパイロットを乗せよう（乗せないと出撃できません）`,'growth',{growth:mech.id});
-  for(const u of UNIT_MASTER){const sp=levelInfo(u.id).sp,tree=BASE_UNIT_MASTER.find(b=>b.id===u.id)?.skillTree||[],got=state.tree[u.id]||[];if(sp>0&&tree.some(n=>!got.includes(n.id))){add(2,`${u.name}にスキルポイントが${sp}あります。スキルツリーで新しいスキルを覚えよう`,'growth',{growth:u.id});break;}}
+  for(const u of UNIT_MASTER){const sp=levelInfo(u.id).sp,tree=baseUnit(u.id)?.skillTree||[],got=state.tree[u.id]||[];if(sp>0&&tree.some(n=>!got.includes(n.id))){add(2,`${u.name}にスキルポイントが${sp}あります。スキルツリーで新しいスキルを覚えよう`,'growth',{growth:u.id});break;}}
   const hurt=UNIT_MASTER.filter(u=>(state.units[u.id]?.hp??u.hp)<u.hp);if(hurt.length)add(3,`${hurt.length}体のHPが減っています。修理やアイテムで回復しておこう`,'units');
   const next=MISSIONS.find(m=>missionAvailable(m)&&!missionLockReason(m)&&!state.missions[m.id]?.clears);if(next)add(4,`作戦「${next.name}」に挑戦しよう`,'missions',{mission:next.id});
   const research=Object.values(RESEARCH_MASTER).find(r=>researchStatus(r)==='open'&&state.credits>=(r.cost?.credits||0)&&Object.entries(r.cost?.items||{}).every(([id,n])=>(state.items[id]||0)>=n));if(research)add(5,`研究「${research.name}」ができます`,'lab');
+  const hire=Object.values(HIRE_MASTER).find(h=>hireVisible(h)&&!hireProblem(h)&&!copiesOf(h.unitId));if(hire)add(5.5,`新しく雇えるユニットがいます（${hireUnitDef(hire)?.name||hire.unitId}）`,'hire');
   const starMiss=MISSIONS.find(m=>state.missions[m.id]?.clears&&state.missions[m.id].stars.some(x=>!x)&&!missionLockReason(m));if(starMiss)add(6,`「${starMiss.name}」で残りの星を集めよう`,'missions',{mission:starMiss.id});
   out.sort((a,b)=>a.prio-b.prio);return out.slice(0,3);
 }
@@ -1425,7 +1520,7 @@ function autoSquad(m){
   const limit=Math.min(MAX_SLOTS,m?.maxDeploy||MAX_SLOTS),boards=[];
   const usable=u=>{if((state.units[u.id]?.hp??0)<=0||sortieBlock(u.id)||boardingOf(u.id))return false;if(!m)return true;const p=deployProblem(m,[u.id]);return !p||/パイロットが必要/.test(p);};
   let pool=UNIT_MASTER.filter(usable);
-  const pilots=pool.filter(u=>PILOT_MASTER[u.id]&&!state.pilots[u.id]).sort((a,b)=>unitPower(b)-unitPower(a));
+  const pilots=pool.filter(u=>PILOT_MASTER[baseOf(u.id)]&&!state.pilots[u.id]).sort((a,b)=>unitPower(b)-unitPower(a));
   for(const mech of pool.filter(u=>crewOf(u)==='required'&&!u.pilotId).sort((a,b)=>unitPower(b)-unitPower(a))){const p=pilots.find(p=>p.id!==mech.id&&!boards.some(b=>b.pilot===p.id)&&!sortieBlock(p.id));if(p)boards.push({unit:mech.id,pilot:p.id});}
   const boarded=new Set(boards.map(b=>b.pilot));
   pool=pool.filter(u=>!boarded.has(u.id)&&!(crewOf(u)==='required'&&!u.pilotId&&!boards.some(b=>b.unit===u.id)));
@@ -1450,7 +1545,7 @@ function scheduleEstimates(){estimateQueue=MISSIONS.filter(m=>missionAvailable(m
 async function runEstimates(){estimateRunning=true;try{while(estimateQueue.length){const id=estimateQueue.shift(),m=MISSIONS.find(x=>x.id===id);if(!m||battleRunning)continue;const v=await estimateWin(m);const span=document.getElementById('est-'+id);if(span)span.innerHTML=estimateHtml(v)||'';await new Promise(r=>setTimeout(r,0));}}catch(e){console.warn('estimate failed',e);}finally{estimateRunning=false;}}
 function renderSquadPrep(){const box=document.getElementById('squadPrep');if(!box)return;const m=MISSIONS.find(x=>x.id===selectedMission);
   if(!selected.length){box.innerHTML=`<div class="sub">まだ誰も選ばれていません。${m?'<button type="button" class="primary" data-auto-squad="1">おまかせ編成</button>':'先に「02 作戦」で作戦を選ぶと、おまかせ編成が使えます。'}</div>`;return;}
-  const freePilots=Object.values(PILOT_MASTER).filter(p=>UNIT_MASTER.some(x=>x.id===p.id)&&!boardingOf(p.id)&&!state.pilots[p.id]&&!selected.includes(p.id));
+  const freePilots=UNIT_MASTER.filter(p=>PILOT_MASTER[baseOf(p.id)]&&!boardingOf(p.id)&&!state.pilots[p.id]&&!selected.includes(p.id));
   box.innerHTML=(m?'<div class="controls"><button type="button" class="secondary" data-auto-squad="1">おまかせ編成で選び直す</button></div>':'')+selected.map(id=>{const u=UNIT_MASTER.find(x=>x.id===id);if(!u)return '';const cur=state.units[id]?.hp??u.hp,cost=repairCost(u.hp-cur),prob=m?deployProblem(m,[id]):'';
     const needSeat=crewOf(u)!=='none'&&!u.pilotId&&freePilots.length;
     return `<div class="prep-row${prob?' bad':''}"><div><b>${esc(u.name)}</b> <span class="sub">HP ${Math.ceil(cur).toLocaleString()} / ${u.hp.toLocaleString()}${u.pilotId?` ／ 搭乗: ${esc(u.pilot)}`:''}</span>${prob?`<div class="prep-problem">⚠ ${esc(prob)}</div>`:''}</div><div class="controls">${cost?`<button type="button" class="secondary" data-prep-repair="${esc(id)}" ${state.credits<cost?'disabled':''}>修理 ${cost.toLocaleString()}</button>`:''}${needSeat?`<select data-prep-pilot="${esc(id)}" aria-label="${esc(u.name)}に乗せるパイロット"><option value="">${crewOf(u)==='required'?'パイロットを選ぶ':'パイロットを乗せる（任意）'}</option>${freePilots.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select>`:''}<button type="button" class="secondary" data-prep-remove="${esc(id)}">外す</button></div></div>`;}).join('');}
@@ -1495,7 +1590,7 @@ document.getElementById('fatigueToggle').onchange=e=>{state.settings.fatigue=!!e
 document.getElementById('exportSaveBtn').onclick=()=>{const d=new Date(),stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;downloadText(`pro_save_${stamp}.json`,JSON.stringify(exportSaveData()));lastNotice='セーブデータを書き出しました';render();};
 document.getElementById('importSaveBtn').onclick=()=>document.getElementById('saveFileInput').click();
 document.getElementById('saveFileInput').onchange=async e=>{const f=e.target.files?.[0];e.target.value='';if(!f||battleRunning)return;try{const data=JSON.parse(await f.text());if(!confirm(`セーブデータを読み込みますか？\n現在の進行と追加パックは置き換わります。\n書き出し日時: ${data?.exportedAt||'不明'}`))return;importSaveData(data);lastNotice='セーブデータを読み込みました';render();}catch(err){alert('読み込めませんでした: '+err.message);}};
-window.PROGame={render,reopenGuide,importAnyFiles,addCatalogPack,removePack:removeImportedBundlePack,applyAutoSquad};
+window.PROGame={render,reopenGuide,hireUnit,fireUnit,renameUnit,importAnyFiles,addCatalogPack,removePack:removeImportedBundlePack,applyAutoSquad};
 showScreen('base');
 ensureUnitState();
 render();
@@ -1511,7 +1606,7 @@ const heading=(text)=>{const h=el('h1','flow-heading',text);h.tabIndex=-1;return
 const focusPage=(page)=>{const h=page.querySelector('h1,h2,.card-title');if(h){h.tabIndex=-1;h.focus({preventScroll:true});}window.scrollTo({top:0,behavior:'instant'});};
 const links=()=>{const box=el('div','flow-links');[['index.html','ゲーム'],['unit_maker.html','Unit Maker'],['mission_maker.html','Mission Maker'],['item_maker.html','Item Maker'],['combined_maker.html','統合メーカー'],['maker_hub.html','メーカー入口']].forEach(([href,t])=>{const a=el('a','',t);a.href=href;a.target='_blank';a.rel='noopener';box.append(a);});return box;};
 
-const wrap=document.querySelector('#baseScreen .wrap'),grid=wrap.querySelector('.grid'),panels=[...grid.children],units=panels[0],missions=panels[1],items=wrap.querySelector('.item-panel'),growth=wrap.querySelector('.growth-panel'),shop=wrap.querySelector('.shop-panel'),lab=wrap.querySelector('.lab-panel'),records=wrap.querySelector('.records-panel');
+const wrap=document.querySelector('#baseScreen .wrap'),grid=wrap.querySelector('.grid'),panels=[...grid.children],units=panels[0],missions=panels[1],items=wrap.querySelector('.item-panel'),growth=wrap.querySelector('.growth-panel'),shop=wrap.querySelector('.shop-panel'),hire=wrap.querySelector('.hire-panel'),lab=wrap.querySelector('.lab-panel'),records=wrap.querySelector('.records-panel');
 const data=el('section','flow-page panel'),review=el('section','flow-page panel'),packs=el('section','flow-page panel'),nav=el('nav','flow-nav');nav.setAttribute('aria-label','基地画面');
 data.append(heading('データ管理'),el('p','flow-lead','自作データの読み込み、セーブの書き出し・読み込み、設定を行います。'));
 // One button for every kind of data file (1.11.0); the per-type tools move into a folded section.
@@ -1526,17 +1621,17 @@ const start=[...missions.children].find(e=>e.tagName==='H2'&&e.textContent.inclu
 let node=start;while(node){const next=node.nextSibling;review.append(node);node=next;}
 review.prepend(heading('出撃前の確認'),el('p','flow-lead','味方の状態と敵編成を確認し、準備が整ったら派遣を開始してください。'));
 units.querySelector('h2').textContent='派遣部隊を編成';missions.querySelector('h2').textContent='作戦を選択';items.querySelector('h2').textContent='補給・強化アイテム';
-const views={units,missions,review,items,growth,shop,lab,records,packs,data};Object.values(views).forEach(e=>e.classList.add('flow-page'));
-grid.before(nav);grid.append(review,growth,shop,lab,records,packs,data);
+const views={units,missions,review,items,growth,hire,shop,lab,records,packs,data};Object.values(views).forEach(e=>e.classList.add('flow-page'));
+grid.before(nav);grid.append(review,growth,hire,shop,lab,records,packs,data);
 // 1.11.0: grouped menu — 出撃 / 基地 / その他 (group labels are CSS, so the buttons stay the nav's only children)
-const buttons={};[['units','01 部隊','出撃'],['missions','02 作戦'],['review','03 出撃確認'],['growth','育成','基地'],['items','アイテム'],['shop','ショップ'],['lab','研究・施設'],['packs','拡張パック','その他'],['records','記録'],['data','データ管理']].forEach(([id,t,group])=>{buttons[id]=button(t,()=>show(id));if(group)buttons[id].setAttribute('data-group',group);nav.append(buttons[id]);});
+const buttons={};[['units','01 部隊','出撃'],['missions','02 作戦'],['review','03 出撃確認'],['growth','育成','基地'],['hire','雇用'],['items','アイテム'],['shop','ショップ'],['lab','研究・施設'],['packs','拡張パック','その他'],['records','記録'],['data','データ管理']].forEach(([id,t,group])=>{buttons[id]=button(t,()=>show(id));if(group)buttons[id].setAttribute('data-group',group);nav.append(buttons[id]);});
 function show(id,focus=true){if(!views[id])return;Object.entries(views).forEach(([k,e])=>e.hidden=k!==id);Object.entries(buttons).forEach(([k,b])=>{if(k===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});if(buttons[id]&&buttons[id].scrollIntoView&&nav.scrollWidth>nav.clientWidth)buttons[id].scrollIntoView({block:'nearest',inline:'center'});if(focus)focusPage(views[id]);}
 window.PROFlow={show};
 const anyBtn=document.getElementById('anyImportBtn'),anyInput=document.getElementById('anyFileInput');if(anyBtn&&anyInput){anyBtn.onclick=()=>anyInput.click();anyInput.onchange=async()=>{const files=[...(anyInput.files||[])];anyInput.value='';if(files.length&&window.PROGame)await window.PROGame.importAnyFiles(files);};}
 catalog.onclick=async e=>{const t=e.target.closest('button');if(!t||!window.PROGame)return;if(t.dataset.packAdd)await window.PROGame.addCatalogPack(t.dataset.packAdd);if(t.dataset.packRemove)window.PROGame.removePack(t.dataset.packRemove);};
 if(window.PROGame)window.PROGame.render();
 function footer(page,choices){const f=el('div','flow-footer');choices.forEach(([id,t])=>f.append(button(t,()=>show(id))));page.append(f);}
-footer(packs,[['units','← 部隊編成へ'],['missions','作戦選択へ →']]);footer(units,[['items','補給・強化へ'],['missions','作戦選択へ →']]);footer(missions,[['units','← 部隊編成へ'],['review','出撃確認へ →']]);footer(review,[['units','部隊を変更'],['missions','作戦を変更']]);footer(items,[['units','← 部隊編成へ'],['growth','育成へ']]);footer(growth,[['units','← 部隊編成へ'],['items','アイテムへ']]);footer(shop,[['items','アイテムへ'],['lab','研究・施設へ']]);footer(lab,[['shop','ショップへ'],['growth','育成へ']]);
+footer(packs,[['units','← 部隊編成へ'],['missions','作戦選択へ →']]);footer(units,[['items','補給・強化へ'],['missions','作戦選択へ →']]);footer(missions,[['units','← 部隊編成へ'],['review','出撃確認へ →']]);footer(review,[['units','部隊を変更'],['missions','作戦を変更']]);footer(items,[['units','← 部隊編成へ'],['growth','育成へ']]);footer(growth,[['units','← 部隊編成へ'],['items','アイテムへ']]);footer(shop,[['items','アイテムへ'],['lab','研究・施設へ']]);footer(lab,[['shop','ショップへ'],['growth','育成へ']]);footer(hire,[['units','← 部隊編成へ'],['growth','育成へ']]);
 show('units',false);
 })();
 

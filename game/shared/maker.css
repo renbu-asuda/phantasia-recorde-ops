@@ -73,3 +73,8 @@ body.mode-easy .adv{display:none!important}
 .pro-wave{background:#0c1f2c;border-radius:0 10px 10px 0;padding:8px 10px}.pro-wave .pro-list-head b{color:#ffd27a}
 .pro-conditions{background:#0f2a22;color:#d6f3e6;border-radius:8px;padding:8px 10px;margin:6px 0;line-height:1.7}.pro-conditions-title{display:block;margin-top:8px;color:#9be9ba}
 .pro-terrains{margin:8px 0}.pro-testlog{white-space:pre-wrap;max-height:420px;overflow:auto}
+/* 1.13.0: tag chips and duplicate buttons */
+.pro-tags{display:flex;flex-direction:column;gap:6px}.pro-tag-chips{display:flex;flex-wrap:wrap;gap:6px;min-height:28px;align-items:center}
+.pro-tag-chip{display:inline-flex;align-items:center;gap:4px;background:#173248;border:1px solid #3f6f8c;border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;max-width:100%;overflow-wrap:anywhere}
+.pro-tag-x{min-width:30px;min-height:30px;border:0;border-radius:999px;background:#2a4a63;color:#fff;font-weight:900;cursor:pointer}
+.pro-tag-add{display:flex;gap:6px}.pro-tag-add input{flex:1;min-width:0}.pro-tag-plus{min-width:44px;font-size:18px;padding:4px 12px}

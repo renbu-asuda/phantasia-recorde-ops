@@ -1,9 +1,9 @@
-/* PRO 1.10.3 基本データ（ユニット）— ゲームに最初から入っているデータです。
- * 最新の形式（Unit Schema 4 / Mission Schema 2 / Item Schema 3）で作り直しました。
+/* PRO 1.13.0 基本データ（ユニット）— ゲームに最初から入っているデータです。
+ * 最新の形式（Unit Schema 6 / Mission Schema 3 / Item Schema 5）です。
  * 作り方の参考にどうぞ。メーカーで読み込めば、そのまま編集できます。 */
 window.VAIS_UNIT_PACK = {
   "format": "VAIS_OUTER_OPS_UNIT_PACK",
-  "schemaVersion": 4,
+  "schemaVersion": 6,
   "packId": "pro-core",
   "packName": "基本データ",
   "units": [
@@ -115,7 +115,8 @@ window.VAIS_UNIT_PACK = {
             "duration": 3
           }
         }
-      ]
+      ],
+      "noFire": true
     },
     {
       "id": "core-u-tiger",
@@ -546,7 +547,8 @@ window.VAIS_UNIT_PACK = {
           ]
         }
       ],
-      "crew": "required"
+      "crew": "required",
+      "sortieCost": 120
     },
     {
       "id": "core-u-truck",
@@ -753,7 +755,8 @@ window.VAIS_UNIT_PACK = {
       "recruit": {
         "locked": true,
         "note": "研究「重装機ガーディアン配備」で加入"
-      }
+      },
+      "sortieCost": 200
     },
     {
       "id": "core-e-trooper",
@@ -1149,6 +1152,45 @@ window.VAIS_UNIT_PACK = {
       ],
       "row": "back",
       "exp": 400
+    }
+  ],
+  "hires": [
+    {
+      "id": "core-h-tiger",
+      "unitId": "core-u-tiger",
+      "cost": 1200,
+      "note": "頼れる突撃兵。何人いても困らない。"
+    },
+    {
+      "id": "core-h-mina",
+      "unitId": "core-u-mina",
+      "cost": 1500,
+      "limit": 3,
+      "note": "後方から支援する衛生兵。"
+    },
+    {
+      "id": "core-h-fox",
+      "unitId": "core-u-fox",
+      "cost": 1800,
+      "requires": {
+        "missions": [
+          "core-m-02"
+        ]
+      },
+      "note": "「防衛線維持」をクリアすると雇える狙撃兵。"
+    },
+    {
+      "id": "core-h-strider",
+      "unitId": "core-u-strider",
+      "cost": 2600,
+      "limit": 2,
+      "requires": {
+        "research": [
+          "core-r-shop"
+        ]
+      },
+      "hidden": true,
+      "note": "研究「新装備の開発」で配備できる機動兵器。パイロットが必要。"
     }
   ]
 };

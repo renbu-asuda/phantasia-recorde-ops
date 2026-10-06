@@ -1,9 +1,9 @@
-/* PRO 1.10.3 基本データ（アイテム・研究）— ゲームに最初から入っているデータです。
- * 最新の形式（Unit Schema 4 / Mission Schema 2 / Item Schema 3）で作り直しました。
+/* PRO 1.13.0 基本データ（アイテム・研究）— ゲームに最初から入っているデータです。
+ * 最新の形式（Unit Schema 6 / Mission Schema 3 / Item Schema 5）です。
  * 作り方の参考にどうぞ。メーカーで読み込めば、そのまま編集できます。 */
 window.VAIS_ITEM_PACK = {
   "format": "VAIS_OUTER_OPS_ITEM_PACK",
-  "schemaVersion": 3,
+  "schemaVersion": 5,
   "packId": "pro-core",
   "packName": "基本データ",
   "items": [
@@ -183,6 +183,19 @@ window.VAIS_ITEM_PACK = {
           }
         ]
       }
+    },
+    {
+      "id": "core-i-rack",
+      "name": "拡張装備ラック",
+      "desc": "使ったユニットの装備枠を1つ増やす（最大8枠）。",
+      "effect": {
+        "type": "equip_slot",
+        "value": 1
+      },
+      "price": 2500,
+      "shop": {
+        "requiresResearch": "core-r-shop"
+      }
     }
   ],
   "research": [
@@ -199,7 +212,8 @@ window.VAIS_ITEM_PACK = {
         "units": [],
         "items": [
           "core-i-armor",
-          "core-i-weaponkit"
+          "core-i-weaponkit",
+          "core-i-rack"
         ],
         "grantItems": {}
       }
@@ -225,7 +239,8 @@ window.VAIS_ITEM_PACK = {
         "grantItems": {
           "core-i-repair": 2
         }
-      }
+      },
+      "hidden": true
     }
   ]
 };

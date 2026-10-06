@@ -1,3 +1,60 @@
+# Toolkit 1.13.0 雇用・個体・出撃費用・装備枠（Unit Schema 6 / Mission Schema 4 / Item Schema 5 / Bundle Schema 6）
+
+## 雇用候補 `hires`（ユニットパック・統合パックの直下、最大200）
+
+```js
+hires: [
+  { id: 'h-tiger', unitId: 'core-u-tiger', cost: 1200 },                       // 最初から雇える
+  { id: 'h-fox', unitId: 'core-u-fox', cost: 1800, limit: 2,                   // 所持数2体まで
+    requires: { missions: ['core-m-02'], research: [], items: [], day: 0 },     // すべて満たすと雇える
+    hidden: true, note: '雇用画面の紹介文' }                                    // 条件を満たすまで隠す
+]
+```
+
+- `unitId` は味方として出撃できるユニット。`cost` は0以上（0=無料）、`limit` は0〜99（0・省略=無制限。そのユニットの所持数で判定）。
+- 雇用は同じユニットを何体でも追加します。加入条件（`recruit`）のないユニットや、作戦・研究・アイテムで加入したユニットは、今までどおり1体が無料で加わります。
+  `recruit.locked` で加入条件を付け、加入させる手段を作らなければ「雇用でしか手に入らないユニット」になります。
+- 検証: `PROCore.hire(h)` / `PROCore.hireList(list)`、条件の文章 `PROCore.hireRequirementText(h, names)`。
+
+## ユニットの追加項目
+
+| 項目 | 内容 | 省略時 |
+| --- | --- | --- |
+| `sortieCost` | 出撃1回の費用（0〜）。勝敗に関係なく出撃時に部隊全員ぶん引く。合計が資金を超えると出撃不可 | 0 |
+| `equipSlots` | 装備枠の数（0〜6） | 2 |
+| `noFire` | `true` で解雇できない | false |
+
+アイテム効果 `{type:'equip_slot', value: -3〜3（0以外）}`: 使ったユニット（個体）の装備枠を増減（0〜8枠）。減ってあふれた装備はアイテム一覧に戻ります。
+
+## 作戦・研究・ドロップ
+
+- 作戦 `hidden: true`: 前提作戦（`requires.missions`）・キーアイテム（`requires.items`）を満たすまで一覧に出しません。曜日（`days`）だけでは隠しません。
+- 研究 `hidden: true`: 前提研究が終わるまで一覧に出しません。
+- ドロップ `odds: [分子, 分母]`（`chance` の代わり）: 分数のまま正確に抽選します。`PROCore.drop(d)`・`dropChance(d)`（0〜1）・`dropRateText(d)`（「1/8（12.5%）」）・`parseDropRate('1/8'|'50%'|'50')`。
+
+## Schema 番号（使ったときだけ上がる）
+
+| 種類 | 上がる条件 | 番号 |
+| --- | --- | --- |
+| Unit Pack | `sortieCost`・`equipSlots`（2以外）・`noFire`・`hires` | 6 |
+| Mission Pack | 作戦の `hidden`・ドロップの `odds` | 4 |
+| Item Pack | `equip_slot` 効果・研究の `hidden` | 5 |
+| 統合パック | 上のいずれか | 6 |
+
+## セーブデータ（version 2）
+
+- `state.roster: [{uid, base, name?, slotMod?}]` — 所持しているユニットの個体。`uid` は1体目が基本ID、2体目以降は `基本ID__2`、`__3`…。`name` は呼び名、`slotMod` は装備枠の増減。
+- `state.joined: [基本ID]` — 無料で加入済みの基本ユニット（解雇しても再加入しません）。
+- HP・レベル・装備・パイロット・疲労・負傷・隊列・強化・スキルツリーなどの各マップは `uid` をキーにします。1体目の `uid` が基本IDなので、version 1 のセーブはそのまま読み込めます（名簿は自動で作成）。
+
+## 追加API
+
+- `PROEditor`（1.7.0）: `tagInput(parent, values, onChange, opts)`（タグの札入力）、`duplicateOf(item)` / `freshIds(x)`（複製とID付け直し）、`hireFields()` / `newHire(unitId)`、`hiddenField(what, help)`、`dropRateInput(parent, drop, onChange)`。
+  `form()` の `tags` 型は札入力に、`list` 型とウェーブに「複製」ボタン（`f.duplicate(item, arr)` で上書き可）。`unitExtFields()` に出撃費用・装備枠・解雇不可、`missionExtFields()` と `researchFields()` に「未解放のときの表示」。
+- ゲーム（`window.PROGame`）: `hireUnit(id)`、`fireUnit(uid)`、`renameUnit(uid, name?)`。
+
+---
+
 # Toolkit 1.12.3 攻撃属性「幻想」（Unit Schema 5 / Item Schema 4 / Bundle Schema 5）
 
 武装の `damageType` と、耐性スキルの `resistType` に **`fantasy`（幻想）** を追加しました。属性は戦闘の計算には関わらず、ラベル・色・耐性の一致判定にだけ使われます（物理・ビーム・特殊と同じ扱い）。
