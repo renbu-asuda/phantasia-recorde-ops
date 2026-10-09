@@ -1,3 +1,7 @@
+# PRO 1.15.0 追補
+
+新項目と処理順は [FEATURES_1_15.md](FEATURES_1_15.md) を参照。新機能使用時は Unit 9 / Mission 5 / Item 7 / Bundle 9。以下は旧版の項目を含む従来資料です。
+
 # Toolkit 1.14.2: 共有スキル（Unit / Bundle Schema 8）
 
 > 追補（番号据え置き）: アイテムの装備にも参照を使えます。`equip.skillIds`（8個まで）と `equip.weaponIds`（4個まで）で、同じパックの `skills` / `weapons` のIDを指定します（指定した側は埋め込みの `skills` / `weapons` を持ちません）。参照を使うと Bundle Schema 8。`PROCore.resolveItemData(item, weapons, skills)` で展開、`materializeItem` で参照を埋め込みに置き換えます。ゲームと単体メーカーは読み込み時に展開し、アイテムパック単体（`VAIS_ITEM_PACK`）は参照を持てません（統合パックとして読み込みます）。
@@ -591,4 +595,5 @@ node tests/test_ui.cjs
 ```
 
 UIテストは軽量DOM模擬環境です。ブラウザ描画・Androidタッチ・ファイルダウンロード自体の実機テストではありません。
+
 

@@ -63,12 +63,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 </style>
 <link rel="stylesheet" href="shared/maker.css?v=1.14.2">
-<script src="shared/pro_core.js?v=1.14.2"></script>
+<script src="shared/pro_core.js?v=1.15.0"></script>
 <script src="shared/maker_core.js?v=1.14.2"></script>
-<script src="shared/pro_battle.js?v=1.14.2"></script>
+<script src="shared/pro_battle.js?v=1.15.0"></script>
 <script src="shared/pro_templates.js?v=1.14.2"></script>
-<script src="shared/pro_editor.js?v=1.14.2"></script>
-</head>
+<script src="shared/pro_editor.js?v=1.15.0"></script>
+<script src="shared/pro_features.js?v=1.15.0"></script>
+<script src="shared/pro_features_ui.js?v=1.15.0"></script>
+<link rel="stylesheet" href="shared/pro_features.css?v=1.15.0"></head>
 <body>
 <header class="topbar"><div class="toprow">
   <div class="brand">PRO <span style="color:var(--accent)">UNIT MAKER</span><small>v1.20.0 / 出撃費用・装備枠・解雇不可・武装とスキルの複製 / テンプレートで作れる・強さの目安つき・武装の追加効果・パイロットもユニット・マイナスも入れやすい数値入力 / Game 1.14.2</small><div id="modeBox"></div><span id="viewModeSlot" style="display:inline-block;margin-top:4px"></span></div>
@@ -172,10 +174,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   </section>
 </main>
 <div class="toast" id="toast"></div>
-<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.7.0','shared/pro_core.js'],['PROBattle','1.5.1','shared/pro_battle.js'],['PROEditor','1.9.0','shared/pro_editor.js'],['PROTemplates','1.4.1','shared/pro_templates.js'],['PROMaker','1.1.1','shared/maker_core.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
+<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROFeatures','1.0.0','shared/pro_features.js'],['PROFeaturesUI','1.0.0','shared/pro_features_ui.js'],['PROCore','2.7.0','shared/pro_core.js'],['PROBattle','1.5.1','shared/pro_battle.js'],['PROEditor','1.9.0','shared/pro_editor.js'],['PROTemplates','1.4.1','shared/pro_templates.js'],['PROMaker','1.1.1','shared/maker_core.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
 <script>
 (()=>{'use strict';
-const FORMAT='VAIS_OUTER_OPS_UNIT_PACK',SCHEMA=2,SUPPORTED_SCHEMAS=new Set([1,2,3,4,5,6,7,8]),DRAFT_KEY='vais_outer_ops_unit_maker_draft_v1',C=window.PROCore,E=window.PROEditor,T=window.PROTemplates;
+const FORMAT='VAIS_OUTER_OPS_UNIT_PACK',SCHEMA=2,SUPPORTED_SCHEMAS=new Set([1,2,3,4,5,6,7,8,9]),DRAFT_KEY='vais_outer_ops_unit_maker_draft_v1',C=window.PROCore,E=window.PROEditor,T=window.PROTemplates;
 const FO={refs:(kind,obj)=>kind==='nodes'?(pack.units[selectedIndex]?.skillTree||[]).filter(n=>n.id!==obj?.id).map(n=>[n.id,`${n.skill?.name||n.id}（${n.id}）`]):kind==='units'||kind==='lockedUnits'?pack.units.map(u=>[u.id,`${u.name}（${u.id}）`]):null};
 function storageGet(k,f=null){try{const v=localStorage.getItem(k);return v===null?f:v;}catch(e){return f;}}function storageSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}}function storageRemove(k){try{localStorage.removeItem(k);return true;}catch(e){return false;}}
 const STAT_GAUGES={hp:{min:1000,max:10000,step:100,base:3000},atk:{min:0,max:1500,step:5,base:250},def:{min:0,max:1500,step:10,base:0},mob:{min:0,max:1500,step:10,base:500},acc:{min:0,max:1500,step:10,base:500}};
@@ -361,4 +363,5 @@ stepTo(0,false);show('list',false);
 </script>
 </body>
 </html>
+
 

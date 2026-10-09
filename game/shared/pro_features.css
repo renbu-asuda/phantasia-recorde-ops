@@ -1,0 +1,13 @@
+/* Shared, narrow-screen-friendly authoring and history controls. */
+#proBattleHistory,#proPackExtras,#proMaterialGuide,#proEconomy{margin:14px 0;padding:12px;border:1px solid #34516b;border-radius:10px;overflow-wrap:anywhere}
+#proBattleHistory button,#proPackExtras button,#proEconomy button{margin:4px;white-space:normal}
+#proBattleHistory input[type=range]{width:100%}
+.pro-form .flow-section{min-width:0;margin:8px 0;padding:12px}
+.pro-form .flow-section label{display:block;margin:6px 0}
+.pro-form .flow-section input:not([type=checkbox]),.pro-form .flow-section select{display:block;box-sizing:border-box;width:100%;max-width:100%}
+.flow-section .pro-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.flow-section pre,#proEconomy pre,#proBattleHistory pre{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}
+#records .flow-section>label{display:inline-flex;align-items:center;gap:8px;margin:5px 12px 5px 0}
+#records .flow-section input[type=checkbox]{width:auto}
+#storyText>button{display:block;width:100%;margin:8px 0;white-space:normal}
+@media(max-width:600px){.flow-section .record-row{display:block}.flow-section .pro-row>button{max-width:100%;white-space:normal}#proPackExtras small{display:block}}

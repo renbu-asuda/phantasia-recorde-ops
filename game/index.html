@@ -133,7 +133,7 @@ body.flow-layout .skill-card,body.flow-layout .weapon-card,body.flow-layout .dro
 body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relative;margin-left:12px}.flow-nav .flow-btn[data-group]:first-child{margin-left:0}.flow-nav .flow-btn[data-group]::before{content:attr(data-group);position:absolute;top:-17px;left:2px;font-size:10px;color:#7f9bb2;font-weight:600;letter-spacing:.08em;pointer-events:none}@media(max-width:600px){body .flow-nav{display:flex!important;flex-wrap:nowrap;padding-bottom:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}.flow-nav .flow-btn{flex:0 0 auto;white-space:nowrap}}
 .objective-hud{margin-top:4px;color:#ffd27a;font-weight:700;font-size:13px;line-height:1.5}.objective-hud:empty{display:none}.mission-conds{margin:6px 0;padding:6px 9px;border-radius:8px;background:rgba(40,90,70,.25);font-size:12.5px;line-height:1.6}.mission-conds .wave-lines{margin-top:4px;color:#ffd9a0}.enemy-chip.back{border-style:dashed}
 </style>
-</head>
+<link rel="stylesheet" href="shared/pro_features.css?v=1.15.0"></head>
 <body>
 <section id="baseScreen" class="screen active">
   <div class="wrap">
@@ -247,9 +247,9 @@ body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relativ
     </section>
     <div class="data-tools save-tools"><h2>セーブデータ・設定</h2><p class="sub">進行状況と追加パックをJSONファイルに書き出し、機種変更やバックアップに使えます。</p><div class="controls"><button id="exportSaveBtn" class="secondary" type="button">セーブを書き出す</button><button id="importSaveBtn" class="secondary" type="button">セーブを読み込む</button><input id="saveFileInput" type="file" accept=".json,application/json" hidden></div><label class="toggle-line"><input id="fatigueToggle" type="checkbox" checked> 疲労・負傷ルール（出撃で疲労がたまり、撃破されると数日休養が必要）</label><div id="saveStatus" class="data-status"></div></div>
     <div class="data-tools bundle-tools"><h2>統合パック</h2><p class="sub">ユニット・作戦・アイテムをまとめたJSを一度に読み込みます。更新・解除もパック単位です。</p><div class="controls"><button id="importBundleBtn" class="secondary">統合JSを読み込む</button><input id="bundleFileInput" type="file" accept=".js,.json,text/javascript,application/javascript" multiple hidden></div><div id="bundleDataStatus" class="data-status"></div><div id="bundlePackManager" class="pack-manager-body"></div></div>
-    <div class="foot">Fantasia Record Ops (PRO) 1.14.0</div>
+    <div class="foot">Fantasia Record Ops (PRO) 1.15.0</div>
     <div id="tipBox" class="tip-box" role="status" hidden></div>
-    <div id="techInfo" hidden>MGSPW OUTER OPS inspired / Unit Pack Schema 6・Mission Schema 4・Item Schema 5・Bundle Schema 6（旧Schema読込互換）</div>
+    <div id="techInfo" hidden>MGSPW OUTER OPS inspired / Unit Pack Schema 9・Mission Schema 5・Item Schema 7・Bundle Schema 9（旧Schema読込互換）</div>
   </div>
 </section>
 
@@ -327,29 +327,31 @@ body .flow-nav{padding-top:24px}.flow-nav .flow-btn[data-group]{position:relativ
 
 <div id="storyOverlay" class="story-overlay" role="dialog" aria-modal="true" aria-labelledby="storyTitle" hidden><div class="story-card"><div id="storyTitle" class="result-kicker"></div><div id="storySpeaker" class="story-speaker"></div><div id="storyText" class="story-text"></div><div class="story-foot"><span id="storyProgress" class="sub"></span><div class="result-actions"><button id="storySkip" class="secondary" type="button">スキップ</button><button id="storyNext" class="primary" type="button">次へ</button></div></div></div></div>
 
-<script src="shared/pro_core.js?v=1.14.2"></script>
-<script src="shared/pro_battle.js?v=1.14.2"></script>
+<script src="shared/pro_core.js?v=1.15.0"></script>
+<script src="shared/pro_battle.js?v=1.15.0"></script>
+<script src="shared/pro_features.js?v=1.15.0"></script>
+<script src="shared/pro_features_ui.js?v=1.15.0"></script>
 <script src="outer_ops_units.js?v=1.14.2" onerror="window.VAIS_UNIT_PACK_LOAD_ERROR=true"></script>
 <script src="outer_ops_missions.js?v=1.14.2" onerror="window.VAIS_MISSION_PACK_LOAD_ERROR=true"></script>
 <script src="outer_ops_items.js?v=1.14.2" onerror="window.VAIS_ITEM_PACK_LOAD_ERROR=true"></script>
-<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROCore','2.7.0','shared/pro_core.js'],['PROBattle','1.5.1','shared/pro_battle.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
+<script data-pro-guard>/* 1.10.4: shared/ の読み込みチェック。読めない・古いときは理由と対処を画面に出す */(function(){var need=[['PROFeatures','1.0.0','shared/pro_features.js'],['PROFeaturesUI','1.0.0','shared/pro_features_ui.js'],['PROCore','2.7.0','shared/pro_core.js'],['PROBattle','1.5.1','shared/pro_battle.js']],bad=[];function cmp(a,b){a=String(a||'0').split('.');b=String(b).split('.');for(var i=0;i<3;i++){var x=+a[i]||0,y=+b[i]||0;if(x!==y)return x-y;}return 0;}for(var i=0;i<need.length;i++){var n=need[i],m=window[n[0]];if(!m)bad.push(n[2]+' を読み込めません');else if(cmp(m.version,n[1])<0)bad.push(n[2]+' が古い版です（'+m.version+' ／ 必要 '+n[1]+' 以上）');}if(!bad.length)return;window.__PRO_BOOT_FAILED=bad;var d=document.createElement('div');d.id='proBootError';d.setAttribute('role','alert');d.style.cssText='position:relative;z-index:9999;margin:12px;padding:14px 16px;border:2px solid #ff6b6b;border-radius:10px;background:#3a1418;color:#ffe3e3;font:15px/1.7 system-ui,sans-serif';var h=document.createElement('b');h.textContent='共通ファイル（shared フォルダ）を読み込めませんでした。このままでは正しく動きません。';d.appendChild(h);var ul=document.createElement('ul');for(var j=0;j<bad.length;j++){var li=document.createElement('li');li.textContent=bad[j];ul.appendChild(li);}d.appendChild(ul);var tip=document.createElement('div');tip.textContent='対処: ① ZIPは「すべて展開」し、このページと同じ場所にある shared フォルダごと置いてください（ファイルだけ移動しない）。② ページを再読み込みしてください（直らないときはブラウザの履歴・キャッシュを削除）。';d.appendChild(tip);document.body.insertBefore(d,document.body.firstChild);})();</script>
 <script>
 (() => {
 'use strict';
 const C=window.PROCore,B=window.PROBattle;
 const UNIT_PACK_FORMAT = 'VAIS_OUTER_OPS_UNIT_PACK';
 const UNIT_PACK_SCHEMA = 7;
-const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3,4,5,6,7,8]);
+const SUPPORTED_UNIT_SCHEMAS = new Set([1,2,3,4,5,6,7,8,9]);
 const IMPORTED_PACKS_KEY = 'vais_outer_ops_imported_unit_packs_v1';
 const MISSION_PACK_FORMAT = 'VAIS_OUTER_OPS_MISSION_PACK';
 const MISSION_PACK_SCHEMA = 2;
-const SUPPORTED_MISSION_SCHEMAS = new Set([1,2,3,4]);
+const SUPPORTED_MISSION_SCHEMAS = new Set([1,2,3,4,5]);
 const IMPORTED_MISSION_PACKS_KEY = 'vais_outer_ops_imported_mission_packs_v1';
 const ITEM_PACK_FORMAT = 'VAIS_OUTER_OPS_ITEM_PACK';
 const ITEM_PACK_SCHEMA = 6;
 const IMPORTED_ITEM_PACKS_KEY = 'vais_outer_ops_imported_item_packs_v1';
 const IMPORTED_BUNDLE_PACKS_KEY = 'pro_imported_bundle_packs_v1';
-const GAME_VERSION = '1.14.2';
+const GAME_VERSION = '1.15.0';
 
 function storageGet(key,fallback=null){try{const v=localStorage.getItem(key);return v===null?fallback:v;}catch(e){console.warn('localStorage read failed',e);return fallback;}}
 function storageSet(key,value){try{localStorage.setItem(key,value);return true;}catch(e){console.warn('localStorage write failed',e);return false;}}
@@ -412,7 +414,7 @@ function normalizeWeapon(w={}){
 }
 const SKILL_TRIGGERS=new Set(Object.keys(C.triggers));
 const SKILL_EFFECTS=new Set([...Object.keys(C.skillEffects),'damage_type_resist_pct','attack_type_resist_pct']);
-function normalizeSkill(sk={},i=0){
+function normalizeSkill(sk={},i=0){if(sk.effects)return C.skill({...sk,id:sk.id||`skill_${i+1}`,name:sk.name||'複合スキル'});
   const trigger=SKILL_TRIGGERS.has(sk.trigger)?sk.trigger:'before_attack';
   let effect=SKILL_EFFECTS.has(sk.effect)?sk.effect:'damage_up_pct';
   if(sk.resistType&&!Object.hasOwn(C.RESIST_TYPES,sk.resistType))throw new Error(`スキル「${sk.name||sk.id||'?'}」の耐性対象「${sk.resistType}」は未対応です（対応: ${Object.values(C.RESIST_TYPES).join('・')}）。`);
@@ -460,7 +462,7 @@ function validatePack(pack){
   const skillMasters=C.skillList(pack.skills);const units=C.pilotsToUnits(pack.units,pack.pilots).units.map(u=>normalizeUnit(C.resolveUnitData(u,pack.weapons,skillMasters)));assertUniqueIds(units,'unit');
   for(const u of units){assertUniqueIds(u.skills||[],`${u.id} の skill`);}
   const hires=C.hireList(pack.hires);
-  return {format:UNIT_PACK_FORMAT,schemaVersion:skillMasters.length||units.some(C.unitIsV8)?8:UNIT_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),units,...(skillMasters.length?{skills:skillMasters}:{}),...(pack.weapons?.length?{weapons:C.weaponList(pack.weapons)}:{}),...(hires.length?{hires}:{})};
+  return {format:UNIT_PACK_FORMAT,schemaVersion:C.unitSchemaFor(units,[],hires,pack.weapons,skillMasters),packId:String(pack.packId),packName:String(pack.packName||pack.packId),...C.packMetadata(pack),units,...(skillMasters.length?{skills:skillMasters}:{}),...(pack.weapons?.length?{weapons:C.weaponList(pack.weapons)}:{}),...(hires.length?{hires}:{})};
 }
 function extractPackFromJs(text){return validatePack(extractAssignedObject(text,'VAIS_UNIT_PACK'));}
 function loadImportedUnitPacks(){
@@ -527,7 +529,7 @@ function validateMissionPack(pack){
   if(!Array.isArray(pack.missions))throw new Error('missions 配列がありません。');
   const missions=pack.missions.map(normalizeMission);assertUniqueIds(missions,'mission');
   const terrains=C.terrainList(pack.terrains);
-  return {format:MISSION_PACK_FORMAT,schemaVersion:MISSION_PACK_SCHEMA,packId:String(pack.packId),packName:String(pack.packName||pack.packId),missions,...(terrains.length?{terrains}:{})};
+  return {format:MISSION_PACK_FORMAT,schemaVersion:C.missionSchemaFor(missions,terrains),packId:String(pack.packId),packName:String(pack.packName||pack.packId),...C.packMetadata(pack),missions,...(terrains.length?{terrains}:{})};
 }
 function extractMissionPackFromJs(text){return validateMissionPack(extractAssignedObject(text,'VAIS_MISSION_PACK'));}
 function loadImportedMissionPacks(){
@@ -669,13 +671,13 @@ function intIn(v,min,max,fallback){const n=Math.floor(num(v,fallback));return Ma
 function idArray(raw,max=999){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&C.safeId(x)))].slice(0,max):[];}
 function stringArray(raw,max=16){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&x.trim()).map(x=>x.trim().slice(0,32)))].slice(0,max):[];}
 function freshRecords(){return {battles:0,wins:0,losses:0,draws:0,kills:0,purchases:0,enemyKills:{},enemyNames:{},itemsFound:{},itemNames:{}};}
-function freshExtState(){return {roster:[],joined:[],levels:{},equip:{},pilots:{},tree:{},tagMods:{},sortieBuffs:{},itemUses:{},fatigue:{},injury:{},rows:{},recruited:[],research:[],facilities:{med:0,hangar:0,training:0},missions:{},records:freshRecords(),achievements:[],presets:[],settings:{fatigue:true},day:0};}
+function freshExtState(){return {roster:[],joined:[],levels:{},equip:{},pilots:{},tree:{},tagMods:{},sortieBuffs:{},itemUses:{},fatigue:{},injury:{},rows:{},recruited:[],research:[],facilities:{med:0,hangar:0,training:0},missions:{},records:freshRecords(),achievements:[],presets:[],settings:{fatigue:true},day:0,campaignFlags:{},battleHistory:[]};}
 // New games start with one of the base pack's first healing item (1.10.3: no hard-coded item ID).
 function starterItems(){const it=(window.VAIS_ITEM_PACK?.items||[]).find(i=>/^heal_/.test(i.effect?.type||''));return it?{[it.id]:1}:{};}
 function defaultState(){return {credits:2500,units:Object.fromEntries(BASE_UNIT_MASTER.map(u=>[u.id,{hp:u.hp}])),items:starterItems(),upgrades:{},grants:{},...freshExtState()};}
 function normalizeExtState(saved){
   const r=plainObject(saved.records),base=freshRecords();
-  return {
+  return {campaignFlags:mapEntries(saved.campaignFlags,v=>typeof v==='boolean'?v:undefined),battleHistory:normalizeBattleHistory(saved.battleHistory),
     levels:mapEntries(saved.levels,v=>({lv:intIn(v?.lv,1,MAX_LEVEL,1),exp:intIn(v?.exp,0,1e9,0),sp:intIn(v?.sp,0,9999,0)})),
     // 1.14.0: owned units are instances {uid, base, name?, slotMod?}; the first copy's uid is the base id, so older per-id data keeps working
     roster:normalizeRoster(saved.roster),joined:idArray(saved.joined),
@@ -797,13 +799,14 @@ function missionRecord(id){return state.missions[id]||(state.missions[id]={clear
 function missionCleared(id){return (state.missions[id]?.clears||0)>0;}
 function missionLockReason(m){
   const r=m.requires;
+  if(r?.flags&&Object.entries(r.flags).some(([k,v])=>(state.campaignFlags?.[k]??false)!==v))return '分岐条件: '+Object.entries(r.flags).map(([k,v])=>k+'='+v).join('・');
   if(r?.missions){const miss=r.missions.filter(id=>!missionCleared(id));if(miss.length)return '前提作戦が未クリア: '+miss.map(id=>MISSIONS.find(x=>x.id===id)?.name||id).join('・');}
   if(r?.items){const miss=r.items.filter(id=>!((state.items[id]||0)>0));if(miss.length)return '必要なキーアイテム: '+miss.map(id=>ITEM_MASTER[id]?.name||id).join('・');}
   if(m.days?.length&&!m.days.includes(today()))return '出撃できる曜日: '+m.days.map(d=>C.days[d]).join('・');
   return '';
 }
 // 1.14.0: a hidden mission stays out of the list until its prerequisite missions / key items are met (weekday locks never hide).
-function missionHidden(m){if(!m?.hidden)return false;const r=m.requires;return !!(r?.missions?.some(id=>!missionCleared(id))||r?.items?.some(id=>!((state.items[id]||0)>0)));}
+function missionHidden(m){if(!m?.hidden)return false;const r=m.requires;return !!(r?.flags&&Object.entries(r.flags).some(([k,v])=>(state.campaignFlags?.[k]??false)!==v)||r?.missions?.some(id=>!missionCleared(id))||r?.items?.some(id=>!((state.items[id]||0)>0)));}
 function visibleMissions(){return MISSIONS.filter(m=>!missionHidden(m));}
 function deployRules(m){const tagRule=(m.rules||[]).find(r=>r&&r.type==='deploy_tags');const ban=C.terrainMods(m).banTags||[];return {tagRule,ban};}
 function deployProblem(m,ids){
@@ -873,7 +876,7 @@ function render(){
   const activeMission=MISSIONS.find(m=>m.id===selectedMission);
   document.getElementById('deployBtn').disabled=battleRunning||selected.length===0||!activeMission||selected.length>activeMission.maxDeploy||!missionAvailable(activeMission)||!!missionLockReason(activeMission)||!!deployProblem(activeMission,selected); document.getElementById('repairBtn').disabled=battleRunning;
   renderPackManagers();renderItemPackManager();renderBundlePackManager();updateDeployReadiness(activeMission);updateBattleControls();
-  renderGrowth();renderHire();renderShop();renderLab();renderRecords();renderPresets();renderSaveTools();renderMissionDetail(activeMission);
+  renderGrowth();renderHire();renderShop();renderLab();renderRecords();renderPresets();renderSaveTools();renderMissionDetail(activeMission);renderFeaturePanels(activeMission);
   renderHomeCards();renderPackCatalog();renderSquadPrep();if(typeof document.getElementById('missionList')?.closest==='function')scheduleEstimates();
   const notice=document.getElementById('itemNotice');if(notice){notice.hidden=!lastNotice;notice.textContent=lastNotice;}
 }
@@ -1035,7 +1038,7 @@ async function actionGate(){
 
 // ---- combat: the rules live in shared/pro_battle.js; these wrappers keep the game's hooks and older entry points. ----
 function battleHooks(allies,enemies){return {
-  log:(h,c)=>log(h,c),logSkill:(u,sk,d)=>logSkill(u,sk,d),render:()=>{renderCombatants(allies,enemies);updateObjectiveHud();},
+  story:async(title,lines)=>{if(!battleControl.skip)await showStory(title,lines);},log:(h,c)=>log(h,c),logSkill:(u,sk,d)=>logSkill(u,sk,d),render:()=>{renderCombatants(allies,enemies);updateObjectiveHud();},
   actionStart:async(attacker,weapon,targets)=>{visualState.activeId=attacker.combatId;visualState.targetIds=targets.map(t=>t.combatId);visualState.weaponById[attacker.combatId]=weapon.name;renderCombatants(allies,enemies);setAction(attacker,weapon,targets,'FIRING');fireLane(attacker.side,weapon);await wait(.55);},
   actionEnd:async(attacker,weapon,targets,summary)=>{setAction(attacker,weapon,targets,summary);await wait(.45);visualState.activeId=null;visualState.targetIds=[];delete visualState.weaponById[attacker.combatId];renderCombatants(allies,enemies);},
   popDamage:(t,d,c,h,w)=>popDamage(t,d,c,h,w),wait:s=>wait(s),gate:()=>actionGate(),
@@ -1098,8 +1101,10 @@ async function deploy(){
   const snapshot=JSON.stringify(state);let committed=false;
   try{
   const mission=selectedMissionData;
+  const creditsBefore=state.credits;
   const sortieCost=sortieCostTotal(selected.slice(0,Math.min(MAX_SLOTS,mission.maxDeploy)));state.credits-=sortieCost;
   if(mission.story?.before?.length)await showStory(`${mission.name} / 作戦前`,mission.story.before);
+  if(mission.story?.choices?.length)await chooseStory(mission);
   document.getElementById('returnResultBtn').style.display='none';
   render();
   document.getElementById('battleLog').innerHTML='';applyLogFilter();
@@ -1113,26 +1118,29 @@ async function deploy(){
   showScreen('battle');
   visualState={activeId:null,targetIds:[],weaponById:{}};renderCombatants(allies,enemies);setAction(null,null,[],mission.name);log(`OPERATION START: ${esc(mission.name)} / 勝利条件: ${esc(objectiveText(mission))}`,'sys');
   if(sortieCost)log(`SORTIE COST: 出撃費用 -${sortieCost.toLocaleString()}`,'sys');for(const t of ruleTexts(mission))log(`RULE: ${esc(t)}`,'sys');{const c=missionConds(mission);log(esc(`${c.win} ／ ${c.lose} ／ ${c.draw}`),'sys');for(const t of waveLines(mission))log(`WAVE: ${esc(t)}`,'sys');}
-  const ctx=B.createContext({allies,enemies,mission,stats:battleStats,hooks:battleHooks(allies,enemies),enemyDefs:ENEMY_MASTER,unitDefs:UNIT_INDEX});activeBattle=ctx;
+  const ctx=B.createContext({allies,enemies,mission,stats:battleStats,hooks:battleHooks(allies,enemies),enemyDefs:ENEMY_MASTER,unitDefs:UNIT_INDEX,flags:state.campaignFlags,record:true});activeBattle=ctx;
   updateObjectiveHud();const result=await B.runBattle(ctx);updateObjectiveHud();activeBattle=null;
   const turns=result.turns,outcome=result.outcome,win=outcome==='win',draw=outcome==='draw',roster=allies.filter(u=>!u.escort);
-  roster.forEach(u=>{state.units[u.id].hp=Math.max(0,Math.round(u.currentHp));});
+  roster.forEach(u=>{const max=u._persistentMaxHp||u.maxHp;state.units[u.id].hp=Math.max(0,Math.round(u.currentHp/u.maxHp*max));});Object.assign(state.campaignFlags,ctx.flags,mission.resultFlags?.[outcome]||{});
   const gained=win?mission.reward:Math.round(mission.reward*(draw?0.25:0.12));state.credits+=gained;
   const drops=win?rollMissionDrops(mission):[];
   const report=afterBattle(mission,ctx,result,roster);
   const reason=!win&&!draw&&result.limit&&result.timeUp?'TURN制限':!win&&allies.some(u=>u.escort&&!u.alive)?'護衛対象撃破':'';
   log(`${win?'MISSION COMPLETE':draw?'DRAW / 300TURN':'MISSION FAILED'}${reason?` (${reason})`:''} / ${win?'報酬':'回収資金'} ${gained}`,'sys');committed=true;save();
-  const repairEstimate=roster.reduce((sum,u)=>sum+repairCost(Math.max(0,u.maxHp-u.currentHp)),0);
+  const repairEstimate=roster.reduce((sum,u)=>sum+repairCost(Math.max(0,(u._persistentMaxHp||u.maxHp)-state.units[u.id].hp)),0);
+  const cashChange=state.credits-creditsBefore;recordBattleHistory(ctx,result,mission,{cashChange,sortieCost,repairEstimate,drops});save();
   setAction(null,null,[],win?'MISSION COMPLETE':draw?'DRAW / 300TURN':'MISSION FAILED');
   battleRunning=false;battleControl.paused=false;battleControl.stepTokens=0;wakeGate();render();
   renderCombatants(allies,enemies);
   renderResultScreen(outcome,mission,gained,repairEstimate,roster,turns);
   if(reason)document.getElementById('resultMeta').textContent+=` / ${reason}`;
   if(sortieCost)document.getElementById('resultMeta').textContent+=` / 出撃費用 -${sortieCost.toLocaleString()}`;
+  document.getElementById('resultMeta').textContent+=` / 資金増減 ${cashChange>=0?'+':''}${cashChange} / 全修理した場合の収支 ${cashChange-repairEstimate}`;
   document.getElementById('resultDrops').textContent=win?(drops.length?`獲得アイテム: ${drops.map(d=>`${d.name} ×${d.count}`).join(' / ')}`:'獲得アイテム: なし'):'アイテムドロップは作戦成功時のみ';
   renderResultExtras(report,mission);
   {const ef=ctx.effects||{},parts=[];if(ef.resistCount)parts.push(`耐性でダメージを ${Math.round(ef.resistSaved).toLocaleString()} 軽減（${ef.resistCount}回）`);if(ef.tagCount)parts.push(`タグ特効で ${Math.round(ef.tagBonus).toLocaleString()} 追加ダメージ（${ef.tagCount}回）`);const box=document.getElementById('resultEffects');if(box)box.textContent=parts.length?'この戦闘で効いたもの: '+parts.join(' ／ '):'';}
   if(win&&mission.story?.after?.length)await showStory(`${mission.name} / 作戦後`,mission.story.after);
+  if(!win&&!draw&&mission.story?.defeat?.length)await showStory(`${mission.name} / 敗北後`,mission.story.defeat);
   await new Promise(r=>setTimeout(r,battleControl.skip?0:650));
   showScreen('result');
   }catch(err){
@@ -1365,6 +1373,42 @@ function importSaveData(data){
   state=next;selected=[];selectedMission=null;ensureUnitState();return true;
 }
 function downloadText(name,text,type='application/json'){const blob=new Blob([text],{type:type+';charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
+
+// 1.15 campaign choices, replay files, pack rollback and economy.
+function normalizeBattleHistory(raw){
+ if(!Array.isArray(raw))return [];const out=[];for(const r of raw.slice(0,10)){if(!r||!Array.isArray(r.timeline))continue;
+ const record={missionName:String(r.missionName||'戦闘').slice(0,100),missionId:String(r.missionId||''),at:String(r.at||''),outcome:['win','lose','draw'].includes(r.outcome)?r.outcome:'draw',turns:intIn(r.turns,0,300,0),cashChange:num(r.cashChange,0),sortieCost:num(r.sortieCost,0),repairEstimate:num(r.repairEstimate,0),truncated:!!r.truncated};
+ record.timeline=r.timeline.slice(0,4000).map(f=>({type:String(f.type||'log').slice(0,30),text:String(f.text||'').slice(0,1000),turn:intIn(f.turn,0,300,0),units:(Array.isArray(f.units)?f.units:[]).slice(0,100).map(u=>({id:String(u.id||'').slice(0,100),name:String(u.name||'').slice(0,100),side:u.side==='ally'?'ally':'enemy',hp:intIn(u.hp,0,1e9,0),maxHp:intIn(u.maxHp,1,1e9,1),alive:!!u.alive,row:u.row==='back'?'back':'front'}))}));out.push(record);
+ }while(JSON.stringify(out).length>1500000&&out.length>1)out.pop();return out;
+}
+function recordBattleHistory(ctx,result,m,finance){
+ const timeline=ctx.timeline;let truncated=!!ctx.timelineTruncated;
+ // Keep first and last parts if a very long battle exceeds the per-record budget.
+ while(JSON.stringify(timeline).length>400000&&timeline.length>2){timeline.splice(Math.floor(timeline.length/3),Math.max(1,Math.floor(timeline.length/10)));truncated=true;}
+ const record={format:'PRO_REPLAY',version:1,game:GAME_VERSION,missionId:m.id,missionName:m.name,at:new Date().toISOString(),outcome:result.outcome,turns:result.turns,timeline,truncated,...finance};
+ state.battleHistory=normalizeBattleHistory([record,...(state.battleHistory||[])]);
+}
+async function chooseStory(m){
+ const choice=await new Promise(resolve=>{const overlay=document.getElementById('storyOverlay'),next=document.getElementById('storyNext'),skip=document.getElementById('storySkip'),text=document.getElementById('storyText');
+ document.getElementById('storyTitle').textContent=m.name+' / 選択';document.getElementById('storySpeaker').textContent='';document.getElementById('storyProgress').textContent='選んでください';text.replaceChildren();next.hidden=true;skip.hidden=true;
+ for(const c of m.story.choices){const b=document.createElement('button');b.type='button';b.textContent=c.text;b.onclick=()=>{overlay.hidden=true;next.hidden=false;skip.hidden=false;resolve(c);};text.append(b);}overlay.hidden=false;text.querySelector('button')?.focus();});
+ Object.assign(state.campaignFlags,choice.flags||{});if(choice.lines?.length)await showStory(m.name,choice.lines);
+}
+function backupPacks(){try{if(!storageSet('pro_pack_backup_v1',JSON.stringify(exportSaveData())))throw Error();return true;}catch(e){alert('更新前バックアップを保存できません。セーブを書き出して容量を確保してください。');return false;}}
+function featureBox(id,parent){let b=document.getElementById(id);if(!b){b=document.createElement('div');b.id=id;parent.append(b);}b.replaceChildren();return b;}
+function renderFeaturePanels(m){
+ const U=window.PROFeaturesUI,F=window.PROFeatures;if(!U)return;
+ const history=featureBox('proBattleHistory',document.getElementById('recordSummary').parentNode);history.append(U.el('h3','戦闘履歴・リプレイ（直近10件）'));
+ const viewer=U.el('div');for(const r of state.battleHistory||[]){const row=U.el('div');row.append(U.button(r.missionName+' / '+r.outcome+' / '+r.turns+'TURN',()=>{viewer.replaceChildren();U.replayViewer(viewer,r);}),U.button('JSONを書き出す',()=>downloadText('pro_replay_'+Date.now()+'.json',JSON.stringify({format:'PRO_REPLAY',version:1,...r},null,2))),U.el('span',' 資金増減 '+r.cashChange+' / 全修理時 '+(r.cashChange-r.repairEstimate)));history.append(row);}history.append(viewer);
+ const file=U.el('input');file.type='file';file.accept='.json';file.onchange=async()=>{try{const f=file.files?.[0];if(!f)return;if(f.size>2000000)throw Error('リプレイは2MB以下です');const raw=JSON.parse(await f.text());if(raw.format!=='PRO_REPLAY'||raw.version!==1)throw Error('対応するリプレイJSONではありません');const record=normalizeBattleHistory([raw])[0];if(!record)throw Error('記録がありません');viewer.replaceChildren();U.replayViewer(viewer,record);}catch(e){alert(e.message);}finally{file.value='';}};history.append(U.el('p','リプレイJSONを開く（進行状況は変わりません）'),file);
+ const data=featureBox('proPackExtras',document.getElementById('bundleDataStatus').parentNode);data.append(U.button('直前のパック更新前へ戻す',()=>{if(battleRunning)return;const backup=storageGet('pro_pack_backup_v1');if(!backup){alert('更新前バックアップがありません');return;}if(!confirm('直前のパック更新前の進行状況とパックへ戻しますか？'))return;try{importSaveData(JSON.parse(backup));render();}catch(e){alert(e.message);}}));
+ for(const p of importedBundlePacks){const audit=F.packAudit(p,importedBundlePacks.filter(x=>x!==p),state);data.append(U.el('p',p.packName+' / '+(p.author||'作者未設定')+' / '+(p.packVersion||'版未設定')+(p.dependencies?.length?' / 必要: '+p.dependencies.join('・'):'')));for(const w of audit.warnings)data.append(U.el('small',w));}
+ const graphHost=U.el('div');data.append(U.button('解放条件・入手経路を見る',()=>{graphHost.replaceChildren();U.graphPanel(graphHost,{units:BASE_UNIT_MASTER,missions:visibleMissions(),items:Object.values(ITEM_MASTER),research:Object.values(RESEARCH_MASTER).filter(r=>!r.hidden||researchStatus(r)!=='locked'),hires:HIRES_FOR_GRAPH()},n=>n.kind==='missions'?missionCleared(n.id)?'クリア済み':missionLockReason(MISSIONS.find(m=>m.id===n.id)||{})||'出撃可能':n.kind==='research'?researchStatus(RESEARCH_MASTER[n.id]):n.kind==='items'?'所持 '+(state.items[n.id]||0):'');}),graphHost);
+ const lab=featureBox('proMaterialGuide',document.getElementById('researchList').parentNode);const itemSel=U.el('select');for(const i of Object.values(ITEM_MASTER)){const o=U.el('option',i.name+' / 所持'+(state.items[i.id]||0));o.value=i.id;itemSel.append(o);}const sources=U.el('div');const show=()=>{sources.replaceChildren();for(const x of F.materialSources(visibleMissions(),itemSel.value)){sources.append(U.el('p',x.mission.name+' / ドロップ率 '+(x.chance*100).toFixed(2)+'% / 成功1回あたり期待 '+x.expected.toFixed(3)+'個'+(missionLockReason(x.mission)?' / '+missionLockReason(x.mission):'')));}for(const r of Object.values(RESEARCH_MASTER).filter(r=>!r.hidden||researchStatus(r)!=='locked'))if(r.cost.items[itemSel.value])sources.append(U.el('p',r.name+': 必要'+r.cost.items[itemSel.value]+' / 不足'+Math.max(0,r.cost.items[itemSel.value]-(state.items[itemSel.value]||0))));};itemSel.onchange=show;lab.append(U.el('h3','素材の入手先・研究の不足数'),itemSel,sources);show();
+ const economy=featureBox('proEconomy',document.getElementById('missionDetail').parentNode);if(m){const ids=selected.filter(id=>UNIT_MASTER.some(u=>u.id===id)),cost=sortieCostTotal(ids);economy.append(U.el('h3','出撃収支'),U.el('p','勝利時の基本収支 '+(m.reward-cost)+'（報酬 '+m.reward+' − 出撃費 '+cost+'。修理・星・ドロップは別）'));const result=U.el('pre'),run=U.button('現在の編成で期待収支を試算（100回）',async()=>{run.disabled=true;try{const allies=ids.map(makeAlly);if(!allies.length)throw Error('出撃ユニットを選んでください');const r=await B.simulate({allies,enemies:m.enemies,mission:m,enemyDefs:ENEMY_MASTER,unitDefs:UNIT_INDEX,trials:100,seed:17});const income=(r.win*m.reward+r.draw*Math.round(m.reward*.25)+r.lose*Math.round(m.reward*.12))/r.trials,rep=r.meanMissingHp*repairRate();result.textContent='100回 / seed 17 / 現在の育成・装備・疲労・HP\n勝率 '+(r.winRate*100).toFixed(1)+'%\n期待回収資金 '+Math.round(income)+' − 出撃費 '+cost+' − 全修理費の概算 '+Math.ceil(rep)+' = '+Math.round(income-cost-rep)+'\n星・実績・ドロップの売却額は含みません。修理費は合計HPからの概算です。';}catch(e){result.textContent=e.message;}finally{run.disabled=false;}});run.disabled=battleRunning;economy.append(run,result);}
+}
+function HIRES_FOR_GRAPH(){return [...loadedUnitPacks.flatMap(p=>p.hires||[]),...importedBundlePacks.flatMap(p=>p.hires||[])].filter(h=>!h.hidden||hireUnlocked(h));}
+
 function showStory(title,lines){return new Promise(resolve=>{
   const o=document.getElementById('storyOverlay');if(!o||!lines?.length){resolve();return;}
   let i=0;const draw=()=>{document.getElementById('storyTitle').textContent=title;document.getElementById('storySpeaker').textContent=lines[i].speaker||'';document.getElementById('storyText').textContent=lines[i].text;document.getElementById('storyNext').textContent=i>=lines.length-1?'閉じる':'次へ';document.getElementById('storyProgress').textContent=`${i+1} / ${lines.length}`;};
@@ -1483,6 +1527,7 @@ function finishGuide(){state.settings.guideDone=true;commitChange('ガイドを�
 function reopenGuide(){state.settings.guideDone=false;commitChange('ガイドを表示しました');if(window.PROFlow)window.PROFlow.show('units');}
 // ---- expansion pack catalog (bundled files, loaded with <script>, no fetch: works on file://) ----
 const PACK_CATALOG=[
+  {packId:'pro_115_demo',name:'PRO 1.15 新機能デモ',kind:'システムデモ',desc:'複合スキル・段階変化・作戦イベント・選択と分岐・素材研究を試すデータ。',file:'samples/pro_115_feature_sample.js'},
   {packId:'black_bullet',file:'expansion_packs/black_bullet_bundle_PRO.js',name:'ブラック・ブレット',kind:'拡張パック',desc:'原作1～7巻の流れをたどる作戦10本と、民警ペア・ガストレア・ゾディアックなどユニット27体。'},
   {packId:'PR-01',file:'expansion_packs/PR-01.js',name:'PR-01',kind:'拡張パック',desc:'作戦11本とユニット・アイテムをまとめた拡張パック。'},
   {packId:'touhou',file:'expansion_packs/touhou_bundle_PRO.js',name:'東方Project（二次創作）',kind:'拡張パック',desc:'紅魔郷〜神霊廟の異変をたどる作戦12本。霊夢・魔理沙から始めて、異変を解決するたびに仲間が増える（42人）。スペルカードは「幻想」属性（要 v1.12.3）。'},
@@ -1498,7 +1543,10 @@ function loadCatalogScript(file){return new Promise((resolve,reject)=>{const key
 async function applyBundles(parsed){
   const duplicates=new Set();for(const p of parsed){if(duplicates.has(p.packId)){alert('同じ統合パックIDが複数ファイルにあります: '+p.packId);return false;}duplicates.add(p.packId);}
   const description=parsed.map(p=>`${p.packName}: ユニット${p.units.length}・作戦${p.missions.length}・アイテム${p.items.length}`).join('\n');
-  if(!confirm(`統合パックを適用しますか？\n${description}\n同じパックIDは更新されます。`))return false;
+  const audits=parsed.map(p=>window.PROFeatures.packAudit(p,[...importedBundlePacks,...importedUnitPacks,...importedMissionPacks,...importedItemPacks],state));
+  const installed=new Set([...importedBundlePacks,...importedUnitPacks,...importedMissionPacks,...importedItemPacks,...parsed].map(p=>p.packId));const missing=parsed.flatMap(p=>(p.dependencies||[]).filter(id=>!installed.has(id)));if(missing.length){alert('必要なパックを先に読み込んでください: '+[...new Set(missing)].join('・'));return false;}
+  if(!confirm(`統合パックを適用しますか？\n${description}\n`+audits.map(a=>a.warnings.join('\n')+'\n'+a.diff).join('\n')))return false;
+  if(!backupPacks())return false;
   const next=[...importedBundlePacks];for(const pack of parsed){const i=next.findIndex(x=>x.packId===pack.packId);if(i>=0)next[i]=pack;else next.push(pack);}
   if(!storageSet(IMPORTED_BUNDLE_PACKS_KEY,JSON.stringify(next))){alert(STORAGE_FAIL_MESSAGE);return false;}
   importedBundlePacks=next;refreshBundleMasters();return true;
@@ -1640,4 +1688,5 @@ show('units',false);
 </script>
 </body>
 </html>
+
 

@@ -1,0 +1,14 @@
+{
+  "name": "phantasia-recorde-ops",
+  "version": "1.15.0",
+  "private": true,
+  "scripts": {
+    "test": "node tests/syntax.cjs && node tests/features.cjs",
+    "test:dom": "node tests/dom-smoke.mjs",
+    "test:browser": "node tests/browser.cjs"
+  },
+  "devDependencies": {
+    "happy-dom": "20.14.6",
+    "playwright": "1.62.1"
+  }
+}

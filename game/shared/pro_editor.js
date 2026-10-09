@@ -15,7 +15,7 @@ function setVal(obj,key,v,keep){if(!keep&&isEmpty(v))delete obj[key];else obj[ke
 const splitList=text=>String(text||'').split(/[,、\n]/).map(x=>x.trim()).filter(Boolean);
 const choicesOf=(f,obj)=>typeof f.choices==='function'?f.choices(obj):f.choices;
 const STAT_LABELS={hp:'HP',atk:'ATK',def:'DEF',mob:'MOB',acc:'ACC'};
-const BLOCK_TYPES=['formation','waves','objective','terrain','list','object','lines','textarea','json','skill','statmap','days','counts','idlines','image','typedRules','refcounts'];
+const BLOCK_TYPES=['formation','waves','objective','terrain','list','object','lines','textarea','json','skill','statmap','days','counts','idlines','image','typedRules','refcounts','condition','flags'];
 const MODE_KEY='pro_maker_mode';
 function mode(){try{return localStorage.getItem(MODE_KEY)==='expert'?'expert':'easy';}catch(e){return 'easy';}}
 function applyMode(){const b=document.body;if(b&&b.classList){b.classList.toggle('mode-easy',mode()==='easy');b.classList.toggle('mode-expert',mode()==='expert');}}
@@ -72,9 +72,11 @@ function form(container,obj,fields,onChange,opts={}){
     case 'lines':{const l=wrap(parent,f),t=el('textarea');t.placeholder='隊長: 作戦を開始する\nオペレーター: 了解';t.value=(obj[k]||[]).map(x=>x.speaker?`${x.speaker}: ${x.text}`:x.text).join('\n');t.oninput=()=>{const lines=t.value.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.match(/^([^:：]{1,40})[:：]\s*(.+)$/);return m?{speaker:m[1].trim(),text:m[2]}:{speaker:'',text:x};});setVal(obj,k,lines);changed();};l.append(t);help(l,f);return;}
     case 'idlines':{const l=wrap(parent,f),t=el('textarea');t.placeholder='enemy_a, enemy_a\nboss_unit';t.value=(obj[k]||[]).map(w=>w.join(', ')).join('\n');t.oninput=()=>{setVal(obj,k,t.value.split('\n').map(splitList).filter(x=>x.length));changed();};l.append(t);help(l,f);return;}
     case 'counts':{const l=wrap(parent,f),t=el('textarea');t.placeholder='item_id: 2';t.value=Object.entries(obj[k]||{}).map(([id,n])=>`${id}: ${n}`).join('\n');t.oninput=()=>{const out={};for(const line of t.value.split('\n')){const m=line.match(/^\s*([^:：×x\s]+)\s*[:：×x]\s*(\d+)\s*$/);if(m)out[m[1]]=Number(m[2]);}setVal(obj,k,out);changed();};l.append(t);help(l,f);return;}
+    case 'condition':root.PROFeaturesUI.conditionEditor(parent,obj,k,changed);return;
+    case 'flags':root.PROFeaturesUI.flagsEditor(parent,obj,k,changed);return;
     case 'json':{const l=wrap(parent,f),t=el('textarea');t.value=obj[k]===undefined?'':JSON.stringify(obj[k],null,1);t.oninput=()=>{if(!t.value.trim()){delete obj[k];t.className='';changed();return;}try{obj[k]=JSON.parse(t.value);t.className='';changed();}catch(e){t.className='pro-invalid';}};l.append(t);help(l,f);return;}
     case 'days':{const box=el('fieldset','pro-days');box.append(el('legend',undefined,f.label));const days=new Set(obj[k]||[]);C.days.forEach((d,i)=>{const l=el('label','pro-check'),x=el('input');x.type='checkbox';x.checked=days.has(i);x.onchange=()=>{if(x.checked)days.add(i);else days.delete(i);setVal(obj,k,[...days].sort());changed();};l.append(x,el('span',undefined,d));box.append(l);});parent.append(box);help(box,f);return;}
-    case 'statmap':{const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));const g=el('div','pro-fields');box.append(g);const cur=obj[k]||{};for(const s of C.STAT_KEYS){const l=el('label','pro-field'),i=el('input');l.append(el('span','pro-label',STAT_LABELS[s]));i.type='number';i.min=0;i.max=1000000;i.step='any';i.value=cur[s]??'';i.oninput=()=>{const m={...(obj[k]||{})};if(i.value===''||Number(i.value)===0)delete m[s];else m[s]=Number(i.value);setVal(obj,k,m);changed();};l.append(i);g.append(l);}help(box,f);parent.append(box);return;}
+    case 'statmap':{const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));const g=el('div','pro-fields');box.append(g);const cur=obj[k]||{};for(const s of C.STAT_KEYS){const l=el('label','pro-field'),i=el('input');l.append(el('span','pro-label',STAT_LABELS[s]));i.type='number';i.min=0;i.max=1000000;i.step='any';i.value=cur[s]??'';i.oninput=()=>{const m={...(obj[k]||{})};if(i.value===''||Number(i.value)===0&&!f.keepZero)delete m[s];else m[s]=Number(i.value);setVal(obj,k,m);changed();};l.append(i);g.append(l);}help(box,f);parent.append(box);return;}
     case 'image':{const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));const prev=el('img','pro-image');if(obj[k])prev.src=obj[k];else prev.hidden=true;const input=el('input');input.type='file';input.accept='image/png,image/jpeg,image/webp,image/gif';input.onchange=async()=>{const file=input.files&&input.files[0];if(!file)return;try{obj[k]=await shrinkImage(file,f.size||128);redraw();changed();}catch(e){alert('画像を読み込めません: '+e.message);}};box.append(prev,input);if(obj[k])box.append(btn('画像を削除',()=>{delete obj[k];redraw();changed();}));help(box,f);parent.append(box);return;}
     case 'object':{
       const box=el('fieldset','pro-group');box.append(el('legend',undefined,f.label));parent.append(box);help(box,f);
@@ -147,7 +149,8 @@ function skillExtFields(){return [
   {key:'tag',label:'特効タグ（このタグを持つ敵へのダメージが上がる）',type:'text',show:o=>o.effect==='tag_damage_up_pct'},
   {key:'target',label:'効果対象',type:'select',empty:'自動（強化・回復は自分、弱体は相手）',choices:C.skillTargets,show:o=>C.TARGETED_EFFECTS.includes(o.effect)},
   {key:'duration',label:'持続TURN（スタンは行動不能回数）',type:'number',min:1,max:99,show:o=>C.DURATION_EFFECTS.includes(o.effect)},
-  {key:'cond',label:'追加の発動条件',type:'object',advanced:true,emptyWhen:o=>!o.type,fields:[{key:'type',label:'条件',type:'select',empty:'なし',choices:C.conditions,rerender:true},{key:'value',label:'条件値',type:'number',min:0,max:1000000,show:o=>o.type&&o.type!=='target_tag'},{key:'tag',label:'条件タグ',type:'text',show:o=>o.type==='target_tag'}]}
+  {key:'cond',label:'追加の発動条件',type:'condition'},
+  {key:'effects',label:'複合スキルの効果（設定すると上の単独効果に代わって実行）',type:'list',max:8,factory:()=>({effect:'heal_flat',value:100,target:'self'}),fields:e=>[{key:'effect',label:'効果',type:'select',choices:C.skillEffects,rerender:true},{key:'value',label:'効果値',type:'number',min:()=>C.effectValueRange(e.effect).min,keep:true},{key:'resistType',label:'耐性属性',type:'select',choices:C.RESIST_TYPES,show:o=>o.effect==='weapon_resist_pct'},{key:'target',label:'対象',type:'select',choices:C.skillTargets},{key:'duration',label:'持続TURN',type:'number',min:1,max:99},{key:'tag',label:'特効タグ',show:o=>o.effect==='tag_damage_up_pct'}],help:'発動率と使用回数はスキル全体で一回判定します。発動タイミングに対応する効果を選んでください。'}
 ];}
 function skillFields(){return [
   {key:'name',label:'スキル名',type:'text',keep:true},
@@ -201,6 +204,7 @@ function weaponFields(){return [
   ...weaponExtFields(),{key:'note',label:'メモ',type:'text',advanced:true}
 ];}
 function unitExtFields(){return [
+ {key:'phases',label:'段階変化・変形',type:'list',max:16,factory:()=>({id:'phase_'+rid(),name:'覚醒',cond:{type:'hp_below',value:50},hpMode:'ratio',stats:{}}),fields:()=>root.PROFeaturesUI.phaseFields()},
   {key:'image',label:'ユニット画像（128px程度に縮小して埋め込みます）',type:'image'},
   {key:'sortieCost',label:'出撃費用（出撃1回ごとに資金から引く。勝敗に関係なし。空欄=0）',type:'number',min:0,max:1000000,help:'部隊全員の出撃費用の合計が資金より多いと出撃できません。'},
   {key:'equipSlots',label:'装備枠の数（0～6。空欄=2）',type:'number',min:0,max:6,help:'「装備枠を増やす」アイテムで、ユニットごとに最大8枠まで増減できます。'},
@@ -227,12 +231,14 @@ function pilotFields(){return [
 function newPilot(){return {id:creationId('pilot',[],'pilot_'+rid()),name:'新しいパイロット',tags:[],stats:{acc:20},skills:[]};}
 function ruleFields(type){if(type==='turn_limit')return [{key:'value',label:'このTURNまでに勝てなければ敗北',type:'number',min:1,max:300,keep:true}];if(type==='reinforce')return [{key:'turn',label:'出現TURN',type:'number',min:1,max:300,keep:true},{key:'enemies',label:'援軍の敵',type:'ref',ref:'enemies',multi:true,ordered:true,keepEmptyArray:true}];return [{key:'allTags',label:'全員がすべて持つタグ',type:'tags'},{key:'anyTags',label:'全員がどれか1つ持つタグ',type:'tags'},{key:'noneTags',label:'持っていると出撃不可のタグ',type:'tags'}];}
 function missionExtFields(){return [
+ {key:'resultFlags',label:'結果で成立する分岐',type:'object',fields:[{key:'win',label:'勝利',type:'flags'},{key:'lose',label:'敗北',type:'flags'},{key:'draw',label:'引き分け',type:'flags'}]},
+ {key:'events',label:'戦闘中イベント',type:'list',max:32,factory:()=>({id:'event_'+rid(),when:'turn',value:3}),fields:()=>root.PROFeaturesUI.eventFields()},
   {key:'objective',label:'勝敗条件',type:'objective',help:'勝ち方を1つ選び、必要なら「護衛」や「TURN制限」を足します。下の「勝敗条件の確認」に、ゲームで表示される文章が出ます。'},
   {key:'waves',label:'追加ウェーブ（あとから出てくる敵）',type:'waves',ref:'enemies',help:'波ごとに「いつ出てくるか」と前衛・後衛を決めます。盤面の敵がいなくなったときは、まだ出ていない次の波がそのTURNの終わりに出ます。'},
   {key:'rules',label:'戦闘ルール（TURN制限・決まったTURNの援軍・出撃できるユニットの条件）',type:'typedRules'},
-  {key:'requires',label:'出撃条件',type:'object',fields:[{key:'missions',label:'先にクリアが必要な作戦',type:'ref',ref:'missions',multi:true},{key:'items',label:'持っている必要があるキーアイテム',type:'ref',ref:'keyItems',multi:true},{key:'minLevel',label:'出撃ユニットの必要レベル',type:'number',min:1,max:99}]},
+  {key:'requires',label:'出撃条件',type:'object',fields:[{key:'missions',label:'先にクリアが必要な作戦',type:'ref',ref:'missions',multi:true},{key:'items',label:'持っている必要があるキーアイテム',type:'ref',ref:'keyItems',multi:true},{key:'flags',label:'分岐条件',type:'flags'},{key:'minLevel',label:'出撃ユニットの必要レベル',type:'number',min:1,max:99}]},
   hiddenField('作戦','前提作戦・キーアイテムの条件を満たすまで作戦一覧に出しません（曜日の条件だけのときは隠しません）。'),
-  {key:'story',label:'ストーリー（1行に「話す人: セリフ」）',type:'object',fields:[{key:'before',label:'作戦前',type:'lines'},{key:'after',label:'勝利後',type:'lines'}]},
+  {key:'story',label:'ストーリー（1行に「話す人: セリフ」）',type:'object',fields:[{key:'before',label:'作戦前',type:'lines'},{key:'after',label:'勝利後',type:'lines'},{key:'defeat',label:'敗北後',type:'lines'},{key:'choices',label:'作戦前の選択肢',type:'list',max:8,factory:()=>({text:'進む',flags:{route_a:true}}),fields:[{key:'text',label:'選択肢',keep:true},{key:'flags',label:'分岐',type:'flags'},{key:'lines',label:'選択後の会話',type:'lines'}]}]},
   {key:'stars',label:'星条件（最大3つ。なしなら「勝利／被撃破なし／10TURN以内」）',type:'list',max:3,addLabel:'星条件を追加',advanced:true,factory:()=>({type:'clear'}),fields:[{key:'type',label:'条件',type:'select',choices:C.starTypes,rerender:true},{key:'value',label:'値',type:'number',min:1,max:100,show:o=>['turns_le','hp_ge'].includes(o.type),keep:true}]},
   {key:'days',label:'出撃できる曜日（全部オフ=毎日）',type:'days',advanced:true},
   {key:'terrainMods',label:'この作戦だけ地形の効果を変える（空欄なら地形のまま）',type:'object',advanced:true,fields:[{key:'meleeHitPt',label:'近接の命中 pt（マイナス可）',type:'number',min:-100,max:100},{key:'rangedHitPt',label:'射撃の命中 pt（マイナス可）',type:'number',min:-100,max:100},{key:'mobPct',label:'MOB %（マイナス可）',type:'number',min:-90,max:200},{key:'banTags',label:'出撃できないタグ',type:'tags'}]},
@@ -287,7 +293,7 @@ function effectFields(type){switch(type){
   case 'equip_slot':return [{key:'value',label:'装備枠を増やす数（減らすときはマイナス。-3～3）',type:'number',min:-3,max:3,keep:true}];}return [];}
 
 // Lenient extraction for maker drafts: keep 1.9 fields even when not yet valid so the user can fix them.
-const UNIT_EXT_KEYS=['image','ai','row','growth','exp','skillTree','recruit','crew','pilotProfile','sortieCost','equipSlots','noFire'],SKILL_EXT_KEYS=['cond','target','duration','tag'],WEAPON_EXT_KEYS=['baseAtk','useUnitAtk','usesPerBattle','cooldown','defPiercePct','fxColor','effects'],MISSION_EXT_KEYS=['enemyRows','objective','waves','terrainMods','requires','story','stars','starReward','days','exp','hidden'],ITEM_EXT_KEYS=['price','limitPerUnit','scope','equip','key','shop'];
+const UNIT_EXT_KEYS=['image','ai','row','growth','exp','skillTree','recruit','crew','pilotProfile','sortieCost','equipSlots','noFire','phases'],SKILL_EXT_KEYS=['cond','target','duration','tag','effects'],WEAPON_EXT_KEYS=['baseAtk','useUnitAtk','usesPerBattle','cooldown','defPiercePct','fxColor','effects'],MISSION_EXT_KEYS=['enemyRows','objective','waves','terrainMods','requires','story','stars','starReward','days','exp','hidden','events','resultFlags'],ITEM_EXT_KEYS=['price','limitPerUnit','scope','equip','key','shop'];
 function pick(o,keys){const out={};for(const k of keys)if(o&&o[k]!==undefined&&o[k]!==null&&o[k]!=='')out[k]=C.clone(o[k]);return out;}
 
 // ---- simulator and damage calculator ----
@@ -328,12 +334,12 @@ const TRIGGER_TEXT={before_attack:'攻撃するとき',when_targeted:'攻撃さ�
 const TARGET_TEXT={self:'自分',allies:'味方全体',weakest_ally:'HPが一番減っている味方',enemies:'敵全体',opponent:'相手',random_enemy:'ランダムな敵1体'};
 const COND_TEXT={hp_below:c=>`自分のHPが${c.value}%以下なら`,hp_above:c=>`自分のHPが${c.value}%以上なら`,turn_ge:c=>`${c.value}TURN目以降なら`,turn_le:c=>`${c.value}TURN目までなら`,target_tag:c=>`相手が「${c.tag}」なら`,allies_le:c=>`生き残っている味方が${c.value}体以下なら`,enemies_le:c=>`生き残っている敵が${c.value}体以下なら`};
 const STAT_NAME={atk:'ATK',def:'DEF',mob:'MOB（機動）',acc:'ACC（照準）'};
-function describeSkill(s){
+function describeSkill(s){if(s.effects)return `${s.name} / ${C.skillText(s)} / ${s.chance??100}% / ${s.maxUses||'無制限'}回`;
   if(!s)return '';const v=s.value,hostile=C.HOSTILE_EFFECTS.includes(s.effect),tgt=TARGET_TEXT[s.target||(hostile?'opponent':'self')];
   const buff=/^(atk|def|mob|acc)_(up|down)_pct$/.exec(s.effect);
   const body={damage_up_pct:`与えるダメージを${v}%上げる`,hit_up_pt:`命中率を${v}ポイント上げる`,crit_up_pt:`クリティカル率を${v}ポイント上げる`,enemy_hit_down_pt:`相手の命中率を${Math.abs(v)}ポイント下げる`,damage_reduce_pct:`受けるダメージを${Math.abs(v)}%減らす`,weapon_resist_pct:`${RESIST[s.resistType]||'指定'}${['melee','ranged'].includes(s.resistType)?'':'属性'}の攻撃から受けるダメージを${Math.abs(v)}%減らす`,
     heal_maxhp_pct:`${tgt}に${C.hpEffectText(s.effect,v)}`,heal_flat:`${tgt}に${C.hpEffectText(s.effect,v)}`,def_pierce_pct:`相手のDEFを${v}%無視する`,tag_damage_up_pct:`「${s.tag||'?'}」を持つ相手へのダメージを${v}%上げる`,guts:`HP${Math.max(1,v||1)}で踏みとどまる`,counter:`威力${v}%で反撃する`,shield:`${tgt}に${v}ダメージを防ぐバリアを張る`,extra_action:'もう一度行動する',taunt:`${tgt}が狙われやすくなる（+${v}%）`,stun:`${tgt}を行動不能にする`,burn:`${tgt}を炎上させる（毎TURN ${v}ダメージ）`}[s.effect]||(buff?`${tgt}の${STAT_NAME[buff[1]]}を${Math.abs(v)}%${buff[2]==='up'?'上げる':'下げる'}`:C.skillEffects[s.effect]||s.effect);
-  const cond=s.cond&&COND_TEXT[s.cond.type]?COND_TEXT[s.cond.type](s.cond)+'、':'';
+  const cond=s.cond?C.conditionText(s.cond)+'、':'';
   const extras=[];if(C.DURATION_EFFECTS.includes(s.effect)){const d=s.duration||(s.effect==='stun'?1:2);extras.push(s.effect==='stun'?`${d}回`:d>=99?'戦闘終了まで':`${d}TURN`);}
   if(s.chance<100)extras.push(`発動率${s.chance}%`);if(s.maxUses>0)extras.push(`1戦闘${s.maxUses}回まで`);
   return `${TRIGGER_TEXT[s.trigger]||s.trigger}、${cond}${body}${extras.length?`（${extras.join('・')}）`:''}。`;
@@ -455,13 +461,13 @@ async function testBattle(m,defs,squad,o={}){
   const mission=battleMission(m),ids=C.missionEnemyIds(mission),missing=ids.filter(id=>!defs[id]);if(!mission.enemies.length)return {ok:false,message:'敵編成が空です。'};if(missing.length)return {ok:false,message:'敵のデータが見つかりません: '+missing.join(', ')};
   const esc=mission.objective?.escortUnitId;if(esc&&!defs[esc])return {ok:false,message:'護衛対象のユニットが見つかりません: '+esc};
   const {allies,note}=squadFor(m,squad),lines=[],rng=B.mulberry32(o.seed??(Date.now()%1000000));
-  const ctx=B.buildBattle({allies,enemies:mission.enemies,mission,enemyDefs:defs,unitDefs:defs},rng);let lastTurn=-1;
-  ctx.hooks.log=h=>{if(ctx.turn!==lastTurn){lastTurn=ctx.turn;if(ctx.turn)lines.push(`── ${ctx.turn}TURN ──`);}lines.push(unhtml(h));};
+  const ctx=B.buildBattle({allies,enemies:mission.enemies,mission,enemyDefs:defs,unitDefs:defs,record:true},rng);let lastTurn=-1;ctx.recording=true;B.recordFrame(ctx,'start','テスト戦闘開始');
+  ctx.hooks.log=h=>{B.recordFrame(ctx,'log',unhtml(h));if(ctx.turn!==lastTurn){lastTurn=ctx.turn;if(ctx.turn)lines.push(`── ${ctx.turn}TURN ──`);}lines.push(unhtml(h));};
   const r=await B.runBattle(ctx,{maxTurns:o.maxTurns}),reason=outcomeReason(ctx,mission,r),label={win:'勝利',lose:'敗北',draw:'引き分け'}[r.outcome];
   const log=lines.length>400?[...lines.slice(0,300),`…（${lines.length-350}行省略）…`,...lines.slice(-50)]:lines;
   let cond=[];try{const c=C.missionConditions(mission,Object.fromEntries(Object.entries(defs).map(([k,d])=>[k,d.name||k])));cond=[c.win,c.lose,c.draw];}catch(e){}
   const head=[`結果: ${label}（${r.turns}TURN）— ${reason}`,`味方: ${note}（${allies.map(a=>a.name).join('・')}）`,...cond];
-  return {ok:true,outcome:r.outcome,turns:r.turns,reason,log,text:[...head,'',...log].join('\n')};}
+  return {ok:true,record:{missionName:mission.name,outcome:r.outcome,turns:r.turns,timeline:ctx.timeline,truncated:ctx.timelineTruncated},outcome:r.outcome,turns:r.turns,reason,log,text:[...head,'',...log].join('\n')};}
 // Upgrade number inputs on maker pages (also ones built later from HTML strings) and normalize full-width input.
 function upgradeNumbers(node){if(node&&node.querySelectorAll)for(const i of node.querySelectorAll('input[type="number"]'))numberInput(i);}
 if(typeof document!=='undefined'&&typeof document.addEventListener==='function'&&typeof MutationObserver!=='undefined'){
@@ -570,6 +576,7 @@ function refsFrom(src){const label=x=>`${x.name||x.id}（${x.id}）`;return (kin
   switch(kind){case 'units':return unitChoices(units);case 'enemies':return unitChoices(units.filter(u=>u.deploy?.enemy));case 'players':return unitChoices(units.filter(u=>u.deploy?.player!==false));case 'lockedUnits':{const l=units.filter(u=>u.recruit?.locked);return unitChoices(l.length?l:units.filter(u=>u.deploy?.player!==false));}
   case 'skills':return (src.skills?.()||[]).map(s=>[s.id,label(s)]);case 'weapons':return (src.weapons?.()||[]).map(w=>[w.id,label(w)]);case 'missions':return missions.map(m=>[m.id,label(m)]);case 'items':return items.map(i=>[i.id,label(i)]);case 'keyItems':{const k=items.filter(i=>i.key);return (k.length?k:items).map(i=>[i.id,label(i)]);}case 'pricedItems':{const p=items.filter(i=>i.price);return (p.length?p:items).map(i=>[i.id,label(i)]);}
   case 'research':return research.map(r=>[r.id,label(r)]);case 'nodes':{const nodes=src.nodes?.()||[];return nodes.filter(n=>n.id!==obj?.id).map(n=>[n.id,`${n.skill?.name||n.id}（${n.id}）`]);}}return null;};}
-root.PROEditor=Object.freeze({version:'1.9.0',registerIdSource,idPreferences,saveIdPreferences,validateIdPreset,renderIdPattern,patternId,creationId,idPresetEditor,effectNumberInput,unitChoices,tagInput,freshIds,duplicateOf,hireFields,newHire,hiddenField,dropRateInput,numberInput,normNum,selectOf,labelNames,formationBox,compactWave,objectiveEditor,terrainOptions,terrainEffectOf,terrainEditor,TERRAIN_FIELDS,testBattle,squadFor,WIN_TYPES,WAVE_WHEN,weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
+root.PROEditor=Object.freeze({version:'1.10.0',registerIdSource,idPreferences,saveIdPreferences,validateIdPreset,renderIdPattern,patternId,creationId,idPresetEditor,effectNumberInput,unitChoices,tagInput,freshIds,duplicateOf,hireFields,newHire,hiddenField,dropRateInput,numberInput,normNum,selectOf,labelNames,formationBox,compactWave,objectiveEditor,terrainOptions,terrainEffectOf,terrainEditor,TERRAIN_FIELDS,testBattle,squadFor,WIN_TYPES,WAVE_WHEN,weaponEffectFields,WEAPON_EFFECT_PRESETS,mode,setMode,applyMode,modeToggle,describeSkill,describeWeapon,unitPower,powerRatio,starRating,missionDifficulty,friendlyError,issues,guide,afterExport,templatePicker,autoId,fixIds,refsFrom,STANDARD,el,btn,form,skillFields,skillExtFields,weaponFields,weaponExtFields,unitExtFields,pilotFields,missionExtFields,itemExtFields,researchFields,effectFields,effectDefaults,NEW_EFFECTS,newSkill,newWeapon,newPilot,newResearch,pick,UNIT_EXT_KEYS,SKILL_EXT_KEYS,WEAPON_EXT_KEYS,MISSION_EXT_KEYS,ITEM_EXT_KEYS,battleUnit,battleMission,tools,simText,dmgText,validationErrors});
 })(window);
+
 

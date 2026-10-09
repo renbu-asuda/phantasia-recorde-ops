@@ -25,6 +25,8 @@ function combatant(def,side,combatId,extra={}){return prepare({...def,side,curre
 function createContext(o){
   const ctx={allies:o.allies,enemies:o.enemies,mission:o.mission||null,terrain:C.terrainMods(o.mission),turn:o.turn||0,stats:o.stats||{},rng:o.rng||(()=>Math.random()),hooks:{...NOOP_HOOKS,...(o.hooks||{})},enemyDefs:o.enemyDefs||{},unitDefs:o.unitDefs||{},killLog:o.killLog||[],pending:[],aborted:false,spawnCount:o.enemies.length,effects:{resistCount:0,resistSaved:0,tagCount:0,tagBonus:0}};
   for(const u of [...ctx.allies,...ctx.enemies])prepare(u);
+  ctx.flags={...(o.flags||{})};ctx.seenEvents=new Set();ctx.recording=!!o.record;ctx.timeline=[];
+  if(ctx.recording){for(const key of ['log','logSkill','turnStart','actionEnd']){const fn=ctx.hooks[key];ctx.hooks[key]=(...args)=>{recordFrame(ctx,key,key==='log'?String(args[0]).replace(/<[^>]*>/g,''):key==='logSkill'?args[0].name+' / '+args[1].name+': '+args[2]:key==='turnStart'?'TURN '+args[0]:args[0].name+' / '+args[1].name);return fn(...args);};}recordFrame(ctx,'start','戦闘開始');}
   return ctx;
 }
 const alive=u=>u.alive;
@@ -40,7 +42,7 @@ function eff(ctx,u,stat){let v=num(u[stat],0),pct=0;for(const b of u.status?.buf
 // ---- skills ----
 function skillUses(u,id){return u.skillUses?.[id]||0;}
 function consumeSkill(u,sk){if(!u.skillUses)u.skillUses={};u.skillUses[sk.id]=(u.skillUses[sk.id]||0)+1;}
-function condOk(ctx,u,sk,info){const c=sk.cond;if(!c)return true;switch(c.type){
+function condOk(ctx,u,sk,info){const c=sk.cond;if(!c)return true;if(c.all)return c.all.every(x=>condOk(ctx,u,{cond:x},info));if(c.any)return c.any.some(x=>condOk(ctx,u,{cond:x},info));switch(c.type){
   case 'hp_below':return u.currentHp/u.maxHp*100<=c.value;case 'hp_above':return u.currentHp/u.maxHp*100>=c.value;
   case 'turn_ge':return ctx.turn>=c.value;case 'turn_le':return ctx.turn<=c.value;
   case 'target_tag':return !!info.opponent&&tagsOf(info.opponent).includes(c.tag);
@@ -87,10 +89,13 @@ function applyEvent(ctx,u,sk,info){
 function triggerSkills(ctx,u,trigger,info={}){
   const result={damageMult:1,hitAdd:0,critAdd:0,incomingHitAdd:0,damageTakenMult:1,resistMult:1,defPierce:0,tagBonus:[]};
   if(!u.alive)return result;
-  for(const sk of u.skills||[]){
+  for(const group of u.skills||[]){
     if(!u.alive)break;
-    if(sk.trigger!==trigger||!skillReady(ctx,u,sk,info))continue;
-    let applied=false,detail='',preConsumed=false;
+    if(group.trigger!==trigger||!skillReady(ctx,u,group,info))continue;
+    consumeSkill(u,group);let groupApplied=false;
+    for(const [ei,part] of (group.effects||[group]).entries()){
+    if(!u.alive)break;const sk={...group,...part,id:group.effects?group.id+':'+ei:group.id};
+    let applied=false,detail='';
     if(trigger==='before_attack'){
       if(sk.effect==='damage_up_pct'){result.damageMult*=Math.max(0,1+sk.value/100);detail=`与ダメージ +${sk.value}%`;applied=true;}
       else if(sk.effect==='hit_up_pt'){result.hitAdd+=sk.value/100;detail=`命中 +${sk.value}pt`;applied=true;}
@@ -105,8 +110,10 @@ function triggerSkills(ctx,u,trigger,info={}){
       if(trigger==='on_death'&&u.currentHp<=0){u.currentHp=Math.max(1,Math.min(u.maxHp,Math.round(sk.value||1)));detail=`根性で踏みとどまった（HP ${u.currentHp}）`;applied=true;}
     }else if(sk.effect==='counter'){
       const target=info.opponent;if(target&&target.alive&&target.side!==u.side&&!info.counter){ctx.pending.push({unit:u,target,scale:Math.max(0,sk.value)/100});detail=`反撃 ${sk.value}%`;applied=true;}
-    }else{if(C.SIGNED_HP_EFFECTS.includes(sk.effect)&&sk.value){consumeSkill(u,sk);preConsumed=true;}detail=applyEvent(ctx,u,sk,info);applied=!!detail;}
-    if(preConsumed&&!applied)u.skillUses[sk.id]--;if(applied){if(!preConsumed)consumeSkill(u,sk);ctx.hooks.logSkill(u,sk,detail);}
+    }else{detail=applyEvent(ctx,u,sk,info);applied=!!detail;}
+    if(applied){groupApplied=true;ctx.hooks.logSkill(u,group,detail);}
+    }
+    if(!groupApplied)u.skillUses[group.id]--;
   }
   return result;
 }
@@ -284,7 +291,7 @@ function objectiveStatus(ctx){const plan=ctx.plan;if(!plan)return null;const m=c
     nextWave:next?C.waveWhenText(next):null,turnsLeft:limit?Math.max(0,limit-(ctx.turn||0)):null,enemiesLeft:ctx.enemies.filter(alive).length};}
 async function runBattle(ctx,opts={}){
   const H=ctx.hooks,m=ctx.mission||{},{limit,reinforce}=battleRules(m);
-  const plan=battlePlan(ctx);ctx.plan=plan;
+  const plan=battlePlan(ctx);ctx.plan=plan;await checkpoint(ctx);
   const maxTurns=limit||(plan.type==='defense'?Math.max(opts.maxTurns||DRAW_TURNS,plan.ob.turns||10):(opts.maxTurns||DRAW_TURNS));
   const fighters=()=>ctx.allies.filter(alive);
   const evaluate=()=>{
@@ -299,47 +306,73 @@ async function runBattle(ctx,opts={}){
   while(!outcome&&turn<=maxTurns){
     ctx.turn=turn;await H.turnStart(turn);
     for(const r of reinforce)if(r.turn===turn)spawnEnemies(ctx,r.enemies,'援軍');
-    checkWaves(ctx,plan,'turn');
-    burnTick(ctx);outcome=evaluate();if(outcome)break;
-    triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_start');await processPending(ctx);H.render();
+    checkWaves(ctx,plan,'turn');await checkpoint(ctx);
+    burnTick(ctx);await checkpoint(ctx);outcome=evaluate();if(outcome)break;
+    triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_start');await processPending(ctx);await checkpoint(ctx);H.render();
     const order=[...ctx.allies,...ctx.enemies].filter(alive).map(u=>({u,init:eff(ctx,u,'mob')+rand(ctx,0,100)})).sort((a,b)=>b.init-a.init).map(x=>x.u);
     for(const a of order){
       if(!a.alive)continue;if(!oppOf(ctx,a).some(alive))break;
-      await H.gate();if(ctx.aborted)break;await attack(ctx,a);
+      await H.gate();if(ctx.aborted)break;await attack(ctx,a);await checkpoint(ctx);
       outcome=evaluate();if(outcome)break;
-      checkWaves(ctx,plan,'action');outcome=evaluate();
+      checkWaves(ctx,plan,'action');await checkpoint(ctx);outcome=evaluate();
       if(outcome||!ctx.allies.some(alive)||!ctx.enemies.some(alive))break;await H.wait(.35);
     }
     if(ctx.aborted)break;
-    triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_end');await processPending(ctx);tickStatuses(ctx);
+    triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_end');await processPending(ctx);await checkpoint(ctx);tickStatuses(ctx);
     outcome=outcome||evaluate();
-    if(!outcome){checkWaves(ctx,plan,'end');outcome=evaluate();}
+    if(!outcome){checkWaves(ctx,plan,'end');await checkpoint(ctx);outcome=evaluate();}
     if(!outcome&&plan.type==='defense'&&turn>=(plan.ob.turns||10)&&fighters().length)outcome='win';
     H.render();turn++;if(!outcome)await H.wait(.4);
   }
   const turns=Math.max(1,outcome?ctx.turn||1:turn-1);
   if(!outcome)outcome=limit?'lose':'draw';
-  return {outcome,turns,timeUp:!evaluate()&&turn>maxTurns,limit};
+  recordFrame(ctx,'result',outcome==='win'?'勝利':outcome==='lose'?'敗北':'引き分け');return {outcome,turns,timeUp:!evaluate()&&turn>maxTurns,limit};
+}
+
+
+function recordFrame(ctx,type,text){
+  if(!ctx.recording)return;if(ctx.timeline.length>=4000){ctx.timelineTruncated=true;return;}
+  ctx.timeline.push({type,text:String(text).slice(0,1000),turn:ctx.turn,units:[...ctx.allies,...ctx.enemies].map(u=>({id:u.combatId,name:u.name,side:u.side,hp:Math.max(0,Math.round(u.currentHp)),maxHp:u.maxHp,alive:u.alive,row:u.row}))});
+}
+async function checkpoint(ctx){
+  const say=async(title,lines)=>{for(const l of lines||[])ctx.hooks.log(esc((l.speaker?l.speaker+': ':'')+l.text),'sys');if(ctx.hooks.story&&lines?.length)await ctx.hooks.story(title,lines);};
+  for(const u of [...ctx.allies,...ctx.enemies]){if(!u.alive)continue;u.phaseUses||={};
+    const p=(u.phases||[]).find(p=>!u.phaseUses[p.id]&&condOk(ctx,u,{cond:p.cond},{}));if(!p)continue;
+    u.phaseUses[p.id]=true;const oldMax=u.maxHp,oldHp=u.currentHp;u._persistentMaxHp??=oldMax;
+    for(const [k,v] of Object.entries(p.stats||{})){u[k]=v;if(k==='hp')u.maxHp=Math.max(1,v);}
+    u.currentHp=clamp(p.hpMode==='value'?p.hpValue:p.hpMode==='keep'?oldHp:oldHp/oldMax*u.maxHp,1,u.maxHp);
+    if(p.weapons!==undefined){u.weapons=C.clone(p.weapons);u.weaponState={};}if(p.skills!==undefined)u.skills=C.clone(p.skills);if(p.ai)u.ai=C.clone(p.ai);
+    ctx.hooks.log(esc(u.name+' / 段階変化: '+p.name),'sys');recordFrame(ctx,'phase',u.name+' → '+p.name);await say(p.name,p.lines);ctx.hooks.render();
+  }
+  const wave=1+(ctx.plan?.waves||[]).filter(w=>w.spawned).length;
+  for(const e of ctx.mission?.events||[]){if(ctx.seenEvents.has(e.id))continue;
+    if(e.requiredUnitId&&!ctx.allies.some(u=>(u.baseId||u.base||u.key||u.id)===e.requiredUnitId||u.id===e.requiredUnitId))continue;
+    const boss=ctx.plan?.boss;
+    const ok=e.when==='turn'?ctx.turn>=e.value:e.when==='wave'?wave>=e.value:e.when==='boss_hp'?!!boss&&boss.currentHp/boss.maxHp*100<=e.value:e.when==='unit_down'?[...ctx.allies,...ctx.enemies].some(u=>!u.alive&&(u.key===e.unitId||u.baseId===e.unitId||u.id===e.unitId)):false;
+    if(!ok)continue;ctx.seenEvents.add(e.id);Object.assign(ctx.flags,e.flags||{});
+    if(e.terrain){ctx.terrain=C.terrainMods({terrain:e.terrain});ctx.hooks.log(esc('地形変更: '+e.terrain),'sys');}
+    recordFrame(ctx,'event','作戦イベント: '+e.id);await say('作戦イベント',e.lines);ctx.hooks.render();
+  }
 }
 
 // ---- tools ----
 function enemyRow(m,i,def){return m?.enemyRows?.[i]||def?.row||'front';}
 function buildBattle(o,rng){
-  const allies=o.allies.map((d,i)=>combatant(d,'ally',`a_${d.id}_${i}`,{row:o.rows?.[i]||d.row||'front'}));
+  const allies=o.allies.map((d,i)=>combatant(d,'ally',`a_${d.id}_${i}`,{row:o.rows?.[i]||d.row||'front',...(d.currentHp!==undefined?{currentHp:d.currentHp}:{}),...(d.status?{status:C.clone(d.status)}:{})}));
   const m=o.mission||null,enemyIds=m?m.enemies.slice(0,MAX_SLOTS):o.enemies;
   const enemies=enemyIds.map((k,i)=>{const d=o.enemyDefs[k];return combatant(d,'enemy',`e_${k}_${i}`,{id:`${k}_${i}`,key:k,row:enemyRow(m,i,d)});});
   if(m?.objective?.escortUnitId){const d=o.unitDefs?.[m.objective.escortUnitId];if(d)allies.push(combatant(d,'ally','escort_'+d.id,{escort:true,row:'back'}));}
-  return createContext({allies,enemies,mission:m,rng,enemyDefs:o.enemyDefs,unitDefs:o.unitDefs});
+  return createContext({allies,enemies,mission:m,rng,enemyDefs:o.enemyDefs,unitDefs:o.unitDefs,record:o.record,flags:o.flags});
 }
 async function simulate(o){
   const trials=Math.max(1,Math.min(2000,Math.floor(num(o.trials,100)))),rng=mulberry32(num(o.seed,1));
-  const out={trials,win:0,lose:0,draw:0,turns:[],allyDowns:0,perUnit:{}};
+  const out={trials,win:0,lose:0,draw:0,turns:[],allyDowns:0,missingHp:0,perUnit:{}};
   for(let t=0;t<trials;t++){
     const ctx=buildBattle(o,rng);
     const r=await runBattle(ctx,{maxTurns:o.maxTurns});out[r.outcome]++;out.turns.push(r.turns);
-    for(const u of ctx.allies){const s=ctx.stats[u.combatId]||{damage:0};const p=out.perUnit[u.combatId]||(out.perUnit[u.combatId]={name:u.name,damage:0,downs:0});p.damage+=s.damage;if(!u.alive){p.downs++;out.allyDowns++;}}
+    for(const u of ctx.allies){if(!u.escort)out.missingHp+=Math.max(0,(u._persistentMaxHp||u.maxHp)*(1-Math.max(0,u.currentHp)/u.maxHp));const s=ctx.stats[u.combatId]||{damage:0};const p=out.perUnit[u.combatId]||(out.perUnit[u.combatId]={name:u.name,damage:0,downs:0});p.damage+=s.damage;if(!u.alive){p.downs++;out.allyDowns++;}}
   }
-  const turns=out.turns;return {trials,win:out.win,lose:out.lose,draw:out.draw,winRate:out.win/trials,meanTurns:turns.reduce((a,b)=>a+b,0)/trials,minTurns:Math.min(...turns),maxTurns:Math.max(...turns),allyDownsMean:out.allyDowns/trials,perUnit:Object.values(out.perUnit).map(p=>({name:p.name,meanDamage:p.damage/trials,downRate:p.downs/trials}))};
+  const turns=out.turns;return {trials,win:out.win,lose:out.lose,draw:out.draw,winRate:out.win/trials,meanTurns:turns.reduce((a,b)=>a+b,0)/trials,minTurns:Math.min(...turns),maxTurns:Math.max(...turns),meanMissingHp:out.missingHp/trials,allyDownsMean:out.allyDowns/trials,perUnit:Object.values(out.perUnit).map(p=>({name:p.name,meanDamage:p.damage/trials,downRate:p.downs/trials}))};
 }
 function damagePreview(att,weapon,def,mission){
   const ctx=createContext({allies:[prepare({...att,side:'ally',currentHp:att.hp,maxHp:att.hp,alive:true})],enemies:[prepare({...def,side:'enemy',currentHp:def.hp,maxHp:def.hp,alive:true})],mission});
@@ -362,6 +395,7 @@ function unitPower(a){const ws=(a.weapons&&a.weapons.length)?a.weapons:[BASIC_WE
 let STD_POWER=0;
 function powerRatio(a){if(!STD_POWER)STD_POWER=unitPower(STANDARD_UNIT);return Math.sqrt(unitPower(a)/STD_POWER);}
 function starCount(r){return r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;}
-root.PROBattle=Object.freeze({version:'1.5.1',DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+root.PROBattle=Object.freeze({version:'1.6.0',checkpoint,condOk,recordFrame,DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);
+
 

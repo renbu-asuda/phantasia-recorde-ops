@@ -45,7 +45,7 @@ function tagList(raw,label='タグ'){
   const result=[];for(const value of raw){need(typeof value==='string',label+'は文字列で指定してください');const tag=value.trim();need(tag.length>0&&tag.length<=MAX_TAG_LENGTH,label+'は1～32文字で指定してください');need(!result.includes(tag),label+'が重複しています: '+tag);result.push(tag);}return result;
 }
 function tagValue(v,label){need(typeof v==='string'&&v.trim().length>0&&v.trim().length<=MAX_TAG_LENGTH,label+'は1～32文字で指定してください');return v.trim();}
-function statMap(raw,label,allowNegative=false){const o={};if(raw===undefined||raw===null)return o;need(typeof raw==='object'&&!Array.isArray(raw),label+'が不正です');for(const k of STAT_KEYS)if(has(raw,k)){const v=number(raw[k],label+' '+k,allowNegative?-1000000:0,1000000);if(v)o[k]=v;}return o;}
+function statMap(raw,label,allowNegative=false,keepZero=false){const o={};if(raw===undefined||raw===null)return o;need(typeof raw==='object'&&!Array.isArray(raw),label+'が不正です');for(const k of STAT_KEYS)if(has(raw,k)){const v=number(raw[k],label+' '+k,allowNegative?-1000000:0,1000000);if(v||keepZero)o[k]=v;}return o;}
 // ---- skills ----
 // ---- attack attributes (1.12.3) ----
 // damageType values, and the targets a resist skill can name (the attributes plus melee / ranged).
@@ -53,7 +53,8 @@ const DAMAGE_TYPES={physical:'物理',beam:'ビーム',special:'特殊',fantasy:
 const RESIST_TYPES={...DAMAGE_TYPES,melee:'近接',ranged:'射撃'};
 function skillExt(s,label='スキル'){
   const o={};
-  if(has(s,'cond')){const c=s.cond;need(c&&typeof c==='object'&&Object.hasOwn(conditions,c.type),label+': 発動条件の種類が不正です');const cond={type:c.type};if(c.type==='target_tag')cond.tag=tagValue(c.tag,label+' 条件タグ');else cond.value=number(c.value,label+' 条件値',0,1000000);o.cond=cond;}
+  if(s.effects)o.effects=s.effects.map(e=>{const sk=skill({...e,id:s.id||'effect',name:s.name||label,trigger:s.trigger,effects:undefined});const {id,name,trigger,chance,maxUses,note,...part}=sk;return part;});
+  if(has(s,'cond'))o.cond=condition(s.cond,label);
   if(has(s,'target')){need(Object.hasOwn(skillTargets,s.target),label+': 効果対象が不正です');o.target=s.target;}
   if(has(s,'duration'))o.duration=number(s.duration,label+' 持続TURN',1,99,true);
   if(has(s,'tag'))o.tag=tagValue(s.tag,label+' 特効タグ');
@@ -65,8 +66,8 @@ const SIGNED_HP_EFFECTS=['heal_maxhp_pct','heal_flat'];
 function effectValueRange(effect,weaponEffect=false){return {min:SIGNED_HP_EFFECTS.includes(effect)?-1000000:0,max:weaponEffect?(effect==='recoil_pct'||effect==='drain_pct'?100:1000000):Number.MAX_SAFE_INTEGER};}
 function weaponValueRange(key){const limits={accuracyPt:[-100,100],critPt:[-100,100],targetCount:[1,8,true],weight:[.01,100000],hitsMin:[1,100,true],hitsMax:[1,100,true]};const [min,max,integer]=limits[key]||[0,1000000];return {min,max,integer:!!integer};}
 function hpEffectText(effect,value){return effect==='heal_maxhp_pct'?`最大HPの${Math.abs(value)}%${value<0?'ダメージ':'回復'}`:`HP${Math.abs(value)}${value<0?'ダメージ':'回復'}`;}
-function skill(s){need(s&&safeId(s.id)&&String(s.name||'').trim(),'スキルID・名前が必要です');need(allowed[s.trigger]?.includes(s.effect),'スキルの発動条件と効果の組み合わせが未対応です');const o={id:s.id,name:String(s.name),trigger:s.trigger,effect:s.effect,value:number(s.value,'効果値',effectValueRange(s.effect).min,effectValueRange(s.effect).max),chance:number(s.chance??100,'発動率',0,100),maxUses:number(s.maxUses??0,'発動回数',0,999,true),note:String(s.note||'')};if(s.effect==='weapon_resist_pct'){need(Object.hasOwn(RESIST_TYPES,s.resistType),'耐性対象が不正です（'+Object.values(RESIST_TYPES).join('・')+'から選んでください）');o.resistType=s.resistType;}Object.assign(o,skillExt(s,s.name));return o;}
-function skillIsExtended(s){return !!s&&(!LEGACY_TRIGGERS.includes(s.trigger)||!LEGACY_EFFECTS.includes(s.effect)||['cond','target','duration','tag'].some(k=>has(s,k)));}
+function skill(s){if(Array.isArray(s?.effects)){need(s.effects.length>0&&s.effects.length<=8,'複合スキルは1～8効果です');const parts=s.effects.map((e,i)=>{need(e&&!e.effects,'効果を入れ子にできません');return skill({...e,id:s.id,name:s.name,trigger:s.trigger,chance:100,maxUses:0,cond:undefined,effects:undefined});});const o=skill({...s,...parts[0],effects:undefined,chance:s.chance??100,maxUses:s.maxUses??0,cond:s.cond,note:s.note});o.effects=parts.map(({id,name,trigger,chance,maxUses,note,...e})=>e);return o;}need(s&&safeId(s.id)&&String(s.name||'').trim(),'スキルID・名前が必要です');need(allowed[s.trigger]?.includes(s.effect),'スキルの発動条件と効果の組み合わせが未対応です');const o={id:s.id,name:String(s.name),trigger:s.trigger,effect:s.effect,value:number(s.value,'効果値',effectValueRange(s.effect).min,effectValueRange(s.effect).max),chance:number(s.chance??100,'発動率',0,100),maxUses:number(s.maxUses??0,'発動回数',0,999,true),note:String(s.note||'')};if(s.effect==='weapon_resist_pct'){need(Object.hasOwn(RESIST_TYPES,s.resistType),'耐性対象が不正です（'+Object.values(RESIST_TYPES).join('・')+'から選んでください）');o.resistType=s.resistType;}Object.assign(o,skillExt(s,s.name));return o;}
+function skillIsExtended(s){return !!s&&(!LEGACY_TRIGGERS.includes(s.trigger)||!LEGACY_EFFECTS.includes(s.effect)||['cond','target','duration','tag','effects'].some(k=>has(s,k)));}
 // ---- weapons ----
 const weaponDefaults={"name":"E90","attackType":"ranged","damageType":"physical","note":"","powerPct":100,"accuracyPt":15,"critPt":0,"targetCount":1,"weight":1,"minDamage":50,"hitsMin":1,"hitsMax":4,"hitPowerPct":25};
 // ---- weapon effects (1.10.1) ----
@@ -99,7 +100,7 @@ function weaponEffectText(e){
   const tg=own?'':tk==='targets'&&e.timing==='after'&&e.when==='hit'?'命中した相手':tk==='targets'&&e.timing==='after'&&e.when==='crit'?'クリティカルを受けた相手':weaponEffectTargets[tk];
   const dur=DURATION_EFFECTS.includes(e.effect)?`（${e.duration||(e.effect==='stun'?1:2)}TURN）`:'';
   const when=e.timing==='after'&&e.when&&e.when!=='always'?weaponWhen[e.when].replace('とき','ら')+'、':'';
-  const cond=e.cond?'['+conditions[e.cond.type].replace('値',e.cond.value??'').replace('指定タグ','「'+(e.cond.tag||'')+'」')+'] ':'';
+  const cond=e.cond?'['+conditionText(e.cond)+'] ':'';
   const ch=e.chance!==undefined&&e.chance<100?`${e.chance}%の確率で`:'';
   return `${weaponTimings[e.timing]}: ${cond}${when}${ch}${tg?tg+'の':''}${body}${dur}`;
 }
@@ -113,6 +114,7 @@ function image(v,label){need(typeof v==='string'&&/^data:image\/(png|jpeg|webp|g
 function treeNode(n,label){need(n&&typeof n==='object'&&safeId(n.id),label+': スキルツリーのノードIDが必要です');const o={id:n.id,skill:skill(n.skill),cost:number(n.cost??1,label+' 必要SP',0,99,true),minLevel:number(n.minLevel??1,label+' 必要レベル',1,99,true),requires:idList(n.requires,label+' 前提ノード',16)};if(has(n,'skillId')){need(safeId(n.skillId),label+': スキルIDが不正です');o.skillId=n.skillId;}return o;}
 function unitExt(u,label=u?.id||'ユニット'){
   const o={};
+  if(has(u,'phases'))o.phases=phases(u.phases,label);
   if(has(u,'image'))o.image=image(u.image,label);
   if(has(u,'ai')){const a=u.ai;need(a&&Object.hasOwn(aiTargets,a.target),label+': AIの狙い方が不正です');o.ai={target:a.target};if(a.target==='tag')o.ai.tag=tagValue(a.tag,label+' AI優先タグ');}
   if(has(u,'row')){need(Object.hasOwn(rows,u.row),label+': 隊列は front / back です');o.row=u.row;}
@@ -227,15 +229,15 @@ function itemIsExtended(i){return !!i&&(['price','limitPerUnit','equip','key','s
 function research(r){need(r&&safeId(r.id)&&String(r.name||'').trim(),'研究ID・名前が必要です');const cost=r.cost||{},items={};if(cost.items){need(typeof cost.items==='object'&&!Array.isArray(cost.items),r.name+': 必要素材が不正です');for(const [id,n] of Object.entries(cost.items)){need(safeId(id),r.name+': 素材IDが不正です: '+id);items[id]=number(n,r.name+' 素材数',1,999,true);}}const u=r.unlock||{},grant={};if(u.grantItems){need(typeof u.grantItems==='object'&&!Array.isArray(u.grantItems),r.name+': 支給アイテムが不正です');for(const [id,n] of Object.entries(u.grantItems)){need(safeId(id),r.name+': 支給アイテムIDが不正です');grant[id]=number(n,r.name+' 支給数',1,999,true);}}return {id:r.id,name:String(r.name),desc:String(r.desc||''),cost:{credits:number(cost.credits??0,r.name+' 研究費',0,1e12,true),items},requires:idList(r.requires,r.name+' 前提研究',16),unlock:{units:idList(u.units,r.name+' 解放ユニット'),items:idList(u.items,r.name+' 解放ショップ品'),grantItems:grant},...(r.hidden===true?{hidden:true}:{})};}
 function researchList(raw){if(raw===undefined||raw===null)return [];need(Array.isArray(raw)&&raw.length<=200,'研究は200件までです');const list=raw.map(research),ids=new Set();for(const r of list){need(!ids.has(r.id),'研究ID重複: '+r.id);ids.add(r.id);}for(const r of list)for(const q of r.requires)need(ids.has(q)&&q!==r.id,r.name+': 前提研究が見つかりません: '+q);return list;}
 function pilotList(raw){if(raw===undefined||raw===null)return [];need(Array.isArray(raw)&&raw.length<=200,'パイロットは200人までです');const list=raw.map(pilot),ids=new Set();for(const p of list){need(!ids.has(p.id),'パイロットID重複: '+p.id);ids.add(p.id);}return list;}
-function itemPack(p){need(p&&p.format==='VAIS_OUTER_OPS_ITEM_PACK'&&[1,2,3,4,5,6].includes(Number(p.schemaVersion))&&String(p.packId||'').trim()&&Array.isArray(p.items),'対応するItem Pack Schema 1～6ではありません');const items=p.items.map(item),ids=new Set();for(const i of items){need(!ids.has(i.id),'アイテムID重複: '+i.id);ids.add(i.id);need(!itemHasRefs(i),i.id+': 装備が共有スキル・武装データを参照しています。統合パックとして読み込んでください');}const res=researchList(p.research);const ext=res.length||items.some(itemIsExtended);return {format:p.format,schemaVersion:items.some(itemIsV6)?6:items.some(itemIsV5)||res.some(researchIsV5)?5:items.some(itemIsFantasy)?4:ext?3:2,packId:String(p.packId),packName:String(p.packName||p.packId),items,...(res.length?{research:res}:{})};}
+function itemPack(p){need(p&&p.format==='VAIS_OUTER_OPS_ITEM_PACK'&&[1,2,3,4,5,6,7].includes(Number(p.schemaVersion))&&String(p.packId||'').trim()&&Array.isArray(p.items),'対応するItem Pack Schema 1～7ではありません');const items=p.items.map(item),ids=new Set();for(const i of items){need(!ids.has(i.id),'アイテムID重複: '+i.id);ids.add(i.id);need(!itemHasRefs(i),i.id+': 装備が共有スキル・武装データを参照しています。統合パックとして読み込んでください');}const res=researchList(p.research);const ext=res.length||items.some(itemIsExtended);return {format:p.format,schemaVersion:hasNewFeatures({items})?7:items.some(itemIsV6)?6:items.some(itemIsV5)||res.some(researchIsV5)?5:items.some(itemIsFantasy)?4:ext?3:2,packId:String(p.packId),packName:String(p.packName||p.packId),items,...(res.length?{research:res}:{})};}
 // ---- missions ----
-function story(raw,label){if(raw===undefined||raw===null)return null;need(typeof raw==='object'&&!Array.isArray(raw),label+': ストーリーが不正です');const lines=(arr,part)=>{if(arr===undefined||arr===null)return [];need(Array.isArray(arr)&&arr.length<=100,label+' '+part+': 会話は100行までです');return arr.map(l=>{need(l&&typeof l==='object'&&String(l.text||'').trim(),label+' '+part+': 会話の本文が必要です');return {speaker:String(l.speaker||'').slice(0,40),text:String(l.text).slice(0,500)};});};const o={before:lines(raw.before,'作戦前'),after:lines(raw.after,'勝利後')};return o.before.length||o.after.length?o:null;}
+function story(raw,label){if(raw===undefined||raw===null)return null;need(typeof raw==='object'&&!Array.isArray(raw),label+': ストーリーが不正です');const lines=(arr,part)=>{if(arr===undefined||arr===null)return [];need(Array.isArray(arr)&&arr.length<=100,label+' '+part+': 会話は100行までです');return arr.map(l=>{need(l&&typeof l==='object'&&String(l.text||'').trim(),label+' '+part+': 会話の本文が必要です');return {speaker:String(l.speaker||'').slice(0,40),text:String(l.text).slice(0,500)};});};const o={before:lines(raw.before,'作戦前'),after:lines(raw.after,'勝利後')};if(raw.defeat)o.defeat=lines(raw.defeat,'敗北後');if(raw.choices){need(Array.isArray(raw.choices)&&raw.choices.length<=8,label+': 選択肢は8個までです');o.choices=raw.choices.map(c=>{need(c&&String(c.text||'').trim(),label+': 選択肢本文が必要です');return {text:String(c.text).slice(0,100),flags:flagMap(c.flags,label),lines:lines(c.lines,'選択後')};});}return Object.values(o).some(x=>x.length)?o:null;}
 function rule(r,label){if(typeof r==='string')return r;need(r&&typeof r==='object','特殊ルールが不正です');if(!Object.hasOwn(ruleTypes,r.type))return clone(r);// unknown object rules are preserved as display data
   if(r.type==='turn_limit')return {type:r.type,value:number(r.value,label+' TURN制限',1,300,true)};
   if(r.type==='reinforce'){const enemies=idList(r.enemies,label+' 援軍',8);need(enemies.length>0,label+': 援軍の敵を1体以上指定してください');return {type:r.type,turn:number(r.turn,label+' 援軍TURN',1,99,true),enemies};}
   const req=requirements({allTags:r.allTags,anyTags:r.anyTags,noneTags:r.noneTags});return {type:r.type,...(req||{})};}
 function missionExt(m,label=m?.id||'作戦'){
-  const o={};
+  const o={};if(has(m,'events'))o.events=missionEvents(m.events,label);if(has(m,'resultFlags')){need(m.resultFlags&&typeof m.resultFlags==='object',label+': 結果フラグが不正です');o.resultFlags={};for(const k of ['win','lose','draw'])if(m.resultFlags[k])o.resultFlags[k]=flagMap(m.resultFlags[k],label);}
   if(has(m,'enemyRows')){need(Array.isArray(m.enemyRows)&&m.enemyRows.length<=8&&m.enemyRows.every(x=>Object.hasOwn(rows,x)),label+': 敵の隊列は front / back の配列です');if(m.enemyRows.some(x=>x==='back'))o.enemyRows=[...m.enemyRows];}
   if(has(m,'objective')){const ob=m.objective;need(ob&&Object.hasOwn(objectives,ob.type),label+': 勝利条件が不正です');const out={type:ob.type};
     if(ob.type==='defense')out.turns=number(ob.turns??10,label+' 防衛TURN',1,300,true);
@@ -247,7 +249,7 @@ function missionExt(m,label=m?.id||'作戦'){
   else if(o.objective?.type==='boss')need(o.objective.bossIndex<(m.enemies||[]).length,label+': ボス番号が敵編成の数を超えています');
   if(o.objective?.type==='chain')need(o.waves?.length,label+': 連戦には追加ウェーブが必要です');
   if(has(m,'terrainMods')){const t=m.terrainMods;need(typeof t==='object'&&!Array.isArray(t),label+': 地形補正が不正です');const out={};for(const k of ['meleeHitPt','rangedHitPt'])if(has(t,k))out[k]=number(t[k],label+' '+k,-100,100);if(has(t,'mobPct'))out.mobPct=number(t.mobPct,label+' mobPct',-90,200);if(has(t,'banTags'))out.banTags=tagList(t.banTags,label+' 出撃禁止タグ');if(Object.keys(out).length)o.terrainMods=out;}
-  if(has(m,'requires')){const r=m.requires;need(typeof r==='object'&&!Array.isArray(r),label+': 出撃条件が不正です');const out={};const ms=idList(r.missions,label+' 前提作戦'),is=idList(r.items,label+' 必要キーアイテム');if(ms.length)out.missions=ms;if(is.length)out.items=is;if(has(r,'minLevel'))out.minLevel=number(r.minLevel,label+' 必要レベル',1,99,true);if(Object.keys(out).length)o.requires=out;}
+  if(has(m,'requires')){const r=m.requires;need(typeof r==='object'&&!Array.isArray(r),label+': 出撃条件が不正です');const out={};if(r.flags)out.flags=flagMap(r.flags,label);const ms=idList(r.missions,label+' 前提作戦'),is=idList(r.items,label+' 必要キーアイテム');if(ms.length)out.missions=ms;if(is.length)out.items=is;if(has(r,'minLevel'))out.minLevel=number(r.minLevel,label+' 必要レベル',1,99,true);if(Object.keys(out).length)o.requires=out;}
   const st=story(m.story,label);if(st)o.story=st;
   if(has(m,'stars')){need(Array.isArray(m.stars)&&m.stars.length<=3,label+': 星条件は3個までです');const s=m.stars.map(x=>{need(x&&Object.hasOwn(starTypes,x.type),label+': 星条件の種類が不正です');return ['turns_le','hp_ge'].includes(x.type)?{type:x.type,value:number(x.value,label+' 星条件値',1,100,true)}:{type:x.type};});if(s.length)o.stars=s;}
   if(has(m,'starReward'))o.starReward=number(m.starReward,label+' 星報酬',0,1e12,true);
@@ -290,7 +292,7 @@ function missionConditions(m,names={}){
 }
 // ---- terrains (1.12.0): built-in presets + pack-defined terrains ----
 function terrain(t,label='地形'){need(t&&typeof t==='object',label+': 形式が不正です');const name=String(t.name||'').trim();need(name.length>0&&name.length<=20,label+': 名前は1～20文字です');const o={name};
-  if(has(t,'desc'))o.desc=String(t.desc).slice(0,200);for(const k of ['meleeHitPt','rangedHitPt'])if(has(t,k)){const v=number(t[k],label+' '+k,-100,100);if(v)o[k]=v;}if(has(t,'mobPct')){const v=number(t.mobPct,label+' mobPct',-90,200);if(v)o.mobPct=v;}if(has(t,'banTags')){const b=tagList(t.banTags,label+' 出撃禁止タグ');if(b.length)o.banTags=b;}return o;}
+  if(has(t,'desc'))o.desc=String(t.desc).slice(0,200);for(const k of ['meleeHitPt','rangedHitPt'])if(has(t,k)){const v=number(t[k],label+' '+k,-100,100);if(v||keepZero)o[k]=v;}if(has(t,'mobPct')){const v=number(t.mobPct,label+' mobPct',-90,200);if(v)o.mobPct=v;}if(has(t,'banTags')){const b=tagList(t.banTags,label+' 出撃禁止タグ');if(b.length)o.banTags=b;}return o;}
 function terrainList(raw){if(raw===undefined||raw===null)return [];need(Array.isArray(raw)&&raw.length<=50,'地形は50個までです');const list=raw.map((t,i)=>terrain(t,'地形'+(i+1))),names=new Set();for(const t of list){need(!names.has(t.name),'地形の名前が重複しています: '+t.name);names.add(t.name);}return list;}
 let CUSTOM_TERRAINS={};
 function registerTerrains(list){CUSTOM_TERRAINS={};for(const t of list||[]){const {name,desc,...mods}=t;CUSTOM_TERRAINS[name]=mods;}}
@@ -318,10 +320,10 @@ function resolveUnitSkills(u,masters=[]){const out=clone(u);if(!unitIsV8(u))retu
   if(has(out.pilotProfile,'skillIds'))out.pilotProfile.skills=list(out.pilotProfile.skillIds,8);
   for(const n of out.skillTree||[])if(has(n,'skillId'))n.skill=one(n.skillId);return out;
 }
-function resolveUnitData(u,weapons=[],skills=[]){return resolveUnitSkills(resolveUnitWeapons(u,weapons),skills);}
+function resolveUnitData(u,weapons=[],skills=[]){const out=resolveUnitSkills(resolveUnitWeapons(u,weapons),skills);if(out.phases)out.phases=phases(out.phases,u.name).map(p=>{let data={id:u.id};for(const k of ['weaponIds','skillIds','weapons','skills'])if(p[k]!==undefined)data[k]=p[k];data=resolveUnitSkills(resolveUnitWeapons(data,weapons),skills);return {...p,...(data.weapons?{weapons:data.weapons}:{}),...(data.skills?{skills:data.skills}:{})};});return out;}
 function stripSkillRefs(u){delete u.skillIds;if(u.pilotProfile)delete u.pilotProfile.skillIds;for(const n of u.skillTree||[])delete n.skillId;return u;}
-function materializeUnit(u,weapons=[],skills=[]){const out=resolveUnitData(u,weapons,skills);delete out.weaponIds;return stripSkillRefs(out);}
-function linkedUnit(u,masters,skills=[]){const out=clone(u);if(has(out,'weaponIds')){resolveUnitWeapons(out,masters);delete out.weapons;}
+function materializeUnit(u,weapons=[],skills=[]){const out=resolveUnitData(u,weapons,skills);delete out.weaponIds;for(const p of out.phases||[]){delete p.weaponIds;delete p.skillIds;}return stripSkillRefs(out);}
+function linkedUnit(u,masters,skills=[]){const out=clone(u);resolveUnitData(out,masters,skills);for(const p of out.phases||[]){if(p.weaponIds)delete p.weapons;if(p.skillIds)delete p.skills;}if(has(out,'weaponIds')){resolveUnitWeapons(out,masters);delete out.weapons;}
   resolveUnitSkills(out,skills);if(has(out,'skillIds'))delete out.skills;if(has(out.pilotProfile,'skillIds'))delete out.pilotProfile.skills;for(const n of out.skillTree||[])if(has(n,'skillId'))delete n.skill;return out;
 }
 // Item equipment can link to the pack's skill / weapon data too; the game and standalone makers use materializeItem.
@@ -335,9 +337,9 @@ function materializeItem(i,weaponMasters=[],skillMasters=[]){const out=resolveIt
 function weaponAttack(w,unitAtk){return ((w.useUnitAtk===false?0:Number(unitAtk)||0)+(Number(w.baseAtk)||0))*(Number(w.powerPct??100)/100);}
 
 // ---- bundles ----
-const BUNDLE_FORMAT='VAIS_OUTER_OPS_BUNDLE_PACK',BUNDLE_SCHEMA=8,BUNDLE_SCHEMAS=[1,2,3,4,5,6,7,8];
+const BUNDLE_FORMAT='VAIS_OUTER_OPS_BUNDLE_PACK',BUNDLE_SCHEMA=9,BUNDLE_SCHEMAS=[1,2,3,4,5,6,7,8,9];
 function bundlePack(raw){
-  need(raw&&raw.format===BUNDLE_FORMAT&&BUNDLE_SCHEMAS.includes(Number(raw.schemaVersion))&&String(raw.packId||'').trim(),'対応する統合パック Schema 1～8ではありません');
+  need(raw&&raw.format===BUNDLE_FORMAT&&BUNDLE_SCHEMAS.includes(Number(raw.schemaVersion))&&String(raw.packId||'').trim(),'対応する統合パック Schema 1～9ではありません');
   for(const type of ['units','missions','items'])need(Array.isArray(raw[type]),type+' 配列が必要です');
   const unique=(rows,type)=>{const ids=new Set();for(const row of rows){need(row&&safeId(row.id),type+' IDは英数字・_・-で指定してください');need(!ids.has(row.id),type+' ID重複: '+row.id);ids.add(row.id);}};
   unique(raw.units,'unit');unique(raw.missions,'mission');
@@ -345,18 +347,62 @@ function bundlePack(raw){
   const conv=pilotsToUnits(clone(raw.units),raw.pilots),units=conv.units,res=researchList(raw.research);
   const terrains=terrainList(raw.terrains),hires=hireList(raw.hires),weapons=weaponList(raw.weapons),skills=skillList(raw.skills);for(const u of units)resolveUnitData(u,weapons,skills);for(const i of items)resolveItemData(i,weapons,skills);
   const ext=res.length>0||units.some(unitIsExtended)||raw.missions.some(missionIsExtended)||items.some(itemIsExtended);
-  const schema=skills.length||units.some(unitIsV8)||items.some(itemIsV8)?8:weapons.length||units.some(unitIsV7)||items.some(itemIsV6)?7:hires.length||units.some(unitIsV6)||raw.missions.some(missionIsV4)||items.some(itemIsV5)||res.some(researchIsV5)?6:units.some(unitIsFantasy)||items.some(itemIsFantasy)?5:terrains.length||raw.missions.some(missionIsV3)?4:units.some(unitIsV4)?3:ext?2:1;
-  return {format:BUNDLE_FORMAT,schemaVersion:schema,packId:String(raw.packId),packName:String(raw.packName||raw.packId),units:units.map(u=>linkedUnit(u,weapons,skills)),...(skills.length?{skills}:{}),...(weapons.length?{weapons}:{}),missions:clone(raw.missions),items,...(res.length?{research:res}:{}),...(terrains.length?{terrains}:{}),...(hires.length?{hires}:{})};
+  const schema=hasNewFeatures(raw)?9:skills.length||units.some(unitIsV8)||items.some(itemIsV8)?8:weapons.length||units.some(unitIsV7)||items.some(itemIsV6)?7:hires.length||units.some(unitIsV6)||raw.missions.some(missionIsV4)||items.some(itemIsV5)||res.some(researchIsV5)?6:units.some(unitIsFantasy)||items.some(itemIsFantasy)?5:terrains.length||raw.missions.some(missionIsV3)?4:units.some(unitIsV4)?3:ext?2:1;
+  return {format:BUNDLE_FORMAT,schemaVersion:schema,packId:String(raw.packId),packName:String(raw.packName||raw.packId),...packMetadata(raw),units:units.map(u=>linkedUnit(u,weapons,skills)),...(skills.length?{skills}:{}),...(weapons.length?{weapons}:{}),missions:clone(raw.missions),items,...(res.length?{research:res}:{}),...(terrains.length?{terrains}:{}),...(hires.length?{hires}:{})};
 }
-function unitSchemaFor(units,pilots,hires,weapons,skills){return (skills&&skills.length)||units.some(unitIsV8)?8:(weapons&&weapons.length)||units.some(unitIsV7)?7:(hires&&hires.length)||units.some(unitIsV6)?6:units.some(unitIsFantasy)||(pilots||[]).some(p=>(p?.skills||[]).some(skillIsFantasy))?5:(pilots&&pilots.length)||units.some(unitIsV4)?4:units.some(unitIsExtended)?3:2;}
+function unitSchemaFor(units,pilots,hires,weapons,skills){return hasNewFeatures({units,pilots,skills})?9:(skills&&skills.length)||units.some(unitIsV8)?8:(weapons&&weapons.length)||units.some(unitIsV7)?7:(hires&&hires.length)||units.some(unitIsV6)?6:units.some(unitIsFantasy)||(pilots||[]).some(p=>(p?.skills||[]).some(skillIsFantasy))?5:(pilots&&pilots.length)||units.some(unitIsV4)?4:units.some(unitIsExtended)?3:2;}
 function missionIsV3(m){const ob=m?.objective;return !!m&&((m.waves||[]).some(waveIsExtended)||!!(ob&&ob.type!=='escort'&&ob.escortUnitId)||!!ob?.bossWave||(m.rules||[]).some(r=>r&&r.type==='turn_limit'&&r.value>99)||(ob?.type==='defense'&&ob.turns>99));}
-function missionSchemaFor(missions,terrains){return missions.some(missionIsV4)?4:(terrains&&terrains.length)||missions.some(missionIsV3)?3:missions.some(missionIsExtended)?2:1;}
+function missionSchemaFor(missions,terrains){return hasNewFeatures({missions})?5:missions.some(missionIsV4)?4:(terrains&&terrains.length)||missions.some(missionIsV3)?3:missions.some(missionIsExtended)?2:1;}
+
+// 1.15: compound conditions/effects, battle phases and campaign events.
+function flagMap(raw,label='フラグ'){
+  need(raw&&typeof raw==='object'&&!Array.isArray(raw),label+': フラグはオブジェクトです');
+  need(Object.keys(raw).length<=64,label+': フラグは64個までです');const out={};
+  for(const [k,v] of Object.entries(raw)){need(safeId(k)&&typeof v==='boolean',label+': フラグIDとtrue/falseを指定してください');out[k]=v;}return out;
+}
+function condition(c,label='条件',depth=0){
+  need(c&&typeof c==='object'&&!Array.isArray(c)&&depth<=4,label+': 条件が不正です（入れ子は4段まで）');
+  if(c.all||c.any){need(!(c.all&&c.any),label+': allとanyは同時指定できません');const k=c.all?'all':'any';need(Array.isArray(c[k])&&c[k].length>0&&c[k].length<=8,label+': 条件は1～8個です');return {[k]:c[k].map(x=>condition(x,label,depth+1))};}
+  need(Object.hasOwn(conditions,c.type),label+': 条件の種類が不正です');return c.type==='target_tag'?{type:c.type,tag:tagValue(c.tag,label)}:{type:c.type,value:number(c.value,label,0,1000000)};
+}
+function conditionText(c){if(c.all||c.any){const k=c.all?'all':'any';return '('+c[k].map(conditionText).join(k==='all'?' かつ ':' または ')+')';}return (conditions[c.type]||c.type).replace('値',c.value??'').replace('指定タグ','「'+(c.tag||'')+'」');}
+function phases(raw,label){
+  need(Array.isArray(raw)&&raw.length<=16,label+': 段階変化は16個までです');const ids=new Set();return raw.map((p,i)=>{
+    need(p&&safeId(p.id)&&!ids.has(p.id),label+': 段階IDが不正または重複しています');ids.add(p.id);
+    const cond=condition(p.cond,label);const valid=c=>c.all||c.any?(c.all||c.any).every(valid):['hp_below','hp_above','turn_ge','turn_le','allies_le','enemies_le'].includes(c.type);need(valid(cond),label+': 段階条件はHP・TURN・生存体数を指定してください');
+    const out={id:p.id,name:String(p.name||'段階'+(i+1)).slice(0,80),cond,stats:statMap(p.stats,label,false,true),hpMode:p.hpMode||'ratio'};
+    need(out.stats.hp===undefined||out.stats.hp>=1,label+': 変化後の最大HPは1以上です');need(['ratio','keep','value'].includes(out.hpMode),label+': HPの引継ぎ方が不正です');if(out.hpMode==='value')out.hpValue=number(p.hpValue,label+' HP',1,1e9,true);
+    if(p.weapons){need(Array.isArray(p.weapons)&&p.weapons.length>0&&p.weapons.length<=24,label+': 武装は1～24個です');out.weapons=p.weapons.map(weapon);}
+    if(p.skills){need(Array.isArray(p.skills)&&p.skills.length<=24,label+': スキルは24個までです');out.skills=p.skills.map(skill);}
+    if(p.weaponIds){out.weaponIds=idList(p.weaponIds,label,24);need(out.weaponIds.length,label+': 武装を選んでください');}if(p.skillIds)out.skillIds=idList(p.skillIds,label,24);
+    if(p.ai)out.ai=unitExt({ai:p.ai},label).ai;
+    if(p.lines)out.lines=story({before:p.lines},label)?.before||[];return out;
+  });
+}
+const eventWhens={turn:'TURN到達',wave:'第n波登場',boss_hp:'ボスHPが%以下',unit_down:'指定ユニット撃破'};
+function missionEvents(raw,label){
+  need(Array.isArray(raw)&&raw.length<=32,label+': 作戦イベントは32個までです');const ids=new Set();return raw.map(e=>{
+    need(e&&safeId(e.id)&&!ids.has(e.id)&&Object.hasOwn(eventWhens,e.when),label+': イベントIDまたは発動時期が不正です');ids.add(e.id);
+    const o={id:e.id,when:e.when};if(e.when==='unit_down'){need(safeId(e.unitId),label+': 対象ユニットを指定してください');o.unitId=e.unitId;}else o.value=number(e.value,label+' 発動値',e.when==='boss_hp'?0:1,e.when==='boss_hp'?100:e.when==='wave'?10:300,true);
+    if(e.requiredUnitId){need(safeId(e.requiredUnitId),label+': 出撃条件ユニットIDが不正です');o.requiredUnitId=e.requiredUnitId;}
+    if(e.lines)o.lines=story({before:e.lines},label)?.before||[];
+    if(e.flags)o.flags=flagMap(e.flags,label);if(e.terrain){need(String(e.terrain).length<=80,label+': 地形名が長すぎます');o.terrain=String(e.terrain);}return o;
+  });
+}
+function packMetadata(raw){const o={};for(const k of ['author','packVersion'])if(raw[k]!==undefined){need(typeof raw[k]==='string'&&raw[k].length<=100,k+': 100文字以内です');o[k]=raw[k];}if(raw.dependencies!==undefined)o.dependencies=idList(raw.dependencies,'依存パック',32);return o;}
+function hasNewFeatures(raw){
+  const walk=(o,depth=0)=>{if(!o||typeof o!=='object'||depth>20)return false;if(Array.isArray(o))return o.some(x=>walk(x,depth+1));
+    if(o.phases?.length||o.events?.length||o.resultFlags||o.story?.choices?.length||o.story?.defeat?.length||o.requires?.flags||o.cond?.all||o.cond?.any||(o.trigger&&o.effects?.length))return true;
+    return Object.values(o).some(x=>walk(x,depth+1));};return walk(raw)||!!(raw.author||raw.packVersion||raw.dependencies?.length);
+}
+
 // ---- text ----
 function effectText(e){const v=e.value;switch(e.type){case 'heal_hp_flat':return `HPを${v}回復`;case 'heal_hp_pct':return `最大HPの${v}%回復`;case 'heal_hp_full':return 'HP全回復';case 'revive_hp_pct':return `HP 0から最大HPの${v}%で復帰`;case 'stat_up_flat':return `${stats[e.stat]} +${v}（恒久）`;case 'stat_up_pct':return `${stats[e.stat]} +${v}%（使用時の値から切り上げ・恒久）`;case 'all_stats_up_flat':return `全能力 +${v}（恒久）`;case 'add_skill':return `スキル「${e.skill.name}」習得`;case 'add_weapon':return `武装「${e.weapon.name}」追加`;case 'credits_gain':return `資金 +${v}`;
   case 'equip_slot':return `装備枠 ${v>0?'+':''}${v}（恒久）`;case 'add_tag':return `タグ「${e.tag}」を追加`;case 'remove_tag':return `タグ「${e.tag}」を削除`;case 'sortie_buff':return `次の出撃だけ${stats[e.stat]} +${v}%`;case 'loot_box':return `ランダム箱（${e.table.length}種から1つ）`;case 'remove_skill':return e.skillId?`習得スキル「${e.skillId}」を外す`:'習得スキルをすべて外す';case 'remove_weapon':return e.name?`追加武装「${e.name}」を外す`:'追加武装をすべて外す';case 'recruit_unit':return `ユニット「${e.unitId}」が加入`;case 'exp_gain':return `経験値 +${v}`;case 'skill_point':return `スキルポイント +${v}`;default:return '不明';}}
 function itemSummary(i){const parts=itemEffects(i).map(effectText);if(i.equip){const s=Object.entries(i.equip.stats||{}).map(([k,v])=>`${stats[k]}+${v}`);parts.push('装備: '+[...s,...(i.equip.skills||[]).map(x=>'「'+x.name+'」'),...(i.equip.weapons||[]).map(x=>'武装「'+x.name+'」')].join(' / '));}if(i.key)parts.push('キーアイテム');if(i.scope==='party')parts.push('部隊全体');if(i.limitPerUnit)parts.push(`1体${i.limitPerUnit}回まで`);return parts.join(' ／ ');}
-function skillText(s){const c=s.cond?' ['+conditions[s.cond.type].replace('値',s.cond.value??'').replace('指定タグ','「'+(s.cond.tag||'')+'」')+']':'';const t=s.target?' → '+skillTargets[s.target]:'';const d=s.duration?` ${s.duration}TURN`:'';return `${triggers[s.trigger]||s.trigger}${c}: ${SIGNED_HP_EFFECTS.includes(s.effect)?hpEffectText(s.effect,s.value):(skillEffects[s.effect]||s.effect)+' '+s.value}${s.effect==='tag_damage_up_pct'?'（対「'+s.tag+'」）':''}${t}${d}`;}
+function skillText(s){if(s.effects)return `${triggers[s.trigger]}${s.cond?' ['+conditionText(s.cond)+']':''}: `+s.effects.map(e=>skillText({...e,trigger:s.trigger})).join(' ／ ');const c=s.cond?' ['+conditionText(s.cond)+']':'';const t=s.target?' → '+skillTargets[s.target]:'';const d=s.duration?` ${s.duration}TURN`:'';return `${triggers[s.trigger]||s.trigger}${c}: ${SIGNED_HP_EFFECTS.includes(s.effect)?hpEffectText(s.effect,s.value):(skillEffects[s.effect]||s.effect)+' '+s.value}${s.effect==='tag_damage_up_pct'?'（対「'+s.tag+'」）':''}${t}${d}`;}
 function serialize(marker,p){return '/* PRO data pack */\nwindow.'+marker+' = '+JSON.stringify(p,null,2)+';\n';}
-root.PROCore=Object.freeze({version:'2.7.0',skillList,unitIsV8,resolveUnitSkills,resolveUnitData,stripSkillRefs,materializeUnit,SIGNED_HP_EFFECTS,effectValueRange,weaponValueRange,hpEffectText,weaponIsV7,unitIsV7,itemIsV6,weaponList,resolveUnitWeapons,linkedUnit,weaponAttack,drop,dropChance,dropRateText,parseDropRate,hire,hireList,hireRequirementText,unitIsV6,missionIsV4,itemIsV5,researchIsV5,DAMAGE_TYPES,RESIST_TYPES,weaponIsFantasy,skillIsFantasy,unitIsFantasy,itemIsFantasy,waveTriggers,wave,normalizeWave,waveIsExtended,waveText,waveWhenText,formationText,groupNames,bossOf,DRAW_TURNS,missionConditions,missionIsV3,terrain,terrainList,registerTerrains,terrainDef,terrainEffectText,crews,pilotProfile,unitIsV4,crewOf,pilotBonus,pilotToUnit,pilotsToUnits,PILOT_UNIT_STATS,weaponTimings,weaponEffectLabels,weaponEffectsAllowed,weaponEffectTargets,weaponWhen,WEAPON_BEFORE_ONLY,WEAPON_AFTER_ONLY,WEAPON_EFFECT_MAX,weaponEffect,weaponEffectHostile,weaponEffectText,weaponEffectsText,clone,stats,STAT_KEYS,triggers,skillEffects,allowed,conditions,skillTargets,DURATION_EFFECTS,TARGETED_EFFECTS,HOSTILE_EFFECTS,effects,aiTargets,rows,objectives,ruleTypes,starTypes,days,TERRAINS,safeId,parse,skill,skillExt,skillIsExtended,weapon,weaponExt,weaponIsExtended,weaponDefaults,unitExt,unitIsExtended,pilot,pilotList,image,effect,item,itemExt,itemIsExtended,itemPack,itemEffects,itemSummary,itemHasRefs,itemIsV8,resolveItemData,materializeItem,effectText,skillText,research,researchList,serialize,tagList,parseTags,unitTags,requirements,checkRequirements,requirementText,missionExt,missionIsExtended,missionStars,starText,terrainMods,missionEnemyIds,rule,BUNDLE_FORMAT,BUNDLE_SCHEMA,bundlePack,unitSchemaFor,missionSchemaFor});
+root.PROCore=Object.freeze({version:'2.8.0',condition,conditionText,phases,missionEvents,flagMap,packMetadata,hasNewFeatures,skillList,unitIsV8,resolveUnitSkills,resolveUnitData,stripSkillRefs,materializeUnit,SIGNED_HP_EFFECTS,effectValueRange,weaponValueRange,hpEffectText,weaponIsV7,unitIsV7,itemIsV6,weaponList,resolveUnitWeapons,linkedUnit,weaponAttack,drop,dropChance,dropRateText,parseDropRate,hire,hireList,hireRequirementText,unitIsV6,missionIsV4,itemIsV5,researchIsV5,DAMAGE_TYPES,RESIST_TYPES,weaponIsFantasy,skillIsFantasy,unitIsFantasy,itemIsFantasy,waveTriggers,wave,normalizeWave,waveIsExtended,waveText,waveWhenText,formationText,groupNames,bossOf,DRAW_TURNS,missionConditions,missionIsV3,terrain,terrainList,registerTerrains,terrainDef,terrainEffectText,crews,pilotProfile,unitIsV4,crewOf,pilotBonus,pilotToUnit,pilotsToUnits,PILOT_UNIT_STATS,weaponTimings,weaponEffectLabels,weaponEffectsAllowed,weaponEffectTargets,weaponWhen,WEAPON_BEFORE_ONLY,WEAPON_AFTER_ONLY,WEAPON_EFFECT_MAX,weaponEffect,weaponEffectHostile,weaponEffectText,weaponEffectsText,clone,stats,STAT_KEYS,triggers,skillEffects,allowed,conditions,skillTargets,DURATION_EFFECTS,TARGETED_EFFECTS,HOSTILE_EFFECTS,effects,aiTargets,rows,objectives,ruleTypes,starTypes,days,TERRAINS,safeId,parse,skill,skillExt,skillIsExtended,weapon,weaponExt,weaponIsExtended,weaponDefaults,unitExt,unitIsExtended,pilot,pilotList,image,effect,item,itemExt,itemIsExtended,itemPack,itemEffects,itemSummary,itemHasRefs,itemIsV8,resolveItemData,materializeItem,effectText,skillText,research,researchList,serialize,tagList,parseTags,unitTags,requirements,checkRequirements,requirementText,missionExt,missionIsExtended,missionStars,starText,terrainMods,missionEnemyIds,rule,BUNDLE_FORMAT,BUNDLE_SCHEMA,bundlePack,unitSchemaFor,missionSchemaFor});
 })(window);
+
 
