@@ -1,0 +1,15 @@
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const read=p=>fs.readFileSync(p,'utf8');
+const pack=read('game/expansion_packs/black_bullet_bundle_PRO.js');
+const game=read('game/index.html');
+const readme=read('README.md');
+const index=read('index.html');
+assert.match(pack,/二次創作です（非公式・非営利）/);
+assert.match(pack,/"packName": "ブラック・ブレット 拡張パック（二次創作）"/);
+assert.match(game,/name:'ブラック・ブレット（二次創作）',kind:'拡張パック',desc:'非公式・非営利/);
+assert.match(readme,/ブラック・ブレット」（二次創作・非公式）を統合パックに更新/);
+assert.match(readme,/fantasia_record_ops_toolkit_v1\.15\.3\.zip/);
+assert.match(index,/dist\/fantasia_record_ops_toolkit_v1\.15\.3\.zip/);
+assert.match(game,/const GAME_VERSION = '1\.15\.3';/);
+assert.equal(JSON.parse(read('package.json')).version,'1.15.3');
+console.log('PASS: PRO 1.15.3 fan-pack disclosure and distribution');
