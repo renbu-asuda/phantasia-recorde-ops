@@ -8,7 +8,7 @@ function input(parent,label,value,change,type='text'){const l=el('label',label),
 function select(parent,label,values,value,change){const l=el('label',label),s=el('select');for(const [v,t] of Object.entries(values)){const o=el('option',t);o.value=v;s.append(o);}s.value=value;s.onchange=()=>change(s.value);l.append(s);parent.append(l);return s;}
 function conditionEditor(parent,obj,key,changed){
  const host=section(parent,'発動条件（複数可）');
- const draw=()=>{host.replaceChildren(el('h3','発動条件（複数可）'));const c=obj[key],mode=c?.all?'all':c?.any?'any':c?'single':'none';
+ const draw=()=>{host.replaceChildren(el('h3','発動条件（複数可）'));{const h=el('p','「HPが50%以下」「3TURN目以降」などを組み合わせます。「すべて満たす」は全部が当てはまるとき、「どれかを満たす」は1つでも当てはまるときに発動します。条件なしなら常に発動します。');h.className='sub';host.append(h);}const c=obj[key],mode=c?.all?'all':c?.any?'any':c?'single':'none';
   select(host,'条件の組合せ',{none:'条件なし',single:'一つの条件',all:'すべて満たす',any:'どれかを満たす'},mode,v=>{const old=c?.all||c?.any||(c?[c]:[{type:'hp_below',value:50}]);if(v==='none')delete obj[key];else obj[key]=v==='single'?old[0]:{[v]:old};changed();draw();});
   if(!c)return;const list=c.all||c.any||[c];list.forEach((x,i)=>{const row=el('div');row.className='pro-list-item';if(x.all||x.any){row.append(el('p',C.conditionText(x)));row.append(button('この入れ子を一つの条件へ変更',()=>{list[i]={type:'hp_below',value:50};changed();draw();}));}else{
    select(row,'条件',C.conditions,x.type,v=>{x.type=v;if(v==='target_tag'){x.tag||='装甲車';delete x.value;}else{x.value??=50;delete x.tag;}changed();draw();});
@@ -17,7 +17,30 @@ function conditionEditor(parent,obj,key,changed){
   if(mode==='all'||mode==='any'){const b=button('＋ 条件',()=>{list.push({type:'turn_ge',value:3});changed();draw();});b.disabled=list.length>=8;host.append(b);}
  };draw();
 }
-function flagsEditor(parent,obj,key,changed){const host=section(parent,'分岐フラグ');const draw=()=>{host.replaceChildren(el('h3','分岐フラグ'));for(const [id,v] of Object.entries(obj[key]||{})){const row=el('div');row.className='pro-row';row.append(el('span',id));select(row,'値',{true:'成立',false:'不成立'},String(v),x=>{obj[key][id]=x==='true';changed();});row.append(button('削除',()=>{delete obj[key][id];if(!Object.keys(obj[key]).length)delete obj[key];changed();draw();}));host.append(row);}const row=el('div');let name='';input(row,'新しいフラグID',name,v=>name=v);row.append(button('＋ フラグ',()=>{if(!C.safeId(name)){alert('英数字・_・-のIDを入力してください');return;}obj[key]||={};obj[key][name]=true;changed();draw();}));host.append(row);};draw();}
+// 1.15.1: flags are picked from the pack's flag dictionary. A new flag is created (and registered) on the spot, near-duplicates are questioned, and unregistered IDs get a one-tap register button.
+function flagsEditor(parent,obj,key,changed){
+ const host=section(parent,'分岐フラグ');
+ const src=()=>F.getFlagSource(),notes=()=>src()?.notes?.()||{},known=()=>[...new Set([...Object.keys(notes()),...(src()?.known?.()||[])])].sort();
+ const label=id=>{const n=notes()[id];return n?.name?n.name+'（'+id+'）':id;};
+ const draw=()=>{host.replaceChildren(el('h3','分岐フラグ'));
+  const help=el('p','フラグは「選択した」「ボスを倒した」などの記録です。ここで成立させたフラグを、別の作戦の出撃条件に使うと、ストーリー分岐になります。');help.className='sub';host.append(help);
+  for(const [id,v] of Object.entries(obj[key]||{})){const row=el('div');row.className='pro-row';const nm=el('b',label(id));row.append(nm);
+   if(src()?.register&&!notes()[id]){const b=button('辞書に登録',()=>{const name=prompt('「'+id+'」の名前（分かりやすい名前）',id);if(name===null)return;src().register(id,name.trim()===id?'':name.trim());changed();draw();});row.append(b);}
+   select(row,'値',{true:'成立させる',false:'不成立にする'},String(v),x=>{obj[key][id]=x==='true';changed();});
+   row.append(button('削除',()=>{delete obj[key][id];if(!Object.keys(obj[key]).length)delete obj[key];changed();draw();}));host.append(row);
+   if(notes()[id]?.desc)host.append(el('small',notes()[id].desc));}
+  const add=el('div');add.className='pro-row';const choices=known().filter(id=>!Object.hasOwn(obj[key]||{},id));
+  const pick=el('select');pick.setAttribute('aria-label','追加するフラグ');const first=el('option','＋ フラグを追加…');first.value='';pick.append(first);for(const id of choices){const o=el('option',label(id));o.value=id;pick.append(o);}const mk=el('option','＋ 新しいフラグを作る…');mk.value='__new';pick.append(mk);
+  pick.onchange=()=>{const v=pick.value;if(!v)return;if(v==='__new'){form.hidden=false;return;}obj[key]||={};obj[key][v]=true;changed();draw();};add.append(pick);host.append(add);
+  const form=el('div');form.className='pro-row';form.hidden=true;let id='',name='';
+  input(form,'新しいフラグのID（英数字・_・-）',id,v=>id=v.trim());input(form,'名前（分かりやすい名前・任意）',name,v=>name=v.trim());
+  form.append(button('作って追加',()=>{if(!C.safeId(id)){alert('IDは英数字・_・-で入力してください（例: boss_beaten）');return;}
+   const sim=F.similarFlags([...known(),id]).filter(p=>p.includes(id)&&!known().includes(id)).map(p=>p.find(x=>x!==id)).filter(Boolean);
+   if(known().includes(id)){obj[key]||={};obj[key][id]=true;changed();draw();return;}
+   if(sim.length&&!confirm('「'+id+'」は既にある「'+sim.join('」「')+'」と似ています。\nタイプミスなら「キャンセル」して、上の一覧から選んでください。\n別のフラグとして作りますか？'))return;
+   if(src()?.register)src().register(id,name);obj[key]||={};obj[key][id]=true;changed();draw();}));host.append(form);
+ };draw();
+}
 const conditionField={key:'cond',label:'発動条件',type:'condition'};
 function phaseFields(){return [
  {key:'id',label:'段階ID',keep:true},{key:'name',label:'段階名',keep:true},conditionField,
@@ -73,5 +96,5 @@ function replayViewer(parent,record){
  const jump=el('select');for(const [i,f] of frames.entries())if(['turnStart','phase','event','result'].includes(f.type)||/撃破/.test(f.text)){const o=el('option','TURN '+f.turn+' / '+f.text.slice(0,60));o.value=i;jump.append(o);}jump.onchange=()=>{stop();at=Number(jump.value);draw();};controls.append(jump);
  box.append(controls,slider,scene,text);if(record.truncated)box.append(el('p','容量上限により記録を一部省略しています。'));draw();return stop;
 }
-root.PROFeaturesUI=Object.freeze({version:'1.0.0',el,button,section,input,select,conditionEditor,flagsEditor,phaseFields,eventFields,graphPanel,maker,replayViewer});
+root.PROFeaturesUI=Object.freeze({version:'1.1.0',el,button,section,input,select,conditionEditor,flagsEditor,phaseFields,eventFields,graphPanel,maker,replayViewer});
 })(window);

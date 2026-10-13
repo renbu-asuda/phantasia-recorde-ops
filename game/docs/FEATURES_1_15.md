@@ -105,3 +105,13 @@ npm run test:browser
 ```
 
 ブラウザテストは390×844の表示幅で、デモの取込、編集、Undo/Redo、名前付き保存、専用化、実戦、分岐保存、履歴表示を検証します。既存ゲームの利用にnpmは不要です。
+
+## 1.15.1 クリエイター向けの補強
+
+データ形式は 1.15.0 のままです（Schema 番号は変わりません）。
+
+- **フラグ辞書**: 統合パックの任意の項目 `flagNotes: { "boss_beaten": { "name": "ボス撃破", "desc": "ボスを倒した" } }`。表示用で、ゲームの動作や Schema 番号に影響しません。IDは英数字・_・-、名前40文字・説明200文字まで、200件まで。
+- **フラグタブ**: 立てる場所・使う場所の一覧と移動、ID変更（全箇所を書き換え・統合）、辞書への登録と削除、似たつづりの警告。
+- **作り方の確認**: 「パック・出力」に表示。書き出しは止めません。
+- **要約とテンプレート**: 段階変化・イベント・選択肢の一覧タイトルに日本語の要約。複合スキル・段階変化・イベント・選択肢のテンプレート。
+- 共通モジュール: `PROFeatures`（1.1.0）に `flagSites` / `flagReport` / `similarFlags` / `renameFlag` / `setFlagNote` / `deleteFlagNote` / `authoringHints` / `describePhase` / `describeEvent` / `describeChoice` / `templates`、`PROCore.flagNotes`。

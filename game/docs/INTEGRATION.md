@@ -1,3 +1,9 @@
+# Toolkit 1.15.1 フラグ辞書（表示用・Schema 変更なし）
+
+統合パックの直下に任意で `flagNotes` を置けます（`{ フラグID: { name?, desc? } }`）。`PROCore.bundlePack` は検証して保持し、空なら出力しません。ゲームは読み込んで保持するだけで、動作には使いません。`PROFeatures.flagReport(pack)` でフラグごとの「立てる場所」「使う場所」と注意点、`authoringHints(pack)` で作り方の確認を取得できます。
+
+---
+
 # PRO 1.15.0 追補
 
 新項目と処理順は [FEATURES_1_15.md](FEATURES_1_15.md) を参照。新機能使用時は Unit 9 / Mission 5 / Item 7 / Bundle 9。以下は旧版の項目を含む従来資料です。

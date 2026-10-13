@@ -7,6 +7,16 @@ window.VAIS_BUNDLE_PACK = {
   "author": "PRO",
   "packVersion": "1.0.0",
   "dependencies": [],
+  "flagNotes": {
+    "demo_forest": {
+      "name": "森ルートを選んだ",
+      "desc": "作戦前の選択で「森を抜ける」を選ぶと成立する"
+    },
+    "demo_clear": {
+      "name": "デモをクリアした",
+      "desc": "「新機能デモ：選択と段階変化」に勝利すると成立する"
+    }
+  },
   "units": [
     {
       "id": "demo_hero",

@@ -56,7 +56,11 @@ const skills=[
   {key:'meleeresist',label:'近接耐性',desc:'近接武器から受けるダメージを30%減らす。',skill:S({name:'近接耐性',trigger:'when_targeted',effect:'weapon_resist_pct',value:30,resistType:'melee'})},
   {key:'rangedresist',label:'射撃耐性',desc:'射撃武器から受けるダメージを30%減らす。',skill:S({name:'射撃耐性',trigger:'when_targeted',effect:'weapon_resist_pct',value:30,resistType:'ranged'})},
   {key:'rage',label:'激昂',desc:'HPが50%以下になると、ATKが30%上がる（戦闘終了まで）。',skill:S({name:'激昂',trigger:'turn_start',effect:'atk_up_pct',value:30,maxUses:1,duration:99,cond:{type:'hp_below',value:50}})},
-  {key:'jamming',label:'ジャミング',desc:'毎TURNのはじめに50%の確率で、敵全体の命中を10%下げる。',skill:S({name:'ジャミング',trigger:'turn_start',effect:'acc_down_pct',value:10,chance:50,target:'enemies',duration:1})}
+  {key:'jamming',label:'ジャミング',desc:'毎TURNのはじめに50%の確率で、敵全体の命中を10%下げる。',skill:S({name:'ジャミング',trigger:'turn_start',effect:'acc_down_pct',value:10,chance:50,target:'enemies',duration:1})},
+  // 1.15.1: composite skills (several effects from one trigger, optional AND / OR conditions)
+  {key:'awakening',label:'複合: 覚醒',desc:'3TURN目以降でHPが50%以下になると、1回だけ「ATK+30%・MOB+20%（3TURN）・HP500回復」をまとめて発動。',skill:S({name:'覚醒',trigger:'turn_start',effect:'atk_up_pct',value:30,maxUses:1,cond:{all:[{type:'turn_ge',value:3},{type:'hp_below',value:50}]},effects:[{effect:'atk_up_pct',value:30,duration:3,target:'self'},{effect:'mob_up_pct',value:20,duration:3,target:'self'},{effect:'heal_flat',value:500,target:'self'}]})},
+  {key:'warcry',label:'複合: 鬨の声',desc:'戦闘開始時に1回、味方全体のATKとACCを10%上げる（3TURN）。',skill:S({name:'鬨の声',trigger:'battle_start',effect:'atk_up_pct',value:10,maxUses:1,effects:[{effect:'atk_up_pct',value:10,duration:3,target:'allies'},{effect:'acc_up_pct',value:10,duration:3,target:'allies'}]})},
+  {key:'lastresort',label:'複合: 背水の陣',desc:'HPが30%以下のとき、1回だけ最大HPの20%を回復してDEFを30%上げる（3TURN）。',skill:S({name:'背水の陣',trigger:'turn_start',effect:'heal_maxhp_pct',value:20,maxUses:1,cond:{type:'hp_below',value:30},effects:[{effect:'heal_maxhp_pct',value:20,target:'self'},{effect:'def_up_pct',value:30,duration:3,target:'self'}]})}
 ];
 // ---- units ----
 const units=[
@@ -153,6 +157,6 @@ const research=[
 ];
 function makeResearch(key,name,ctx={},existingIds=[]){const t=research.find(x=>x.key===key)||research[0];return {id:autoId('research',existingIds),...t.make(ctx),...(name?{name}:{})};}
 function makeTreeNode(skillKey,existingIds=[]){return {id:autoId('node',existingIds),cost:1,minLevel:1,requires:[],skill:skillByKey(skillKey)};}
-root.PROTemplates=Object.freeze({version:'1.4.1',makePilotUnit,weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
+root.PROTemplates=Object.freeze({version:'1.4.2',makePilotUnit,weapons,skills,units,tiers,factions,ranks,items,missions,pilots,research,autoId,weaponByKey,skillByKey,makeUnit,makeItem,makeMission,makePilot,makeResearch,makeTreeNode});
 })(window);
 
