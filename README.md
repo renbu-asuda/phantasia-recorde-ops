@@ -8,6 +8,7 @@
 
 - ゲーム: https://renbu-asuda.github.io/phantasia-recorde-ops/game/index.html
 - メーカー: https://renbu-asuda.github.io/phantasia-recorde-ops/game/maker_hub.html
+- マニュアル（遊び方・計算式・作り方）: https://renbu-asuda.github.io/phantasia-recorde-ops/manual/
 
 
 ### LINEで送るとき・画面が窮屈なとき
@@ -17,7 +18,7 @@
 
 ## ダウンロード
 
-オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.15.1.zip](dist/fantasia_record_ops_toolkit_v1.15.1.zip)**（リンク先の「Download raw file」ボタンで保存できます）
+オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.15.2.zip](dist/fantasia_record_ops_toolkit_v1.15.2.zip)**（リンク先の「Download raw file」ボタンで保存できます）
 
 ## 遊び方
 
@@ -44,6 +45,7 @@
 
 ## 更新履歴（抜粋）
 
+- **1.15.2**: オンラインマニュアルを追加（`manual/`）。遊び方・戦闘の計算式・拠点と経済・データの作り方・メーカーの使い方・バランスの目安・用語集・FAQ。ゲーム内とメーカー内にもリンクを設置。ZIPには含まれません。
 - **1.15.1**: 統合メーカーに「フラグ」タブ。分岐フラグに名前と説明を付け、立てる場所・使う場所を一覧できます（ID変更は全箇所に反映、似たつづりは警告）。フラグ入力は辞書から選ぶ形に。「作り方の確認」で、何も起きないイベントなどを書き出し前に知らせます。複合スキル・段階変化・イベント・選択肢に日本語の要約とテンプレートを追加。1.15.0 で地形の命中補正を持つパックが読み込めなかった不具合も修正。データ形式は変わらず、旧パック・セーブはそのまま使えます。
 - **1.15.0**: 複合条件・複合スキル、段階変化・変形、戦闘中イベント・選択と分岐、解放条件の関係表示、共有データの使用先・専用化、Undo/Redo・名前付き保存・一括編集、パック差分・依存・更新前復元、出撃収支・素材案内、戦闘履歴・リプレイを追加。新機能デモを拡張パック画面から試せます。[使い方と新しいデータ項目](game/docs/FEATURES_1_15.md)。
 

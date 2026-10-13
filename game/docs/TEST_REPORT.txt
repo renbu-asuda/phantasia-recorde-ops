@@ -1,3 +1,7 @@
+PRO Toolkit 1.15.2 検証報告
+
+全41テストPASS（新規 test_manual_links: ゲーム・メーカーのマニュアルリンク、ZIPに含めないこと）。test_ui は1.15.1の一覧パネル追加に合わせテスト側を修正。
+
 PRO Toolkit 1.15.1 検証報告
 
 全38テストPASS（新規 test_flags_151）。公開リポジトリ付属の syntax / features テストもPASS。

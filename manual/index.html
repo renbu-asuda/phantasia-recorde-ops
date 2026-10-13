@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ファンタジア・レコード・オプス オンラインマニュアル</title>
+<meta name="description" content="ファンタジア・レコード・オプス（PRO）のオンラインマニュアル。遊び方、戦闘の計算式、データの作り方を、初めての人にも分かるように説明します。">
+<link rel="stylesheet" href="manual.css">
+</head><body>
+<header class="topbar"><nav aria-label="マニュアルの目次"><a class="brand" href="index.html">📖 マニュアル</a><a class="nav" href="index.html" aria-current="page">目次</a><a class="nav" href="1-start.html">1. はじめに</a><a class="nav" href="2-play.html">2. 遊び方</a><a class="nav" href="3-battle.html">3. 戦闘</a><a class="nav" href="4-base.html">4. 育成・基地</a><a class="nav" href="5-data.html">5. データ</a><a class="nav" href="6-maker.html">6. メーカー</a><a class="nav" href="7-balance.html">7. 作成の目安</a><a class="nav" href="8-faq.html">8. 困ったとき</a></nav></header>
+<main>
+<h1>ファンタジア・レコード・オプス オンラインマニュアル</h1>
+
+<p class="lead">このゲームの遊び方、戦いの計算のしくみ、自分だけのデータ（キャラクターや作戦）の作り方を、ゲームやプログラミングに触れたことがない人にも分かるように説明するマニュアルです。</p>
+
+<div class="box tip"><b>まずここから</b>
+<p>「とにかく遊びたい」なら<a href="1-start.html">1. はじめに</a>と<a href="2-play.html">2. 遊び方</a>だけ読めば大丈夫です。「自分でキャラクターや作戦を作りたい」なら<a href="6-maker.html">6. メーカーの使い方</a>へ。数字の意味が知りたくなったら、そのとき<a href="3-battle.html">3. 戦闘</a>を開いてください。</p></div>
+
+<h2 id="sec1">このゲームはどんなゲーム？</h2>
+<p>あなたは小さな部隊の指揮官です。仲間（ユニット）を選んで「作戦」に送り出します。<span class="k">戦闘は自動で進む</span>ので、あなたがやるのは「誰を行かせるか」「どの作戦に挑むか」を決めることと、勝って手に入れたお金や経験値で仲間を強くすることです。</p>
+<ol class="step">
+<li><b>部隊を選ぶ</b>：出撃する仲間を最大8人まで選びます。</li>
+<li><b>作戦を選ぶ</b>：どの敵と戦うか決めます。勝てそうかどうかの目安（推定勝率）も出ます。</li>
+<li><b>派遣して見守る</b>：戦闘は自動です。倍速やスキップもできます。</li>
+<li><b>育てる</b>：勝つとお金・経験値・アイテムが手に入ります。レベルを上げ、装備を整え、新しい仲間を雇います。</li>
+</ol>
+<p>データ（仲間・作戦・アイテム）は、専用の「メーカー」という道具を使って、プログラミングなしで自分で作れます。作ったデータは1つのファイルに書き出して、ゲームに読み込ませると遊べます。</p>
+
+<h2 id="sec2">目次</h2>
+<div class="cards">
+<a class="card" href="1-start.html"><b>1. はじめに</b><span>ゲームの全体像、よく出る言葉の説明、最初の5分の流れ、セーブについて。</span></a>
+<a class="card" href="2-play.html"><b>2. 遊び方</b><span>部隊・作戦・出撃確認・戦闘・雇用・ショップなど、画面ごとの使い方。</span></a>
+<a class="card" href="3-battle.html"><b>3. 戦闘のしくみと計算式</b><span>命中率・ダメージ・スキルなど、戦闘の計算を具体例つきで。</span></a>
+<a class="card" href="4-base.html"><b>4. お金・育成・基地</b><span>報酬、経験値とレベル、疲労と負傷、修理、施設、研究、雇用のルール。</span></a>
+<a class="card" href="5-data.html"><b>5. データの種類と項目</b><span>ユニット・武装・スキル・アイテム・作戦・研究などの項目一覧。</span></a>
+<a class="card" href="6-maker.html"><b>6. メーカーの使い方</b><span>統合メーカーで仲間や作戦を作り、ゲームで遊ぶまでの手順。</span></a>
+<a class="card" href="7-balance.html"><b>7. 作成のコツと目安</b><span>強さの基準値、ちょうどいい難しさにする目安、よくある失敗。</span></a>
+<a class="card" href="8-faq.html"><b>8. 困ったとき</b><span>よくある質問、用語集、データの互換性（古い・新しい）の話。</span></a>
+</div>
+
+<h2 id="sec3">このマニュアルの読み方</h2>
+<ul>
+<li><span class="k">緑の枠</span>：知っておくと得するポイントです。</li>
+<li><span class="k">黄色の枠</span>：具体的な数字で計算してみる例です。</li>
+<li><span class="k">赤の枠</span>：間違えやすいところ・注意です。</li>
+<li>「もっと詳しく」の折りたたみは、気になったときだけ開いてください。読み飛ばしても遊べます。</li>
+<li>画面の名前やボタンは、ゲームの表示どおり「」で書いています。</li>
+</ul>
+<div class="box warn"><b>用語について</b><p>最初に出てくる専門用語（HP、ATK、スキルなど）は、その場で意味を説明します。分からなくなったら<a href="8-faq.html#glossary">用語集</a>を見てください。</p></div>
+
+<div class="pager"><span></span><span><a href="1-start.html">1. はじめに →</a></span></div>
+</main>
+<footer><p>ファンタジア・レコード・オプス（PRO）1.15.2 対応。<a href="../">トップへ戻る</a> ／ <a href="../game/index.html">ゲームを遊ぶ</a> ／ <a href="../game/maker_hub.html">メーカーを開く</a></p><p>このマニュアルはオンラインで公開しています（ZIPには入っていません）。内容は今後のアップデートで更新されます。</p></footer>
+</body></html>
