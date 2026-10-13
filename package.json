@@ -1,9 +1,9 @@
 {
   "name": "phantasia-recorde-ops",
-  "version": "1.15.2",
+  "version": "1.15.3",
   "private": true,
   "scripts": {
-    "test": "node tests/syntax.cjs && node tests/features.cjs",
+    "test": "node tests/syntax.cjs && node tests/features.cjs && node tests/notice.cjs",
     "test:dom": "node tests/dom-smoke.mjs",
     "test:browser": "node tests/browser.cjs"
   },
