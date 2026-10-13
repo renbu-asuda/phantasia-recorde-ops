@@ -18,7 +18,7 @@
 
 ## ダウンロード
 
-オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.15.2.zip](dist/fantasia_record_ops_toolkit_v1.15.2.zip)**（リンク先の「Download raw file」ボタンで保存できます）
+オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.15.3.zip](dist/fantasia_record_ops_toolkit_v1.15.3.zip)**（リンク先の「Download raw file」ボタンで保存できます）
 
 ## 遊び方
 
