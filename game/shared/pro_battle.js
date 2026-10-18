@@ -289,6 +289,27 @@ function objectiveStatus(ctx){const plan=ctx.plan;if(!plan)return null;const m=c
   return {wave:spawned,totalWaves:total,boss:plan.type==='boss'?(plan.boss?{name:plan.boss.name,hpPct:Math.max(0,Math.round(plan.boss.currentHp/plan.boss.maxHp*100)),alive:plan.boss.alive}:{pending:true}):null,
     defenseLeft:plan.type==='defense'?Math.max(0,(plan.ob.turns||10)-(ctx.turn||0)):null,escort:escort?{name:escort.name,hpPct:Math.max(0,Math.round(escort.currentHp/escort.maxHp*100)),alive:escort.alive}:null,
     nextWave:next?C.waveWhenText(next):null,turnsLeft:limit?Math.max(0,limit-(ctx.turn||0)):null,enemiesLeft:ctx.enemies.filter(alive).length};}
+// Opt-in Tactical encounter: no mission objectives, rewards, waves or draw verdict.
+async function runLocalBattle(ctx,{maxTurns=3}={}){
+ if(!Number.isInteger(maxTurns)||maxTurns<1||maxTurns>100)throw Error('Invalid local turn limit');
+ const finished=()=>!ctx.allies.some(alive)||!ctx.enemies.some(alive);
+ const H=ctx.hooks;
+ triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'battle_start');await processPending(ctx);
+ let turns=0;
+ for(let t=1;t<=maxTurns&&!finished();t++){
+  ctx.turn=t;turns=t;await H.turnStart(t);burnTick(ctx);if(finished())break;
+  triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_start');await processPending(ctx);if(finished())break;
+  const order=[...ctx.allies,...ctx.enemies].filter(alive).map(u=>({u,init:eff(ctx,u,'mob')+rand(ctx,0,100)})).sort((a,b)=>b.init-a.init).map(x=>x.u);
+  for(const u of order){if(finished()||ctx.aborted)break;if(u.alive)await attack(ctx,u);}
+  if(ctx.aborted||finished())break;
+  triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_end');await processPending(ctx);
+  // Persistent Tactical effects expire at faction end, not each local combat turn.
+  H.render();
+ }
+ const stop=finished()?'elimination':ctx.aborted?'aborted':'turn_limit';
+ return {stop,turns,alliesAlive:ctx.allies.filter(alive).length,enemiesAlive:ctx.enemies.filter(alive).length};
+}
+
 async function runBattle(ctx,opts={}){
   const H=ctx.hooks,m=ctx.mission||{},{limit,reinforce}=battleRules(m);
   const plan=battlePlan(ctx);ctx.plan=plan;await checkpoint(ctx);
@@ -395,7 +416,7 @@ function unitPower(a){const ws=(a.weapons&&a.weapons.length)?a.weapons:[BASIC_WE
 let STD_POWER=0;
 function powerRatio(a){if(!STD_POWER)STD_POWER=unitPower(STANDARD_UNIT);return Math.sqrt(unitPower(a)/STD_POWER);}
 function starCount(r){return r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;}
-root.PROBattle=Object.freeze({version:'1.6.0',checkpoint,condOk,recordFrame,DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+root.PROBattle=Object.freeze({version:'1.6.0',checkpoint,condOk,recordFrame,DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runLocalBattle,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);
 
 
