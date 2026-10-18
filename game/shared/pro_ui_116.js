@@ -16,7 +16,7 @@ let pending=false;function schedule(){if(pending)return;pending=true;queueMicrot
 // Observe only source UI changes; own popup/button mutations must not cause a loop.
 const watch=new MutationObserver(records=>{if(records.some(r=>{const t=r.target;return !dialog.contains(t)&&!t.closest?.('.pro-select-button,.pro-home,.pro-selection-summary,.pro-mission-detail,.pro-mobile-menu')&&(r.type==='childList'||r.type==='characterData'||['disabled','selected','hidden','class'].includes(r.attributeName));}))schedule();});
 document.addEventListener('change',()=>{sync();updateSummary();});
-document.addEventListener('click',e=>{const label=e.target.closest?.('label');const s=label?.control;if(s?.tagName==='SELECT'&&selects.has(s)&&!e.target.closest('button')){e.preventDefault();selects.get(s).b.click();}});
+document.addEventListener('click',e=>{const label=e.target.closest?.('label');const s=label?.control;if(s?.tagName==='SELECT'&&selects.has(s)&&e.target!==s&&!e.target.closest('button')){e.preventDefault();selects.get(s).b.click();}});
 // Keep programmatic value-only updates (battle speed, pilot selection) reflected too.
 const timer=setInterval(()=>{sync();if(dialog.open&&source&&!source.isConnected)finish();},500);window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
 const wrap=document.querySelector('#baseScreen .wrap'),grid=wrap.querySelector('.grid'),nav=wrap.querySelector('.flow-nav');

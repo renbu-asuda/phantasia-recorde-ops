@@ -26,7 +26,7 @@ for(const file of ['game/index.html','game/combined_maker.html','game/unit_maker
  if(file.endsWith('combined_maker.html')){
   const doc=win.document;doc.querySelector('#importMode').value='replace';const sample=fs.readFileSync('game/samples/pro_115_feature_sample.js','utf8');const input=doc.querySelector('#importFiles');Object.defineProperty(input,'files',{value:[{text:async()=>sample}],configurable:true});await input.onchange({target:input});
   assert.equal(doc.querySelector('#packId').value,'pro_115_demo');assert.equal(doc.querySelector('#download').disabled,false,doc.querySelector('#validation').textContent);
-  const click=t=>{const b=[...doc.querySelectorAll('button')].find(b=>b.textContent===t)||[...doc.querySelectorAll('button')].find(b=>b.textContent.startsWith(t));assert(b,t);b.click();};click('スキル');click('複合覚醒');assert(doc.querySelector('#form').textContent.includes('複合スキル'));click('ユニット');click('デモ隊員');click('4. 拡張（1.9）');assert(doc.querySelector('#form').textContent.includes('段階変化'));
+  const click=t=>{const b=[...doc.querySelectorAll('button')].find(b=>b.textContent===t)||[...doc.querySelectorAll('button')].find(b=>b.textContent.startsWith(t));assert(b,t);b.click();};click('スキル');click('複合覚醒');assert(doc.querySelector('#form').textContent.includes('複合スキル'));click('ユニット');click('デモ隊員');click('4. 拡張設定');assert(doc.querySelector('#form').textContent.includes('段階変化'));
   click('ミッション');click('新機能デモ：選択と段階変化');click('4. 勝敗条件・ウェーブ');assert(doc.querySelector('#form').textContent.includes('戦闘中イベント'));
   click('パック・出力');click('関係図と到達条件を確認');assert(doc.querySelector('#overview').textContent.includes('ドロップ'));
  }
