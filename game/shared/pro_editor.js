@@ -165,6 +165,8 @@ function skillFields(){return [
 function weaponExtFields(){return [
   {key:'useUnitAtk',label:'ユニットのATKを参照する',type:'bool',default:true,help:'ON: ATK＋基礎攻撃力。OFF: 基礎攻撃力のみ。未設定の旧武装はON。'},
   {key:'baseAtk',label:'武装基礎攻撃力',type:'number',min:0,max:1000000,help:'（参照するATK または 0）＋基礎攻撃力に、威力％を掛けます。'},
+  {key:'minRange',label:'最小射程（SRPG・開発中）',type:'number',min:1,max:99,help:'SRPG方式用のマス数。空欄は1。現在の自動戦闘には影響しません。'},
+  {key:'maxRange',label:'最大射程（SRPG・開発中）',type:'number',min:1,max:99,help:'SRPG方式用のマス数。空欄は1（最小射程を入れた場合はその値）。現在の自動戦闘には影響しません。'},
   {key:'usesPerBattle',label:'1戦闘の使用回数（空欄=無制限）',type:'number',min:0,max:99,advanced:true},
   {key:'cooldown',label:'使用後に待つTURN数（空欄=なし）',type:'number',min:0,max:99,advanced:true},
   {key:'defPiercePct',label:'DEF貫通 %',type:'number',min:0,max:100,advanced:true},
