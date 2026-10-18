@@ -3,7 +3,7 @@
   "version": "1.15.4",
   "private": true,
   "scripts": {
-    "test": "node tests/syntax.cjs && node tests/features.cjs && node tests/notice.cjs && node tests/tactical-prep.cjs",
+    "test": "node tests/syntax.cjs && node tests/features.cjs && node tests/notice.cjs && node tests/tactical-prep.cjs && node tests/tactical-foundations.cjs",
     "test:dom": "node tests/dom-smoke.mjs",
     "test:browser": "node tests/browser.cjs"
   },

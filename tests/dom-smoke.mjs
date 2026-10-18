@@ -9,14 +9,19 @@ for(const file of ['game/index.html','game/combined_maker.html','game/unit_maker
  const {win,alerts}=await load(file);assert(!win.__PRO_BOOT_FAILED,file+' boot');assert(win.PROCore,file+' core');console.log('DOM loaded',file,win.document.querySelectorAll('button').length,'buttons');
  if(['game/combined_maker.html','game/unit_maker.html'].includes(file)){
   const E=win.PROEditor,model={},box=win.document.createElement('div');win.document.body.append(box);
-  E.form(box,model,E.unitExtFields().filter(f=>['move','movementAptitude'].includes(f.key)),()=>{});
+  E.form(box,model,E.unitExtFields().filter(f=>['size','move','movementAptitude'].includes(f.key)),()=>{});
+  const sampleUnit={id:'sized',name:'sized',hp:1000,atk:100,def:0,mob:500,acc:500,weapons:[{name:'gun'}],size:'XL'};
+  const marker=file.endsWith('unit_maker.html')?'VAIS_UNIT_PACK':'VAIS_BUNDLE_PACK';
+  const raw={format:marker==='VAIS_UNIT_PACK'?'VAIS_OUTER_OPS_UNIT_PACK':'VAIS_OUTER_OPS_BUNDLE_PACK',schemaVersion:9,packId:'sized',units:[sampleUnit],missions:[],items:[]};
+  const adapter=win.PROMaker.getAdapter(marker==='VAIS_UNIT_PACK'?'unit':'bundle');
+  assert.equal(adapter.readPack(win.PROCore.serialize(marker,raw)).units[0].size,'XL');
   const move=box.querySelector('input[type=number]');move.value='0';move.dispatchEvent(new win.Event('input'));
-  const selects=box.querySelectorAll('select');assert.equal(selects.length,5);
-  selects[0].value='S';selects[0].dispatchEvent(new win.Event('change'));
-  selects[1].value='none';selects[1].dispatchEvent(new win.Event('change'));
+  const selects=box.querySelectorAll('select');assert.equal(selects.length,6);selects[0].value='2XL';selects[0].dispatchEvent(new win.Event('change'));assert.equal(model.size,'2XL');assert.equal(win.PROCore.unitExt(model).size,'2XL');
+  selects[1].value='S';selects[1].dispatchEvent(new win.Event('change'));
+  selects[2].value='none';selects[2].dispatchEvent(new win.Event('change'));
   assert.equal(model.move,0);assert.equal(model.movementAptitude.ground,'S');assert.equal(model.movementAptitude.air,'none');
   assert.equal(E.pick(model,E.UNIT_EXT_KEYS).move,0);assert.equal(win.PROCore.unitExt(model).movementAptitude.air,'none');
-  selects[0].value='';selects[0].dispatchEvent(new win.Event('change'));assert(!('ground' in model.movementAptitude));box.remove();
+  selects[1].value='';selects[1].dispatchEvent(new win.Event('change'));assert(!('ground' in model.movementAptitude));box.remove();
  }
  if(file.endsWith('combined_maker.html')){
   const doc=win.document;doc.querySelector('#importMode').value='replace';const sample=fs.readFileSync('game/samples/pro_115_feature_sample.js','utf8');const input=doc.querySelector('#importFiles');Object.defineProperty(input,'files',{value:[{text:async()=>sample}],configurable:true});await input.onchange({target:input});
