@@ -3,7 +3,7 @@
   "version": "1.16.2",
   "private": true,
   "scripts": {
-    "test": "node tests/syntax.cjs && node tests/features.cjs && node tests/notice.cjs && node tests/tactical-prep.cjs && node tests/tactical-foundations.cjs",
+    "test": "node tests/syntax.cjs && node tests/features.cjs && node tests/notice.cjs && node tests/tactical-prep.cjs && node tests/tactical-foundations.cjs && node tests/tactical-range.cjs",
     "test:dom": "node tests/dom-smoke.mjs && node tests/ui-116.mjs && node tests/maker-ui-1161.mjs && node tests/compact-ui.mjs",
     "test:browser": "node tests/browser.cjs",
     "test:prototype": "node tests/prototype-hub.mjs"

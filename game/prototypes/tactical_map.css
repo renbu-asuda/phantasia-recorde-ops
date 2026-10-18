@@ -5,3 +5,5 @@
 #fieldBattle{max-width:720px;max-height:90dvh;overflow:auto}.field-battle-log{max-height:45dvh;overflow:auto;background:#10171d;padding:12px}.field-battle-log p{font-size:12px;border-bottom:1px solid var(--line);margin:0;padding:7px 0}.field-tile:has(strong){box-shadow:inset 0 0 0 2px #d6ed8377}
 
 .field-tile.hostile{box-shadow:inset 0 0 0 2px #efaa99}.field-tile.hostile strong{color:#ffbaa8}
+
+.field-tile.attackable{outline:3px solid #ff8273;outline-offset:-3px}.field-tile.attackable::after{content:"攻撃可";position:absolute;top:1px;right:1px;font-size:9px;color:#ffc8ba;background:#381c20}

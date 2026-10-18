@@ -126,7 +126,9 @@ function weaponTypeLabel(w){return `${attackTypeLabel(w.attackType)}・${damageT
 
 // ---- weapons and targets ----
 function weaponReady(ctx,u,w){const st=u.weaponState?.[w.name];if(!st)return true;if(w.usesPerBattle&&st.used>=w.usesPerBattle)return false;if(w.cooldown&&ctx.turn<st.readyTurn)return false;return true;}
+function weaponInRange(w,distance){const min=w.minRange??1,max=w.maxRange??1;return Number.isInteger(min)&&Number.isInteger(max)&&min>=1&&max>=min&&distance>=min&&distance<=max;}
 function chooseWeapon(ctx,attacker){
+  if(ctx.localDistance!==undefined){const source=attacker.weapons?.length?attacker.weapons:[BASIC_WEAPON],ws=source.filter(w=>weaponInRange(w,ctx.localDistance)&&weaponReady(ctx,attacker,w));if(!ws.length)return null;let r=ctx.rng()*ws.reduce((n,w)=>n+Math.max(.01,num(w.weight,1)),0);for(const w of ws){r-=Math.max(.01,num(w.weight,1));if(r<=0)return w;}return ws[ws.length-1];}
   const ws=(attacker.weapons||[]).filter(w=>weaponReady(ctx,attacker,w));if(!ws.length)return attacker.weapons?.length?BASIC_WEAPON:{...BASIC_WEAPON,name:'標準攻撃'};
   const total=ws.reduce((sum,w)=>sum+Math.max(.01,num(w.weight,1)),0);let r=ctx.rng()*total;
   for(const w of ws){r-=Math.max(.01,num(w.weight,1));if(r<=0)return w;}return ws[ws.length-1];
@@ -185,6 +187,7 @@ function handleDeath(ctx,u,killer){
   return true;
 }
 async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
+  if(ctx.localDistance!==undefined&&!weaponInRange(weapon,ctx.localDistance))return {hits:0,damage:0,kills:0,crits:0};
   const H=ctx.hooks;
   await H.actionStart(attacker,weapon,targets,opts);
   let actionResist=0,actionTag=0,actionHits=0,actionDmg=0,killCount=0,actionCrits=0,lastKilled=null,lastCritTarget=null;
@@ -240,7 +243,7 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
   return {hits:actionHits,damage:actionDmg,kills:killCount,crits:actionCrits};
 }
 async function processPending(ctx){
-  while(ctx.pending.length){const p=ctx.pending.shift();if(!p.unit.alive||!p.target.alive)continue;const w=(p.unit.weapons||[])[0]||BASIC_WEAPON;await resolveWeapon(ctx,p.unit,w,[p.target],{counter:true,scale:p.scale});}
+  while(ctx.pending.length){const p=ctx.pending.shift();if(!p.unit.alive||!p.target.alive)continue;const w=ctx.localDistance!==undefined?chooseWeapon(ctx,p.unit):(p.unit.weapons||[])[0]||BASIC_WEAPON;if(!w)continue;await resolveWeapon(ctx,p.unit,w,[p.target],{counter:true,scale:p.scale});}
 }
 async function attack(ctx,attacker){
   if(!attacker.alive)return;
@@ -248,7 +251,7 @@ async function attack(ctx,attacker){
   for(let round=0;round<2;round++){
     const opp=oppOf(ctx,attacker);if(!opp.some(alive)||!attacker.alive)return;
     if(round===1){if(!(attacker.extraActions>0))return;attacker.extraActions=0;attacker.extraTurn=ctx.turn;ctx.hooks.log(`<span class="skill">[再行動]</span> ${esc(attacker.name)}`,'sys');}
-    const weapon=chooseWeapon(ctx,attacker),targets=chooseTargets(ctx,attacker,opp,weapon.targetCount,weapon);if(!targets.length)return;
+    const weapon=chooseWeapon(ctx,attacker);if(!weapon){ctx.hooks.log(esc(attacker.name)+'：使用可能な射程内武装なし','sys');return;}const targets=chooseTargets(ctx,attacker,opp,weapon.targetCount,weapon);if(!targets.length)return;
     await resolveWeapon(ctx,attacker,weapon,targets);await processPending(ctx);
   }
 }
@@ -290,8 +293,10 @@ function objectiveStatus(ctx){const plan=ctx.plan;if(!plan)return null;const m=c
     defenseLeft:plan.type==='defense'?Math.max(0,(plan.ob.turns||10)-(ctx.turn||0)):null,escort:escort?{name:escort.name,hpPct:Math.max(0,Math.round(escort.currentHp/escort.maxHp*100)),alive:escort.alive}:null,
     nextWave:next?C.waveWhenText(next):null,turnsLeft:limit?Math.max(0,limit-(ctx.turn||0)):null,enemiesLeft:ctx.enemies.filter(alive).length};}
 // Opt-in Tactical encounter: no mission objectives, rewards, waves or draw verdict.
-async function runLocalBattle(ctx,{maxTurns=3}={}){
+async function runLocalBattle(ctx,{maxTurns=3,distance=1}={}){
  if(!Number.isInteger(maxTurns)||maxTurns<1||maxTurns>100)throw Error('Invalid local turn limit');
+ if(!Number.isInteger(distance)||distance<1)throw Error('Invalid local distance');
+ ctx.localDistance=distance;
  const finished=()=>!ctx.allies.some(alive)||!ctx.enemies.some(alive);
  const H=ctx.hooks;
  triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'battle_start');await processPending(ctx);
@@ -416,7 +421,7 @@ function unitPower(a){const ws=(a.weapons&&a.weapons.length)?a.weapons:[BASIC_WE
 let STD_POWER=0;
 function powerRatio(a){if(!STD_POWER)STD_POWER=unitPower(STANDARD_UNIT);return Math.sqrt(unitPower(a)/STD_POWER);}
 function starCount(r){return r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;}
-root.PROBattle=Object.freeze({version:'1.6.0',checkpoint,condOk,recordFrame,DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runLocalBattle,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+root.PROBattle=Object.freeze({version:'1.6.0',checkpoint,condOk,recordFrame,DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,weaponInRange,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runLocalBattle,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);
 
 
