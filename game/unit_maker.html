@@ -14,7 +14,7 @@ window.PROView={mode:mode,set:set,text:text,setText:setText,isLine:line,external
 function ui(){var slot=document.getElementById('viewModeSlot');if(slot&&!slot.firstChild){var b=document.createElement('button');b.type='button';b.className='view-mode-btn';b.textContent=mode==='pc'?'📱 スマホ表示':'🖥 PC表示';b.title=mode==='pc'?'スマホ向けの表示に戻す':'画面を広く使うPC向けの表示にする';b.setAttribute('style','font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid #3d5a73;background:#10202e;color:#cfe6f5;cursor:pointer;white-space:nowrap');b.onclick=function(){set(mode==='pc'?'mobile':'pc');};slot.appendChild(b);var tb=document.createElement('button');tb.type='button';tb.className='text-size-btn';tb.textContent=text==='large'?'Aa 文字：標準':'Aa 文字：大';tb.title='文字の大きさを切り替える';tb.setAttribute('style',b.getAttribute('style')+';margin-left:6px');tb.onclick=function(){setText(text==='large'?'normal':'large');};slot.appendChild(tb);}
 if(line&&!document.getElementById('proLineNotice')){var d=document.createElement('div');d.id='proLineNotice';d.setAttribute('role','note');d.setAttribute('style','margin:10px;padding:12px 14px;border:2px solid #f0c040;border-radius:10px;background:#2e2610;color:#fff3cf;font:14px/1.7 system-ui,sans-serif');var t=document.createElement('div');t.textContent='LINEの中のブラウザで開いています。ここではZIPのダウンロードができず、セーブも普段のブラウザとは別になります。';var a=document.createElement('a');a.href=externalUrl();a.textContent='▶ ブラウザで開き直す';a.setAttribute('style','display:inline-block;margin-top:6px;padding:6px 12px;border-radius:8px;background:#f0c040;color:#2a2000;font-weight:bold;text-decoration:none');d.appendChild(t);d.appendChild(a);document.body.insertBefore(d,document.body.firstChild);}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ui);else ui();})();</script>
-<title>PRO ユニットメーカー 1.16.1</title>
+<title>PRO ユニットメーカー 1.16.2</title>
 <style>
 :root{
   --bg:#071019;--panel:#0d1823;--panel2:#101f2d;--line:#24384a;--text:#e8f0f7;--muted:#91a3b4;
@@ -62,18 +62,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 
 
 </style>
-<link rel="stylesheet" href="shared/maker.css?v=1.16.1">
-<script src="shared/pro_core.js?v=1.16.1"></script>
-<script src="shared/maker_core.js?v=1.16.1"></script>
-<script src="shared/pro_battle.js?v=1.16.1"></script>
-<script src="shared/pro_templates.js?v=1.16.1"></script>
-<script src="shared/pro_editor.js?v=1.16.1"></script>
-<script src="shared/pro_features.js?v=1.16.1"></script>
-<script src="shared/pro_features_ui.js?v=1.16.1"></script>
-<link rel="stylesheet" href="shared/pro_features.css?v=1.16.1"><link rel="stylesheet" href="shared/pro_maker_ui_1161.css?v=1.16.1"></head>
+<link rel="stylesheet" href="shared/maker.css?v=1.16.2">
+<script src="shared/pro_core.js?v=1.16.2"></script>
+<script src="shared/maker_core.js?v=1.16.2"></script>
+<script src="shared/pro_battle.js?v=1.16.2"></script>
+<script src="shared/pro_templates.js?v=1.16.2"></script>
+<script src="shared/pro_editor.js?v=1.16.2"></script>
+<script src="shared/pro_features.js?v=1.16.2"></script>
+<script src="shared/pro_features_ui.js?v=1.16.2"></script>
+<link rel="stylesheet" href="shared/pro_features.css?v=1.16.2"><link rel="stylesheet" href="shared/pro_maker_ui_1161.css?v=1.16.2"><link rel="stylesheet" href="shared/pro_compact_ui.css?v=1.16.2"></head>
 <body>
 <header class="topbar"><div class="toprow">
-  <div class="brand">PRO <span style="color:var(--accent)">UNIT MAKER</span><small>1.16.1 / 性能・スキル・武装・パイロットを編集</small><div id="modeBox"></div><span id="viewModeSlot" style="display:inline-block;margin-top:4px"></span></div>
+  <div class="brand">PRO <span style="color:var(--accent)">UNIT MAKER</span><small>1.16.2 / 性能・スキル・武装・パイロットを編集</small><div id="modeBox"></div><span id="viewModeSlot" style="display:inline-block;margin-top:4px"></span></div>
   <div class="actions">
     <label class="btn ghost">ユニット/統合JSを読み込む<input id="importFile" type="file" accept=".js,text/javascript" hidden></label>
     <button class="btn" id="newPackBtn">新規パック</button>
@@ -361,7 +361,7 @@ stepTo(0,false);show('list',false);
 })();
 
 </script>
-<script src="shared/pro_maker_ui_1161.js?v=1.16.1"></script></body>
+<script src="shared/pro_maker_ui_1161.js?v=1.16.2"></script><script src="shared/pro_compact_ui.js?v=1.16.2"></script></body>
 </html>
 
 
