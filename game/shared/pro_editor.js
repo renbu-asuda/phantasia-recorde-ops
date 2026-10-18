@@ -204,6 +204,8 @@ function weaponFields(){return [
   ...weaponExtFields(),{key:'note',label:'メモ',type:'text',advanced:true}
 ];}
 function unitExtFields(){return [
+ {key:'move',label:'MOVE（v2.0準備・現在のゲームには未適用）',type:'number',min:0,max:1000000,step:1,help:'マップ移動ポイント。空欄は未設定、0は移動力0。現在の自動戦闘・能力評価には影響しません。'},
+ {key:'movementAptitude',label:'地形移動適性（v2.0準備・現在のゲームには未適用）',type:'object',help:'PRO共通の移動領域プリセット。戦闘用地形とは別です。将来の消費は地形基本コスト×適性倍率。なしは進入不可。未設定はなしと区別して保存します。',fields:Object.entries(C.MOVEMENT_DOMAINS).map(([key,label])=>({key,label:label+'の移動適性',type:'select',empty:'未設定',choices:{S:'S：×0.75',A:'A：×0.875',B:'B：×1',C:'C：×1.125',D:'D：×1.25',none:'なし：進入不可'}}))},
  {key:'phases',label:'段階変化・変形（戦闘中に条件を満たすと、能力・武装・スキルが切り替わる）',type:'list',max:16,addLabel:'白紙の段階を追加',help:'例:「HPが半分以下になったら、ATKが上がって会話が入る」。各段階は一戦闘に一度だけ起きます。能力は変化後の値そのものを入れ、空欄の能力は今のままです。戦闘が終わると元に戻ります。下の「テンプレートから追加」から始めると簡単です。',presets:root.PROFeatures?root.PROFeatures.templates.phases:[],itemLabel:(x,i)=>'段階'+(i+1)+': '+(x.name?x.name+'／':'')+root.PROFeatures.describePhase(x,flagPack()),factory:()=>({id:'phase_'+rid(),name:'覚醒',cond:{type:'hp_below',value:50},hpMode:'ratio',stats:{}}),fields:()=>root.PROFeaturesUI.phaseFields()},
   {key:'image',label:'ユニット画像（128px程度に縮小して埋め込みます）',type:'image'},
   {key:'sortieCost',label:'出撃費用（出撃1回ごとに資金から引く。勝敗に関係なし。空欄=0）',type:'number',min:0,max:1000000,help:'部隊全員の出撃費用の合計が資金より多いと出撃できません。'},
@@ -294,7 +296,7 @@ function effectFields(type){switch(type){
   case 'equip_slot':return [{key:'value',label:'装備枠を増やす数（減らすときはマイナス。-3～3）',type:'number',min:-3,max:3,keep:true}];}return [];}
 
 // Lenient extraction for maker drafts: keep 1.9 fields even when not yet valid so the user can fix them.
-const UNIT_EXT_KEYS=['image','ai','row','growth','exp','skillTree','recruit','crew','pilotProfile','sortieCost','equipSlots','noFire','phases'],SKILL_EXT_KEYS=['cond','target','duration','tag','effects'],WEAPON_EXT_KEYS=['baseAtk','useUnitAtk','usesPerBattle','cooldown','defPiercePct','fxColor','effects'],MISSION_EXT_KEYS=['enemyRows','objective','waves','terrainMods','requires','story','stars','starReward','days','exp','hidden','events','resultFlags'],ITEM_EXT_KEYS=['price','limitPerUnit','scope','equip','key','shop'];
+const UNIT_EXT_KEYS=['move','movementAptitude','image','ai','row','growth','exp','skillTree','recruit','crew','pilotProfile','sortieCost','equipSlots','noFire','phases'],SKILL_EXT_KEYS=['cond','target','duration','tag','effects'],WEAPON_EXT_KEYS=['baseAtk','useUnitAtk','usesPerBattle','cooldown','defPiercePct','fxColor','effects'],MISSION_EXT_KEYS=['enemyRows','objective','waves','terrainMods','requires','story','stars','starReward','days','exp','hidden','events','resultFlags'],ITEM_EXT_KEYS=['price','limitPerUnit','scope','equip','key','shop'];
 function pick(o,keys){const out={};for(const k of keys)if(o&&o[k]!==undefined&&o[k]!==null&&o[k]!=='')out[k]=C.clone(o[k]);return out;}
 
 // ---- simulator and damage calculator ----
