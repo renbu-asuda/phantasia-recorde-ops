@@ -12,3 +12,4 @@ body{background:var(--bg);font-size:14px;line-height:1.65}button,a,input,summary
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
 .view-mode-btn,.text-size-btn{background:var(--panel)!important;color:var(--muted)!important;border-color:var(--line)!important;border-radius:4px!important}.story-card{border-radius:6px;background:var(--panel);border-color:var(--line)}.pro-dialog[open]{animation:pro-sheet-in .14s ease-out}@keyframes pro-sheet-in{from{opacity:.6;transform:translateY(10px)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.pro-dialog[open]{animation:none}}
+.pro-service{color:var(--text)}.flow-nav .flow-btn{margin-left:0!important;margin-right:0!important;width:100%}
