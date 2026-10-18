@@ -13,3 +13,4 @@
 .cmd-scroll{overflow-y:auto;max-height:55dvh;margin-bottom:10px}.cmd-scroll ul{padding-left:20px;font-size:12px;line-height:1.9}.cmd-float{position:fixed;inset:auto 16px 16px auto;margin:0;z-index:20}.cmd-hint{font-size:12px;color:var(--muted,#9ab)}.cmd-reopen{width:100%;min-height:44px}
 @media(max-width:850px){.cmd-float{inset:auto 8px 8px 8px;width:auto}}
 #fieldChoice{width:min(480px,92vw);overflow:auto}#fieldChoice>button{margin-top:10px}#fieldChoiceBody>button,#fieldChoiceBody section button{display:block;width:100%;margin:4px 0;text-align:left}
+.result-window{width:min(420px,92vw)}.result-window h2{font-size:26px;letter-spacing:.1em}.result-window h2.win{color:var(--accent)}.result-window h2.lose{color:#efaa99}.result-row{display:flex;justify-content:space-between;gap:12px;padding:8px 4px;border-bottom:1px solid #ffffff1a;font-size:14px}.result-row b{color:var(--accent);white-space:nowrap}
