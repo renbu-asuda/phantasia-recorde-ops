@@ -16,6 +16,12 @@
 - LINEで送るときは `https://renbu-asuda.github.io/phantasia-recorde-ops/?openExternalBrowser=1` を送ってください（LINEの中のブラウザではなく、標準ブラウザで開きます。LINEの中ではZIPのダウンロードができません）。
 - ブラウザに「PC版サイト」の機能がなくても、ゲームやメーカーの上にある「🖥 PC表示」ボタンで広い画面にできます。
 
+## 製作者テスト用
+
+**[PRO Tactical：拠点・ミッション選択プロトタイプ](https://renbu-asuda.github.io/phantasia-recorde-ops/game/prototypes/tactical_hub.html)**
+
+拠点からミッション選択、絞り込み、作戦詳細、出撃確認までの操作を試せます。表示はサンプルデータで、戦術マップ・戦闘にはまだ接続しません。既存ゲームのセーブや自動戦闘には影響しません。スマートフォン・PC対応、オフラインではリポジトリ内の `game/prototypes/tactical_hub.html` を直接開けます（配布ZIPには未同梱）。
+
 ## ダウンロード
 
 オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.15.4.zip](dist/fantasia_record_ops_toolkit_v1.15.4.zip)**（リンク先の「Download raw file」ボタンで保存できます）
