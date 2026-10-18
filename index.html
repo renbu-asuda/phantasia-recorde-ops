@@ -40,7 +40,9 @@ li{margin:4px 0}
 code{background:#0c1825;border:1px solid #223244;border-radius:6px;padding:1px 6px;font-size:13px}
 footer{margin-top:28px;color:#6f8396;font-size:12px}
 </style>
-</head>
+<style>
+:root{--bg:#10171d;--text:#ecf1ee;--muted:#a9bdc9;--line:#34454f;--panel:#18232c;--accent:#d6ed83}body{background:#10171d;color:#ecf1ee}main{max-width:1150px}.card{border-radius:5px!important;background:#18232c!important;border-color:#34454f!important;padding:24px!important}.card.primary{background:#d6ed83!important;color:#172119!important}.card.primary span{color:#344936!important}.card b{font-size:20px}h1{letter-spacing:.05em}section{border-color:#34454f!important;background:transparent!important}a{color:#b9d693}footer{color:#a9bdc9}
+</style></head>
 <body>
 <main><div style="text-align:right"><span id="viewModeSlot"></span></div>
   <h1>ファンタジア・レコード・オプス</h1>
@@ -50,14 +52,14 @@ footer{margin-top:28px;color:#6f8396;font-size:12px}
     <a class="card primary" href="game/index.html"><b>▶ ゲームを遊ぶ</b><span>部隊を編成して作戦に派遣。戦闘は自動で進みます。</span></a>
     <a class="card" href="game/maker_hub.html"><b>✎ データを作る（メーカー）</b><span>テンプレートを選ぶだけで、ユニット・作戦・アイテムを作れます。</span></a>
     <a class="card" href="manual/"><b>📖 マニュアル</b><span>遊び方・計算式・データの作り方を、やさしく解説。</span></a>
-    <a class="card" href="dist/fantasia_record_ops_toolkit_v1.15.4.zip"><b>⬇ ZIPをダウンロード</b><span>オフラインで遊びたい人向け（Android・パソコン）。v1.15.4</span></a>
+    <a class="card" href="dist/fantasia_record_ops_toolkit_v1.16.0.zip"><b>⬇ ZIPをダウンロード</b><span>オフラインで遊びたい人向け（Android・パソコン）。v1.16.0</span></a>
   </div>
 
   <section>
     <h2>はじめての遊び方</h2>
     <ol>
       <li>「ゲームを遊ぶ」を開きます。</li>
-      <li>「01 部隊」でユニットを選び、「02 作戦」で作戦を選んで、「03 出撃確認」で派遣開始。</li>
+      <li>拠点の「部隊編成へ」からユニットを選び、「作戦選択」で作戦を選んで、「出撃確認」で派遣開始。スマートフォンでは「メニュー」から各画面を開けます。</li>
       <li>拡張パック（ブラック・ブレット・東方Project・ピースウォーカーなど）やサンプルは、ゲームの「拡張パック」画面で「＋ 追加する」を押すだけで遊べます。ファイルから読み込む場合は、ゲームの「データ管理 → データファイルを読み込む」で <code>samples/pro_190_feature_sample.js</code> を読み込みます（ZIPに入っています）。武装の追加効果（1.10.1）は <code>samples/pro_1101_weapon_effects_sample.js</code>、パイロットとユニットの統合（1.10.2）は <code>samples/pro_1102_pilot_sample.js</code> で試せます。</li>
     </ol>
   </section>
@@ -90,7 +92,7 @@ footer{margin-top:28px;color:#6f8396;font-size:12px}
     <p class="note">このゲームとツールは、AIを使って制作しています。プログラム・データ・説明文の多くはAIが生成し、作者が確認・調整して公開しています。1.8.4 以降の改修は、AIコーディングアシスタント「Claude Code」（Anthropic）で行いました。不具合が残っている可能性があるので、見つけたら教えてください。</p>
   </section>
 
-  <footer>Fantasia Record Ops (PRO) Toolkit 1.15.4 ・ AIを使って制作</footer>
+  <footer>Fantasia Record Ops (PRO) Toolkit 1.16.0 ・ AIを使って制作</footer>
 </main>
 </body>
 </html>
