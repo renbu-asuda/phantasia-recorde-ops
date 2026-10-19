@@ -3,15 +3,15 @@
 (function(){'use strict';
 const C=window.PROCore,D=window.PROTacticalData,G=window.PROUnitGrid,$=id=>document.getElementById(id);
 const seen=()=>window.PROUnitsSeen;
-// Test player state: owned units (uid → unit id) and credits. Units are Lv1 in the prototype.
+// Test player state: owned units (uid → unit id, level, EXP) and credits. Stats follow PROCore.levelStats.
 // Starting units keep their unit id as uid (the formation screen and its tests address them that way).
 const HQ_KEY='PRO_TACTICAL_HQ',START_CREDITS=24800;
 let serial=1,credits=START_CREDITS,owned=D.roster().map(u=>({uid:u.id,id:u.id}));
 // A save made with another data source (built-in / maker) is ignored; units missing from the data are dropped.
 try{const h=JSON.parse(localStorage.getItem(HQ_KEY)||'null');if(h&&h.source===D.source&&Array.isArray(h.owned)){owned=h.owned.filter(o=>{try{D.unit(o.id);return typeof o.uid==='string';}catch(e){return false;}});credits=Number.isFinite(h.credits)?h.credits:START_CREDITS;serial=h.serial||1;}}catch(e){}
 function save(){try{localStorage.setItem(HQ_KEY,JSON.stringify({source:D.source,owned,credits,serial}));}catch(e){}}
-const unitOf=o=>({...D.unit(o.id),id:o.id,uid:o.uid}),counts=()=>owned.reduce((m,o)=>(m[o.id]=(m[o.id]||0)+1,m),{});
-const state=u=>({credits,units:counts(),items:{},flags:{},day:1,unit:u?{...u,level:1}:undefined,rng:()=>0});
+const unitOf=o=>({...C.levelStats(D.unit(o.id),o.lv||1),id:o.id,uid:o.uid,exp:o.exp||0}),counts=()=>owned.reduce((m,o)=>(m[o.id]=(m[o.id]||0)+1,m),{});
+const state=u=>({credits,units:counts(),items:{},flags:{},day:1,unit:u?{...u,level:u.level||1}:undefined,rng:()=>0});
 const name=id=>seen().has(id)?D.unit(id).name:'？？？';
 const CMP={ge:'以上',le:'以下',eq:'ちょうど',lt:'未満'};
 // Short text for the condition types the samples use; other types fall back to their id.
@@ -62,11 +62,13 @@ function confirmFusion(f){const uids=[anchor,...picks],r=C.evalConds(f.conds,sta
  // Pair each picked unit with a recipe slot so per-material consume flags apply to the right unit.
  const slots=[...used],plan=uids.map(uid=>{const o=owned.find(x=>x.uid===uid),i=slots.findIndex(m=>m.unitId===o.id);const m=slots.splice(i,1)[0];return {o,keep:m.consume===false};});
  win('確認','設計・合成',[plan.map(p=>D.unit(p.o.id).name+(p.keep?'（消費しない）':'')).join(' ＋ ')+' → '+D.unit(res).name,'条件：'+condsText(f.conds),r.costs.length?'消費：'+r.costs.map(c=>c.credits!=null?c.credits+' Cr':c.itemId+'×'+c.count).join('・'):'資金の消費なし'],
- [['実行する',()=>{pay(r.costs);const gone=new Set(plan.filter(p=>!p.keep).map(p=>p.o.uid));owned=owned.filter(o=>!gone.has(o.uid));for(let i=0;i<(f.result.count||1);i++)owned.push({uid:res+'#'+serial++,id:res});save();seen().mark([res],'joined');anchor=null;picks=[];renderFusion();win('完了',D.unit(res).name,['設計・合成で '+D.unit(res).name+' が加わりました。'],[['閉じる',close]]);},false,'run'],
+ [['実行する',()=>{pay(r.costs);const gone=new Set(plan.filter(p=>!p.keep).map(p=>p.o.uid));owned=owned.filter(o=>!gone.has(o.uid));for(let i=0;i<(f.result.count||1);i++)owned.push({uid:res+'#'+serial++,id:res,lv:1,exp:0});save();seen().mark([res],'joined');anchor=null;picks=[];renderFusion();win('完了',D.unit(res).name,['設計・合成で '+D.unit(res).name+' が加わりました。'],[['閉じる',close]]);},false,'run'],
   ['戻る',()=>{picks.pop();renderFusion();close();}]]);}
 function focusTile(grid,uid){$(grid).querySelector('[data-uid="'+uid+'"]')?.focus();}
 $('fusionReset').onclick=()=>{anchor=null;picks=[];pending=null;renderFusion();};
 $('labWindow').addEventListener('cancel',e=>e.preventDefault());
 showCredits();
-window.PROUnitLab=Object.freeze({renderEvolve,renderFusion,owned:()=>owned.map(unitOf),credits:()=>credits,reset(){serial=1;credits=START_CREDITS;owned=D.roster().map(u=>({uid:u.id,id:u.id}));evoPick=null;anchor=null;picks=[];pending=null;showCredits();save();}});
+// EXP for owned units (mission rewards). Returns what changed so the result screen can show level-ups.
+function gainExp(uids,amount){const out=[];for(const uid of uids){const o=owned.find(x=>x.uid===uid);if(!o)continue;const r=C.gainExp({lv:o.lv||1,exp:o.exp||0},amount);o.lv=r.lv;o.exp=r.exp;out.push({uid,name:D.unit(o.id).name,lv:r.lv,ups:r.ups});}save();return out;}
+window.PROUnitLab=Object.freeze({renderEvolve,renderFusion,gainExp,owned:()=>owned.map(unitOf),credits:()=>credits,reset(){serial=1;credits=START_CREDITS;owned=D.roster().map(u=>({uid:u.id,id:u.id}));evoPick=null;anchor=null;picks=[];pending=null;showCredits();save();}});
 })();
