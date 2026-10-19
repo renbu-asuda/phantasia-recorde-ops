@@ -51,6 +51,22 @@ w=open({});{const L=w.PROUnitLab,d=w.document,tile=id=>d.querySelector('#product
  L.register('boat');L.renderProduction();two('reg-boat');assert(body().includes('生産・雇用リスト'));run().click();closeW();L.renderProduction();assert(tile('hire-marine'));L.register('scout_ace');L.renderProduction();assert(tile('reg-scout_ace').textContent.includes('4,200Cr'));two('reg-scout_ace');assert.equal(run().textContent,'生産する');assert(body().includes('Lv1'));closeW();two('hire-infantry');assert.equal(run().textContent,'雇用する');closeW();
  saved=dump(w);}
 w.close();w=open(saved);assert.equal(w.PROUnitLab.cleared()[0],'training-01');assert.equal(w.PROUnitLab.owned().filter(u=>u.id==='scout').length,4);w.close();
+// Research: credits at start, items reserved until completion, days advance with missions, cancel refunds.
+w=open({});{const L=w.PROUnitLab,d=w.document,btn=id=>d.querySelector('#researchList [data-research="'+id+'"]'),act=k=>d.querySelector('#labWinActions [data-lab='+k+']'),closeW=()=>[...d.querySelectorAll('#labWinActions button')].find(b=>b.textContent==='閉じる').click();
+ L.renderResearch();assert(btn('r-ace').className.includes('blocked'));assert(btn('r-ace').textContent.includes('装甲改良'));assert.equal(L.items().parts,5);
+ btn('r-armor').click();assert(d.querySelector('#labWinBody').textContent.includes('完了時に消費'));act('run').click();closeW();assert.equal(L.credits(),22800);assert.equal(L.active().until,3);assert.equal(L.items().parts,5);
+ assert(d.querySelector('#researchReserved').textContent.includes('機械部品×3'));assert(btn('r-data').className.includes('blocked'));
+ // Reserved parts can't be used by a condition that consumes them.
+ assert(!w.PROCore.evalConds({mode:'all',list:[{type:'item_use',itemId:'parts',count:3}]},{items:L.items(),reserved:{items:L.active().reserve}}).ok);
+ // Cancel → refund and release; start again.
+ btn('r-armor').click();act('stop').click();act('cancel').click();closeW();assert.equal(L.credits(),24800);assert.equal(L.active(),null);
+ btn('r-armor').click();act('run').click();closeW();assert.deepEqual([...L.advanceDay()],[]);d.querySelector('#researchDayTest').click();assert(d.querySelector('#noticeText').textContent.includes('装甲改良 が完了'));d.querySelector('#closeNotice').click();
+ assert.equal(L.items().parts,2);assert(L.done().includes('r-armor'));assert(L.registered().includes('tank2'));assert.equal(L.day(),3);
+ // Missions advance the day: a Dispatch-free check through the Tactical result screen.
+ btn('r-data').click();act('run').click();closeW();const F=w.PROField;F.deploy({missionId:'training-01',groups:[{id:'g1',name:'第1部隊',faction:'player',mode:'auto',members:[{uid:'infantry',unit:L.owned().find(u=>u.uid==='infantry')}]}]});const st=F._live();st.groups=st.groups.filter(g=>g.faction==='player');st.outcome='victory';F.showResult();
+ assert(d.querySelector('#fieldResultBody').textContent.includes('戦闘記録の解析 が完了'));assert.equal(L.items().data,2);
+ L.renderResearch();assert(!btn('r-ace').className.includes('blocked'),btn('r-ace').textContent);btn('r-ace').click();act('run').click();closeW();L.advanceDay(3);assert(L.owned().some(u=>u.id==='scout_ace'));assert.equal(L.items().alloy,0);assert.equal(L.items().data,1);saved=dump(w);}
+w.close();w=open(saved);assert.equal(w.PROUnitLab.day(),7);assert.equal(w.PROUnitLab.done().length,3);w.close();
 // 2) Maker source: draft units, evolutions and variants join the built-in data; invalid links are dropped.
 w=open({...saved,PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(draft)});D=w.PROTacticalData;L=w.PROUnitLab;
 assert.equal(D.source,'maker');assert.equal(D.makerName,'テストパック');assert(D.roster().some(u=>u.id==='td-u-a'));assert(!D.roster().some(u=>u.id==='td-u-b'));assert(D.roster().some(u=>u.id==='infantry'));
@@ -61,4 +77,4 @@ assert.equal(L.credits(),24800);assert(L.owned().some(u=>u.id==='tank'));assert(
 assert(w.document.querySelector('#dataSourceText').textContent.includes('テストパック'));w.close();
 // 3) Maker source selected but no draft: falls back to the built-in data.
 w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'builtin');w.close();
-console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
+console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');

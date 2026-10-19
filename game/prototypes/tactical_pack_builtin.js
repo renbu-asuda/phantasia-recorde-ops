@@ -52,6 +52,14 @@ root.PROTacticalBuiltinPack={
   {...base,id:'commander',name:'指揮機動兵器',catalog:'汎用機動兵器と戦闘機の設計を組み合わせた指揮機。',size:'2XL',move:7,hp:1800,movementAptitude:apt({ground:'B',air:'A',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,4)]}
  ],
  // Development / evolution (one step from → to) and design / fusion (materials → result), same shapes as T&D.
+ // Items (materials) and research, same shapes as T&D. Research takes `days` in-game days (missions advance the day):
+ // credits are paid at the start, cost.items are reserved and consumed on completion; cancelling refunds credits.
+ // unlock.units join the player, unlock.register adds to the production / hire list, unlock.grantItems are given.
+ items:[{id:'parts',name:'機械部品'},{id:'data',name:'戦闘データ'},{id:'alloy',name:'特殊合金'}],
+ startItems:{parts:5,alloy:1},
+ research:[{id:'r-data',name:'戦闘記録の解析',desc:'過去の戦闘を解析し、戦闘データを得る。',days:1,cost:{credits:500},unlock:{grantItems:{data:2}}},
+  {id:'r-armor',name:'装甲改良',desc:'主力戦車改の生産技術。',days:2,cost:{credits:2000,items:{parts:3}},unlock:{register:['tank2']}},
+  {id:'r-ace',name:'エース機の再現',desc:'エース偵察車を再現し、部隊に迎える。',days:3,requires:['r-armor'],cost:{credits:3000,items:{alloy:1,data:1}},unlock:{units:['scout_ace']}}],
  // Production / hire entries (same shape as T&D hires): cost in credits, limit = max hires (unset = no limit),
  // requires.missions = missions to clear first, conds = extra condition set, hidden = not listed until available.
  hires:[{id:'hire-infantry',unitId:'infantry',cost:800},{id:'hire-scout',unitId:'scout',cost:1500,limit:3},{id:'hire-tank',unitId:'tank',cost:2500,requires:{missions:['training-01']}},
