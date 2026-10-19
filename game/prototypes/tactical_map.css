@@ -29,3 +29,5 @@
 .quit-warning{color:#efaa99;line-height:1.7}
 .heading button{white-space:nowrap;flex-shrink:0}
 .setting-row b{color:var(--accent);white-space:nowrap}
+.story-window{width:min(520px,94vw)}.story-window h2{color:var(--accent);font-size:16px;margin:4px 0}.story-text{font-size:15px;line-height:1.9;min-height:4em;white-space:pre-wrap}.dispatch-units{max-height:60dvh}
+#fieldBattle .field-battle-log p.turn{color:var(--accent);font-weight:700}#fieldBattle .field-battle-log p.skill{color:#c9b6ff}
