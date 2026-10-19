@@ -55,8 +55,13 @@ root.PROTacticalBuiltinPack={
  // Items (materials) and research, same shapes as T&D. Research takes `days` in-game days (missions advance the day):
  // credits are paid at the start, cost.items are reserved and consumed on completion; cancelling refunds credits.
  // unlock.units join the player, unlock.register adds to the production / hire list, unlock.grantItems are given.
- items:[{id:'parts',name:'機械部品'},{id:'data',name:'戦闘データ'},{id:'alloy',name:'特殊合金'}],
- startItems:{parts:5,alloy:1},
+ // price: shop price (unset = not sold); sells for half. shop.requiresMission / shop.requiresResearch gate the listing;
+ // research unlock.items also gate it. key items cannot be sold.
+ items:[{id:'parts',name:'機械部品',desc:'研究や開発に使う汎用の部品。',price:400},{id:'data',name:'戦闘データ',desc:'戦闘記録を解析したデータ。研究で手に入る。'},
+  {id:'alloy',name:'特殊合金',desc:'高性能な装甲材。装甲改良の研究で購入できるようになる。',price:1500,shop:{requiresResearch:'r-armor'}},
+  {id:'repair',name:'修理キット',desc:'ユニットの修理に使う。機動訓練をクリアすると購入できる。',price:300,shop:{requiresMission:'training-01'}},
+  {id:'pass',name:'通行許可証',desc:'大切なもの。売却できない。',key:true}],
+ startItems:{parts:5,alloy:1,pass:1},
  research:[{id:'r-data',name:'戦闘記録の解析',desc:'過去の戦闘を解析し、戦闘データを得る。',days:1,cost:{credits:500},unlock:{grantItems:{data:2}}},
   {id:'r-armor',name:'装甲改良',desc:'主力戦車改の生産技術。',days:2,cost:{credits:2000,items:{parts:3}},unlock:{register:['tank2']}},
   {id:'r-ace',name:'エース機の再現',desc:'エース偵察車を再現し、部隊に迎える。',days:3,requires:['r-armor'],cost:{credits:3000,items:{alloy:1,data:1}},unlock:{units:['scout_ace']}}],

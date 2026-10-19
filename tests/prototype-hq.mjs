@@ -67,6 +67,16 @@ w=open({});{const L=w.PROUnitLab,d=w.document,btn=id=>d.querySelector('#research
  assert(d.querySelector('#fieldResultBody').textContent.includes('戦闘記録の解析 が完了'));assert.equal(L.items().data,2);
  L.renderResearch();assert(!btn('r-ace').className.includes('blocked'),btn('r-ace').textContent);btn('r-ace').click();act('run').click();closeW();L.advanceDay(3);assert(L.owned().some(u=>u.id==='scout_ace'));assert.equal(L.items().alloy,0);assert.equal(L.items().data,1);saved=dump(w);}
 w.close();w=open(saved);assert.equal(w.PROUnitLab.day(),7);assert.equal(w.PROUnitLab.done().length,3);w.close();
+// Shop / storage: gated listing (mission, research), buy, sell at half, key items and reserved items not sellable.
+w=open({});{const L=w.PROUnitLab,d=w.document,row=(box,id)=>d.querySelector('#'+box+' [data-item="'+id+'"]'),act=k=>d.querySelector('#labWinActions [data-lab='+k+']'),closeW=()=>[...d.querySelectorAll('#labWinActions button')].find(b=>b.textContent==='閉じる').click();
+ L.renderShop();assert(row('shopList','parts'));assert(!row('shopList','alloy'));assert(!row('shopList','repair'));assert(!row('shopList','data'));assert(d.querySelector('#shopSoon').textContent.includes('装甲改良'));
+ row('shopList','parts').click();act('buy5').click();assert.equal(L.items().parts,10);assert.equal(L.credits(),22800);act('sell1').click();assert.equal(L.items().parts,9);assert.equal(L.credits(),23000);closeW();
+ L.markCleared('training-01');L.renderShop();assert(row('shopList','repair'));
+ L.startResearch('r-armor');row('shopList','parts').click();for(let i=0;i<6;i++)act('sell1').click();assert.equal(L.items().parts,3);assert(act('sell1').disabled);closeW();
+ L.advanceDay(2);L.renderShop();assert(row('shopList','alloy'));
+ L.renderStorage();assert(row('storageList','pass').textContent.includes('★'));row('storageList','pass').click();assert(d.querySelector('#labWinBody').textContent.includes('大切なもの'));closeW();assert(!L.sell('pass'));assert(!row('storageList','parts'));
+ assert(d.querySelector('#storageCount').textContent.includes('種類'));saved=dump(w);}
+w.close();w=open(saved);assert.equal(w.PROUnitLab.items().pass,1);w.close();
 // 2) Maker source: draft units, evolutions and variants join the built-in data; invalid links are dropped.
 w=open({...saved,PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(draft)});D=w.PROTacticalData;L=w.PROUnitLab;
 assert.equal(D.source,'maker');assert.equal(D.makerName,'テストパック');assert(D.roster().some(u=>u.id==='td-u-a'));assert(!D.roster().some(u=>u.id==='td-u-b'));assert(D.roster().some(u=>u.id==='infantry'));
@@ -77,4 +87,4 @@ assert.equal(L.credits(),24800);assert(L.owned().some(u=>u.id==='tank'));assert(
 assert(w.document.querySelector('#dataSourceText').textContent.includes('テストパック'));w.close();
 // 3) Maker source selected but no draft: falls back to the built-in data.
 w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'builtin');w.close();
-console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
+console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
