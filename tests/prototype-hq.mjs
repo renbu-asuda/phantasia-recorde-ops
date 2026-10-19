@@ -48,7 +48,7 @@ w=open({});{const L=w.PROUnitLab,d=w.document,tile=id=>d.querySelector('#product
  for(let i=0;i<3;i++){two('hire-scout');run().click();closeW();}two('hire-scout');assert(run().disabled);assert(body().includes('上限'));closeW();
  L.markCleared('training-01');L.renderProduction();assert(!tile('hire-tank').classList.contains('blocked'));
  // Hidden until its condition holds (own 2 patrol boats).
- L.register('boat');L.renderProduction();two('reg-boat');assert(body().includes('生産・雇用リスト'));run().click();closeW();L.renderProduction();assert(tile('hire-marine'));
+ L.register('boat');L.renderProduction();two('reg-boat');assert(body().includes('生産・雇用リスト'));run().click();closeW();L.renderProduction();assert(tile('hire-marine'));L.register('scout_ace');L.renderProduction();assert(tile('reg-scout_ace').textContent.includes('4,200Cr'));two('reg-scout_ace');assert.equal(run().textContent,'生産する');assert(body().includes('Lv1'));closeW();two('hire-infantry');assert.equal(run().textContent,'雇用する');closeW();
  saved=dump(w);}
 w.close();w=open(saved);assert.equal(w.PROUnitLab.cleared()[0],'training-01');assert.equal(w.PROUnitLab.owned().filter(u=>u.id==='scout').length,4);w.close();
 // 2) Maker source: draft units, evolutions and variants join the built-in data; invalid links are dropped.
