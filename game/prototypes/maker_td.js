@@ -119,13 +119,13 @@ const condsText=cs=>cs?.list?.length?cs.list.map(condText).join(cs.mode==='any'?
 const CONDS_FIELD=(key,label,group,show)=>({key,label,type:'conds',group,...(show?{show}:{})});
 FIELDS.evolutions=[{key:'name',label:'進化の名前',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},
   {key:'from',label:'進化前のユニット',type:'select',choices:()=>Object.fromEntries(data.units.map(u=>[u.id,u.name])),group:'基本'},{key:'to',label:'進化後のユニット',type:'select',choices:()=>Object.fromEntries(data.units.map(u=>[u.id,u.name])),group:'基本'},
-  CONDS_FIELD('conds','進化の条件','条件'),
-  {key:'carry.level',label:'レベルを引き継ぐ',type:'toggle',group:'引き継ぐもの'},{key:'carry.equipment',label:'装備を引き継ぐ',type:'toggle',group:'引き継ぐもの'},{key:'carry.skills',label:'習得スキルを引き継ぐ',type:'toggle',group:'引き継ぐもの'},
+  CONDS_FIELD('conds','進化の条件','条件'),{key:'register',label:'進化後のユニットを生産・雇用リストに登録する',type:'toggle',group:'結果'},
+  {key:'carry.level',label:'レベル・経験値・スキルポイントを引き継ぐ',type:'toggle',group:'引き継ぐもの'},{key:'carry.equipment',label:'装備を引き継ぐ',type:'toggle',group:'引き継ぐもの'},{key:'carry.skills',label:'習得スキルを引き継ぐ',type:'toggle',group:'引き継ぐもの'},
   {key:'hidden',label:'条件を満たすまで表示しない',type:'toggle',group:'詳細'},{key:'note',label:'説明',type:'text',group:'詳細'}];
 FIELDS.fusions=[{key:'name',label:'合成の名前',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},
   {key:'materials',label:'素材のユニット（2〜8体）',type:'materials',group:'基本'},CONDS_FIELD('conds','合成の条件','条件'),
-  {key:'result.type',label:'結果',type:'select',choices:{unit:'新しいユニットを入手',hire:'雇用を解禁'},group:'結果'},
-  {key:'result.unitId',label:'入手するユニット',type:'select',choices:()=>Object.fromEntries(data.units.map(u=>[u.id,u.name])),group:'結果',show:f=>f.result?.type!=='hire'},{key:'result.count',label:'入手する数',type:'number',min:1,max:99,group:'結果',show:f=>f.result?.type!=='hire'},
+  {key:'result.type',label:'結果',type:'select',choices:{unit:'新しいユニットを入手',register:'生産・雇用リストに登録のみ（ユニットは入手しない）',hire:'雇用を解禁'},group:'結果'},
+  {key:'result.unitId',label:'対象のユニット',type:'select',choices:()=>Object.fromEntries(data.units.map(u=>[u.id,u.name])),group:'結果',show:f=>f.result?.type!=='hire'},{key:'result.count',label:'入手する数',type:'number',min:1,max:99,group:'結果',show:f=>!['hire','register'].includes(f.result?.type)},{key:'result.register',label:'入手したユニットを生産・雇用リストにも登録する',type:'toggle',group:'結果',show:f=>!['hire','register'].includes(f.result?.type)},{key:'carry.level',label:'1体目の素材のレベル・経験値・スキルポイントを引き継ぐ',type:'toggle',group:'結果',show:f=>!['hire','register'].includes(f.result?.type)},
   {key:'result.hireId',label:'解禁する雇用',type:'select',choices:()=>Object.fromEntries(data.hires.map(h=>[h.id,h.name])),group:'結果',show:f=>f.result?.type==='hire'},
   {key:'hidden',label:'条件を満たすまで表示しない',type:'toggle',group:'詳細'},{key:'note',label:'説明',type:'text',group:'詳細'}];
 FIELDS.missions.splice(FIELDS.missions.findIndex(f=>f.key==='requires.flags')+1,0,CONDS_FIELD('conds','追加の解放条件','解放条件'));

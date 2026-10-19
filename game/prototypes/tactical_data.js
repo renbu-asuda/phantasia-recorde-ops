@@ -13,7 +13,8 @@ function fromMaker(d){const find=(k,id)=>(d[k]||[]).find(x=>x.id===id),ok=(f,x)=
  const taken=new Set(builtin.units.map(u=>u.id)),units=(d.units||[]).filter(u=>u.id&&!taken.has(u.id)).map(u=>{const {weaponIds,skillIds,deploy,...rest}=u;const weapons=(weaponIds||[]).map(id=>find('weapons',id)).filter(Boolean).map(w=>ok(C.weapon,w)).filter(Boolean);
   return {...rest,hp:Number(u.hp)||3000,atk:Number(u.atk)||0,def:Number(u.def)||0,mob:Number(u.mob)||0,acc:Number(u.acc)||0,weapons,skills:(skillIds||[]).map(id=>find('skills',id)).filter(Boolean).map(x=>ok(C.skill,{...x})).filter(Boolean),tags:u.tags||[],_player:!!deploy?.player};});
  const ids=new Set([...taken,...units.map(u=>u.id)]),has=id=>ids.has(id);
- return {units,roster:units.filter(u=>u._player).map(u=>u.id),evolutions:(d.evolutions||[]).filter(e=>has(e.from)&&has(e.to)),fusions:(d.fusions||[]).filter(f=>f.result?.type!=='item'&&has(f.result?.unitId)&&(f.materials||[]).length>=2&&f.materials.every(m=>has(m.unitId))),name:d.name||d.packId};}
+ return {units,roster:units.filter(u=>u._player).map(u=>u.id),evolutions:(d.evolutions||[]).filter(e=>has(e.from)&&has(e.to)),// A fusion that unlocks a hire becomes a register-only fusion for the hire's unit.
+ fusions:(d.fusions||[]).map(f=>f.result?.type==='hire'?{...f,result:{type:'register',unitId:find('hires',f.result.hireId)?.unitId}}:f).filter(f=>['unit','register',undefined].includes(f.result?.type)&&has(f.result?.unitId)&&(f.materials||[]).length>=2&&f.materials.every(m=>has(m.unitId))),name:d.name||d.packId};}
 const draft=read(SOURCE_KEY)==='maker'?makerDraft():null,extra=draft?fromMaker(draft):null;
 const raw=extra?{...builtin,units:[...builtin.units,...extra.units],roster:[...builtin.roster,...extra.roster],evolutions:[...(builtin.evolutions||[]),...extra.evolutions],fusions:[...(builtin.fusions||[]),...extra.fusions]}:builtin;
 // Weapons go through PROCore.weapon so ranges and defaults are validated exactly like maker data.
