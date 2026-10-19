@@ -229,3 +229,10 @@ npm test / npm run test:dom。
 ## リンク遷移の廃止（2026-10-19）
 
 - 製作者テストUIの上部ナビゲーションリンクを削除し、画面遷移をすべてボタン（data-go）・コマンドに統一。拠点のミッション選択ボタン、ミッション選択の拠点へ、出撃準備の戻るもボタン化。
+
+## 内蔵パックへのデータ分離・AI行動パターン（2026-10-19）
+
+- 地形・マップ・作戦・出撃可能ユニット・敵部隊・AI設定を game/prototypes/tactical_pack_builtin.js（format PRO_TACTICAL_PACK、packId builtin、version 1）へ分離。プログラムは tactical_data.js 経由で読む（武装はPROCore.weaponで正規化、マップ寸法・地形キーを検証）。
+- マップは地形キー文字の行で表現し、地形ごとに名前・表示種別・領域別移動コストを持つ。作戦ごとに大きさ・出撃位置・勝敗条件・表示用報酬を持つ。
+- AI行動パターン（プロトタイプ）：assault（突撃）／ambush（triggerRange内に敵が入るまで待機、以後突撃）／hold（移動しない）／cautious（retreatHpPct未満で敵から離れる、攻撃しない）。target：lowest_hp／nearest／strongest（合計ATK）。訓練は突撃、沿岸は待ち伏せ＋拠点防衛、軌道は慎重＋突撃。
+- 作戦メーカーは未作成。パック形式は将来の書き出し形式に合わせる前提の暫定。

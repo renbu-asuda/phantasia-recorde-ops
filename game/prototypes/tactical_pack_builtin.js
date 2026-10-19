@@ -1,0 +1,59 @@
+/* Built-in Tactical sample pack. Data only: the prototype program reads it through tactical_data.js.
+   The shape is meant to match what a future mission maker will export. */
+(function(root){'use strict';
+const apt=(o)=>({ground:'none',air:'none',water:'none',underwater:'none',space:'none',...o});
+const base={hp:1200,atk:180,def:130,mob:250,acc:500,skills:[],tags:[]};
+const gun=(name,minRange,maxRange)=>({name,attackType:'ranged',damageType:'physical',powerPct:100,accuracyPt:10,targetCount:1,minRange,maxRange});
+const blade=(name)=>({name,attackType:'melee',damageType:'physical',powerPct:100,accuracyPt:10,targetCount:1,minRange:1,maxRange:1});
+const target=(id,domain)=>({id,name:'訓練標的',size:'M',move:3,movementAptitude:apt({[domain]:'B'}),hp:1000,atk:130,def:100,mob:150,acc:450,weapons:[],skills:[],tags:['標的']});
+const ground=['fpppppprpmpp','pppppfprpmpp','pppfmpprpmfp','pfppmpprfmpp','ppppmpfbpppp','ppppmpprpppf','ppfpmpprpfpp','fpppppprpppp','pppppfprpppp'];
+const water=Array(9).fill('wwwwwwwddddd');
+const space=['xssssssxssss','ssssxssssssx','sxssssssxsss','sssssxssssss','ssxssssssxss','ssssssxsssss','sssxssssssxs','xssssssxssss','ssssxssssssx'];
+const starts=[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]].map(([x,y])=>({x,y}));
+const enemyGroup=(id,name,unit,x,y,ai)=>({id,name,position:{x,y},ai,members:[{unit,name:'訓練標的1'},{unit,name:'訓練標的2'}]});
+root.PROTacticalBuiltinPack={
+ format:'PRO_TACTICAL_PACK',packId:'builtin',version:1,name:'内蔵サンプル',
+ // Terrain key = map character. costs: movement cost per domain; a missing domain cannot enter.
+ terrains:{
+  p:{name:'平原',kind:'ground',costs:{ground:1,air:1}},
+  b:{name:'橋',kind:'ground',costs:{ground:1,air:1}},
+  f:{name:'森林',kind:'forest',costs:{ground:2,air:1}},
+  m:{name:'山岳',kind:'mountain',costs:{ground:3,air:1}},
+  r:{name:'河川',kind:'water',costs:{water:1,underwater:1,air:1}},
+  w:{name:'浅瀬',kind:'water',costs:{water:1,underwater:1,air:1}},
+  d:{name:'深水',kind:'deep',costs:{water:2,underwater:2,air:1}},
+  s:{name:'宇宙',kind:'space',costs:{space:1}},
+  x:{name:'デブリ',kind:'debris',costs:{space:2}}
+ },
+ units:[
+  {...base,id:'infantry',name:'歩兵小隊',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
+  {...base,id:'scout',name:'偵察車',size:'M',move:7,movementAptitude:apt({ground:'A'}),weapons:[gun('狙撃砲',2,6)]},
+  {...base,id:'tank',name:'主力戦車',size:'L',move:4,movementAptitude:apt({ground:'B'}),weapons:[gun('射撃武装',1,3)]},
+  {...base,id:'medic',name:'衛生兵',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
+  {...base,id:'robot',name:'汎用機動兵器',size:'2XL',move:6,movementAptitude:apt({ground:'B',air:'B',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,3)]},
+  {...base,id:'fighter',name:'戦闘機',size:'XL',move:8,movementAptitude:apt({air:'A'}),weapons:[gun('射撃武装',1,3)]},
+  {...base,id:'heavy',name:'大型陸戦兵器',size:'3XL',move:3,movementAptitude:apt({ground:'D'}),weapons:[blade('近接武装')]},
+  {...base,id:'boat',name:'哨戒艇',size:'M',move:6,movementAptitude:apt({water:'B'}),weapons:[gun('射撃武装',1,3)]},
+  {...base,id:'sub',name:'潜水艦',size:'XL',move:5,movementAptitude:apt({water:'B',underwater:'A'}),weapons:[gun('射撃武装',1,3)]},
+  {...base,id:'marine',name:'水陸両用機',size:'M',move:5,movementAptitude:apt({ground:'B',water:'B',underwater:'B'}),weapons:[blade('近接武装')]},
+  {...base,id:'spacecraft',name:'宇宙戦闘艇',size:'XL',move:7,movementAptitude:apt({space:'A'}),weapons:[gun('射撃武装',1,3)]},
+  // Deliberately missing MOVE and aptitude: exercises the "not configured" rejection.
+  {...base,id:'unset',name:'未設定テスト機',size:'M',movementAptitude:apt({}),weapons:[blade('近接武装')]},
+  target('target_ground','ground'),target('target_water','water'),target('target_space','space')
+ ],
+ roster:['infantry','scout','tank','medic','robot','fighter','heavy','boat','sub','marine','spacecraft','unset'],
+ /* AI patterns (prototype): assault | ambush (waits until a foe is within triggerRange) | hold (never moves)
+    | cautious (retreats below retreatHpPct). target: lowest_hp | nearest | strongest. */
+ missions:[
+  {id:'training-01',code:'TR-01',kind:'training',name:'機動訓練',desc:'平原を舞台に、部隊の移動と交戦の流れを確認する訓練作戦。',goal:'敵部隊の全滅',terrainLabel:'地上・空中',formation:'地上対応の部隊',reward:'1,200 Cr',color:'#29453e',
+   surface:'ground',map:{width:12,height:9,rows:ground},playerStarts:starts,victory:'enemy_wipe',defeat:'player_wipe',result:{credits:800,exp:60,item:'訓練記録'},
+   enemies:[enemyGroup('enemy-0','敵第1部隊','target_ground',5,4,{pattern:'assault',target:'lowest_hp'}),enemyGroup('enemy-1','敵第2部隊','target_ground',9,4,{pattern:'assault',target:'lowest_hp'})]},
+  {id:'combat-01',code:'OP-01',kind:'combat',name:'沿岸防衛線',desc:'海岸線に展開する敵部隊を迎撃。水上・水中に対応する編成を想定したサンプル。',goal:'敵部隊の全滅',terrainLabel:'水上・水中・空中',formation:'水域対応の部隊',reward:'2,800 Cr',color:'#23434e',
+   surface:'water',map:{width:12,height:9,rows:water},playerStarts:starts,victory:'enemy_wipe',defeat:'player_wipe',result:{credits:2400,exp:150,item:'沿岸防衛章'},
+   enemies:[enemyGroup('enemy-0','敵第1部隊','target_water',5,4,{pattern:'ambush',target:'nearest',triggerRange:5}),enemyGroup('enemy-1','敵第2部隊','target_water',9,4,{pattern:'hold',target:'lowest_hp'})]},
+  {id:'combat-02',code:'OP-02',kind:'combat',name:'軌道上の遭遇',desc:'宇宙空間で遭遇した敵部隊を排除する。宇宙適性を確認するためのサンプル。',goal:'敵部隊の全滅',terrainLabel:'宇宙',formation:'宇宙対応の部隊',reward:'3,600 Cr',color:'#222d48',
+   surface:'space',map:{width:12,height:9,rows:space},playerStarts:starts,victory:'enemy_wipe',defeat:'player_wipe',result:{credits:3600,exp:220,item:'軌道航法データ'},
+   enemies:[enemyGroup('enemy-0','敵第1部隊','target_space',5,4,{pattern:'cautious',target:'strongest',retreatHpPct:50}),enemyGroup('enemy-1','敵第2部隊','target_space',9,4,{pattern:'assault',target:'nearest'})]}
+ ]
+};
+})(window);
