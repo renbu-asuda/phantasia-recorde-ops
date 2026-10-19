@@ -18,3 +18,4 @@
 .td-row b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}.td-editor .cmd-hint{overflow-wrap:anywhere}.td-editor{min-width:0}
 .td-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.td-nums label{display:flex;flex-direction:column;font-size:11px;color:#b9c7e8;gap:2px}.td-line select{width:100%}
 .td-row{grid-template-columns:minmax(0,1fr) minmax(0,max-content)!important}.td-row b{max-width:none;min-width:0}.td-row span{min-width:0}@media(max-width:760px){.td-row{grid-template-columns:minmax(0,1fr) minmax(0,55%)!important}}
+.td-sub.warn{color:#efaa99}
