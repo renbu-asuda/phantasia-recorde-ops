@@ -75,8 +75,10 @@ function confirmFusion(f){const uids=[anchor,...picks],r=C.evalConds(f.conds,sta
 /* ---------- production / hire ---------- */
 // Entries: the pack's hire entries plus units on the production / hire list without one. A hire entry is available
 // when its required missions are cleared and its conditions hold; hidden entries are listed only then.
-// Units without a hire entry cost a provisional price derived from their stats.
-const defaultCost=u=>Math.max(100,Math.round(((u.hp||0)/4+(u.atk||0)*2+(u.def||0)*2)/100)*100);
+// Units without a hire entry cost their hireCost (set in the maker), or a provisional price derived from their stats.
+// joinVerb (hire / produce) only changes the wording; both are the same process. New units always join at Lv1.
+const defaultCost=u=>u.hireCost??Math.max(100,Math.round(((u.hp||0)/4+(u.atk||0)*2+(u.def||0)*2)/100)*100);
+const verb=u=>u.joinVerb==='produce'?'生産':u.joinVerb==='hire'?'雇用':'生産・雇用';
 function entries(){const hs=D.hires(),out=hs.map(h=>({...h,cost:h.cost??defaultCost(D.unit(h.unitId))}));for(const id of registered)if(!out.some(e=>e.unitId===id))out.push({id:'reg-'+id,unitId:id,cost:defaultCost(D.unit(id)),registered:true});return out;}
 function status(e){const missing=(e.requires?.missions||[]).filter(m=>!cleared.includes(m)),r=C.evalConds(e.conds,state()),full=e.limit!=null&&(hired[e.id]||0)>=e.limit,afford=credits>=e.cost+r.costs.reduce((n,c)=>n+(c.credits||0),0);
  const why=missing.length?'作戦「'+missing.map(m=>D.mission(m)?.name||m).join('・')+'」のクリアが必要':!r.ok?'条件：'+condsText(e.conds):full?'雇える上限（'+e.limit+'）に達しています':!afford?'資金が足りません':'';return {ok:!why,why,r,open:!missing.length&&r.ok};}
@@ -86,8 +88,8 @@ function renderProduction(){const list=entries().filter(e=>!e.hidden||status(e).
  [...$('productionGrid').querySelectorAll('.ug-tile')].forEach((t,i)=>{t.dataset.uid=list[i].id;});
  if(!list.length)$('productionGrid').append(Object.assign(document.createElement('p'),{className:'cmd-hint',textContent:'生産・雇用できるユニットはまだありません。'}));}
 function openProduction(e){const u=D.unit(e.unitId),st=status(e),have=counts()[e.unitId]||0;
- win('生産・雇用',u.name,[(e.registered?'生産・雇用リスト（開発・設計で登録）':'生産・雇用')+' ｜ 費用 '+e.cost.toLocaleString()+' Cr','所持 '+have+'体'+(e.limit!=null?' ｜ 雇用 '+(hired[e.id]||0)+' / '+e.limit:''),...(e.requires?.missions?.length?['必要：作戦「'+e.requires.missions.map(m=>D.mission(m)?.name||m).join('・')+'」のクリア']:[]),...(e.conds?.list?.length?['条件：'+condsText(e.conds)]:[]),st.ok?'Lv1で加わります。':'できません：'+st.why],
- [['生産・雇用する',()=>{if(!status(e).ok)return;const r=status(e).r;pay([{credits:e.cost},...r.costs]);owned.push({uid:e.unitId+'#'+serial++,id:e.unitId,lv:1,exp:0,sp:0});hired[e.id]=(hired[e.id]||0)+1;save();seen().mark([e.unitId],'joined');prodPick=null;renderProduction();win('完了',u.name,[u.name+' が加わりました。（資金 残り '+credits.toLocaleString()+' Cr）'],[['閉じる',close]]);},!st.ok,'run'],['ユニット情報',()=>window.PROField?.showUnit({...u,id:e.unitId})],['閉じる',close]]);}
+ win(verb(u),u.name,[(e.registered?'生産・雇用リスト（開発・設計で登録）':verb(u))+' ｜ 費用 '+e.cost.toLocaleString()+' Cr','所持 '+have+'体'+(e.limit!=null?' ｜ 雇用 '+(hired[e.id]||0)+' / '+e.limit:''),...(e.requires?.missions?.length?['必要：作戦「'+e.requires.missions.map(m=>D.mission(m)?.name||m).join('・')+'」のクリア']:[]),...(e.conds?.list?.length?['条件：'+condsText(e.conds)]:[]),st.ok?'Lv1で加わります。':'できません：'+st.why],
+ [[verb(u)+'する',()=>{if(!status(e).ok)return;const r=status(e).r;pay([{credits:e.cost},...r.costs]);owned.push({uid:e.unitId+'#'+serial++,id:e.unitId,lv:1,exp:0,sp:0});hired[e.id]=(hired[e.id]||0)+1;save();seen().mark([e.unitId],'joined');prodPick=null;renderProduction();win('完了',u.name,[u.name+' が加わりました。（資金 残り '+credits.toLocaleString()+' Cr）'],[['閉じる',close]]);},!st.ok,'run'],['ユニット情報',()=>window.PROField?.showUnit({...u,id:e.unitId})],['閉じる',close]]);}
 const markCleared=id=>{if(id&&!cleared.includes(id)){cleared.push(id);save();}};
 function focusTile(grid,uid){$(grid).querySelector('[data-uid="'+uid+'"]')?.focus();}
 $('fusionReset').onclick=()=>{anchor=null;picks=[];pending=null;renderFusion();};
