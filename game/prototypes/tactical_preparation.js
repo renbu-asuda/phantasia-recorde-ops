@@ -6,8 +6,8 @@ const sizes=C.UNIT_SIZES,domains=C.MOVEMENT_DOMAINS;
 const P=window.PROTacticalData;
 // Owned units come from the unit lab (evolution / fusion change them); each has a uid unique among owned units.
 const roster=()=>window.PROUnitLab?window.PROUnitLab.owned():P.roster().map(u=>({...u,uid:u.id}));
-// Drop members that are no longer owned and follow evolutions (same uid, new unit).
-function sync(){const own=new Map(roster().map(u=>[u.uid,u]));for(const g of groups){g.members=g.members.filter(m=>own.has(m.uid));for(const m of g.members)if(m.unit.id!==own.get(m.uid).id){m.unit=C.clone(own.get(m.uid));setDomains(g);}}}
+// Drop members that are no longer owned and follow evolutions and level-ups (same uid, new unit or stats).
+function sync(){const own=new Map(roster().map(u=>[u.uid,u]));for(const g of groups){g.members=g.members.filter(m=>own.has(m.uid));for(const m of g.members)if(m.unit.id!==own.get(m.uid).id||m.unit.level!==own.get(m.uid).level){m.unit=C.clone(own.get(m.uid));setDomains(g);}}}
 const scenarios=Object.fromEntries(P.missions().map(m=>[m.id,{name:m.name,goal:m.goal,surface:m.surface}]));
 let missionId='training-01',sequence=2,active='group-1',groups=[{id:'group-1',name:'第1部隊',faction:'player',mode:'auto',members:[]}],lastFocus;
 const scenario=()=>scenarios[missionId],current=()=>groups.find(g=>g.id===active),occupied=id=>groups.find(g=>g.members.some(m=>m.uid===id));
