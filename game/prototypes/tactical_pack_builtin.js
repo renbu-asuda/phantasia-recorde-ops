@@ -52,6 +52,10 @@ root.PROTacticalBuiltinPack={
   {...base,id:'commander',name:'指揮機動兵器',catalog:'汎用機動兵器と戦闘機の設計を組み合わせた指揮機。',size:'2XL',move:7,hp:1800,movementAptitude:apt({ground:'B',air:'A',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,4)]}
  ],
  // Development / evolution (one step from → to) and design / fusion (materials → result), same shapes as T&D.
+ // Production / hire entries (same shape as T&D hires): cost in credits, limit = max hires (unset = no limit),
+ // requires.missions = missions to clear first, conds = extra condition set, hidden = not listed until available.
+ hires:[{id:'hire-infantry',unitId:'infantry',cost:800},{id:'hire-scout',unitId:'scout',cost:1500,limit:3},{id:'hire-tank',unitId:'tank',cost:2500,requires:{missions:['training-01']}},
+  {id:'hire-marine',unitId:'marine',cost:2000,hidden:true,conds:{mode:'all',list:[{type:'unit_owned',unitId:'boat',cmp:'ge',count:2}]}}],
  // conds use the T&D condition sets (PROCore.evalConds). consume:false keeps that material. carry.level keeps level /
  // EXP / skill points (fusion: from the first material). register adds the unit to the production / hire list.
  // A fusion with result.type 'register' adds no unit and only registers.
