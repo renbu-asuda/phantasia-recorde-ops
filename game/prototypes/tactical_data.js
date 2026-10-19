@@ -1,9 +1,24 @@
 /* Reads the Tactical pack (built-in for now) and exposes normalized lookups. No storage access. */
 (function(){'use strict';
-const C=window.PROCore,raw=window.PROTacticalBuiltinPack;
-if(!raw||raw.format!=='PRO_TACTICAL_PACK')throw Error('Tactical pack missing');
+const C=window.PROCore,builtin=window.PROTacticalBuiltinPack;
+if(!builtin||builtin.format!=='PRO_TACTICAL_PACK')throw Error('Tactical pack missing');
+/* Data source: the built-in sample, or the built-in sample plus the T&D maker's draft in this browser
+   (units, evolutions, fusions). Missions and terrains stay built-in until a Tactical mission maker exists.
+   The choice is a browser setting (PRO_TACTICAL_SOURCE); the draft is only read, never written. */
+const SOURCE_KEY='PRO_TACTICAL_SOURCE',DRAFT_KEY='PRO_TD_MAKER_DRAFT';
+const read=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
+function makerDraft(){try{const d=JSON.parse(read(DRAFT_KEY)||'null');return d&&d.format==='PRO_TD_PACK'?d:null;}catch(e){return null;}}
+// T&D unit → Tactical unit: weapon / skill IDs become objects (invalid ones are dropped, as in the maker's test battle).
+function fromMaker(d){const find=(k,id)=>(d[k]||[]).find(x=>x.id===id),ok=(f,x)=>{try{return f(x);}catch(e){return null;}};
+ const taken=new Set(builtin.units.map(u=>u.id)),units=(d.units||[]).filter(u=>u.id&&!taken.has(u.id)).map(u=>{const {weaponIds,skillIds,deploy,...rest}=u;const weapons=(weaponIds||[]).map(id=>find('weapons',id)).filter(Boolean).map(w=>ok(C.weapon,w)).filter(Boolean);
+  return {...rest,hp:Number(u.hp)||3000,atk:Number(u.atk)||0,def:Number(u.def)||0,mob:Number(u.mob)||0,acc:Number(u.acc)||0,weapons,skills:(skillIds||[]).map(id=>find('skills',id)).filter(Boolean).map(x=>ok(C.skill,{...x})).filter(Boolean),tags:u.tags||[],_player:!!deploy?.player};});
+ const ids=new Set([...taken,...units.map(u=>u.id)]),has=id=>ids.has(id);
+ return {units,roster:units.filter(u=>u._player).map(u=>u.id),evolutions:(d.evolutions||[]).filter(e=>has(e.from)&&has(e.to)),fusions:(d.fusions||[]).filter(f=>f.result?.type!=='item'&&has(f.result?.unitId)&&(f.materials||[]).length>=2&&f.materials.every(m=>has(m.unitId))),name:d.name||d.packId};}
+const draft=read(SOURCE_KEY)==='maker'?makerDraft():null,extra=draft?fromMaker(draft):null;
+const raw=extra?{...builtin,units:[...builtin.units,...extra.units],roster:[...builtin.roster,...extra.roster],evolutions:[...(builtin.evolutions||[]),...extra.evolutions],fusions:[...(builtin.fusions||[]),...extra.fusions]}:builtin;
 // Weapons go through PROCore.weapon so ranges and defaults are validated exactly like maker data.
 const normUnit=u=>({...C.clone(u),weapons:(u.weapons||[]).map(w=>C.weapon(w))});
+
 // Variants inherit every field they leave unset from their base (recursively); id, base and separate stay their own.
 const rawById=new Map(raw.units.map(u=>[u.id,u]));
 function resolve(u,seen=new Set()){if(!u.base)return u;if(seen.has(u.id)||!rawById.has(u.base))throw Error(u.id+': bad base unit');seen.add(u.id);const b=resolve(rawById.get(u.base),seen),{id:_i,base:_b,separate:_s,...inherit}=b;return {...inherit,...u};}
@@ -17,5 +32,5 @@ function enemies(missionId){const m=missions.get(missionId);return m.enemies.map
 // Catalog: a variant that is not separate shares its base's entry (and encounter flag).
 const catalogId=id=>{let u=rawById.get(id);while(u?.base&&!u.separate)u=rawById.get(u.base);return u?.id||id;};
 const catalog=()=>raw.units.filter(u=>catalogId(u.id)===u.id).map(u=>unit(u.id));
-window.PROTacticalData=Object.freeze({catalogId,catalog,evolutions:()=>C.clone(raw.evolutions||[]),fusions:()=>C.clone(raw.fusions||[]),packId:raw.packId,version:raw.version,name:raw.name,missions:()=>raw.missions.map(m=>({...m})),mission,unit,roster:()=>raw.roster.map(unit),tile,enemies,size:id=>{const m=missions.get(id);return {width:m.map.width,height:m.map.height};},starts:id=>missions.get(id).playerStarts.map(p=>({...p}))});
+window.PROTacticalData=Object.freeze({source:extra?'maker':'builtin',makerName:extra?.name||null,hasMakerDraft:()=>!!makerDraft(),setSource(v){try{localStorage.setItem(SOURCE_KEY,v==='maker'?'maker':'builtin');}catch(e){}},catalogId,catalog,evolutions:()=>C.clone(raw.evolutions||[]),fusions:()=>C.clone(raw.fusions||[]),packId:raw.packId,version:raw.version,name:raw.name,missions:()=>raw.missions.map(m=>({...m})),mission,unit,roster:()=>raw.roster.map(unit),tile,enemies,size:id=>{const m=missions.get(id);return {width:m.map.width,height:m.map.height};},starts:id=>missions.get(id).playerStarts.map(p=>({...p}))});
 })();

@@ -1,11 +1,15 @@
-/* Development / evolution and design / fusion screens (prototype). Works on an in-memory test roster and test
-   credits only; nothing is saved except encounter flags. Units are picked on the shared unit grid. */
+/* Development / evolution and design / fusion screens (prototype). Owned units and credits are the test save
+   (browser key PRO_TACTICAL_HQ, per data source). Units are picked on the shared unit grid. */
 (function(){'use strict';
 const C=window.PROCore,D=window.PROTacticalData,G=window.PROUnitGrid,$=id=>document.getElementById(id);
 const seen=()=>window.PROUnitsSeen;
 // Test player state: owned units (uid → unit id) and credits. Units are Lv1 in the prototype.
 // Starting units keep their unit id as uid (the formation screen and its tests address them that way).
-let serial=1,credits=24800,owned=D.roster().map(u=>({uid:u.id,id:u.id}));
+const HQ_KEY='PRO_TACTICAL_HQ',START_CREDITS=24800;
+let serial=1,credits=START_CREDITS,owned=D.roster().map(u=>({uid:u.id,id:u.id}));
+// A save made with another data source (built-in / maker) is ignored; units missing from the data are dropped.
+try{const h=JSON.parse(localStorage.getItem(HQ_KEY)||'null');if(h&&h.source===D.source&&Array.isArray(h.owned)){owned=h.owned.filter(o=>{try{D.unit(o.id);return typeof o.uid==='string';}catch(e){return false;}});credits=Number.isFinite(h.credits)?h.credits:START_CREDITS;serial=h.serial||1;}}catch(e){}
+function save(){try{localStorage.setItem(HQ_KEY,JSON.stringify({source:D.source,owned,credits,serial}));}catch(e){}}
 const unitOf=o=>({...D.unit(o.id),id:o.id,uid:o.uid}),counts=()=>owned.reduce((m,o)=>(m[o.id]=(m[o.id]||0)+1,m),{});
 const state=u=>({credits,units:counts(),items:{},flags:{},day:1,unit:u?{...u,level:1}:undefined,rng:()=>0});
 const name=id=>seen().has(id)?D.unit(id).name:'？？？';
@@ -14,7 +18,7 @@ const CMP={ge:'以上',le:'以下',eq:'ちょうど',lt:'未満'};
 function condText(c){const n=v=>v+(CMP[c.cmp||'ge']);let t;switch(c.type){case 'credits_use':t='資金'+c.value+'を消費';break;case 'credits_have':t='資金'+n(c.value);break;case 'unit_level':t='Lv'+n(c.value);break;
  case 'unit_owned':t=name(c.unitId)+'を'+n(c.count??1)+'体所持';break;case 'item_has':t='アイテム'+c.itemId+'を'+n(c.count??1)+'個';break;case 'item_use':t='アイテム'+c.itemId+'×'+(c.count||1)+'を消費';break;default:t=c.type;}return (c.not?'【否定】':'')+t;}
 const condsText=cs=>cs?.list?.length?cs.list.map(condText).join(cs.mode==='any'?' または ':' かつ '):'条件なし';
-function pay(costs){for(const c of costs)if(c.credits!=null)credits-=c.credits;showCredits();}
+function pay(costs){for(const c of costs)if(c.credits!=null)credits-=c.credits;showCredits();save();}
 function showCredits(){const b=$('hubCredits');if(b)b.textContent=credits.toLocaleString();}
 function tell(id,text){$(id).textContent=text;}
 // Window shared by both screens: commands in a list, a confirm step, and results.
@@ -32,7 +36,7 @@ function openEvolve(u){const evos=evosOf(u);if(!evos.length){win('開発・進�
  const rows=evos.map(e=>{const r=C.evalConds(e.conds,state(u)),known=seen().has(e.to)||r.ok;return {e,r,label:'→ '+(known?D.unit(e.to).name:'？？？')+'（'+condsText(e.conds)+(r.ok?' ✓':' ✗')+'）'};});
  win('開発・進化',u.name+' の開発・進化先',['条件を満たした先を選ぶと確認します。'],[...rows.map(x=>[x.label,()=>confirmEvolve(u,x),!x.r.ok,x.e.id]),['閉じる',close]]);}
 function confirmEvolve(u,{e,r}){const to=D.unit(e.to);win('確認',u.name+' → '+to.name,['この内容で開発・進化します。','条件：'+condsText(e.conds),r.costs.length?'消費：'+r.costs.map(c=>c.credits!=null?c.credits+' Cr':c.itemId+'×'+c.count).join('・'):'消費なし'],
- [['実行する',()=>{const o=owned.find(x=>x.uid===u.uid);if(!o)return;pay(r.costs);o.id=e.to;seen().mark([e.to],'joined');evoPick=null;renderEvolve();win('完了',to.name,[u.name+' が '+to.name+' に開発・進化しました。'],[['閉じる',close]]);},false,'run'],['戻る',()=>openEvolve(u)]]);}
+ [['実行する',()=>{const o=owned.find(x=>x.uid===u.uid);if(!o)return;pay(r.costs);o.id=e.to;save();seen().mark([e.to],'joined');evoPick=null;renderEvolve();win('完了',to.name,[u.name+' が '+to.name+' に開発・進化しました。'],[['閉じる',close]]);},false,'run'],['戻る',()=>openEvolve(u)]]);}
 
 /* ---------- design / fusion ---------- */
 // The confirm window only opens for a recipe whose conditions hold, so it always names the result (as evolution does).
@@ -58,11 +62,11 @@ function confirmFusion(f){const uids=[anchor,...picks],r=C.evalConds(f.conds,sta
  // Pair each picked unit with a recipe slot so per-material consume flags apply to the right unit.
  const slots=[...used],plan=uids.map(uid=>{const o=owned.find(x=>x.uid===uid),i=slots.findIndex(m=>m.unitId===o.id);const m=slots.splice(i,1)[0];return {o,keep:m.consume===false};});
  win('確認','設計・合成',[plan.map(p=>D.unit(p.o.id).name+(p.keep?'（消費しない）':'')).join(' ＋ ')+' → '+D.unit(res).name,'条件：'+condsText(f.conds),r.costs.length?'消費：'+r.costs.map(c=>c.credits!=null?c.credits+' Cr':c.itemId+'×'+c.count).join('・'):'資金の消費なし'],
- [['実行する',()=>{pay(r.costs);const gone=new Set(plan.filter(p=>!p.keep).map(p=>p.o.uid));owned=owned.filter(o=>!gone.has(o.uid));for(let i=0;i<(f.result.count||1);i++)owned.push({uid:res+'#'+serial++,id:res});seen().mark([res],'joined');anchor=null;picks=[];renderFusion();win('完了',D.unit(res).name,['設計・合成で '+D.unit(res).name+' が加わりました。'],[['閉じる',close]]);},false,'run'],
+ [['実行する',()=>{pay(r.costs);const gone=new Set(plan.filter(p=>!p.keep).map(p=>p.o.uid));owned=owned.filter(o=>!gone.has(o.uid));for(let i=0;i<(f.result.count||1);i++)owned.push({uid:res+'#'+serial++,id:res});save();seen().mark([res],'joined');anchor=null;picks=[];renderFusion();win('完了',D.unit(res).name,['設計・合成で '+D.unit(res).name+' が加わりました。'],[['閉じる',close]]);},false,'run'],
   ['戻る',()=>{picks.pop();renderFusion();close();}]]);}
 function focusTile(grid,uid){$(grid).querySelector('[data-uid="'+uid+'"]')?.focus();}
 $('fusionReset').onclick=()=>{anchor=null;picks=[];pending=null;renderFusion();};
 $('labWindow').addEventListener('cancel',e=>e.preventDefault());
 showCredits();
-window.PROUnitLab=Object.freeze({renderEvolve,renderFusion,owned:()=>owned.map(unitOf),credits:()=>credits,reset(){serial=1;credits=24800;owned=D.roster().map(u=>({uid:u.id,id:u.id}));evoPick=null;anchor=null;picks=[];pending=null;showCredits();}});
+window.PROUnitLab=Object.freeze({renderEvolve,renderFusion,owned:()=>owned.map(unitOf),credits:()=>credits,reset(){serial=1;credits=START_CREDITS;owned=D.roster().map(u=>({uid:u.id,id:u.id}));evoPick=null;anchor=null;picks=[];pending=null;showCredits();save();}});
 })();
