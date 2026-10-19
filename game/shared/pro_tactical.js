@@ -7,6 +7,12 @@ const need=(ok,msg)=>{if(!ok)throw Error(msg);};
 const ready=()=>({moved:false,ended:false});
 function living(g){need(Array.isArray(g?.members),'部隊のmembersが必要です');return g.members.filter(m=>m.currentHp===undefined||m.currentHp>0);}
 function identity(g){const ids=new Set();for(const m of g.members){need(typeof m.uid==='string'&&m.uid.length&&!ids.has(m.uid),'個体UIDが重複または未設定です');ids.add(m.uid);}return ids;}
+// Squad capacity shared by Tactical groups and Dispatch lineups: at most 8 units and total size 8;
+// maxDeploy (Dispatch) adds a sortie count limit. Returns '' when unit u can join units.
+const SQUAD={count:8,size:8};
+function unitSize(u){return own(C.UNIT_SIZES,u?.size)?C.UNIT_SIZES[u.size]:null;}
+function squadUsage(units){return {count:units.length,size:units.reduce((n,u)=>n+(unitSize(u)??0),0)};}
+function joinReason(units,u,{maxDeploy}={}){const f=squadUsage(units),need=unitSize(u);if(need==null)return 'サイズが未設定です';if(maxDeploy!=null&&f.count>=maxDeploy)return '出撃数の上限'+maxDeploy+'に達しています';if(f.count>=SQUAD.count)return '体数上限'+SQUAD.count+'に達しています';if(f.size+need>SQUAD.size)return '残りサイズ'+(SQUAD.size-f.size)+'に対し、必要サイズ'+need;return '';}
 function formation(g){identity(g);const members=living(g);let size=0;for(const m of members){need(own(C.UNIT_SIZES,m.unit?.size),'サイズ未設定・不正です');size+=C.UNIT_SIZES[m.unit.size];}return {count:members.length,size,valid:members.length>0&&members.length<=8&&size<=8};}
 function requireFormation(g){need(formation(g).valid,'部隊は1～8体・総サイズ8以内です');}
 function configured(m){need(m.unit&&own(m.unit,'move')&&own(m.unit,'movementAptitude'),'MOVE・地形移動適性が未設定です');C.unitExt(m.unit);}
@@ -45,5 +51,5 @@ function transferAdjacent(a,b,toB,toA, {adjacent}={}){need(typeof adjacent==='fu
 function createTurnOrder(factions){need(Array.isArray(factions)&&factions.length>0&&factions.every(x=>typeof x==='string'&&x)&&new Set(factions).size===factions.length,'陣営順を重複なしで指定してください');return {factions:[...factions],index:0,round:1};}
 function beginFaction(groups,faction){return groups.map(g=>g.faction===faction?grantReactivation(g):clone(g));}
 function advanceTurn(order,groups){need(order&&Array.isArray(order.factions),'陣営順が必要です');createTurnOrder(order.factions);need(Number.isInteger(order.index)&&order.index>=0&&order.index<order.factions.length,'陣営インデックスが不正です');const next=clone(order);next.index=(next.index+1)%next.factions.length;if(next.index===0)next.round++;return {order:next,groups:beginFaction(groups,next.factions[next.index])};}
-root.PROTactical=Object.freeze({version:'0.1.0',living,formation,configured,supports,canAct,beforeAction,defaultDomain,initializeDomains,canSwitch,switchDomain,groupMove,stepCost,pathCost,canTravel,markMoved,endAction,grantReactivation,split,merge,transfer,mergeAt,transferAdjacent,createTurnOrder,beginFaction,advanceTurn});
+root.PROTactical=Object.freeze({version:'0.1.0',SQUAD,unitSize,squadUsage,joinReason,living,formation,configured,supports,canAct,beforeAction,defaultDomain,initializeDomains,canSwitch,switchDomain,groupMove,stepCost,pathCost,canTravel,markMoved,endAction,grantReactivation,split,merge,transfer,mergeAt,transferAdjacent,createTurnOrder,beginFaction,advanceTurn});
 })(typeof window==='undefined'?globalThis:window);
