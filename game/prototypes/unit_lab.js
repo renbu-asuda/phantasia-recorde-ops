@@ -7,12 +7,12 @@ const seen=()=>window.PROUnitsSeen;
 // (unit ids registered by evolution or fusion settings) and PRO・D unit levels (by unit id). Stats follow PROCore.levelStats.
 // Starting units keep their unit id as uid (the formation screen and its tests address them that way).
 const HQ_KEY='PRO_TACTICAL_HQ',START_CREDITS=24800;
-let serial=1,credits=START_CREDITS,owned=D.roster().map(u=>({uid:u.id,id:u.id})),registered=[],dlv={},hired={},cleared=[];
+let serial=1,credits=START_CREDITS,owned=D.roster().map(u=>({uid:u.id,id:u.id})),registered=[],dlv={},hired={},cleared=[],items=D.startItems(),day=1,done=[],active=null,notices=[];
 // A save made with another data source (built-in / maker) is ignored; units missing from the data are dropped.
-try{const h=JSON.parse(localStorage.getItem(HQ_KEY)||'null');if(h&&h.source===D.source&&Array.isArray(h.owned)){owned=h.owned.filter(o=>{try{D.unit(o.id);return typeof o.uid==='string';}catch(e){return false;}});credits=Number.isFinite(h.credits)?h.credits:START_CREDITS;registered=Array.isArray(h.registered)?h.registered:[];dlv=h.dlv&&typeof h.dlv==='object'?h.dlv:{};hired=h.hired&&typeof h.hired==='object'?h.hired:{};cleared=Array.isArray(h.cleared)?h.cleared:[];serial=h.serial||1;}}catch(e){}
-function save(){try{localStorage.setItem(HQ_KEY,JSON.stringify({source:D.source,owned,credits,serial,registered,dlv,hired,cleared}));}catch(e){}}
+try{const h=JSON.parse(localStorage.getItem(HQ_KEY)||'null');if(h&&h.source===D.source&&Array.isArray(h.owned)){owned=h.owned.filter(o=>{try{D.unit(o.id);return typeof o.uid==='string';}catch(e){return false;}});credits=Number.isFinite(h.credits)?h.credits:START_CREDITS;registered=Array.isArray(h.registered)?h.registered:[];dlv=h.dlv&&typeof h.dlv==='object'?h.dlv:{};hired=h.hired&&typeof h.hired==='object'?h.hired:{};cleared=Array.isArray(h.cleared)?h.cleared:[];items=h.items&&typeof h.items==='object'?h.items:D.startItems();day=h.day>=1?h.day:1;done=Array.isArray(h.done)?h.done:[];active=h.active&&D.research().some(r=>r.id===h.active.id)?h.active:null;notices=Array.isArray(h.notices)?h.notices:[];serial=h.serial||1;}}catch(e){}
+function save(){try{localStorage.setItem(HQ_KEY,JSON.stringify({source:D.source,owned,credits,serial,registered,dlv,hired,cleared,items,day,done,active,notices}));}catch(e){}}
 const unitOf=o=>({...C.levelStats(D.unit(o.id),o.lv||1),id:o.id,uid:o.uid,exp:o.exp||0,sp:o.sp||0}),counts=()=>owned.reduce((m,o)=>(m[o.id]=(m[o.id]||0)+1,m),{});
-const state=u=>({credits,units:counts(),items:{},flags:{},day:1,cleared,hires:hired,unit:u?{...u,level:u.level||1}:undefined,rng:()=>0});
+const state=u=>({credits,units:counts(),items:{...items},reserved:{items:{...(active?.reserve||{})}},research:done,flags:{},day,cleared,hires:hired,unit:u?{...u,level:u.level||1}:undefined,rng:()=>0});
 const name=id=>seen().has(id)?D.unit(id).name:'？？？';
 const CMP={ge:'以上',le:'以下',eq:'ちょうど',lt:'未満'};
 // Short text for the condition types the samples use; other types fall back to their id.
@@ -80,8 +80,8 @@ function confirmFusion(f){const uids=[anchor,...picks],r=C.evalConds(f.conds,sta
 const defaultCost=u=>u.hireCost??Math.max(100,Math.round(((u.hp||0)/4+(u.atk||0)*2+(u.def||0)*2)/100)*100);
 const verb=u=>u.joinVerb==='produce'?'生産':u.joinVerb==='hire'?'雇用':'生産・雇用';
 function entries(){const hs=D.hires(),out=hs.map(h=>({...h,cost:h.cost??defaultCost(D.unit(h.unitId))}));for(const id of registered)if(!out.some(e=>e.unitId===id))out.push({id:'reg-'+id,unitId:id,cost:defaultCost(D.unit(id)),registered:true});return out;}
-function status(e){const missing=(e.requires?.missions||[]).filter(m=>!cleared.includes(m)),r=C.evalConds(e.conds,state()),full=e.limit!=null&&(hired[e.id]||0)>=e.limit,afford=credits>=e.cost+r.costs.reduce((n,c)=>n+(c.credits||0),0);
- const why=missing.length?'作戦「'+missing.map(m=>D.mission(m)?.name||m).join('・')+'」のクリアが必要':!r.ok?'条件：'+condsText(e.conds):full?'雇える上限（'+e.limit+'）に達しています':!afford?'資金が足りません':'';return {ok:!why,why,r,open:!missing.length&&r.ok};}
+function status(e){const missing=(e.requires?.missions||[]).filter(m=>!cleared.includes(m)),needR=(e.requires?.research||[]).filter(x=>!done.includes(x)),r=C.evalConds(e.conds,state()),full=e.limit!=null&&(hired[e.id]||0)>=e.limit,afford=credits>=e.cost+r.costs.reduce((n,c)=>n+(c.credits||0),0);
+ const why=missing.length?'作戦「'+missing.map(m=>D.mission(m)?.name||m).join('・')+'」のクリアが必要':needR.length?'研究「'+needR.map(x=>D.research().find(r=>r.id===x)?.name||x).join('・')+'」が必要':!r.ok?'条件：'+condsText(e.conds):full?'雇える上限（'+e.limit+'）に達しています':!afford?'資金が足りません':'';return {ok:!why,why,r,open:!missing.length&&!needR.length&&r.ok};}
 let prodPick=null;
 function renderProduction(){const list=entries().filter(e=>!e.hidden||status(e).open);tell('productionCredits','資金 '+credits.toLocaleString()+' Cr');
  G.render($('productionGrid'),list.map(e=>({...D.unit(e.unitId),id:e.unitId,uid:e.id})),{selected:u=>u.uid===prodPick,reason:u=>status(list.find(e=>e.id===u.uid)).why,badge:u=>list.find(e=>e.id===u.uid).cost.toLocaleString()+'Cr',onPick:u=>{if(prodPick===u.uid){openProduction(list.find(e=>e.id===u.uid));return;}prodPick=u.uid;renderProduction();focusTile('productionGrid',u.uid);}});
@@ -90,6 +90,35 @@ function renderProduction(){const list=entries().filter(e=>!e.hidden||status(e).
 function openProduction(e){const u=D.unit(e.unitId),st=status(e),have=counts()[e.unitId]||0;
  win(verb(u),u.name,[(e.registered?'生産・雇用リスト（開発・設計で登録）':verb(u))+' ｜ 費用 '+e.cost.toLocaleString()+' Cr','所持 '+have+'体'+(e.limit!=null?' ｜ 雇用 '+(hired[e.id]||0)+' / '+e.limit:''),...(e.requires?.missions?.length?['必要：作戦「'+e.requires.missions.map(m=>D.mission(m)?.name||m).join('・')+'」のクリア']:[]),...(e.conds?.list?.length?['条件：'+condsText(e.conds)]:[]),st.ok?'Lv1で加わります。':'できません：'+st.why],
  [[verb(u)+'する',()=>{if(!status(e).ok)return;const r=status(e).r;pay([{credits:e.cost},...r.costs]);owned.push({uid:e.unitId+'#'+serial++,id:e.unitId,lv:1,exp:0,sp:0});hired[e.id]=(hired[e.id]||0)+1;save();seen().mark([e.unitId],'joined');prodPick=null;renderProduction();win('完了',u.name,[u.name+' が加わりました。（資金 残り '+credits.toLocaleString()+' Cr）'],[['閉じる',close]]);},!st.ok,'run'],['ユニット情報',()=>window.PROField?.showUnit({...u,id:e.unitId})],['閉じる',close]]);}
+/* ---------- research ---------- */
+// One research at a time. Start: pay credits, reserve cost.items (they stay owned but can't be used elsewhere).
+// The in-game day advances when a mission ends; on the finishing day the reserved items are consumed and the
+// unlocks apply. Cancelling refunds the credits and releases the reservation. Completion notes wait in `notices`.
+const rById=id=>D.research().find(r=>r.id===id),itemText=o=>Object.entries(o||{}).map(([id,n])=>D.itemName(id)+'×'+n).join('・');
+const free=id=>(items[id]||0)-(active?.reserve?.[id]||0);
+function researchStatus(r){if(done.includes(r.id))return {state:'done',why:'完了済み'};if(active?.id===r.id)return {state:'active',why:'研究中（あと'+Math.max(0,active.until-day)+'日）'};
+ const needR=(r.requires||[]).filter(x=>!done.includes(x)),c=C.evalConds(r.conds,state()),lack=Object.entries(r.cost?.items||{}).filter(([id,n])=>free(id)<n);
+ const why=active?'ほかの研究を進行中':needR.length?'先に「'+needR.map(x=>rById(x)?.name||x).join('・')+'」が必要':!c.ok?'条件：'+condsText(r.conds):credits<(r.cost?.credits||0)?'資金が足りません':lack.length?'素材が足りません（'+lack.map(([id,n])=>D.itemName(id)+' '+free(id)+'/'+n).join('・')+'）':'';
+ return {state:why?'blocked':'ready',why,open:!needR.length&&c.ok};}
+function startResearch(id){const r=rById(id);if(!r||researchStatus(r).state!=='ready')return false;const paid=r.cost?.credits||0;pay([{credits:paid}]);active={id,start:day,until:day+Math.max(1,r.days||1),paid,reserve:{...(r.cost?.items||{})}};save();return true;}
+function cancelResearch(){if(!active)return false;credits+=active.paid||0;active=null;showCredits();save();return true;}
+function completeResearch(){const r=rById(active.id);for(const [id,n] of Object.entries(active.reserve||{}))items[id]=Math.max(0,(items[id]||0)-n);
+ const u=r?.unlock||{},got=[];for(const id of u.units||[]){try{D.unit(id);}catch(e){continue;}owned.push({uid:id+'#'+serial++,id,lv:1,exp:0,sp:0});seen().mark([id],'joined');got.push(D.unit(id).name+'が加入');}
+ for(const id of u.register||[]){try{D.unit(id);}catch(e){continue;}register(id);got.push(D.unit(id).name+'を生産・雇用リストに登録');}
+ for(const [id,n] of Object.entries(u.grantItems||{})){items[id]=(items[id]||0)+n;got.push(D.itemName(id)+'×'+n+'を入手');}
+ done.push(active.id);notices.push((r?.name||active.id)+' が完了'+(got.length?'：'+got.join('、'):''));active=null;}
+// In-game day: +1 per finished mission (Tactical or Dispatch). Returns completion notes produced by this advance.
+function advanceDay(n=1){const before=notices.length;day+=n;if(active&&day>=active.until)completeResearch();save();return notices.slice(before);}
+let researchPick=null;
+function renderResearch(){const list=D.research().filter(r=>!r.hidden||researchStatus(r).open||done.includes(r.id));
+ tell('researchDay','ゲーム内 '+day+'日目 ｜ 資金 '+credits.toLocaleString()+' Cr');const box=$('researchList');box.replaceChildren(...list.map(r=>{const st=researchStatus(r),b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.dataset.research=r.id;b.className='research-'+st.state;const a=document.createElement('span'),sm=document.createElement('small');a.textContent=(st.state==='done'?'✓ ':'')+r.name;sm.textContent=st.state==='ready'?(r.days||1)+'日 ・ '+(r.cost?.credits||0).toLocaleString()+' Cr':st.why;b.append(a,sm);b.onclick=()=>openResearch(r.id);return b;}));
+ if(!list.length)box.append(Object.assign(document.createElement('p'),{className:'cmd-hint',textContent:'研究できる項目はありません。'}));
+ $('researchNow').textContent=active?rById(active.id)?.name+'（'+active.until+'日目に完了・あと'+Math.max(0,active.until-day)+'日）':'なし';$('researchReserved').textContent=active&&Object.keys(active.reserve||{}).length?itemText(active.reserve):'なし';$('researchItems').textContent=itemText(Object.fromEntries(Object.entries(items).filter(([,n])=>n>0)))||'なし';
+ $('researchNotices').replaceChildren(...notices.slice(-3).reverse().map(t=>Object.assign(document.createElement('p'),{className:'catalog-line',textContent:t})));}
+function openResearch(id){const r=rById(id),st=researchStatus(r),u=r.unlock||{};
+ const gets=[...(u.units||[]).map(x=>name(x)+' が加入'),...(u.register||[]).map(x=>name(x)+' を生産・雇用リストに登録'),...Object.entries(u.grantItems||{}).map(([x,n])=>D.itemName(x)+'×'+n+' を入手')];
+ win('研究',r.name,[r.desc||'',(r.days||1)+'日 ｜ 開始時に '+(r.cost?.credits||0).toLocaleString()+' Cr',Object.keys(r.cost?.items||{}).length?'素材（完了時に消費・それまで予約）：'+itemText(r.cost.items):'素材なし',...(r.requires?.length?['先に必要：'+r.requires.map(x=>rById(x)?.name||x).join('・')]:[]),'完了すると：'+(gets.join('、')||'なし'),st.state==='ready'?'研究を始められます。':st.why].filter(Boolean),
+  [...(st.state==='active'?[['研究を取りやめる',()=>win('確認','研究を取りやめますか？',['資金 '+(active.paid||0).toLocaleString()+' Cr を返金し、素材の予約を解除します。'],[['取りやめる',()=>{cancelResearch();renderResearch();openResearch(id);},false,'cancel'],['戻る',()=>openResearch(id)]]),false,'stop']]:[['研究を始める',()=>{if(startResearch(id)){renderResearch();win('開始',r.name,[r.name+' を始めました。'+(active.until)+'日目に完了します。'],[['閉じる',close]]);}},st.state!=='ready','run']]),['閉じる',close]]);}
 const markCleared=id=>{if(id&&!cleared.includes(id)){cleared.push(id);save();}};
 function focusTile(grid,uid){$(grid).querySelector('[data-uid="'+uid+'"]')?.focus();}
 $('fusionReset').onclick=()=>{anchor=null;picks=[];pending=null;renderFusion();};
@@ -101,5 +130,5 @@ function grant(entries,get,put,nameOf){const out=[];for(const {key,amount} of en
 const gainExp=entries=>grant(entries,uid=>{const o=owned.find(x=>x.uid===uid);return o&&{lv:o.lv||1,exp:o.exp||0,sp:o.sp||0};},(uid,r)=>Object.assign(owned.find(x=>x.uid===uid),{lv:r.lv,exp:r.exp,sp:r.sp}),uid=>D.unit(owned.find(x=>x.uid===uid).id).name);
 const dispatchLevel=id=>({lv:1,exp:0,sp:0,...(dlv[id]||{})});
 const gainDispatchExp=(entries,names={})=>grant(entries,dispatchLevel,(id,r)=>{dlv[id]={lv:r.lv,exp:r.exp,sp:r.sp};},id=>names[id]||id);
-window.PROUnitLab=Object.freeze({renderEvolve,renderFusion,renderProduction,markCleared,cleared:()=>[...cleared],gainExp,gainDispatchExp,dispatchLevel,registered:()=>[...registered],register,owned:()=>owned.map(unitOf),credits:()=>credits,reset(){serial=1;credits=START_CREDITS;owned=D.roster().map(u=>({uid:u.id,id:u.id}));registered=[];dlv={};hired={};cleared=[];evoPick=null;prodPick=null;anchor=null;picks=[];pending=null;showCredits();save();}});
+window.PROUnitLab=Object.freeze({renderResearch,advanceDay,startResearch,cancelResearch,day:()=>day,items:()=>({...items}),done:()=>[...done],active:()=>active&&{...active},renderEvolve,renderFusion,renderProduction,markCleared,cleared:()=>[...cleared],gainExp,gainDispatchExp,dispatchLevel,registered:()=>[...registered],register,owned:()=>owned.map(unitOf),credits:()=>credits,reset(){serial=1;credits=START_CREDITS;owned=D.roster().map(u=>({uid:u.id,id:u.id}));registered=[];dlv={};hired={};cleared=[];items=D.startItems();day=1;done=[];active=null;notices=[];evoPick=null;prodPick=null;anchor=null;picks=[];pending=null;showCredits();save();}});
 })();
