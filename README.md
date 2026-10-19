@@ -20,6 +20,8 @@
 
 **[開発中の製作者テスト用ページ](https://renbu-asuda.github.io/phantasia-recorde-ops/game/prototypes/tactical_hub.html)**（ネタバレを含むため説明は省略。パスワードが必要です）
 
+**[開発中の製作者テスト用ツール](https://renbu-asuda.github.io/phantasia-recorde-ops/game/prototypes/maker_td.html)**（データメーカー。パスワードが必要です）
+
 ## ダウンロード
 
 オフラインで遊ぶ場合（Android・パソコン）: **[fantasia_record_ops_toolkit_v1.16.2.zip](dist/fantasia_record_ops_toolkit_v1.16.2.zip)**（リンク先の「Download raw file」ボタンで保存できます）

@@ -1,0 +1,147 @@
+/* PRO 統合メーカー T&D (prototype): units / weapons / skills for Tactical & Dispatch.
+   Only current fields are editable. Legacy fields are converted on import when possible, otherwise dropped
+   and reported. Draft is auto-saved to this browser; export is a T&D JSON pack (not the published format). */
+(function(){'use strict';
+const C=window.PROCore,$=id=>document.getElementById(id),DRAFT='PRO_TD_MAKER_DRAFT',FORMAT='PRO_TD_PACK';
+const KINDS={units:{label:'ユニット',en:'UNITS',prefix:'u'},weapons:{label:'武装',en:'WEAPONS',prefix:'w'},skills:{label:'スキル',en:'SKILLS',prefix:'s'}};
+const el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;};
+const clone=x=>JSON.parse(JSON.stringify(x));
+let data=empty(),kind='units',selectedId=null,openGroups=new Set();
+function empty(){return {format:FORMAT,version:1,packId:'td-pack',name:'新しいパック',units:[],weapons:[],skills:[]};}
+
+/* ---------- field schema: only fields the current game uses ---------- */
+const STAT=(key,label,min=0,max=1000000)=>({key,label,type:'number',min,max,group:'能力'});
+const APT={S:'S（×0.75）',A:'A（×0.875）',B:'B（×1）',C:'C（×1.125）',D:'D（×1.25）',none:'なし（進入不可）'};
+const FIELDS={
+ units:[
+  {key:'name',label:'名前',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},{key:'role',label:'役割（表示）',type:'text',group:'基本'},{key:'mark',label:'マーク（カードの3文字）',type:'text',max:3,group:'基本'},{key:'tags',label:'タグ',type:'tags',group:'基本'},
+  {key:'deploy.player',label:'味方として使う',type:'toggle',group:'基本'},{key:'deploy.enemy',label:'敵として使う',type:'toggle',group:'基本'},
+  STAT('hp','HP',1),STAT('atk','ATK'),STAT('def','DEF'),STAT('mob','MOB（行動順・回避）'),STAT('acc','ACC（命中）'),
+  {key:'weaponIds',label:'武装',type:'refs',ref:'weapons',group:'戦闘'},{key:'skillIds',label:'スキル',type:'refs',ref:'skills',group:'戦闘'},
+  {key:'row',label:'標準の隊列',type:'select',choices:{front:'前衛',back:'後衛'},group:'戦闘'},
+  {key:'ai.target',label:'AIの狙い方',type:'select',choices:{random:'ランダム',lowest_hp:'HPが最も低い相手',highest_atk:'ATKが最も高い相手',tag:'指定タグを優先'},group:'戦闘'},{key:'ai.tag',label:'優先するタグ',type:'text',group:'戦闘',show:u=>u.ai?.target==='tag'},
+  {key:'crew',label:'パイロット',type:'select',choices:{optional:'乗せても乗せなくてもよい',none:'乗せられない',required:'パイロットが必要'},group:'戦闘'},
+  {key:'size',label:'サイズ',type:'select',choices:Object.fromEntries(Object.entries(C.UNIT_SIZES).map(([k,v])=>[k,k+'（編成サイズ'+v+'）'])),group:'タクティカル',help:'部隊は最大8体・総サイズ8。'},
+  {key:'move',label:'MOVE',type:'number',min:0,max:99,group:'タクティカル',help:'マップの移動力。'},
+  ...Object.entries(C.MOVEMENT_DOMAINS).map(([k,l])=>({key:'movementAptitude.'+k,label:l+'の移動適性',type:'select',choices:APT,group:'タクティカル'})),
+  {key:'growth.hp',label:'成長：HP',type:'number',min:0,group:'育成・運用'},{key:'growth.atk',label:'成長：ATK',type:'number',min:0,group:'育成・運用'},{key:'growth.def',label:'成長：DEF',type:'number',min:0,group:'育成・運用'},{key:'growth.mob',label:'成長：MOB',type:'number',min:0,group:'育成・運用'},{key:'growth.acc',label:'成長：ACC',type:'number',min:0,group:'育成・運用'},
+  {key:'exp',label:'撃破時の経験値',type:'number',min:0,group:'育成・運用'},{key:'sortieCost',label:'出撃費用',type:'number',min:0,group:'育成・運用'},{key:'equipSlots',label:'装備枠の数',type:'number',min:0,max:6,group:'育成・運用'},
+  {key:'noFire',label:'解雇できない（重要ユニット）',type:'toggle',group:'育成・運用'},{key:'recruit.locked',label:'最初は仲間にいない',type:'toggle',group:'育成・運用'},{key:'note',label:'メモ',type:'text',group:'育成・運用'}],
+ weapons:[
+  {key:'name',label:'武装名',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},
+  {key:'attackType',label:'攻撃方式',type:'select',choices:{melee:'近接',ranged:'射撃'},group:'基本'},{key:'damageType',label:'属性',type:'select',choices:C.DAMAGE_TYPES,group:'基本'},
+  {key:'useUnitAtk',label:'ユニットのATKを参照',type:'toggle',group:'威力',help:'ON：（ATK＋基礎攻撃力）×威力％。OFF：基礎攻撃力×威力％。'},{key:'baseAtk',label:'基礎攻撃力',type:'number',min:0,group:'威力'},
+  {key:'powerPct',label:'威力 %',type:'number',min:0,group:'威力'},{key:'accuracyPt',label:'命中補正 pt',type:'number',min:-100,max:100,group:'威力'},{key:'critPt',label:'CRIT補正 pt',type:'number',min:-100,max:100,group:'威力'},{key:'targetCount',label:'対象数',type:'number',min:1,max:8,group:'威力'},
+  {key:'minRange',label:'最小射程（マス）',type:'number',min:1,max:99,group:'タクティカル'},{key:'maxRange',label:'最大射程（マス）',type:'number',min:1,max:99,group:'タクティカル'},
+  {key:'usesPerBattle',label:'1戦闘の使用回数（0=無制限）',type:'number',min:0,max:99,group:'使用制限'},{key:'cooldown',label:'使用後に待つTURN',type:'number',min:0,max:99,group:'使用制限'},
+  {key:'defPiercePct',label:'DEF貫通 %',type:'number',min:0,max:100,group:'詳細'},{key:'weight',label:'抽選ウェイト（使われやすさ）',type:'number',min:0.01,group:'詳細'},{key:'minDamage',label:'最低ダメージ',type:'number',min:0,group:'詳細'},{key:'hitsMin',label:'最小HIT数',type:'number',min:1,max:100,group:'詳細'},{key:'hitsMax',label:'最大HIT数',type:'number',min:1,max:100,group:'詳細'},{key:'hitPowerPct',label:'1HITの威力 %',type:'number',min:0,group:'詳細'},
+  {key:'fxColor',label:'演出色（#RRGGBB）',type:'color',group:'詳細'},{key:'note',label:'メモ',type:'text',group:'詳細'}],
+ skills:[
+  {key:'name',label:'スキル名',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},
+  {key:'trigger',label:'いつ発動する？',type:'select',choices:C.triggers,group:'基本',after:s=>{if(!C.allowed[s.trigger]?.includes(s.effect))s.effect=C.allowed[s.trigger][0];}},
+  {key:'effect',label:'何が起きる？',type:'select',choices:s=>Object.fromEntries((C.allowed[s.trigger]||[]).map(x=>[x,C.skillEffects[x]])),group:'基本'},
+  {key:'resistType',label:'耐性の対象',type:'select',choices:C.RESIST_TYPES,group:'基本',show:s=>s.effect==='weapon_resist_pct'},
+  {key:'value',label:'効果の大きさ',type:'number',min:-1000000,group:'基本'},{key:'chance',label:'発動率 %',type:'number',min:0,max:100,group:'基本'},{key:'maxUses',label:'1戦闘の発動回数（0=無制限）',type:'number',min:0,group:'基本'},
+  {key:'target',label:'効果の対象',type:'select',choices:C.skillTargets,group:'基本',show:s=>C.TARGETED_EFFECTS.includes(s.effect)},
+  {key:'duration',label:'持続TURN',type:'number',min:1,max:99,group:'基本',show:s=>C.DURATION_EFFECTS.includes(s.effect)},
+  {key:'tag',label:'特効タグ',type:'text',group:'基本',show:s=>s.effect==='tag_damage_up_pct'},{key:'note',label:'メモ',type:'text',group:'詳細'}]};
+const COLLAPSED=new Set(['育成・運用','詳細']);
+const get=(o,p)=>p.split('.').reduce((v,k)=>v==null?undefined:v[k],o);
+function set(o,p,v){const ks=p.split('.'),last=ks.pop();let t=o;for(const k of ks)t=t[k]&&typeof t[k]==='object'?t[k]:(t[k]={});if(v===undefined||v===''||v===null)delete t[last];else t[last]=v;}
+
+/* ---------- defaults, IDs and links ---------- */
+const DEFAULT={units:()=>({name:'新しいユニット',role:'',tags:[],deploy:{player:true,enemy:false},hp:3000,atk:250,def:0,mob:500,acc:500,weaponIds:[],skillIds:[],size:'M',move:5,movementAptitude:{ground:'B',air:'none',water:'none',underwater:'none',space:'none'}}),
+ weapons:()=>({name:'新しい武装',...clone(C.weaponDefaults),useUnitAtk:true,baseAtk:250,minRange:1,maxRange:1}),
+ skills:()=>({name:'新しいスキル',trigger:'battle_start',effect:'atk_up_pct',value:10,chance:100,maxUses:1,duration:3})};
+const allIds=()=>new Set(Object.keys(KINDS).flatMap(k=>data[k].map(x=>x.id)));
+function nextId(k){const ids=allIds();for(let n=1;;n++){const id=KINDS[k].prefix+'_'+String(n).padStart(3,'0');if(!ids.has(id))return id;}}
+const find=(k,id)=>data[k].find(x=>x.id===id);
+const usage=(k,id)=>k==='units'?[]:data.units.filter(u=>(u[k==='weapons'?'weaponIds':'skillIds']||[]).includes(id));
+// Renaming an ID rewrites every link to it.
+function renameId(k,from,to){const x=find(k,from);x.id=to;if(k!=='units'){const key=k==='weapons'?'weaponIds':'skillIds';for(const u of data.units)if(u[key])u[key]=u[key].map(i=>i===from?to:i);}if(selectedId===from)selectedId=to;}
+function idProblem(id,self){if(!id)return 'IDが空です';if(!/^[A-Za-z0-9_-]+$/.test(id))return '半角英数字・_・- だけ使えます';if(id!==self&&allIds().has(id))return 'このIDはすでに使われています';return '';}
+
+/* ---------- validation ---------- */
+function issues(k,x){const out=[];if(!x.name)out.push('名前がありません');if(k==='weapons'){try{C.weapon(x);}catch(e){out.push(e.message);}if((x.minRange??1)>(x.maxRange??1))out.push('最大射程は最小射程以上にしてください');}
+ if(k==='skills'){try{C.skill({...x,id:x.id||'tmp'});}catch(e){out.push(e.message);}}
+ if(k==='units'){for(const [key,ref] of [['weaponIds','weapons'],['skillIds','skills']])for(const id of x[key]||[])if(!find(ref,id))out.push(KINDS[ref].label+'「'+id+'」が見つかりません');if(!x.weaponIds?.length)out.push('武装がありません（戦闘では標準攻撃になります）');if(x.size==null||x.move==null)out.push('サイズ・MOVEが未設定（タクティカルで使えません）');if(!x.deploy?.player&&!x.deploy?.enemy)out.push('味方・敵のどちらにも使わない設定です');}
+ return out;}
+
+/* ---------- autosave ---------- */
+function save(){try{localStorage.setItem(DRAFT,JSON.stringify(data));$('saveState').textContent='自動保存しました '+new Date().toLocaleTimeString('ja-JP');}catch(e){$('saveState').textContent='保存できませんでした';}}
+function load(){try{const d=JSON.parse(localStorage.getItem(DRAFT)||'null');if(d&&d.format===FORMAT)data={...empty(),...d};}catch(e){}}
+
+/* ---------- screens ---------- */
+const fade=fn=>window.PROTransition?window.PROTransition.run(fn):fn();
+function showMenu(){$('listView').hidden=true;$('menuView').hidden=false;for(const k of Object.keys(KINDS))document.querySelector(`[data-count="${k}"]`).textContent=data[k].length+'件';$('menuStats').textContent='パック：'+data.name+'（'+data.packId+'）';$('menuTitle').focus();}
+function openKind(k,id=null){kind=k;selectedId=id;$('menuView').hidden=true;$('listView').hidden=false;$('listEyebrow').textContent=KINDS[k].en;$('listTitle').textContent=KINDS[k].label;$('listSearch').value='';renderList();renderEditor();$('listTitle').focus();}
+function renderList(){const q=$('listSearch').value.trim().toLowerCase(),root=$('itemList');root.replaceChildren();const list=data[kind].filter(x=>!q||(x.name||'').toLowerCase().includes(q)||x.id.toLowerCase().includes(q));if(!list.length)root.append(el('p',data[kind].length?'見つかりません。':'まだありません。「新しく作る」から始めましょう。','cmd-hint'));
+ for(const x of list){const b=el('button',null,'td-item'+(x.id===selectedId?' current':''));b.setAttribute('role','menuitem');b.dataset.item=x.id;const n=issues(kind,x).length;b.append(el('span',x.name||'（名前なし）'),el('small',x.id+(n?' ・ ⚠'+n:'')));b.onclick=()=>{selectedId=x.id;renderList();renderEditor();};root.append(b);}}
+function display(f,x){const v=get(x,f.key);if(f.type==='toggle')return v?'ON':'OFF';if(f.type==='refs')return (v||[]).length?(v||[]).map(id=>find(f.ref,id)?.name||'⚠'+id).join('・'):'なし';if(f.type==='tags')return (v||[]).join('・')||'なし';if(f.type==='select'){const ch=typeof f.choices==='function'?f.choices(x):f.choices;return v==null?'未設定':(ch[v]??v);}if(v==null||v==='')return '未設定';return String(v);}
+function renderEditor(){const x=find(kind,selectedId);$('editor').hidden=!x;$('editorEmpty').hidden=!!x;if(!x)return;$('editName').textContent=x.name||'（名前なし）';$('editId').textContent=KINDS[kind].label+' ・ '+x.id;const iss=issues(kind,x);$('editIssues').textContent=iss.length?'⚠ '+iss.join(' ／ '):'✓ 問題なし';$('editIssues').className='td-issues'+(iss.length?' warn':' ok');
+ const rows=$('editRows');rows.replaceChildren();let group=null;for(const f of FIELDS[kind]){if(f.show&&!f.show(x))continue;if(f.group!==group){group=f.group;const g=group,closed=COLLAPSED.has(g)&&!openGroups.has(g),h=el('button',(closed?'▸ ':'▾ ')+g,'td-group');h.dataset.group=g;h.onclick=()=>{openGroups.has(g)?openGroups.delete(g):openGroups.add(g);renderEditor();};rows.append(h);}if(COLLAPSED.has(group)&&!openGroups.has(group))continue;
+  const b=el('button',null,'unit-row setting-row td-row');b.setAttribute('role','menuitem');b.dataset.field=f.key;b.append(el('span',f.label),el('b',display(f,x)));b.onclick=()=>edit(f);rows.append(b);}
+ const keep=['skillTree','phases','pilotProfile','image','recruit','effects','cond'].filter(k=>x[k]!=null&&!(k==='recruit'&&Object.keys(x.recruit).every(z=>z==='locked')));if(keep.length)rows.append(el('p','このメーカーではまだ編集できないデータを保持しています：'+keep.join('・'),'cmd-hint'));
+ const us=$('editUsage');us.replaceChildren();if(kind!=='units'){const users=usage(kind,x.id);us.append(el('p','使っているユニット：'+(users.length?users.length+'体':'なし'),'td-sub'));for(const u of users){const b=el('button','→ '+u.name,'secondary');b.type='button';b.dataset.jump=u.id;b.onclick=()=>fade(()=>openKind('units',u.id));us.append(b);}}}
+
+/* ---------- input windows (command-window style) ---------- */
+function win(title,help,build,actions){const d=$('inputWin');$('inputKind').textContent=KINDS[kind].label;$('inputTitle').textContent=title;$('inputHelp').textContent=help||'';$('inputError').textContent='';const body=$('inputBody');body.replaceChildren();build(body);const act=$('inputActions');act.replaceChildren();for(const [label,fn] of actions){const b=el('button',label);b.type='button';b.onclick=fn;act.append(b);}if(!d.open)d.showModal();(body.querySelector('input,select,button')||act.querySelector('button'))?.focus();}
+const closeWin=()=>$('inputWin').close();
+function commit(mutate){const x=find(kind,selectedId);mutate(x);save();renderList();renderEditor();}
+function edit(f){const x=find(kind,selectedId),v=get(x,f.key);
+ if(f.type==='toggle'){commit(o=>set(o,f.key,!v?true:undefined));return;}
+ if(f.type==='select'){const ch=typeof f.choices==='function'?f.choices(x):f.choices;win(f.label,f.help,body=>{const list=el('div',null,'cmd-list');for(const [k,label] of Object.entries(ch)){const b=el('button',(k===v?'✓ ':'')+label);b.type='button';b.dataset.choice=k;b.onclick=()=>{commit(o=>{set(o,f.key,k);f.after?.(o);});closeWin();};list.append(b);}body.append(list);},[['未設定に戻す',()=>{commit(o=>set(o,f.key,undefined));closeWin();}],['戻る',closeWin]]);return;}
+ if(f.type==='refs'){refWindow(f,x);return;}
+ if(f.type==='id'){win('IDを変更','半角英数字・_・-。変更すると、このIDを使っている場所もすべて書き換わります。',body=>{const i=el('input');i.value=v;i.id='inputValue';i.oninput=()=>{$('inputError').textContent=idProblem(i.value.trim(),v);};const s=el('p','おすすめ：'+nextId(kind),'cmd-hint');body.append(i,s);},[['決定',()=>{const n=$('inputValue').value.trim(),p=idProblem(n,v);if(p){$('inputError').textContent=p;return;}renameId(kind,v,n);save();renderList();renderEditor();closeWin();}],['戻る',closeWin]]);return;}
+ const number=f.type==='number';win(f.label,f.help||(number?'範囲：'+(f.min??'')+'〜'+(f.max??''):''),body=>{const i=el('input');i.id='inputValue';i.value=f.type==='tags'?(v||[]).join(', '):(v??'');if(number){i.type='number';i.inputMode='decimal';const pad=el('div',null,'td-steps');for(const d of [-100,-10,-1,1,10,100]){const b=el('button',(d>0?'+':'')+d,'secondary');b.type='button';b.onclick=()=>{i.value=Math.min(f.max??Infinity,Math.max(f.min??-Infinity,(Number(i.value)||0)+d));};pad.append(b);}body.append(i,pad);}else{if(f.type==='color')i.placeholder='#ff8800';if(f.type==='tags')i.placeholder='カンマ区切り（例：歩兵, 生身）';if(f.max)i.maxLength=f.max;body.append(i);}},
+  [['決定',()=>{const raw=$('inputValue').value.trim();let val=raw;if(number){if(raw===''){val=undefined;}else{val=Number(raw);if(!Number.isFinite(val)||(f.min!=null&&val<f.min)||(f.max!=null&&val>f.max)){$('inputError').textContent='範囲外です';return;}}}if(f.type==='tags')val=raw?raw.split(/[,、，]/).map(t=>t.trim()).filter(Boolean):[];if(f.type==='color'&&raw&&!/^#[0-9a-fA-F]{6}$/.test(raw)){$('inputError').textContent='#RRGGBB の形で入力してください';return;}if(f.key==='name'&&!raw){$('inputError').textContent='名前は必須です';return;}commit(o=>set(o,f.key,val));closeWin();}],['戻る',closeWin]]);}
+// Link picker: tick existing items, or create a new one and link it in one step.
+function refWindow(f,x){const chosen=new Set(get(x,f.key)||[]);win(f.label+'をつなぐ','チェックしたものがこのユニットにつながります。',body=>{const q=el('input');q.type='search';q.placeholder='名前・IDで検索';const list=el('div',null,'field-checks td-checks');const draw=()=>{list.replaceChildren();for(const it of data[f.ref].filter(it=>!q.value||(it.name+it.id).toLowerCase().includes(q.value.toLowerCase()))){const lab=el('label'),c=el('input');c.type='checkbox';c.checked=chosen.has(it.id);c.value=it.id;c.onchange=()=>{c.checked?chosen.add(it.id):chosen.delete(it.id);};lab.append(c,document.createTextNode(it.name+'（'+it.id+'）'));list.append(lab);}if(!data[f.ref].length)list.append(el('p','まだ'+KINDS[f.ref].label+'がありません。','cmd-hint'));};q.oninput=draw;draw();body.append(q,list);},
+ [['決定',()=>{commit(o=>set(o,f.key,[...chosen]));closeWin();}],['＋ 新しい'+KINDS[f.ref].label+'を作ってつなぐ',()=>{const it={...DEFAULT[f.ref](),id:nextId(f.ref)};data[f.ref].push(it);chosen.add(it.id);commit(o=>set(o,f.key,[...chosen]));closeWin();fade(()=>openKind(f.ref,it.id));}],['戻る',closeWin]]);}
+
+/* ---------- list actions ---------- */
+function create(){const x={...DEFAULT[kind](),id:nextId(kind)};data[kind].push(x);selectedId=x.id;save();renderList();renderEditor();}
+function copyItem(){const x=find(kind,selectedId);if(!x)return;const y={...clone(x),id:nextId(kind),name:x.name+'（コピー）'};data[kind].push(y);selectedId=y.id;save();renderList();renderEditor();}
+function removeItem(){const x=find(kind,selectedId);if(!x)return;const users=usage(kind,x.id);message('削除の確認',[x.name+'（'+x.id+'）を削除します。'+(users.length?'使っているユニット'+users.length+'体からもつながりが外れます。':'')],[['削除する',()=>{data[kind]=data[kind].filter(y=>y!==x);if(kind!=='units'){const key=kind==='weapons'?'weaponIds':'skillIds';for(const u of data.units)if(u[key])u[key]=u[key].filter(i=>i!==x.id);}selectedId=null;save();renderList();renderEditor();$('msgWin').close();}],['やめる',()=>$('msgWin').close()]]);}
+function message(title,lines,actions=[['閉じる',()=>$('msgWin').close()]]){$('msgTitle').textContent=title;const b=$('msgBody');b.replaceChildren(...lines.map(l=>el('p',l)));const a=$('msgActions');a.replaceChildren();for(const [label,fn] of actions){const x=el('button',label);x.type='button';x.onclick=fn;a.append(x);}if(!$('msgWin').open)$('msgWin').showModal();a.querySelector('button')?.focus();}
+
+/* ---------- import: convert legacy fields when possible, drop and report the rest ---------- */
+const LEGACY_SKILLS={heavy:{name:'重装火力',trigger:'before_attack',effect:'damage_up_pct',value:8,chance:100,maxUses:0},regen:{name:'再生',trigger:'turn_end',effect:'heal_maxhp_pct',value:7,chance:100,maxUses:0},cloak:{name:'見えざる傘',trigger:'when_targeted',effect:'enemy_hit_down_pt',value:22,chance:100,maxUses:1}};
+const WEAPON_KEYS=['id','name','attackType','damageType','useUnitAtk','baseAtk','powerPct','accuracyPt','critPt','targetCount','minRange','maxRange','usesPerBattle','cooldown','defPiercePct','weight','minDamage','hitsMin','hitsMax','hitPowerPct','fxColor','effects','note'];
+const SKILL_KEYS=['id','name','trigger','effect','resistType','value','chance','maxUses','target','duration','tag','cond','effects','note'];
+const UNIT_KEYS=['id','name','role','mark','tags','deploy','hp','atk','def','mob','acc','weaponIds','skillIds','row','ai','crew','size','move','movementAptitude','growth','exp','sortieCost','equipSlots','noFire','recruit','note','skillTree','phases','pilotProfile','image'];
+const pick=(o,keys)=>Object.fromEntries(keys.filter(k=>o[k]!==undefined).map(k=>[k,clone(o[k])]));
+function convertWeapon(w,report){const o=pick(w,WEAPON_KEYS),legacy=String(w.type||'');if(!o.attackType)o.attackType=legacy==='melee'?'melee':'ranged';if(!o.damageType)o.damageType={beam:'beam',ballistic:'physical',melee:'physical',bit:'special',special:'special'}[legacy]||'physical';if(o.powerPct==null&&w.power!=null)o.powerPct=Number(w.power)*100;if(o.accuracyPt==null&&w.acc!=null)o.accuracyPt=(Number(w.acc)-1)*70;if(o.critPt==null&&w.crit!=null)o.critPt=Number(w.crit)*100;if(o.hitPowerPct==null&&w.hitPower!=null)o.hitPowerPct=Number(w.hitPower)*100;
+ if(['type','power','acc','crit','hitPower'].some(k=>w[k]!==undefined))report.converted.push('武装「'+(w.name||'?')+'」：旧形式（type／倍率表記）を変換');const extra=Object.keys(w).filter(k=>!WEAPON_KEYS.includes(k)&&!['type','power','acc','crit','hitPower'].includes(k));if(extra.length)report.dropped.push('武装「'+(w.name||'?')+'」：'+extra.join('・'));return o;}
+function convertSkill(s,report){const o=pick(s,SKILL_KEYS),extra=Object.keys(s).filter(k=>!SKILL_KEYS.includes(k));if(extra.length)report.dropped.push('スキル「'+(s.name||'?')+'」：'+extra.join('・'));return o;}
+function arr(src,key){const v=src?.[key];return Array.isArray(v)?v:Array.isArray(v?.[key])?v[key]:[];}
+function convert(src){const report={converted:[],dropped:[]},out=empty();if(src.format===FORMAT)return {data:{...empty(),...src},report};
+ out.packId=String(src.packId||src.units?.packId||'imported');out.name=String(src.packName||src.name||src.units?.packName||'読み込んだパック');
+ const used=new Set(),uniq=(id,fb)=>{let b=String(id||fb).replace(/[^A-Za-z0-9_-]/g,'_')||fb,i=b,n=2;while(used.has(i))i=b+'_'+n++;used.add(i);return i;};
+ for(const w of arr(src,'weapons'))out.weapons.push({...convertWeapon(w,report),id:uniq(w.id,'w')});for(const s of arr(src,'skills'))out.skills.push({...convertSkill(s,report),id:uniq(s.id,'s')});
+ let units=arr(src,'units');const pilots=arr(src,'pilots');if(pilots.length){try{units=C.pilotsToUnits(units,pilots).units;report.converted.push('旧パイロット'+pilots.length+'人をユニット（パイロットとして乗れる）に変換');}catch(e){report.dropped.push('旧パイロット一覧：'+e.message);}}
+ for(const u of units){const o=pick(u,UNIT_KEYS);o.id=uniq(u.id,'u');o.weaponIds=[...(u.weaponIds||[])];o.skillIds=[...(u.skillIds||[])];
+  (u.weapons||[]).forEach((w,i)=>{const id=uniq(o.id+'_w'+(i+1),'w');out.weapons.push({...convertWeapon(w,report),id});o.weaponIds.push(id);});
+  (u.skills||[]).forEach((s,i)=>{const id=uniq(s.id&&!out.skills.some(x=>x.id===s.id)?s.id:o.id+'_s'+(i+1),'s');out.skills.push({...convertSkill(s,report),id});o.skillIds.push(id);});
+  if(u.ability&&!(u.skills||[]).length){const L=LEGACY_SKILLS[u.ability];if(L){const id='legacy_'+u.ability;if(!out.skills.some(x=>x.id===id)){used.add(id);out.skills.push({...L,id});}o.skillIds.push(id);report.converted.push('ユニット「'+u.name+'」：旧ability「'+u.ability+'」をスキルに変換');}else report.dropped.push('ユニット「'+u.name+'」：不明なability「'+u.ability+'」');}
+  if(u.pilot)report.dropped.push('ユニット「'+u.name+'」：旧パイロット名の表示「'+u.pilot+'」');const extra=Object.keys(u).filter(k=>!UNIT_KEYS.includes(k)&&!['weapons','skills','ability','pilot','_packId','_packName'].includes(k));if(extra.length)report.dropped.push('ユニット「'+u.name+'」：'+extra.join('・'));
+  if(o.ai&&!o.ai.target)delete o.ai;out.units.push(o);}
+ return {data:out,report};}
+function parseFile(text){const t=text.trim();try{return JSON.parse(t);}catch(e){}const m=t.match(/=\s*(\{[\s\S]*\})\s*;?\s*$/);if(m)return JSON.parse(m[1]);throw Error('JSON／統合JSとして読めませんでした');}
+function applyImport(src,title){let res;try{res=convert(src);}catch(e){message('読み込めませんでした',[e.message]);return;}const r=res.report,d=res.data;message(title,['ユニット'+d.units.length+'体・武装'+d.weapons.length+'件・スキル'+d.skills.length+'件。今のデータと置き換えます。','変換：'+(r.converted.length?'':'なし'),...r.converted.map(x=>'・'+x),'切り捨て：'+(r.dropped.length?'':'なし'),...r.dropped.map(x=>'・'+x)],[['置き換える',()=>{data=d;selectedId=null;save();$('msgWin').close();fade(showMenu);}],['やめる',()=>$('msgWin').close()]]);}
+function loadBase(){const go=()=>applyImport(window.VAIS_UNIT_PACK,'PRO・Dの基本データ');if(window.VAIS_UNIT_PACK)return go();const s=document.createElement('script');s.src='../outer_ops_units.js';s.onload=go;s.onerror=()=>message('読み込めませんでした',['基本データのファイルが見つかりません。']);document.head.append(s);}
+function exportPack(){const text=JSON.stringify({...data,format:FORMAT,version:1,exportedAt:new Date().toISOString()},null,2),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=(data.packId||'td-pack')+'.td.json';document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);message('書き出し',['T&D形式（'+a.download+'）で保存しました。公開中のゲームでは読み込めない、プロトタイプ用の形式です。']);}
+
+/* ---------- wiring ---------- */
+for(const b of document.querySelectorAll('[data-open]'))b.onclick=()=>fade(()=>openKind(b.dataset.open));
+$('backMenu').onclick=()=>fade(showMenu);$('listNew').onclick=create;$('listSearch').oninput=renderList;$('editCopy').onclick=copyItem;$('editDelete').onclick=removeItem;
+$('menuImport').onclick=()=>$('importFile').click();$('importFile').onchange=async()=>{const f=$('importFile').files[0];$('importFile').value='';if(!f)return;try{applyImport(parseFile(await f.text()),'読み込み：'+f.name);}catch(e){message('読み込めませんでした',[e.message]);}};
+$('menuBase').onclick=loadBase;$('menuExport').onclick=exportPack;
+$('menuReset').onclick=()=>message('すべて消す',['作っているデータをすべて消して、新しく始めます。元に戻せません。'],[['消して始める',()=>{data=empty();selectedId=null;save();$('msgWin').close();showMenu();}],['やめる',()=>$('msgWin').close()]]);
+for(const d of document.querySelectorAll('dialog.cmd-window'))d.addEventListener('cancel',e=>e.preventDefault());
+// Creator gate (same placeholder as the game prototype; not a security boundary).
+$('gateForm').onsubmit=e=>{e.preventDefault();if($('gatePassword').value==='0000'){$('gatePassword').value='';fade(()=>{$('gate').hidden=true;$('shell').inert=false;showMenu();});}else{$('gateError').textContent='パスワードが違います。';$('gatePassword').select();}};
+setTimeout(()=>$('gatePassword').focus(),0);
+load();showMenu();
+window.PROMakerTD=Object.freeze({data:()=>clone(data),convert,applyImport,openKind,showMenu,find:(k,id)=>clone(find(k,id)),issues});
+})();
