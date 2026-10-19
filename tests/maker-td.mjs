@@ -1,0 +1,26 @@
+import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';import vm from 'node:vm';import {Window} from 'happy-dom';
+const file='game/prototypes/maker_td.html',html=fs.readFileSync(file,'utf8');
+const w=new Window({url:'http://localhost/'+file,settings:{enableJavaScriptEvaluation:true,disableJavaScriptFileLoading:true,disableCSSFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});const errors=[];w.addEventListener('error',e=>errors.push(e.message));w.scrollTo=()=>{};w.document.write(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
+for(const dialog of w.document.querySelectorAll('dialog')){dialog.showModal=()=>dialog.setAttribute('open','');dialog.close=()=>{dialog.removeAttribute('open');dialog.dispatchEvent(new w.Event('close'));};}
+for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);const code=src?fs.readFileSync(path.resolve(path.dirname(file),src[1]),'utf8'):m[2];new vm.Script(code);w.eval(code);}
+const d=w.document,$=id=>d.getElementById(id),button=(root,name)=>[...root.querySelectorAll('button')].find(b=>b.textContent.includes(name)),M=w.PROMakerTD;
+// Gate, menu, empty draft.
+assert(!$('gate').hidden);$('gatePassword').value='1111';$('gateForm').dispatchEvent(new w.Event('submit',{cancelable:true}));assert(!$('gate').hidden);$('gatePassword').value='0000';$('gateForm').dispatchEvent(new w.Event('submit',{cancelable:true}));await new Promise(r=>setTimeout(r,800));assert($('gate').hidden);assert(!$('menuView').hidden);
+// Create a unit, edit a number through the input window, create-and-link a weapon from the unit.
+d.querySelector('[data-open=units]').click();await new Promise(r=>setTimeout(r,800));assert(!$('listView').hidden);$('listNew').click();let u=M.data().units[0];assert.equal(u.id,'u_001');
+d.querySelector('[data-field=hp]').click();assert($('inputWin').open);$('inputValue').value='4200';button($('inputActions'),'決定').click();assert.equal(M.data().units[0].hp,4200);
+d.querySelector('[data-field=hp]').click();$('inputValue').value='-5';button($('inputActions'),'決定').click();assert($('inputError').textContent);button($('inputActions'),'戻る').click();
+d.querySelector('[data-field=weaponIds]').click();button($('inputActions'),'新しい武装を作ってつなぐ').click();await new Promise(r=>setTimeout(r,800));assert.deepEqual([...M.data().units[0].weaponIds],['w_001']);assert.equal($('listTitle').textContent,'武装');assert(d.querySelector('[data-jump="u_001"]'));
+// Select field via command list; rename ID updates the unit's link.
+d.querySelector('[data-field=attackType]').click();d.querySelector('[data-choice=melee]').click();assert.equal(M.data().weapons[0].attackType,'melee');
+d.querySelector('[data-field=id]').click();$('inputValue').value='u_001';$('inputValue').dispatchEvent(new w.Event('input'));assert($('inputError').textContent.includes('使われて'));$('inputValue').value='blade';button($('inputActions'),'決定').click();assert.deepEqual([...M.data().units[0].weaponIds],['blade']);
+// Toggle, collapsed group, autosave.
+d.querySelector('[data-jump="u_001"]').click();await new Promise(r=>setTimeout(r,800));assert(!d.querySelector('[data-field=exp]'));button($('editRows'),'育成・運用').click();assert(d.querySelector('[data-field=exp]'));d.querySelector('[data-field="deploy.enemy"]').click();assert.equal(M.data().units[0].deploy.enemy,true);assert.equal(JSON.parse(w.localStorage.getItem('PRO_TD_MAKER_DRAFT')).units[0].deploy.enemy,true);
+// Delete a weapon: links are removed.
+M.openKind('weapons','blade');$('editDelete').click();button($('msgActions'),'削除する').click();assert.equal(M.data().weapons.length,0);assert.equal(M.data().units[0].weaponIds.length,0);
+// Legacy conversion: ability→skill, weapon type/power→current, pilots→units, pilot name and unknown fields dropped and reported.
+const r=M.convert({units:[{id:'old',name:'旧型',ability:'regen',pilot:'ジョン',secret:1,weapons:[{name:'旧銃',type:'beam',power:1.5,acc:1.2,crit:0.1}]}],pilots:[{id:'p1',name:'旧パイロット',stats:{acc:10}}]});
+const ou=r.data.units.find(x=>x.id==='old'),ow=r.data.weapons[0];assert.equal(ow.attackType,'ranged');assert.equal(ow.damageType,'beam');assert.equal(ow.powerPct,150);assert(Math.abs(ow.accuracyPt-14)<1e-9);assert(Math.abs(ow.critPt-10)<1e-9);assert(!('type' in ow));assert.deepEqual([...ou.skillIds],['legacy_regen']);assert(!('pilot' in ou)&&!('ability' in ou)&&!('secret' in ou));assert(r.data.units.some(x=>x.pilotProfile));assert(r.report.dropped.some(x=>x.includes('ジョン')));assert(r.report.dropped.some(x=>x.includes('secret')));assert(r.report.converted.some(x=>x.includes('ability')));
+// Base data import through the real pack shape.
+w.eval(fs.readFileSync('game/outer_ops_units.js','utf8'));M.applyImport(w.VAIS_UNIT_PACK,'base');button($('msgActions'),'置き換える').click();await new Promise(r=>setTimeout(r,800));const D=M.data();assert(D.units.length>=10);assert(D.units.every(x=>x.weaponIds.every(id=>D.weapons.some(w=>w.id===id))));assert(D.weapons.every(x=>M.issues('weapons',x).length===0));
+assert.deepEqual(errors,[]);await w.happyDOM.cancelAsync();w.close();console.log('PASS: T&D maker gate, menu, input windows, ID links and rename, autosave, delete, legacy conversion, base import');

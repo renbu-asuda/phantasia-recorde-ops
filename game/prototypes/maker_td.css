@@ -1,0 +1,16 @@
+/* PRO 統合メーカー T&D (prototype) — builds on the command-window styles in tactical_map.css. */
+.cmd-window-inline{background:#101b31;border:3px double #c9d6f5;border-radius:10px;padding:14px;margin-top:20px;max-width:520px}
+.td-menu .cmd-list{max-height:none}.td-menu .cmd-list button{display:flex;justify-content:space-between;align-items:center;gap:12px}.td-menu small{color:#b9c7e8;font-size:12px}
+.td-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-bottom:16px}.td-head button{white-space:nowrap}
+.td-layout{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:18px;align-items:start}
+.td-side,.td-editor{background:#101b31;border:3px double #c9d6f5;border-radius:10px;padding:12px}
+.td-tools{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}.td-items{max-height:60dvh}
+.td-item{display:flex!important;flex-direction:column;align-items:flex-start;gap:2px}.td-item small{font-size:11px;color:#b9c7e8}.td-item.current{background:#2a3e6b;border-color:#c9d6f5!important}
+.td-editor-head{display:flex;justify-content:space-between;gap:10px;align-items:start}.td-editor-head h2{margin:0 0 4px;font-size:20px}.td-editor-actions{display:flex;gap:6px}
+.td-issues{font-size:12px;margin:8px 0;line-height:1.6}.td-issues.warn{color:#efaa99}.td-issues.ok{color:#9fd3c7}
+.td-rows{max-height:none}.td-row{display:grid!important;grid-template-columns:1fr auto;gap:12px;align-items:center}.td-row b{max-width:55%;text-align:right;overflow-wrap:anywhere}
+.td-group{display:block;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid #ffffff22;color:var(--accent);font-size:12px;letter-spacing:.12em;padding:12px 4px 6px;margin-top:6px}
+.td-usage{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px}.td-sub{width:100%;font-size:12px;color:#b9c7e8;margin:0}
+.td-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:8px}.td-steps button{min-height:40px;padding:4px;font-size:13px}
+.td-checks{max-height:40dvh}
+@media(max-width:760px){.td-layout{grid-template-columns:1fr}.td-items{max-height:32dvh}}
