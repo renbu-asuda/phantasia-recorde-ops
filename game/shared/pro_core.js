@@ -422,28 +422,34 @@ function serialize(marker,p){return '/* PRO data pack */\nwindow.'+marker+' = '+
 // Condition sets (T&D): evalConds(set, state) → {ok, costs, results}. Nothing is changed here; the caller pays
 // `costs` (items / credits) at its own timing (missions: at sortie). state: {credits, day, wins, flags:{id:true},
 // items:{id:n}, units:{id:n}, deployed:[id], unit:{level,hp,atk,def,mob,acc,tags}, cleared:[id], stars:{id:n},
-// research:[id], hires:{id:n}, evolved:[id], fused:[id], now:Date, rng:()=>0..1}. Game weekday = day % 7
-// (day 1 = Monday; the day advances when a mission ends). Real weekday is the local date (switches at midnight).
+// research:[id], hires:{id:n}, evolved:[id], fused:[id], reserved:{items:{id:n},units:{id:n}}, now:Date,
+// weekBase:{day,weekday}, rng:()=>0..1, pick:n}. Reserved materials (held by running research) can't be used.
+// Real weekday is the local date (switches at midnight). The game weekday starts from the real weekday when the game
+// starts (weekBase) and then advances on its own with the in-game day (missions end); a restart re-bases it.
+// mode 'any' with costs: every satisfied entry that costs something is an option; pick chooses (default the first).
 const CMP_FN={ge:(a,b)=>a>=b,le:(a,b)=>a<=b,eq:(a,b)=>a===b,lt:(a,b)=>a<b};
-const gameWeekday=day=>(Math.max(1,Math.floor(Number(day)||1)))%7;
+const gameWeekday=(day,base)=>{const d=Math.max(1,Math.floor(Number(day)||1)),b=base||{day:d,weekday:new Date().getDay()};return (((b.weekday+d-b.day)%7)+7)%7;};
 function evalConds(cs,st={}){const list=cs?.list||[];if(!list.length)return {ok:true,costs:[],results:[]};
  const has=(a,id)=>Array.isArray(a)?a.includes(id):!!(a&&a[id]),num=(o,id)=>Number(o?.[id])||0,cmp=(c,a,b)=>(CMP_FN[c.cmp||'ge']||CMP_FN.ge)(a,b);
  const spent={items:{},credits:0},rng=st.rng||Math.random;
  const one=c=>{const u=st.unit;switch(c.type){
   case 'unit_level':return !!u&&cmp(c,Number(u.level)||1,c.value);case 'unit_stat':return !!u&&cmp(c,Number(u[c.stat])||0,c.value);case 'unit_tag':return !!u&&(u.tags||[]).includes(c.tag);
   case 'unit_owned':return cmp(c,num(st.units,c.unitId),c.count??1);case 'unit_deployed':return (st.deployed||[]).includes(c.unitId);
-  case 'item_has':return cmp(c,num(st.items,c.itemId),c.count??1);case 'item_use':return num(st.items,c.itemId)-(spent.items[c.itemId]||0)>=(c.count||1);
+  case 'item_has':return cmp(c,num(st.items,c.itemId),c.count??1);case 'item_use':return num(st.items,c.itemId)-num(st.reserved?.items,c.itemId)-(spent.items[c.itemId]||0)>=(c.count||1);
   case 'credits_have':return cmp(c,Number(st.credits)||0,c.value);case 'credits_use':return (Number(st.credits)||0)-spent.credits>=c.value;
   case 'flag':return has(st.flags,c.flagId)===(c.on!==false);case 'mission_clear':return has(st.cleared,c.missionId);case 'mission_stars':return cmp(c,num(st.stars,c.missionId),c.value);
   case 'wins_total':return cmp(c,Number(st.wins)||0,c.value);case 'research_done':return has(st.research,c.researchId);case 'hired':return cmp(c,num(st.hires,c.hireId),c.count??1);
   case 'evolved':return has(st.evolved,c.evolutionId);case 'fused':return has(st.fused,c.fusionId);case 'day':return cmp(c,Number(st.day)||1,c.value);
-  case 'weekday':return (c.days||[]).includes(c.clock==='game'?gameWeekday(st.day):(st.now||new Date()).getDay());case 'chance':return rng()*100<c.value;default:return false;}};
- const results=[],costs=[];let ok=cs.mode==='any'?false:true;
+  case 'weekday':return (c.days||[]).includes(c.clock==='game'?gameWeekday(st.day,st.weekBase):(st.now||new Date()).getDay());case 'chance':return rng()*100<c.value;default:return false;}};
+ const results=[],costs=[],options=[];let ok=cs.mode==='any'?false:true;
  for(const c of list){let r=one(c);if(c.not)r=!r;results.push(r);
-  if(r&&c.type==='item_use'&&(cs.mode!=='any'||!ok)){spent.items[c.itemId]=(spent.items[c.itemId]||0)+(c.count||1);costs.push({itemId:c.itemId,count:c.count||1});}
-  if(r&&c.type==='credits_use'&&(cs.mode!=='any'||!ok)){spent.credits+=c.value;costs.push({credits:c.value});}
-  if(cs.mode==='any'){if(r&&!ok)ok=true;}else if(!r)ok=false;}
- return {ok,costs:ok?costs:[],results};}
+  const cost=!r?null:c.type==='item_use'?{itemId:c.itemId,count:c.count||1}:c.type==='credits_use'?{credits:c.value}:null;
+  if(cs.mode==='any'){if(r)ok=true;if(cost)options.push({index:results.length-1,costs:[cost]});}
+  else{if(!r)ok=false;if(cost){if(cost.itemId)spent.items[cost.itemId]=(spent.items[cost.itemId]||0)+cost.count;else spent.credits+=cost.credits;costs.push(cost);}}}
+ // 'any': a satisfied entry without a cost means nothing has to be paid; otherwise the player picks one option.
+ const free=cs.mode==='any'&&results.some((r,i)=>r&&!['item_use','credits_use'].includes(list[i].type));
+ if(cs.mode==='any'&&!free&&options.length)costs.push(...(options[Math.min(Math.max(0,st.pick|0),options.length-1)]||options[0]).costs);
+ return {ok,costs:ok?costs:[],results,options:cs.mode==='any'&&!free?options:[]};}
 root.PROCore=Object.freeze({version:'2.8.3',evalConds,gameWeekday,UNIT_SIZES,MOVEMENT_DOMAINS,MOVEMENT_APTITUDES,movementAptitude,condition,conditionText,phases,missionEvents,flagMap,packMetadata,flagNotes,hasNewFeatures,skillList,unitIsV8,resolveUnitSkills,resolveUnitData,stripSkillRefs,materializeUnit,SIGNED_HP_EFFECTS,effectValueRange,weaponValueRange,hpEffectText,weaponIsV7,unitIsV7,itemIsV6,weaponList,resolveUnitWeapons,linkedUnit,weaponAttack,drop,dropChance,dropRateText,parseDropRate,hire,hireList,hireRequirementText,unitIsV6,missionIsV4,itemIsV5,researchIsV5,DAMAGE_TYPES,RESIST_TYPES,weaponIsFantasy,skillIsFantasy,unitIsFantasy,itemIsFantasy,waveTriggers,wave,normalizeWave,waveIsExtended,waveText,waveWhenText,formationText,groupNames,bossOf,DRAW_TURNS,missionConditions,missionIsV3,terrain,terrainList,registerTerrains,terrainDef,terrainEffectText,crews,pilotProfile,unitIsV4,crewOf,pilotBonus,pilotToUnit,pilotsToUnits,PILOT_UNIT_STATS,weaponTimings,weaponEffectLabels,weaponEffectsAllowed,weaponEffectTargets,weaponWhen,WEAPON_BEFORE_ONLY,WEAPON_AFTER_ONLY,WEAPON_EFFECT_MAX,weaponEffect,weaponEffectHostile,weaponEffectText,weaponEffectsText,clone,stats,STAT_KEYS,triggers,skillEffects,allowed,conditions,skillTargets,DURATION_EFFECTS,TARGETED_EFFECTS,HOSTILE_EFFECTS,effects,aiTargets,rows,objectives,ruleTypes,starTypes,days,TERRAINS,safeId,parse,skill,skillExt,skillIsExtended,weapon,weaponExt,weaponIsExtended,weaponDefaults,unitExt,unitIsExtended,pilot,pilotList,image,effect,item,itemExt,itemIsExtended,itemPack,itemEffects,itemSummary,itemHasRefs,itemIsV8,resolveItemData,materializeItem,effectText,skillText,research,researchList,serialize,tagList,parseTags,unitTags,requirements,checkRequirements,requirementText,missionExt,missionIsExtended,missionStars,starText,terrainMods,missionEnemyIds,rule,BUNDLE_FORMAT,BUNDLE_SCHEMA,bundlePack,unitSchemaFor,missionSchemaFor});
 })(window);
 
