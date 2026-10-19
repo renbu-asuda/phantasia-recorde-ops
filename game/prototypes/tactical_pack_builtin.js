@@ -52,9 +52,12 @@ root.PROTacticalBuiltinPack={
   {...base,id:'commander',name:'指揮機動兵器',catalog:'汎用機動兵器と戦闘機の設計を組み合わせた指揮機。',size:'2XL',move:7,hp:1800,movementAptitude:apt({ground:'B',air:'A',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,4)]}
  ],
  // Development / evolution (one step from → to) and design / fusion (materials → result), same shapes as T&D.
- // conds use the T&D condition sets (PROCore.evalConds). consume:false keeps that material.
- evolutions:[{id:'evo-tank',from:'tank',to:'tank2',conds:{mode:'all',list:[{type:'credits_use',value:3000}]}},{id:'evo-scout',from:'scout',to:'scout2',conds:{mode:'all',list:[{type:'unit_level',cmp:'ge',value:5}]}}],
- fusions:[{id:'fu-ranger',materials:[{unitId:'infantry'},{unitId:'medic',consume:false}],result:{type:'unit',unitId:'ranger',count:1}},{id:'fu-commander',materials:[{unitId:'robot'},{unitId:'fighter'}],result:{type:'unit',unitId:'commander',count:1},conds:{mode:'all',list:[{type:'credits_use',value:5000}]}}],
+ // conds use the T&D condition sets (PROCore.evalConds). consume:false keeps that material. carry.level keeps level /
+ // EXP / skill points (fusion: from the first material). register adds the unit to the production / hire list.
+ // A fusion with result.type 'register' adds no unit and only registers.
+ evolutions:[{id:'evo-tank',from:'tank',to:'tank2',carry:{level:true},register:true,conds:{mode:'all',list:[{type:'credits_use',value:3000}]}},{id:'evo-scout',from:'scout',to:'scout2',carry:{level:true},conds:{mode:'all',list:[{type:'unit_level',cmp:'ge',value:5}]}}],
+ fusions:[{id:'fu-ranger',materials:[{unitId:'infantry'},{unitId:'medic',consume:false}],result:{type:'unit',unitId:'ranger',count:1,register:true}},{id:'fu-commander',materials:[{unitId:'robot'},{unitId:'fighter'}],carry:{level:true},result:{type:'unit',unitId:'commander',count:1},conds:{mode:'all',list:[{type:'credits_use',value:5000}]}},
+  {id:'fu-ace',materials:[{unitId:'scout',consume:false},{unitId:'tank',consume:false}],result:{type:'register',unitId:'scout_ace'},conds:{mode:'all',list:[{type:'credits_use',value:2000}]}}],
  roster:['infantry','scout','tank','medic','robot','fighter','heavy','boat','sub','marine','spacecraft','unset'],
  /* AI patterns (prototype): assault | ambush (waits until a foe is within triggerRange) | hold (never moves)
     | cautious (retreats below retreatHpPct). target: lowest_hp | nearest | strongest. */
