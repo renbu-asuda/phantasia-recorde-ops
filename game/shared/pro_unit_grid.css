@@ -7,4 +7,5 @@
 .ug-tile:hover,.ug-tile:focus-visible{outline:3px solid #fff;outline-offset:-3px;z-index:1}
 .ug-tile.selected{outline:3px solid #d6ed83;outline-offset:-3px;background:#4f6b3b}
 .ug-tile.blocked{filter:saturate(.2) brightness(.7)}
+.ug-tile.unknown{background:#1a2228;box-shadow:inset 0 0 0 2px #ffffff14}.ug-tile.unknown strong{color:#6f7d86}.ug-tile.unknown .ug-size{display:none}.ug-tile.unknown.selected{outline-color:#a7b8c4;background:#24303a}
 @media(max-width:480px){.unit-grid{--ug-tile:64px}}

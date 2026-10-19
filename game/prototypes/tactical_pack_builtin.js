@@ -26,21 +26,34 @@ root.PROTacticalBuiltinPack={
   x:{name:'デブリ',kind:'debris',costs:{space:2}}
  },
  units:[
-  {...base,id:'infantry',name:'歩兵小隊',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
-  {...base,id:'scout',name:'偵察車',size:'M',move:7,movementAptitude:apt({ground:'A'}),weapons:[gun('狙撃砲',2,6)]},
-  {...base,id:'tank',name:'主力戦車',size:'L',move:4,movementAptitude:apt({ground:'B'}),weapons:[gun('射撃武装',1,3)]},
-  {...base,id:'medic',name:'衛生兵',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
-  {...base,id:'robot',name:'汎用機動兵器',size:'2XL',move:6,movementAptitude:apt({ground:'B',air:'B',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,3)]},
-  {...base,id:'fighter',name:'戦闘機',size:'XL',move:8,movementAptitude:apt({air:'A'}),weapons:[gun('射撃武装',1,3)]},
-  {...base,id:'heavy',name:'大型陸戦兵器',size:'3XL',move:3,movementAptitude:apt({ground:'D'}),weapons:[blade('近接武装')]},
-  {...base,id:'boat',name:'哨戒艇',size:'M',move:6,movementAptitude:apt({water:'B'}),weapons:[gun('射撃武装',1,3)]},
-  {...base,id:'sub',name:'潜水艦',size:'XL',move:5,movementAptitude:apt({water:'B',underwater:'A'}),weapons:[gun('射撃武装',1,3)]},
-  {...base,id:'marine',name:'水陸両用機',size:'M',move:5,movementAptitude:apt({ground:'B',water:'B',underwater:'B'}),weapons:[blade('近接武装')]},
-  {...base,id:'spacecraft',name:'宇宙戦闘艇',size:'XL',move:7,movementAptitude:apt({space:'A'}),weapons:[gun('射撃武装',1,3)]},
+  {...base,id:'infantry',catalog:'最も数の多い基本戦力。どんな地形でも頼りになる。',name:'歩兵小隊',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
+  {...base,id:'scout',catalog:'長射程の狙撃砲で敵の動きを止める偵察車両。',name:'偵察車',size:'M',move:7,movementAptitude:apt({ground:'A'}),weapons:[gun('狙撃砲',2,6)]},
+  {...base,id:'tank',catalog:'厚い装甲と射撃武装を備えた地上戦の要。',name:'主力戦車',size:'L',move:4,movementAptitude:apt({ground:'B'}),weapons:[gun('射撃武装',1,3)]},
+  {...base,id:'medic',catalog:'前線で味方を支える衛生兵。',name:'衛生兵',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
+  {...base,id:'robot',catalog:'地上・空中・宇宙を行き来できる汎用機動兵器。',name:'汎用機動兵器',size:'2XL',move:6,movementAptitude:apt({ground:'B',air:'B',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,3)]},
+  {...base,id:'fighter',catalog:'空中を高速で移動する戦闘機。',name:'戦闘機',size:'XL',move:8,movementAptitude:apt({air:'A'}),weapons:[gun('射撃武装',1,3)]},
+  {...base,id:'heavy',catalog:'巨大な陸戦兵器。動きは遅いが圧倒的な存在感。',name:'大型陸戦兵器',size:'3XL',move:3,movementAptitude:apt({ground:'D'}),weapons:[blade('近接武装')]},
+  {...base,id:'boat',catalog:'沿岸を守る小型の哨戒艇。',name:'哨戒艇',size:'M',move:6,movementAptitude:apt({water:'B'}),weapons:[gun('射撃武装',1,3)]},
+  {...base,id:'sub',catalog:'水中から奇襲する潜水艦。',name:'潜水艦',size:'XL',move:5,movementAptitude:apt({water:'B',underwater:'A'}),weapons:[gun('射撃武装',1,3)]},
+  {...base,id:'marine',catalog:'陸と水を行き来する水陸両用機。',name:'水陸両用機',size:'M',move:5,movementAptitude:apt({ground:'B',water:'B',underwater:'B'}),weapons:[blade('近接武装')]},
+  {...base,id:'spacecraft',catalog:'宇宙空間専用の戦闘艇。',name:'宇宙戦闘艇',size:'XL',move:7,movementAptitude:apt({space:'A'}),weapons:[gun('射撃武装',1,3)]},
   // Deliberately missing MOVE and aptitude: exercises the "not configured" rejection.
-  {...base,id:'unset',name:'未設定テスト機',size:'M',movementAptitude:apt({}),weapons:[blade('近接武装')]},
-  target('target_ground','ground'),target('target_water','water'),target('target_space','space')
+  {...base,id:'unset',catalog:'設定確認用の試験機。',name:'未設定テスト機',size:'M',movementAptitude:apt({}),weapons:[blade('近接武装')]},
+  target('target_ground','ground'),
+  // Variants: base = the unit they derive from; unset fields come from the base. separate:false shares the
+  // base's catalog entry and encounter flag; separate:true gets its own.
+  {id:'target_water',base:'target_ground',separate:false,movementAptitude:apt({water:'B'})},
+  {id:'target_space',base:'target_ground',separate:false,movementAptitude:apt({space:'B'})},
+  {id:'scout_ace',base:'scout',separate:true,name:'エース偵察車',hp:1500,acc:600,catalog:'敵軍のエースが駆る改造偵察車。'},
+  // Reached only by evolution or fusion (sample).
+  {...base,id:'tank2',name:'主力戦車改',catalog:'主力戦車を改修した発展型。',size:'L',move:5,hp:1500,atk:220,def:170,movementAptitude:apt({ground:'B'}),weapons:[gun('改良射撃武装',1,3)]},
+  {...base,id:'scout2',name:'高速偵察車',catalog:'偵察車の足回りを強化した高速型。',size:'M',move:9,movementAptitude:apt({ground:'A'}),weapons:[gun('狙撃砲',2,6)]},
+  {...base,id:'ranger',name:'特殊歩兵',catalog:'歩兵と衛生兵の技術を併せ持つ精鋭。',size:'S',move:6,hp:1400,movementAptitude:apt({ground:'A'}),weapons:[blade('近接武装')]},
+  {...base,id:'commander',name:'指揮機動兵器',catalog:'汎用機動兵器と戦闘機の設計を組み合わせた指揮機。',size:'2XL',move:7,hp:1800,movementAptitude:apt({ground:'B',air:'A',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,4)]}
  ],
+ // Development / evolution (one step from → to) and design / fusion (materials → result), same shapes as T&D.
+ evolutions:[{id:'evo-tank',from:'tank',to:'tank2'},{id:'evo-scout',from:'scout',to:'scout2'}],
+ fusions:[{id:'fu-ranger',materials:[{unitId:'infantry'},{unitId:'medic'}],result:{type:'unit',unitId:'ranger',count:1}},{id:'fu-commander',materials:[{unitId:'robot'},{unitId:'fighter'}],result:{type:'unit',unitId:'commander',count:1}}],
  roster:['infantry','scout','tank','medic','robot','fighter','heavy','boat','sub','marine','spacecraft','unset'],
  /* AI patterns (prototype): assault | ambush (waits until a foe is within triggerRange) | hold (never moves)
     | cautious (retreats below retreatHpPct). target: lowest_hp | nearest | strongest. */
