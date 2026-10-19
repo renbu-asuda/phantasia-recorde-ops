@@ -77,6 +77,23 @@ w=open({});{const L=w.PROUnitLab,d=w.document,row=(box,id)=>d.querySelector('#'+
  L.renderStorage();assert(row('storageList','pass').textContent.includes('★'));row('storageList','pass').click();assert(d.querySelector('#labWinBody').textContent.includes('大切なもの'));closeW();assert(!L.sell('pass'));assert(!row('storageList','parts'));
  assert(d.querySelector('#storageCount').textContent.includes('種類'));saved=dump(w);}
 w.close();w=open(saved);assert.equal(w.PROUnitLab.items().pass,1);w.close();
+// Item use and equipment: permanent boosts with a per-unit limit, EXP items, base-only effects, equip slots and stats.
+w=open({});{const L=w.PROUnitLab,d=w.document,u=id=>L.owned().find(x=>x.uid===id),act=k=>d.querySelector('#labWinActions [data-lab='+k+']'),closeW=()=>[...d.querySelectorAll('#labWinActions button')].find(b=>['閉じる','戻る'].includes(b.textContent)).click();
+ const atk0=u('tank').atk;assert.deepEqual([...L.useItem('chip','tank')],['ATK+20']);assert.equal(u('tank').atk,atk0+20);assert.equal(L.items().chip,1);
+ assert.equal(typeof L.useItem('chip'),'string');assert(L.useItem('repair','tank').includes('ない')||L.useItem('repair','tank').includes('作戦中'));
+ L.useItem('manual','tank');assert.equal(u('tank').level,3);assert.equal(u('tank').exp,0);
+ // Storage → 使う → unit grid (two taps) → confirm.
+ L.renderStorage();d.querySelector('#storageList [data-item=chip]').click();act('use').click();assert.equal(w.location.hash,'#useitem');L.renderUse();const t=d.querySelector('#useGrid [data-uid=scout]');t.click();d.querySelector('#useGrid [data-uid=scout]').click();act('run').click();assert(d.querySelector('#labWinBody').textContent.includes('ATK+20'));closeW();assert.equal(L.items().chip||0,0);
+ // limitPerUnit 3: buy more and use until blocked.
+ for(let i=0;i<4;i++)L.buy('chip');for(let i=0;i<2;i++)L.useItem('chip','scout');assert(L.useItem('chip','scout').includes('3回まで'));
+ // Equipment: stats and weapons; equipped copies can't be sold or equipped twice.
+ const acc0=u('robot').acc;assert(L.equip('robot',0,'scope'));assert.equal(u('robot').acc,acc0+60);assert(!L.equip('fighter',0,'scope'));assert.equal(L.free('scope'),0);assert(!L.sell('scope'));
+ const mob0=u('robot').mob,def0=u('robot').def;assert(L.equip('robot',1,'plate'));assert.equal(u('robot').mob,mob0-20);assert.equal(u('robot').def,def0+80);L.buy('launcher');assert(!L.equip('robot',2,'launcher'));L.equip('robot',1,'launcher');assert(u('robot').weapons.some(x=>x.name==='ミサイル'));assert.equal(L.free('plate'),1);
+ // Equipment screen: two taps, slot → item list → unequip.
+ L.renderEquip();const e=d.querySelector('#equipGrid [data-uid=robot]');e.click();d.querySelector('#equipGrid [data-uid=robot]').click();assert(act('slot0').textContent.includes('精密照準器'));act('slot0').click();act('unequip').click();assert.equal(u('robot').equip[0],null);assert.equal(L.free('scope'),1);closeW();
+ // Formation and battle use the boosted, equipped unit.
+ assert(d.querySelector('#prepUnitList [data-unit=tank]'));saved=dump(w);}
+w.close();w=open(saved);{const u=w.PROUnitLab.owned().find(x=>x.uid==='robot');assert(u.weapons.some(x=>x.name==='ミサイル'));assert.equal(w.PROUnitLab.owned().find(x=>x.uid==='tank').level,3);}w.close();
 // 2) Maker source: draft units, evolutions and variants join the built-in data; invalid links are dropped.
 w=open({...saved,PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(draft)});D=w.PROTacticalData;L=w.PROUnitLab;
 assert.equal(D.source,'maker');assert.equal(D.makerName,'テストパック');assert(D.roster().some(u=>u.id==='td-u-a'));assert(!D.roster().some(u=>u.id==='td-u-b'));assert(D.roster().some(u=>u.id==='infantry'));
@@ -87,4 +104,4 @@ assert.equal(L.credits(),24800);assert(L.owned().some(u=>u.id==='tank'));assert(
 assert(w.document.querySelector('#dataSourceText').textContent.includes('テストパック'));w.close();
 // 3) Maker source selected but no draft: falls back to the built-in data.
 w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'builtin');w.close();
-console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
+console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), item use (boosts, limits, EXP, base-only effects) and equipment (slots, stats, weapons), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');

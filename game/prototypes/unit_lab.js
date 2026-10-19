@@ -11,7 +11,16 @@ let serial=1,credits=START_CREDITS,owned=D.roster().map(u=>({uid:u.id,id:u.id}))
 // A save made with another data source (built-in / maker) is ignored; units missing from the data are dropped.
 try{const h=JSON.parse(localStorage.getItem(HQ_KEY)||'null');if(h&&h.source===D.source&&Array.isArray(h.owned)){owned=h.owned.filter(o=>{try{D.unit(o.id);return typeof o.uid==='string';}catch(e){return false;}});credits=Number.isFinite(h.credits)?h.credits:START_CREDITS;registered=Array.isArray(h.registered)?h.registered:[];dlv=h.dlv&&typeof h.dlv==='object'?h.dlv:{};hired=h.hired&&typeof h.hired==='object'?h.hired:{};cleared=Array.isArray(h.cleared)?h.cleared:[];items=h.items&&typeof h.items==='object'?h.items:D.startItems();day=h.day>=1?h.day:1;done=Array.isArray(h.done)?h.done:[];active=h.active&&D.research().some(r=>r.id===h.active.id)?h.active:null;notices=Array.isArray(h.notices)?h.notices:[];serial=h.serial||1;}}catch(e){}
 function save(){try{localStorage.setItem(HQ_KEY,JSON.stringify({source:D.source,owned,credits,serial,registered,dlv,hired,cleared,items,day,done,active,notices}));}catch(e){}}
-const unitOf=o=>({...C.levelStats(D.unit(o.id),o.lv||1),id:o.id,uid:o.uid,exp:o.exp||0,sp:o.sp||0}),counts=()=>owned.reduce((m,o)=>(m[o.id]=(m[o.id]||0)+1,m),{});
+// An owned unit's stats: level stats, then permanent item boosts (mods flat, pct %), then equipment. Item-added
+// weapons / skills / tags and equipped weapons / skills are appended. Equipment slots: unit.equipSlots (default 2) + bonus.
+const SLOT_DEFAULT=2,SLOT_MAX=8,STATS=['hp','atk','def','mob','acc'],tryW=w=>{try{return C.weapon(w);}catch(e){return null;}},tryS=x=>{try{return C.skill({...x});}catch(e){return null;}};
+const slotsOf=o=>Math.min(SLOT_MAX,Math.max(0,(D.unit(o.id).equipSlots??SLOT_DEFAULT)+(o.slotBonus||0)));
+function unitOf(o){const u=C.levelStats(D.unit(o.id),o.lv||1),gear=(o.equip||[]).filter(Boolean).map(id=>D.item(id)).filter(it=>it?.equip);
+ for(const k of STATS){if(u[k]==null)continue;let v=u[k]+(o.mods?.[k]||0);v=Math.round(v*(1+(o.pct?.[k]||0)/100));for(const it of gear)v+=Number(it.equip.stats?.[k])||0;u[k]=k==='hp'?Math.max(1,v):Math.max(0,v);}
+ const tags=new Set([...(u.tags||[]),...(o.tagsAdd||[])]);for(const t of o.tagsRemove||[])tags.delete(t);
+ return {...u,weapons:[...(u.weapons||[]),...(o.weapons||[]),...gear.flatMap(it=>(it.equip.weapons||[]).map(tryW).filter(Boolean))],skills:[...(u.skills||[]),...(o.skills||[]),...gear.flatMap(it=>(it.equip.skills||[]).map(tryS).filter(Boolean))],tags:[...tags],
+  id:o.id,uid:o.uid,exp:o.exp||0,sp:o.sp||0,slots:slotsOf(o),equip:Array.from({length:slotsOf(o)},(_,i)=>(o.equip||[])[i]||null)};}
+const counts=()=>owned.reduce((m,o)=>(m[o.id]=(m[o.id]||0)+1,m),{});
 const state=u=>({credits,units:counts(),items:{...items},reserved:{items:{...(active?.reserve||{})}},research:done,flags:{},day,cleared,hires:hired,unit:u?{...u,level:u.level||1}:undefined,rng:()=>0});
 const name=id=>seen().has(id)?D.unit(id).name:'？？？';
 const CMP={ge:'以上',le:'以下',eq:'ちょうど',lt:'未満'};
@@ -95,7 +104,9 @@ function openProduction(e){const u=D.unit(e.unitId),st=status(e),have=counts()[e
 // The in-game day advances when a mission ends; on the finishing day the reserved items are consumed and the
 // unlocks apply. Cancelling refunds the credits and releases the reservation. Completion notes wait in `notices`.
 const rById=id=>D.research().find(r=>r.id===id),itemText=o=>Object.entries(o||{}).map(([id,n])=>D.itemName(id)+'×'+n).join('・');
-const free=id=>(items[id]||0)-(active?.reserve?.[id]||0);
+// Usable count: owned minus research reservations minus equipped copies.
+const equipped=id=>owned.reduce((n,o)=>n+(o.equip||[]).slice(0,slotsOf(o)).filter(x=>x===id).length,0);
+const free=id=>(items[id]||0)-(active?.reserve?.[id]||0)-equipped(id);
 function researchStatus(r){if(done.includes(r.id))return {state:'done',why:'完了済み'};if(active?.id===r.id)return {state:'active',why:'研究中（あと'+Math.max(0,active.until-day)+'日）'};
  const needR=(r.requires||[]).filter(x=>!done.includes(x)),c=C.evalConds(r.conds,state()),lack=Object.entries(r.cost?.items||{}).filter(([id,n])=>free(id)<n);
  const why=active?'ほかの研究を進行中':needR.length?'先に「'+needR.map(x=>rById(x)?.name||x).join('・')+'」が必要':!c.ok?'条件：'+condsText(r.conds):credits<(r.cost?.credits||0)?'資金が足りません':lack.length?'素材が足りません（'+lack.map(([id,n])=>D.itemName(id)+' '+free(id)+'/'+n).join('・')+'）':'';
@@ -141,7 +152,46 @@ function openShop(id){const it=D.item(id),p=sellPrice(it),gate=shopGate(it),act=
 function renderStorage(){const list=D.items().filter(it=>(items[it.id]||0)>0);
  listItems('storageList',list,it=>(it.key?'★ ':'')+it.name,it=>'×'+items[it.id]+(active?.reserve?.[it.id]?'（予約 '+active.reserve[it.id]+'）':''),openStorage);
  $('storageReserved').textContent=active&&Object.keys(active.reserve||{}).length?itemText(active.reserve)+'（'+(rById(active.id)?.name||'')+'）':'なし';$('storageCount').textContent=list.length+'種類 ・ 合計 '+list.reduce((n,it)=>n+items[it.id],0)+'個';}
-function openStorage(id){const it=D.item(id);win('倉庫',(it.key?'★ ':'')+it.name,[it.desc||'','所持 '+(items[id]||0)+' ・ 使える数 '+free(id),active?.reserve?.[id]?'研究「'+(rById(active.id)?.name||'')+'」で予約中：'+active.reserve[id]:'',it.key?'大切なもの':sellPrice(it)!=null?'ショップでの売値 '+sellPrice(it).toLocaleString()+' Cr':'売却できません'].filter(Boolean),[['閉じる',close]]);}
+function openStorage(id){const it=D.item(id),eq=equipped(id),why=usable(it)?useBlock(it,null):'';
+ win('倉庫',(it.key?'★ ':'')+it.name,[it.desc||'','所持 '+(items[id]||0)+' ・ 使える数 '+free(id),eq?'装備中：'+eq:'',active?.reserve?.[id]?'研究「'+(rById(active.id)?.name||'')+'」で予約中：'+active.reserve[id]:'',it.key?'大切なもの':sellPrice(it)!=null?'ショップでの売値 '+sellPrice(it).toLocaleString()+' Cr':'売却できません',(it.effects||[]).length&&!usable(it)?'作戦中に使う効果です（拠点では使えません）':''].filter(Boolean),
+  [...(usable(it)?[['使う',()=>{if(needsUnit(it)){useItemId=id;usePick=null;close();location.hash='#useitem';}else confirmUse(it,null);},free(id)<1,'use']]:[]),...(it.equip?[['装備する（ユニット → 装備）',()=>{close();location.hash='#equip';},false,'equip']]:[]),['閉じる',close]]);}
+/* ---------- item use / equipment ---------- */
+// Effects that work at the base. HP / revive / next-sortie effects need a battle and are not usable here.
+const BASE_EFFECTS=['stat_up_flat','stat_up_pct','all_stats_up_flat','exp_gain','skill_point','credits_gain','add_skill','remove_skill','add_weapon','remove_weapon','add_tag','remove_tag','recruit_unit','equip_slot','loot_box'];
+const usable=it=>(it.effects||[]).length>0&&it.effects.every(e=>BASE_EFFECTS.includes(e.type));
+const needsUnit=it=>it.scope!=='party'&&(it.effects||[]).some(e=>!['credits_gain','recruit_unit','loot_box'].includes(e.type));
+function useBlock(it,o){if(!usable(it))return (it.effects||[]).length?'作戦中に使う効果です（拠点では使えません）':'使えないアイテムです';if(free(it.id)<1)return '使える数がありません';
+ if(o&&it.limitPerUnit&&(o.used?.[it.id]||0)>=it.limitPerUnit)return 'このユニットにはもう使えません（'+it.limitPerUnit+'回まで）';
+ if(it.useConds?.list?.length&&!C.evalConds(it.useConds,state(o?unitOf(o):undefined)).ok)return '条件：'+condsText(it.useConds);return '';}
+function applyEffect(e,o,notes){const add=(k,v)=>{o.mods=o.mods||{};o.mods[k]=(o.mods[k]||0)+v;};switch(e.type){
+ case 'stat_up_flat':add(e.stat,e.value);notes.push(e.stat.toUpperCase()+'+'+e.value);break;case 'all_stats_up_flat':for(const k of STATS)add(k,e.value);notes.push('全能力+'+e.value);break;
+ case 'stat_up_pct':o.pct=o.pct||{};o.pct[e.stat]=(o.pct[e.stat]||0)+e.value;notes.push(e.stat.toUpperCase()+'+'+e.value+'%');break;
+ case 'exp_gain':{const r=C.gainExp({lv:o.lv||1,exp:o.exp||0,sp:o.sp||0},e.value);Object.assign(o,{lv:r.lv,exp:r.exp,sp:r.sp});notes.push('経験値+'+e.value+(r.ups?'（Lv'+r.lv+'）':''));break;}
+ case 'skill_point':o.sp=(o.sp||0)+e.value;notes.push('SP+'+e.value);break;case 'equip_slot':o.slotBonus=(o.slotBonus||0)+e.value;notes.push('装備枠'+(e.value>0?'+':'')+e.value);break;
+ case 'add_weapon':{const w=tryW(e.weapon);if(w){o.weapons=[...(o.weapons||[]),w];notes.push('武装「'+w.name+'」を追加');}break;}case 'remove_weapon':o.weapons=(o.weapons||[]).filter(w=>e.name&&w.name!==e.name);notes.push('追加武装を外した');break;
+ case 'add_skill':{const k=tryS(e.skill);if(k){o.skills=[...(o.skills||[]),k];notes.push('スキル「'+k.name+'」を習得');}break;}case 'remove_skill':o.skills=(o.skills||[]).filter(k=>e.skillId&&k.id!==e.skillId);notes.push('習得スキルを外した');break;
+ case 'add_tag':o.tagsAdd=[...new Set([...(o.tagsAdd||[]),e.tag])];o.tagsRemove=(o.tagsRemove||[]).filter(t=>t!==e.tag);notes.push('タグ「'+e.tag+'」');break;case 'remove_tag':o.tagsRemove=[...new Set([...(o.tagsRemove||[]),e.tag])];o.tagsAdd=(o.tagsAdd||[]).filter(t=>t!==e.tag);notes.push('タグ「'+e.tag+'」を削除');break;}}
+function applyGlobal(e,notes){switch(e.type){case 'credits_gain':credits+=e.value;showCredits();notes.push('資金+'+e.value.toLocaleString());break;
+ case 'recruit_unit':try{D.unit(e.unitId);owned.push({uid:e.unitId+'#'+serial++,id:e.unitId,lv:1,exp:0,sp:0});seen().mark([e.unitId],'joined');notes.push(D.unit(e.unitId).name+'が加入');}catch(x){}break;
+ case 'loot_box':{const t=e.table||[],sum=t.reduce((n,r)=>n+(r.weight??1),0);let x=Math.random()*sum;const r=t.find(r=>(x-=(r.weight??1))<0)||t[t.length-1];if(r){const n=(r.min??1)+Math.floor(Math.random()*((r.max??r.min??1)-(r.min??1)+1));items[r.itemId]=(items[r.itemId]||0)+n;notes.push(D.itemName(r.itemId)+'×'+n+'を入手');}break;}}}
+// useItem(itemId, uid?) → notes, or a reason string when it can't be used. party scope applies to every owned unit.
+function useItem(id,uid){const it=D.item(id);if(!it)return '不明なアイテムです';const target=uid?owned.find(o=>o.uid===uid):null;if(needsUnit(it)&&it.scope!=='party'&&!target)return 'ユニットを選んでください';const why=useBlock(it,target);if(why)return why;
+ const notes=[],targets=it.scope==='party'?owned:target?[target]:[];for(const e of it.effects||[]){if(['credits_gain','recruit_unit','loot_box'].includes(e.type))applyGlobal(e,notes);else for(const o of targets)applyEffect(e,o,notes);}
+ items[id]-=1;for(const o of targets){o.used=o.used||{};o.used[id]=(o.used[id]||0)+1;}save();return notes;}
+// equip(uid, slot, itemId|null): an item can be equipped only while a free copy remains.
+function equip(uid,slot,id){const o=owned.find(x=>x.uid===uid);if(!o||slot<0||slot>=slotsOf(o))return false;const cur=(o.equip||[])[slot]||null;if(id&&id!==cur){const it=D.item(id);if(!it?.equip||free(id)<1)return false;}o.equip=Array.from({length:slotsOf(o)},(_,i)=>(o.equip||[])[i]||null);o.equip[slot]=id||null;save();return true;}
+let usePick=null,useItemId=null,equipPick=null;
+function renderUse(){const it=D.item(useItemId);if(!it){tell('useTitleSub','');return;}tell('useTitleSub',it.name+'（使える数 '+free(it.id)+'）を使うユニットを選び、もう一度押して決定');
+ const list=owned.map(unitOf);G.render($('useGrid'),list,{selected:u=>u.uid===usePick,reason:u=>useBlock(it,owned.find(o=>o.uid===u.uid)),badge:u=>'Lv'+u.level+(it.limitPerUnit?' '+((owned.find(o=>o.uid===u.uid).used?.[it.id])||0)+'/'+it.limitPerUnit:''),onPick:u=>{if(usePick===u.uid){confirmUse(it,u);return;}usePick=u.uid;renderUse();focusTile('useGrid',u.uid);}});
+ [...$('useGrid').querySelectorAll('.ug-tile')].forEach((t,i)=>{t.dataset.uid=list[i].uid;});}
+function confirmUse(it,u){const why=useBlock(it,u?owned.find(o=>o.uid===u.uid):null);win('確認',it.name+(u?' → '+u.name:''),[it.desc||'',why||'使うと1個減ります。'].filter(Boolean),[['使う',()=>{const r=useItem(it.id,u?.uid);usePick=null;if(location.hash==='#useitem')renderUse();renderStorage();win('使用',it.name,typeof r==='string'?[r]:[(u?u.name+'：':'')+(r.join('、')||'効果なし')],[['閉じる',close]]);},!!why,'run'],['戻る',close]]);}
+function renderEquip(){const list=owned.map(unitOf);G.render($('equipGrid'),list,{selected:u=>u.uid===equipPick,reason:u=>u.slots?'':'装備枠がありません',badge:u=>'装備'+u.equip.filter(Boolean).length+'/'+u.slots,onPick:u=>{if(equipPick===u.uid){openEquip(u.uid);return;}equipPick=u.uid;renderEquip();focusTile('equipGrid',u.uid);}});
+ [...$('equipGrid').querySelectorAll('.ug-tile')].forEach((t,i)=>{t.dataset.uid=list[i].uid;});}
+function openEquip(uid){const u=unitOf(owned.find(o=>o.uid===uid)),stat=k=>k.toUpperCase()+' '+u[k];
+ win('装備',u.name,['Lv'+u.level+' ｜ '+['hp','atk','def','mob','acc'].map(stat).join(' ・ '),'武装：'+u.weapons.map(w=>w.name).join('・')],[...u.equip.map((id,i)=>['枠'+(i+1)+'：'+(id?D.itemName(id):'空き'),()=>pickGear(uid,i),false,'slot'+i]),['ユニット情報',()=>window.PROField?.showUnit(u)],['閉じる',()=>{close();renderEquip();}]]);}
+function pickGear(uid,slot){const o=owned.find(x=>x.uid===uid),cur=(o.equip||[])[slot]||null,gear=D.items().filter(it=>it.equip&&(items[it.id]||0)>0);
+ const desc=it=>Object.entries(it.equip.stats||{}).map(([k,v])=>k.toUpperCase()+(v>0?'+':'')+v).concat((it.equip.weapons||[]).map(w=>'武装「'+w.name+'」')).join(' ・ ');
+ win('装備','枠'+(slot+1)+'に装備するもの',[cur?'いま：'+D.itemName(cur):'いま：空き'],[...gear.map(it=>[(it.id===cur?'✓ ':'')+it.name+'（使える '+free(it.id)+'）'+(desc(it)?' '+desc(it):''),()=>{equip(uid,slot,it.id);renderEquip();openEquip(uid);},it.id!==cur&&free(it.id)<1,'gear-'+it.id]),['外す',()=>{equip(uid,slot,null);renderEquip();openEquip(uid);},!cur,'unequip'],['戻る',()=>openEquip(uid)]]);}
 const markCleared=id=>{if(id&&!cleared.includes(id)){cleared.push(id);save();}};
 function focusTile(grid,uid){$(grid).querySelector('[data-uid="'+uid+'"]')?.focus();}
 $('fusionReset').onclick=()=>{anchor=null;picks=[];pending=null;renderFusion();};
@@ -153,5 +203,5 @@ function grant(entries,get,put,nameOf){const out=[];for(const {key,amount} of en
 const gainExp=entries=>grant(entries,uid=>{const o=owned.find(x=>x.uid===uid);return o&&{lv:o.lv||1,exp:o.exp||0,sp:o.sp||0};},(uid,r)=>Object.assign(owned.find(x=>x.uid===uid),{lv:r.lv,exp:r.exp,sp:r.sp}),uid=>D.unit(owned.find(x=>x.uid===uid).id).name);
 const dispatchLevel=id=>({lv:1,exp:0,sp:0,...(dlv[id]||{})});
 const gainDispatchExp=(entries,names={})=>grant(entries,dispatchLevel,(id,r)=>{dlv[id]={lv:r.lv,exp:r.exp,sp:r.sp};},id=>names[id]||id);
-window.PROUnitLab=Object.freeze({renderShop,renderStorage,buy,sell,renderResearch,advanceDay,startResearch,cancelResearch,day:()=>day,items:()=>({...items}),done:()=>[...done],active:()=>active&&{...active},renderEvolve,renderFusion,renderProduction,markCleared,cleared:()=>[...cleared],gainExp,gainDispatchExp,dispatchLevel,registered:()=>[...registered],register,owned:()=>owned.map(unitOf),credits:()=>credits,reset(){serial=1;credits=START_CREDITS;owned=D.roster().map(u=>({uid:u.id,id:u.id}));registered=[];dlv={};hired={};cleared=[];items=D.startItems();day=1;done=[];active=null;notices=[];evoPick=null;prodPick=null;anchor=null;picks=[];pending=null;showCredits();save();}});
+window.PROUnitLab=Object.freeze({renderUse,renderEquip,useItem,equip,free,setUseItem:id=>{useItemId=id;usePick=null;},renderShop,renderStorage,buy,sell,renderResearch,advanceDay,startResearch,cancelResearch,day:()=>day,items:()=>({...items}),done:()=>[...done],active:()=>active&&{...active},renderEvolve,renderFusion,renderProduction,markCleared,cleared:()=>[...cleared],gainExp,gainDispatchExp,dispatchLevel,registered:()=>[...registered],register,owned:()=>owned.map(unitOf),credits:()=>credits,reset(){serial=1;credits=START_CREDITS;owned=D.roster().map(u=>({uid:u.id,id:u.id}));registered=[];dlv={};hired={};cleared=[];items=D.startItems();day=1;done=[];active=null;notices=[];evoPick=null;prodPick=null;anchor=null;picks=[];pending=null;showCredits();save();}});
 })();
