@@ -26,3 +26,4 @@
 
 /* Fixed map viewport: zoom changes the content, never the box (vh fallback for browsers without dvh). */
 .field-scroll{height:65vh;height:65dvh;max-height:none}@media(max-width:850px){.field-scroll{height:52vh;height:52dvh;max-height:none}}
+.quit-warning{color:#efaa99;line-height:1.7}
