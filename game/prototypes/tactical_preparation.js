@@ -2,12 +2,9 @@
 (function(){'use strict';
 const C=window.PROCore,T=window.PROTactical,$=id=>document.getElementById(id),el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
 const sizes=C.UNIT_SIZES,domains=C.MOVEMENT_DOMAINS;
-const unit=(id,name,size,move,apt)=>({id,name,size,move,movementAptitude:{ground:'none',air:'none',water:'none',underwater:'none',space:'none',...apt}});
-const roster=[unit('infantry','歩兵小隊','S',5,{ground:'B'}),unit('scout','偵察車','M',7,{ground:'A'}),unit('tank','主力戦車','L',4,{ground:'B'}),unit('medic','衛生兵','S',5,{ground:'B'}),unit('robot','汎用機動兵器','2XL',6,{ground:'B',air:'B',space:'B'}),unit('fighter','戦闘機','XL',8,{air:'A'}),unit('heavy','大型陸戦兵器','3XL',3,{ground:'D'}),unit('boat','哨戒艇','M',6,{water:'B'}),unit('sub','潜水艦','XL',5,{water:'B',underwater:'A'}),unit('marine','水陸両用機','M',5,{ground:'B',water:'B',underwater:'B'}),unit('spacecraft','宇宙戦闘艇','XL',7,{space:'A'}),unit('unset','未設定テスト機','M',undefined,{})];delete roster[roster.length-1].move;
-// Sample weapons only; core pack schema remains unchanged.
-for(const u of roster){const gun=(name,minRange,maxRange)=>({...C.weapon({name,powerPct:100,accuracyPt:10,targetCount:1}),minRange,maxRange});u.weapons=u.id==='scout'?[gun('狙撃砲',2,6)]:['tank','fighter','boat','sub','spacecraft'].includes(u.id)?[gun('射撃武装',1,3)]:u.id==='robot'?[gun('格闘武装',1,1),gun('ビームライフル',1,3)]:[gun('近接武装',1,1)];}
-
-const scenarios={'training-01':{name:'機動訓練',goal:'敵部隊の全滅',surface:'ground'},'combat-01':{name:'沿岸防衛線',goal:'指定拠点の防衛',surface:'water'},'combat-02':{name:'軌道上の遭遇',goal:'敵部隊の全滅',surface:'space'}};
+// Units and missions come from the Tactical pack (built-in sample for now).
+const P=window.PROTacticalData,roster=P.roster();
+const scenarios=Object.fromEntries(P.missions().map(m=>[m.id,{name:m.name,goal:m.goal,surface:m.surface}]));
 let missionId='training-01',sequence=2,active='group-1',groups=[{id:'group-1',name:'第1部隊',faction:'player',mode:'auto',members:[]}],lastFocus;
 const scenario=()=>scenarios[missionId],current=()=>groups.find(g=>g.id===active),occupied=id=>groups.find(g=>g.members.some(m=>m.uid===id));
 function compatibility(u,g){if(u.move===undefined||!u.movementAptitude)return 'MOVE・地形移動適性が未設定';try{const m={uid:u.id,unit:u};T.defaultDomain(m,scenario().surface);if(g?.mode!=='auto'&&g?.mode&&!T.supports(m,g.mode))return domains[g.mode]+'に対応していません';}catch(e){return 'この戦場の移動領域に対応していません';}return '';}
