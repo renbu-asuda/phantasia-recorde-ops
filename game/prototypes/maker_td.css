@@ -20,3 +20,4 @@
 .td-row{grid-template-columns:minmax(0,1fr) minmax(0,max-content)!important}.td-row b{max-width:none;min-width:0}.td-row span{min-width:0}@media(max-width:760px){.td-row{grid-template-columns:minmax(0,1fr) minmax(0,55%)!important}}
 .td-sub.warn{color:#efaa99}
 .pack-mode .td-side{display:none}.pack-mode .td-layout{grid-template-columns:1fr}
+.td-textarea{width:100%;background:#0e161c;border:1px solid var(--line);padding:10px;color:inherit;font:inherit;resize:vertical}
