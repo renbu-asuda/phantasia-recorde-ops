@@ -28,3 +28,4 @@
 .field-scroll{height:65vh;height:65dvh;max-height:none}@media(max-width:850px){.field-scroll{height:52vh;height:52dvh;max-height:none}}
 .quit-warning{color:#efaa99;line-height:1.7}
 .heading button{white-space:nowrap;flex-shrink:0}
+.setting-row b{color:var(--accent);white-space:nowrap}
