@@ -41,6 +41,16 @@ w=open({});{const L=w.PROUnitLab,d=w.document,two=(g,id)=>{const t=d.querySelect
  // PRO・D EXP: kept per unit id in the same test save.
  const got=L.gainDispatchExp([{key:'core-u-jackal',amount:250}],{'core-u-jackal':'ジャッカル'});assert.equal(got[0].lv,2);assert.equal(L.dispatchLevel('core-u-jackal').lv,2);saved=dump(w);}
 w.close();w=open(saved);assert.equal(w.PROUnitLab.dispatchLevel('core-u-jackal').exp,150);assert(w.PROUnitLab.registered().includes('ranger'));w.location.hash='#facility';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,50));assert(w.document.querySelector('#facilityRegistered').textContent.includes('特殊歩兵'));w.close();
+// Production / hire: entries with cost, limit, required missions, hidden conditions and registered units.
+w=open({});{const L=w.PROUnitLab,d=w.document,tile=id=>d.querySelector('#productionGrid [data-uid="'+id+'"]'),two=id=>{tile(id).click();tile(id).click();},body=()=>d.querySelector('#labWinBody').textContent,run=()=>d.querySelector('#labWinActions [data-lab=run]'),closeW=()=>[...d.querySelectorAll('#labWinActions button')].find(b=>b.textContent==='閉じる').click();
+ L.renderProduction();assert(tile('hire-infantry'));assert(!tile('hire-marine'));assert(tile('hire-tank').classList.contains('blocked'));assert(tile('hire-tank').getAttribute('aria-label').includes('機動訓練'));assert(tile('hire-scout').textContent.includes('1,500Cr'));
+ two('hire-infantry');assert(body().includes('費用 800 Cr'));run().click();closeW();assert.equal(L.credits(),24000);assert.equal(L.owned().filter(u=>u.id==='infantry').length,2);
+ for(let i=0;i<3;i++){two('hire-scout');run().click();closeW();}two('hire-scout');assert(run().disabled);assert(body().includes('上限'));closeW();
+ L.markCleared('training-01');L.renderProduction();assert(!tile('hire-tank').classList.contains('blocked'));
+ // Hidden until its condition holds (own 2 patrol boats).
+ L.register('boat');L.renderProduction();two('reg-boat');assert(body().includes('生産・雇用リスト'));run().click();closeW();L.renderProduction();assert(tile('hire-marine'));
+ saved=dump(w);}
+w.close();w=open(saved);assert.equal(w.PROUnitLab.cleared()[0],'training-01');assert.equal(w.PROUnitLab.owned().filter(u=>u.id==='scout').length,4);w.close();
 // 2) Maker source: draft units, evolutions and variants join the built-in data; invalid links are dropped.
 w=open({...saved,PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(draft)});D=w.PROTacticalData;L=w.PROUnitLab;
 assert.equal(D.source,'maker');assert.equal(D.makerName,'テストパック');assert(D.roster().some(u=>u.id==='td-u-a'));assert(!D.roster().some(u=>u.id==='td-u-b'));assert(D.roster().some(u=>u.id==='infantry'));
@@ -51,4 +61,4 @@ assert.equal(L.credits(),24800);assert(L.owned().some(u=>u.id==='tank'));assert(
 assert(w.document.querySelector('#dataSourceText').textContent.includes('テストパック'));w.close();
 // 3) Maker source selected but no draft: falls back to the built-in data.
 w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'builtin');w.close();
-console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, maker draft as data source');
+console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
