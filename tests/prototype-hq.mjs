@@ -3,7 +3,7 @@ import fs from 'node:fs';import path from 'node:path';import assert from 'node:a
 const SID=JSON.parse(fs.readFileSync('tests/sample-ids.json','utf8')),SX=x=>SID[x]||x;
 // Test save (owned units, credits) and the T&D maker draft as a data source, each checked across a page reload.
 const file='game/prototypes/tactical_hub.html',html=fs.readFileSync(file,'utf8');
-function open(store){const w=new Window({url:'http://localhost/'+file,settings:{enableJavaScriptEvaluation:true,disableJavaScriptFileLoading:true,disableCSSFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});w.scrollTo=()=>{};
+function open(store,query=''){const w=new Window({url:'http://localhost/'+file+query,settings:{enableJavaScriptEvaluation:true,disableJavaScriptFileLoading:true,disableCSSFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});w.scrollTo=()=>{};
  // Tests run on the built-in sample pack unless a source is given (the game itself starts empty).
  if(!('PRO_TACTICAL_SOURCE' in store)&&!('PRO_TACTICAL_LOAD' in store))w.localStorage.setItem('PRO_TACTICAL_SOURCE','sample');for(const [k,v] of Object.entries(store))w.localStorage.setItem(k,v);w.document.write(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
  for(const dl of w.document.querySelectorAll('dialog')){dl.showModal=()=>dl.setAttribute('open','');dl.close=()=>{dl.removeAttribute('open');dl.dispatchEvent(new w.Event('close'));};}
@@ -425,6 +425,13 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    s.groups.find(g=>g.id==='e1').ai={pattern:'assault'};const p0={...s.groups.find(g=>g.id==='e1').position};await F.endTurn();assert.deepEqual({...s.groups.find(g=>g.id==='e1').position},p0,'hidden enemy waits');assert(!s.outcome);
    s.groups.find(g=>g.id==='g1').position={x:3,y:0};F.checkOutcome();assert.equal(s.view.length,2);s.talkQueue=[];
    assert(F.opLog().some(e=>e.s.includes('マップが広がりました')));await F.endTurn();assert.notDeepEqual({...s.groups.find(g=>g.id==='e1')?.position},p0,'revealed enemy acts');assert.equal(cells(),48,'expanded draw');assert.equal(open_(),12+24,'L-shaped view: 3×4 corner still closed');w.close();}
+  // Test play from the maker: party built from maker units, map opens directly, returning restores every PRO_TACTICAL_* key.
+  {const tp={missionId:'tm-reach',party:'maker',units:['td-u-a','td-u-a'],snapshot:{PRO_TACTICAL_LOAD:'{"sample":true,"maker":false,"packs":[]}',PRO_TACTICAL_KEEP:'1'}};
+   w=open({PRO_TACTICAL_LOAD:JSON.stringify({sample:true,maker:true,packs:[]}),PRO_TD_MAKER_DRAFT:JSON.stringify(d2),PRO_TACTICAL_TESTPLAY:JSON.stringify(tp)},'?trial=tm-reach#missions');w.dispatchEvent(new w.Event('load'));
+   const s=w.PROField._live();assert(s&&s.missionId==='tm-reach','deployed');assert.equal(s.groups.filter(g=>g.faction==='player').flatMap(g=>g.members).length,2);assert(w.document.getElementById('testplayBack'));
+   w.localStorage.setItem('PRO_TACTICAL_CREDITS_JUNK','x');s.outcome='victory';s.talkQueue=[];w.PROField.showResult();assert(w.document.getElementById('fieldResultBack').textContent.includes('メーカーへ戻る'));
+   try{w.PROTestplay.back();}catch(e){}const left=Object.keys(w.localStorage).filter(k=>k.startsWith('PRO_TACTICAL_')).sort();assert.deepEqual(left,['PRO_TACTICAL_KEEP','PRO_TACTICAL_LOAD'],'restored '+left.join(','));assert.equal(w.localStorage.getItem('PRO_TACTICAL_LOAD'),tp.snapshot.PRO_TACTICAL_LOAD);
+   assert(!w.PROTestplay.active());try{w.close();}catch(e){}}
   // Stage 10 part 2: smart targeting (forecast, hopeless fights avoided) and domain switching to get past water.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const F=w.PROField,L=w.PROUnitLab,T=w.PROTactical,D=w.PROTacticalData,inf=L.owned().find(x=>x.uid===SX('infantry'));
    const mk=(id,name,pos,unit,hp)=>({...T.initializeDomains({id,name,faction:'player',mode:'auto',members:[{uid:id+'-u',unit,currentHp:hp}]},'ground'),position:pos});
