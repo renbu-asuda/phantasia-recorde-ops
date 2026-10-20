@@ -73,7 +73,7 @@ function openCommand(){if(!state||busy||state.outcome||!current())return;if(mode
 // Mission events may replace either condition (state.victory / state.defeat). Wiping out the enemy always wins.
 function outcome(){if(!state)return null;if(!state.outcome){fire();const m=mission(),v=state.victory||(typeof m.victory==='object'?m.victory:{type:m.victory||'enemy_wipe'}),f=state.defeat||(typeof m.defeat==='object'?m.defeat:{type:m.defeat||'player_wipe'}),pl=state.groups.filter(g=>g.faction==='player'),en=state.groups.filter(g=>g.faction==='enemy');
  if(!pl.length||(f.type!=='turn_limit'&&cond(f))||hqLost())state.outcome='defeat';
- else if(!en.length||cond(v))state.outcome='victory';
+ else if((v.type!=='all'&&!en.length)||cond(v))state.outcome='victory';
  else if(f.type==='turn_limit'&&cond(f))state.outcome='defeat';
  if(state.outcome){log('system',state.outcome==='victory'?'作戦成功':'作戦失敗');fire(state.outcome);}}return state.outcome;}
 /* ---------- T&D mission events: reinforcements, withdrawals, talk / choices, flags, terrain and condition changes,
@@ -86,7 +86,9 @@ const gone=id=>!onMap(id)&&!(state.pending||[]).includes(id)&&!(state.withdrawn|
 const lostAny=()=>{const alive=new Set([...state.groups.flatMap(g=>allMembers(g).map(m=>m.uid)),...(state.retreated||[]).map(r=>r.uid)]);return (state.deployed||[]).some(d=>!alive.has(d.uid));};
 function cond(c,phase){if(!c)return false;const pl=state.groups.filter(g=>g.faction==='player'),en=state.groups.filter(g=>g.faction==='enemy'),at=list=>list.some(g=>inArea(c,g.position));switch(c.type){
  case 'start':case 'victory':case 'defeat':return phase===c.type;case 'turn':return state.turn>=c.turns;case 'defend':case 'turn_limit':return state.turn>c.turns;
- case 'boss':case 'squad_down':return gone(c.groupId);case 'reach':return at(pl);case 'enemy_reach':return at(en);case 'flag':return !!state.flags?.[c.flag];
+ case 'boss':case 'squad_down':return gone(c.groupId);case 'reach':return c.unitId?at(state.groups.filter(g=>T.living(g).some(x=>x.unit.id===c.unitId))):at(pl);case 'all':return (c.conds||[]).length>0&&c.conds.every(x=>cond(x,phase));case 'any':return (c.conds||[]).some(x=>cond(x,phase));
+ case 'unit_defeated':{const has=g=>allMembers(g).some(x=>x.unit.id===c.unitId),waiting=(state.pending||[]).some(id=>[...P.enemies(state.missionId),...P.allies(state.missionId)].some(g=>g.id===id&&g.members.some(x=>x.unit.id===c.unitId)));return !waiting&&!state.groups.some(g=>g.faction!=='player'&&has(g));}
+ case 'capture_all':{const fs=[];for(let y=0;y<H;y++)for(let x=0;x<W;x++){const f=fac(x,y);if(f&&(c.tag?facTags(x,y).includes(c.tag):c.key?(state.terrain?.[key(x,y)]||P.tile(state.missionId,x,y).key)===c.key:false))fs.push(f);}return fs.length>0&&fs.every(f=>f.owner===(c.by||'player'));}case 'enemy_reach':return at(en);case 'flag':return !!state.flags?.[c.flag];
  case 'unit_down':return (state.deployed||[]).some(d=>d.id===c.unitId)&&!pl.some(g=>allMembers(g).some(x=>x.unit.id===c.unitId))&&!(state.retreated||[]).some(r=>r.id===c.unitId);case 'loss':return lostAny();
  case 'objective_done':return state.objectives?.[c.objectiveId]==='done';case 'objective_failed':return state.objectives?.[c.objectiveId]==='failed';case 'game_flag':{const v=c.flagId in (state.gameFlags||{})?!!state.gameFlags[c.flagId]:!!window.PROUnitLab?.evalConds({list:[{type:'flag',flagId:c.flagId,on:true}]})?.ok;return v===(c.on!==false);}case 'capture':case 'captured':{const f=fac(c.x,c.y);return !!f&&f.owner===(c.by||'player');}case 'facility_lost':{const f=fac(c.x,c.y);return !!f&&['enemy','third'].includes(f.owner);}
  case 'game_cond':return !!window.PROUnitLab?.evalConds(c.conds||{list:[]})?.ok;
