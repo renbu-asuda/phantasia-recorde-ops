@@ -12,14 +12,15 @@ const parse=t=>{try{return JSON.parse(t);}catch(e){return null;}};
 function snapshot(){window.PROUnitLab?.flush();const hq=parse(get(KEYS.hq))||{};return {format:FORMAT,version:1,savedAt:new Date().toISOString(),source:window.PROTacticalData?.source||'builtin',summary:{day:hq.day||1,credits:hq.credits??null,units:(hq.owned||[]).length,wins:hq.wins||0},hq,seen:parse(get(KEYS.seen))||{}};}
 function valid(s){return !!s&&s.format===FORMAT&&s.version===1&&s.hq&&typeof s.hq==='object'&&Array.isArray(s.hq.owned)&&typeof s.seen==='object';}
 const read=i=>{const s=parse(get(slotKey(i)));return valid(s)?s:null;};
-function describe(s,withTime=true){if(!s)return '空き';const d=new Date(s.savedAt),t=isNaN(d)?'':d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});return (s.source==='maker'?'［メーカー］':'')+s.summary.day+'日目 ・ 資金 '+(s.summary.credits??0).toLocaleString()+' Cr ・ '+s.summary.units+'体 ・ 勝利'+s.summary.wins+(t&&withTime?'（'+t+'）':'');}
+function describe(s,withTime=true){if(!s)return '空き';const d=new Date(s.savedAt),t=isNaN(d)?'':d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});return ({maker:'［メーカー］',pack:'［パック］'}[s.source]||'')+s.summary.day+'日目 ・ 資金 '+(s.summary.credits??0).toLocaleString()+' Cr ・ '+s.summary.units+'体 ・ 勝利'+s.summary.wins+(t&&withTime?'（'+t+'）':'');}
 function saveSlot(i){return put(slotKey(i),JSON.stringify(snapshot()));}
 const autoSave=()=>saveSlot('auto');
 const suspended=()=>!!get(SUSPEND);
 // apply(save): write progress back (switching the data source if needed) and reload. Returns a reason when refused.
 function apply(s,{reload=true}={}){if(!valid(s))return 'セーブデータの形式が違います';
  if(s.source==='maker'&&!window.PROTacticalData?.hasMakerDraft?.())return 'メーカーの下書きがないため、メーカーのデータで作ったセーブは読み込めません';
- put(SUSPEND,null);put(KEYS.hq,JSON.stringify(s.hq));put(KEYS.seen,JSON.stringify(s.seen));put(KEYS.source,s.source==='maker'?'maker':'builtin');if(reload)location.reload();return '';}
+ if(s.source==='pack'&&!window.PROTacticalData?.hasPack?.())return 'パックファイルが読み込まれていないため、パックのデータで作ったセーブは読み込めません';
+ put(SUSPEND,null);put(KEYS.hq,JSON.stringify(s.hq));put(KEYS.seen,JSON.stringify(s.seen));put(KEYS.source,['maker','pack'].includes(s.source)?s.source:'builtin');if(reload)location.reload();return '';}
 function exportFile(){const s=snapshot(),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(s,null,1)],{type:'application/json'}));a.download='pro-tactical-save-day'+s.summary.day+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 function importText(text){const s=parse(text);if(!valid(s))return 'セーブデータの形式が違います';return apply(s);}
 // Window (shared command window). Each slot: save / load / delete, all with a confirm step.
