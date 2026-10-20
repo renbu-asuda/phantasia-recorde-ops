@@ -32,3 +32,4 @@
 .field-tile.facility{background:#3d4f2a;color:#e3f0b0}
 .tmap-cell .tmap-third{color:#ffe36a}.tmap-cell .tmap-allyai{color:#8ff0a8}
 .tmap-cell .tmap-fac{position:absolute;top:0;right:1px;font-style:normal;font-size:9px}.tmap-fac-neutral{color:#ccc}.tmap-fac-player{color:#d6ed83}.tmap-fac-ally{color:#6fd18a}.tmap-fac-enemy{color:#ff7d6b}.tmap-fac-third{color:#e8d04a}
+.tmap-cell.tmap-out{opacity:.35}
