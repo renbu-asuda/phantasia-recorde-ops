@@ -154,6 +154,21 @@ w=open({});{const L=w.PROUnitLab,d=w.document,u=id=>L.owned().find(x=>x.uid===id
  act('resetask').click();act('reset').click();assert.equal(u('infantry').sp,3);assert(!u('infantry').skills.some(k=>k.name==='狙いを定める'));
  const jk=Object.values(w.PRODispatchData.defs).find(x=>(x.skillTree||[]).length&&x.deploy?.player&&!x.recruit?.locked);L.gainDispatchExp([{key:jk.id,amount:100}]);const n0=jk.skillTree[0];assert.equal(L.learn('d:'+jk.id,n0.id),'');assert.equal(L.dispatchTreeSkills(jk.id).length,1);assert.equal(L.dispatchLevel(jk.id).sp,1-(n0.cost??1));saved=dump(w);}
 w.close();w=open(saved);assert.equal(w.PROUnitLab.owned().find(x=>x.uid==='infantry').sp,3);w.close();
+// Boarding: pilot bonus, skills and aptitude; riding pilots and pilot-required machines can't sortie alone;
+// shared EXP and shared fate; PRO・D boarding in the battle.
+w=open({});{const L=w.PROUnitLab,d=w.document,u=id=>L.owned().find(x=>x.uid===id),act=k=>d.querySelector('#labWinActions [data-lab="'+k+'"]'),closeW=()=>[...d.querySelectorAll('#labWinActions button')].find(b=>b.textContent==='閉じる').click();
+ L.renderProduction();const h=d.querySelector('#productionGrid [data-uid=hire-aoi]');h.click();d.querySelector('#productionGrid [data-uid=hire-aoi]').click();act('run').click();closeW();const aoi=L.owned().find(x=>x.id==='aoi').uid;
+ const r0=u('robot');L.renderBoard();assert(!d.querySelector('#boardGrid [data-uid="'+aoi+'"]'));const t=d.querySelector('#boardGrid [data-uid=robot]');t.click();d.querySelector('#boardGrid [data-uid=robot]').click();act('pilot-'+aoi).click();closeW();
+ const r1=u('robot');assert.equal(r1.pilot.name,'葵');assert.equal(r1.acc,Math.round((r0.acc+60)*1.1));assert.equal(r1.atk,Math.round((r0.atk+40)*1.1));assert.equal(r1.def,r0.def);assert(r1.skills.some(k=>k.name==='見切り'));
+ assert(L.crewProblem(aoi).includes('搭乗中'));w.location.hash='#formation';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,400));assert(d.querySelector('#prepUnitList [data-uid="'+aoi+'"]')?.classList.contains('blocked')??d.querySelector('#prepUnitList [data-unit=aoi]').classList.contains('blocked'));
+ // Shared EXP.
+ L.gainExp([{key:'robot',amount:250}]);assert.equal(u(aoi).level,2);assert.equal(u('robot').level,2);
+ // Pilot-required machine (fusion result) and shared fate (robot is a key unit → wrecked; the pilot is lost).
+ assert.equal(L.crewProblem('nope'),'');L.handleLosses(['robot']);assert.equal(u('robot').down,'wrecked');assert(!L.owned().some(x=>x.uid===aoi));assert.equal(JSON.stringify(L.boards()),'{}');
+ // PRO・D: a pilot unit boards a crew-required machine; the machine can then sortie.
+ const DD=w.PRODispatchData,mech=DD.players().find(x=>x.crew==='required'),pil=DD.players().find(x=>x.pilotProfile&&!x.recruit?.locked);if(mech&&pil){assert(L.crewProblem('d:'+mech.id).includes('パイロットが必要'));assert.equal(L.board('d:'+mech.id,'d:'+pil.id),'');assert.equal(L.crewProblem('d:'+mech.id),'');assert(L.crewProblem('d:'+pil.id).includes('搭乗中'));assert.equal(L.dispatchPilot(mech.id).def.id,pil.id);}
+ saved=dump(w);}
+w.close();
 // 2) Maker source: draft units, evolutions and variants join the built-in data; invalid links are dropped.
 w=open({...saved,PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(draft)});D=w.PROTacticalData;L=w.PROUnitLab;
 assert.equal(D.source,'maker');assert.equal(D.makerName,'テストパック');assert(D.roster().some(u=>u.id==='td-u-a'));assert(!D.roster().some(u=>u.id==='td-u-b'));assert(D.roster().some(u=>u.id==='infantry'));
@@ -164,4 +179,4 @@ assert.equal(L.credits(),24800);assert(L.owned().some(u=>u.id==='tank'));assert(
 assert(w.document.querySelector('#dataSourceText').textContent.includes('テストパック'));w.close();
 // 3) Maker source selected but no draft: falls back to the built-in data.
 w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'builtin');w.close();
-console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), skill tree (learn, prerequisites, level, reset, PRO・D), defeat (lost / wrecked, repair, revive, dismissal, PRO・D), sortie support (auto lineup, estimate, presets, supply, choices), missions (lock, hidden, rewards, stars, records, recruits, deploy rules), item use (boosts, limits, EXP, base-only effects) and equipment (slots, stats, weapons), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
+console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), boarding (pilot bonus, aptitude, skills, sortie limits, shared EXP and fate, PRO・D), skill tree (learn, prerequisites, level, reset, PRO・D), defeat (lost / wrecked, repair, revive, dismissal, PRO・D), sortie support (auto lineup, estimate, presets, supply, choices), missions (lock, hidden, rewards, stars, records, recruits, deploy rules), item use (boosts, limits, EXP, base-only effects) and equipment (slots, stats, weapons), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');

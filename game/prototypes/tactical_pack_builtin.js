@@ -32,7 +32,7 @@ root.PROTacticalBuiltinPack={
   {...base,id:'scout',skillTree:[node('sc-eye',1,1,[],{name:'観測',trigger:'before_attack',effect:'hit_up_pt',value:15}),node('sc-ap',2,4,['sc-eye'],{name:'徹甲弾',trigger:'before_attack',effect:'def_pierce_pct',value:30})],joinVerb:'produce',catalog:'長射程の狙撃砲で敵の動きを止める偵察車両。',name:'偵察車',size:'M',move:7,movementAptitude:apt({ground:'A'}),weapons:[gun('狙撃砲',2,6)]},
   {...base,id:'tank',joinVerb:'produce',catalog:'厚い装甲と射撃武装を備えた地上戦の要。',name:'主力戦車',size:'L',move:4,movementAptitude:apt({ground:'B'}),weapons:[gun('射撃武装',1,3)]},
   {...base,id:'medic',joinVerb:'hire',catalog:'前線で味方を支える衛生兵。',name:'衛生兵',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
-  {...base,id:'robot',noFire:true,catalog:'地上・空中・宇宙を行き来できる汎用機動兵器。',name:'汎用機動兵器',size:'2XL',move:6,movementAptitude:apt({ground:'B',air:'B',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,3)]},
+  {...base,id:'robot',noFire:true,tags:['機動兵器'],catalog:'地上・空中・宇宙を行き来できる汎用機動兵器。',name:'汎用機動兵器',size:'2XL',move:6,movementAptitude:apt({ground:'B',air:'B',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,3)]},
   {...base,id:'fighter',catalog:'空中を高速で移動する戦闘機。',name:'戦闘機',size:'XL',move:8,movementAptitude:apt({air:'A'}),weapons:[gun('射撃武装',1,3)]},
   {...base,id:'heavy',catalog:'巨大な陸戦兵器。動きは遅いが圧倒的な存在感。',name:'大型陸戦兵器',size:'3XL',move:3,movementAptitude:apt({ground:'D'}),weapons:[blade('近接武装')]},
   {...base,id:'boat',joinVerb:'produce',catalog:'沿岸を守る小型の哨戒艇。',name:'哨戒艇',size:'M',move:6,movementAptitude:apt({water:'B'}),weapons:[gun('射撃武装',1,3)]},
@@ -47,13 +47,15 @@ root.PROTacticalBuiltinPack={
   {id:'target_water',base:'target_ground',separate:false,movementAptitude:apt({water:'B'})},
   {id:'target_space',base:'target_ground',separate:false,movementAptitude:apt({space:'B'})},
   {id:'scout_ace',base:'scout',separate:true,joinVerb:'produce',hireCost:4200,name:'エース偵察車',hp:1500,acc:600,catalog:'敵軍のエースが駆る改造偵察車。'},
+  // Pilot (pilotProfile): rides a unit whose crew is not 'none'; aptitude % applies to units with those tags.
+  {...base,id:'aoi',name:'葵',catalog:'機動兵器の操縦に長けたパイロット。',joinVerb:'hire',hireCost:1500,tags:['生身','パイロット'],size:'S',move:4,hp:900,atk:120,def:80,movementAptitude:apt({ground:'B'}),weapons:[blade('拳銃')],pilotProfile:{stats:{atk:40,acc:60},skills:[{id:'s-aoi-eye',name:'見切り',trigger:'before_attack',effect:'hit_up_pt',value:10,chance:100,maxUses:0}],aptitude:{tags:['機動兵器'],pct:10},growthPct:2}},
   // Joins when the given mission is first cleared (recruit.missionId).
-  {...base,id:'veteran',name:'古参兵',catalog:'機動訓練の教官。訓練を終えると部隊に加わる。',joinVerb:'hire',recruit:{missionId:'training-01'},size:'S',move:5,hp:1500,atk:220,def:150,movementAptitude:apt({ground:'A'}),weapons:[blade('近接武装'),gun('小銃',1,2)]},
+  {...base,id:'veteran',tags:['生身'],pilotProfile:{stats:{atk:30,def:30},skills:[],growthPct:2},name:'古参兵',catalog:'機動訓練の教官。訓練を終えると部隊に加わる。',joinVerb:'hire',recruit:{missionId:'training-01'},size:'S',move:5,hp:1500,atk:220,def:150,movementAptitude:apt({ground:'A'}),weapons:[blade('近接武装'),gun('小銃',1,2)]},
   // Reached only by evolution or fusion (sample).
   {...base,id:'tank2',name:'主力戦車改',catalog:'主力戦車を改修した発展型。',size:'L',move:5,hp:1500,atk:220,def:170,movementAptitude:apt({ground:'B'}),weapons:[gun('改良射撃武装',1,3)]},
   {...base,id:'scout2',name:'高速偵察車',catalog:'偵察車の足回りを強化した高速型。',size:'M',move:9,movementAptitude:apt({ground:'A'}),weapons:[gun('狙撃砲',2,6)]},
   {...base,id:'ranger',joinVerb:'hire',hireCost:1800,name:'特殊歩兵',catalog:'歩兵と衛生兵の技術を併せ持つ精鋭。',size:'S',move:6,hp:1400,movementAptitude:apt({ground:'A'}),weapons:[blade('近接武装')]},
-  {...base,id:'commander',name:'指揮機動兵器',catalog:'汎用機動兵器と戦闘機の設計を組み合わせた指揮機。',size:'2XL',move:7,hp:1800,movementAptitude:apt({ground:'B',air:'A',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,4)]}
+  {...base,id:'commander',crew:'required',tags:['機動兵器'],name:'指揮機動兵器',catalog:'汎用機動兵器と戦闘機の設計を組み合わせた指揮機。',size:'2XL',move:7,hp:1800,movementAptitude:apt({ground:'B',air:'A',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,4)]}
  ],
  // Development / evolution (one step from → to) and design / fusion (materials → result), same shapes as T&D.
  // Items (materials) and research, same shapes as T&D. Research takes `days` in-game days (missions advance the day):
@@ -80,7 +82,7 @@ root.PROTacticalBuiltinPack={
   {id:'r-ace',name:'エース機の再現',desc:'エース偵察車を再現し、部隊に迎える。',days:3,requires:['r-armor'],cost:{credits:3000,items:{alloy:1,data:1}},unlock:{units:['scout_ace']}}],
  // Production / hire entries (same shape as T&D hires): cost in credits, limit = max hires (unset = no limit),
  // requires.missions = missions to clear first, conds = extra condition set, hidden = not listed until available.
- hires:[{id:'hire-infantry',unitId:'infantry',cost:800},{id:'hire-scout',unitId:'scout',cost:1500,limit:3},{id:'hire-tank',unitId:'tank',cost:2500,requires:{missions:['training-01']}},
+ hires:[{id:'hire-aoi',unitId:'aoi',cost:1500},{id:'hire-infantry',unitId:'infantry',cost:800},{id:'hire-scout',unitId:'scout',cost:1500,limit:3},{id:'hire-tank',unitId:'tank',cost:2500,requires:{missions:['training-01']}},
   {id:'hire-marine',unitId:'marine',cost:2000,hidden:true,conds:{mode:'all',list:[{type:'unit_owned',unitId:'boat',cmp:'ge',count:2}]}}],
  // conds use the T&D condition sets (PROCore.evalConds). consume:false keeps that material. carry.level keeps level /
  // EXP / skill points (fusion: from the first material). register adds the unit to the production / hire list.
