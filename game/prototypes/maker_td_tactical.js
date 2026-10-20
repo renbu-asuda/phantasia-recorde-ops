@@ -33,7 +33,7 @@ function facilityWindow(f,x){const cur=x.tactical?.facility,fac=typeof cur==='st
   rowsWin('施設','できることを自由に組み合わせます。持ち主は作戦のマップ（「施設の持ち主」）でマスごとに決めます。所有者の部隊だけが補給・修理・防御補正を受けます。',rows,[['決定',save],['施設をなくす',()=>{fac.functions={};save();}],['戻る',closeWin]]);};draw();}
 X.registerType('tfacility',{display:v=>facText(v),edit:(f,x)=>facilityWindow(f,x)});
 const SURFACE_FILL={ground:'p',water:'w',space:'s'};
-const AI={assault:'突撃',ambush:'待ち伏せ',hold:'拠点防衛',cautious:'慎重'},TARGET={lowest_hp:'残りHPが少ない相手',nearest:'近い相手',strongest:'強い相手'};
+const AI={assault:'突撃',ambush:'待ち伏せ',hold:'拠点防衛',cautious:'慎重',capture:'占領を狙う'},TARGET={lowest_hp:'残りHPが少ない相手',nearest:'近い相手',strongest:'強い相手'};
 const VICTORY={enemy_wipe:'敵の全滅',boss:'指定した敵部隊の撃破',reach:'指定マスへの到達',defend:'○ターン防衛（生き残る）',flag:'フラグが立つ（イベントで勝利）',capture:'指定マスの施設を占領'},DEFEAT={player_wipe:'味方の全滅',turn_limit:'○ターン以内に勝てない',unit_down:'指定ユニットの撃破',squad_down:'指定部隊の撃破（護衛対象など）',enemy_reach:'敵が指定マスへ到達',flag:'フラグが立つ（イベントで敗北）',facility_lost:'指定マスの施設を敵に奪われる'};
 // (Facilities whose function includes 本拠地 also make the player lose when an enemy takes the player's HQ.)
 // Conditions shared by event triggers and objectives: {type, groupId, x, y, turns, flag, unitId}.
@@ -209,6 +209,7 @@ X.registerKind('tmissions',{label:'タクティカル作戦',en:'TACTICAL MISSIO
  {key:'defeat.flag',label:'敗北するフラグ名',type:'text',max:20,group:'勝敗条件',show:m=>m.defeat?.type==='flag'},
  {key:'events',label:'イベント（会話・増援・撤退・条件変更など）',type:'tevents',group:'イベント'},{key:'objectives',label:'作戦内ミッション（追加報酬）',type:'tobjectives',group:'イベント'},
  {key:'funds.player',label:'初期の戦場資金（味方）',type:'number',min:0,max:9999999,group:'戦場資金'},{key:'funds.enemy',label:'初期の戦場資金（敵）',type:'number',min:0,max:9999999,group:'戦場資金'},{key:'funds.ally',label:'初期の戦場資金（友軍）',type:'number',min:0,max:9999999,group:'戦場資金'},{key:'funds.third',label:'初期の戦場資金（第三勢力）',type:'number',min:0,max:9999999,group:'戦場資金'},{key:'reserveMax',label:'出撃口から追加で出撃できる部隊数（控え部隊の上限・空欄＝0）',type:'number',min:0,max:16,group:'戦場資金'},{key:'produceKeep',label:'拠点の生産リストから戦場で生産したユニットを、勝利後に持ち帰れる',type:'toggle',group:'戦場資金'},{key:'production',label:'作戦の生産リスト（すべての生産施設で作れる）',type:'tprodlist',group:'戦場資金'},
+  ...[['enemy','敵'],['ally','友軍'],['third','第三勢力']].flatMap(([f,l])=>[{key:'aiProduce.'+f+'.mode',label:l+'のAI：生産のしかた（空欄＝生産しない）',type:'select',choices:{strongest:'買える中で一番強い',order:'リストの順番',cheapest:'安いもの優先',random:'ランダム'},group:'AIの生産'},{key:'aiProduce.'+f+'.pattern',label:l+'のAI：生産した部隊のAI',type:'select',choices:AI,group:'AIの生産',show:m=>!!m.aiProduce?.[f]?.mode}]),
  {key:'funds.returnPct',label:'勝利時に持ち帰る戦場資金の%（空欄＝0）',type:'number',min:0,max:100,group:'戦場資金'},
  {key:'result.credits',label:'報酬：資金（Cr）',type:'number',min:0,group:'報酬'},{key:'result.exp',label:'報酬：経験値',type:'number',min:0,group:'報酬'},{key:'result.items',label:'報酬：アイテム',type:'itemCounts',group:'報酬'},{key:'drops',label:'ドロップ（勝利時）',type:'drops',group:'報酬'},
  {key:'stars',label:'星評価の条件（3つまで・空欄＝標準）',type:'tstars',group:'星評価'},{key:'starReward',label:'星を初めて取ったときの資金（1個あたり・空欄＝報酬の20%）',type:'number',min:0,max:9999999,group:'星評価'},
