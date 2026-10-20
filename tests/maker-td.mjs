@@ -221,6 +221,11 @@ M.openKind('tmissions');await new Promise(r=>setTimeout(r,50));$('listNew').clic
   button($('inputActions'),'起こすことを追加').click();ch('victory');ef('keep');ef('text');$('inputValue').value='新しい目標';ok();button($('inputActions'),'戻る').click();
   if(ob){button($('inputActions'),'起こすことを追加').click();ch('objective_change');ef('objective');ch(ob.id);ef('text');$('inputValue').value='急げ';ok();button($('inputActions'),'戻る').click();}
   button($('inputActions'),'一覧へ戻る').click();ok();const acts=tm().events.at(-1).actions;assert.equal(JSON.stringify(acts[0]),JSON.stringify({type:'victory',cond:{type:'enemy_wipe'},keep:true,text:'新しい目標'}));if(ob)assert.equal(JSON.stringify(acts[1]),JSON.stringify({type:'objective_change',id:ob.id,text:'急げ'}));}
+ // Withdrawal areas on the map and an event opening one.
+ {const cell=(x,y)=>d.querySelector('#inputBody [data-x="'+x+'"][data-y="'+y+'"]').click();d.querySelector('[data-field=map]').click();d.querySelector('[data-mode=exit]').click();cell(0,0);cell(1,1);assert(d.querySelector('#inputBody [data-x="1"][data-y="0"]').classList.contains('tmap-exit'));ok();
+  assert.equal(JSON.stringify(tm().exitAreas),JSON.stringify([{x:0,y:0,w:2,h:2}]));d.querySelector('[data-field=map]').click();d.querySelector('[data-mode=exit]').click();d.querySelector('[data-exit="0"]').click();ok();assert(!tm().exitAreas);
+  open('events','イベント');button($('inputActions'),'イベントを追加').click();button($('inputActions'),'起こすことを追加').click();ch('exit_area');ef('mappick');cell(2,2);cell(3,2);ef('on');button($('inputActions'),'戻る').click();button($('inputActions'),'一覧へ戻る').click();ok();
+  assert.equal(JSON.stringify(tm().events.at(-1).actions[0]),JSON.stringify({type:'exit_area',x:2,y:2,w:2,h:1,on:false}));}
  // Deeper checks: unreachable places, things that never happen, victory that can't be won.
  {const base=JSON.parse(JSON.stringify(tm())),iss=x=>M.issues('tmissions',x),has=(x,t)=>iss(x).some(z=>z.includes(t)),W=base.map.width,H=base.map.height;
   let x=JSON.parse(JSON.stringify(base));x.map.grid=x.map.grid.map((r,y)=>r.map((k,c)=>c===W-2?'k':k));x.victory={type:'reach',x:W-1,y:0};assert(has(x,'たどり着けません（勝てない作戦）'),JSON.stringify(iss(x)));

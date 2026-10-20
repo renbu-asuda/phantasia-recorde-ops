@@ -34,3 +34,4 @@
 .tmap-cell .tmap-fac{position:absolute;top:0;right:1px;font-style:normal;font-size:9px}.tmap-fac-neutral{color:#ccc}.tmap-fac-player{color:#d6ed83}.tmap-fac-ally{color:#6fd18a}.tmap-fac-enemy{color:#ff7d6b}.tmap-fac-third{color:#e8d04a}
 .tmap-cell.tmap-out{opacity:.35}
 .tmap-cell.tmap-sel{outline:2px solid var(--accent);outline-offset:-2px}.tmap-cell.tmap-start{outline:2px dashed var(--accent);outline-offset:-2px}
+.tmap-cell.tmap-exit{box-shadow:inset 0 0 0 3px #7fd6ff}
