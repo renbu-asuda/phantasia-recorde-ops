@@ -25,7 +25,7 @@ dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);max
   </div></div><input id="importFile" type="file" accept=".js,.json,application/json,text/javascript" hidden>
  </section>
  <section id="listView" hidden aria-labelledby="listTitle"><div class="td-head"><div><p class="eyebrow" id="listEyebrow"></p><h1 id="listTitle" tabindex="-1"></h1></div><button class="secondary" type="button" id="backMenu">← メニュー</button></div>
-  <div class="td-layout"><aside class="td-side"><div class="td-tools"><input id="listSearch" type="search" placeholder="名前・IDで検索" aria-label="検索"><button class="primary" type="button" id="listNew">＋ 新しく作る</button></div><div id="itemList" class="cmd-list td-items" role="menu" aria-label="一覧"></div></aside>
+  <div class="td-layout"><aside class="td-side"><div class="td-tools"><input id="listSearch" type="search" placeholder="名前・ID・#タグで検索" aria-label="検索"><button class="primary" type="button" id="listNew">＋ 新しく作る</button></div><div id="itemList" class="cmd-list td-items" role="menu" aria-label="一覧"></div></aside>
   <section class="td-editor" aria-label="編集"><div id="editorEmpty" class="sub">左の一覧から選ぶか、「新しく作る」を押してください。</div><div id="editor" hidden><div class="td-editor-head"><div><h2 id="editName"></h2><p id="editId" class="sub"></p></div><div class="td-editor-actions"><button class="secondary" type="button" id="editCopy">複製</button><button class="secondary" type="button" id="editDelete">削除</button></div></div><p id="editIssues" class="td-issues" role="status"></p><div id="editRows" class="cmd-list td-rows" role="menu" aria-label="項目"></div><div id="editUsage" class="td-usage"></div></div></section></div>
  </section>
 </main>
