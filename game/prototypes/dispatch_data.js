@@ -16,5 +16,6 @@ const conditions=m=>{try{return C.missionConditions(m,names);}catch(e){return {w
 const listing=()=>missions.map(m=>({id:m.id,code:'PRO・D / RANK '+(m.diff||'C'),kind:'dispatch',name:m.name,desc:m.desc,goal:conditions(m).win.replace(/^勝利(条件)?[:：]\s*/,''),terrainLabel:m.terrain||'標準',formation:'出撃'+m.maxDeploy+'体まで・総サイズ8',reward:(m.reward||0).toLocaleString()+' Cr',color:'#33304a'}));
 // Item names from the published item pack, when it is loaded (drops are received into the test save).
 const itemNames=Object.fromEntries((window.VAIS_ITEM_PACK?.items||[]).map(i=>[i.id,i.name]));
-window.PRODispatchData=Object.freeze({itemName:id=>itemNames[id]||id,packName:M.packName,defs,players:()=>units.filter(u=>u.deploy.player).map(u=>C.clone(u)),mission:id=>missions.find(m=>m.id===id)||null,conditions,listing,needsCrew:u=>u.crew==='required'});
+window.PRODispatchData=Object.freeze({itemName:id=>itemNames[id]||id,packName:M.packName,defs,// PRO・D player units come from the published data, i.e. with the built-in sample pack only (an empty start has none).
+players:()=>window.PROTacticalData&&!window.PROTacticalData.usesSample?[]:units.filter(u=>u.deploy.player).map(u=>C.clone(u)),mission:id=>missions.find(m=>m.id===id)||null,conditions,listing,needsCrew:u=>u.crew==='required'});
 })();
