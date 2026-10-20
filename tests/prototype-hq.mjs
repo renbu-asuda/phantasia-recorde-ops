@@ -111,6 +111,23 @@ w=open({});{const L=w.PROUnitLab,D=w.PROTacticalData,DD=w.PRODispatchData,d=w.do
  // Deploy rules: minimum level.
  assert.equal(L.deployProblem({requires:{minLevel:3}},{tags:[]},2),'Lv3以上が必要');assert.equal(L.deployProblem({requires:{minLevel:3}},{tags:[]},3),'');saved=dump(w);}
 w.close();w=open(saved);assert.equal(w.PROUnitLab.record('training-01').clears,2);w.close();
+// Sortie support: PRO・D auto lineup, win estimate, presets, supply; story choices with display conditions; Tactical presets and supply.
+w=open({});{const L=w.PROUnitLab,DD=w.PRODispatchData,X=w.PRODispatch,d=w.document;const mid=DD.listing()[0].id;X.show(mid);
+ X.auto();assert(X.chosen().length>0);assert(X.chosen().length<=DD.mission(mid).maxDeploy);await new Promise(r=>setTimeout(r,300));for(let i=0;i<50&&!/推定勝率 \d/.test(d.querySelector('#dispatchEstimate').textContent);i++)await new Promise(r=>setTimeout(r,50));assert(/推定勝率 \d+%/.test(d.querySelector('#dispatchEstimate').textContent),d.querySelector('#dispatchEstimate').textContent);
+ const picked=X.chosen();d.querySelector('#dispatchPresets').click();d.querySelector('#labWinActions [data-preset=save1]').click();X.choose([]);d.querySelector('#dispatchPresets').click();d.querySelector('#labWinActions [data-preset=load1]').click();assert.deepEqual([...X.chosen()],[...picked]);
+ // Supply: pick for the first unit; consumed when the sortie starts.
+ d.querySelector('[data-supply="'+picked[0]+'"]').click();[...d.querySelectorAll('#labWinActions button')].find(b=>b.textContent.startsWith('戦闘糧食')).click();assert.equal(X.supply()[picked[0]],'stim');
+ const p=X.start({watch:false});for(let i=0;i<100&&!d.querySelector('#fieldBattle').open&&!d.querySelector('#labWindow').open;i++){if(d.querySelector('#storyWindow').open)d.querySelector('#storySkip').click();await new Promise(r=>setTimeout(r,20));}
+ if(d.querySelector('#labWindow').open)d.querySelector('#labWinActions [data-lab=choice0]')?.click();for(let i=0;i<200&&(!d.querySelector('#fieldBattle').open||d.querySelector('#fieldBattleClose').disabled);i++){if(d.querySelector('#storyWindow').open)d.querySelector('#storySkip').click();await new Promise(r=>setTimeout(r,20));}
+ d.querySelector('#fieldBattleClose').click();let fin=false;p.then(()=>{fin=true;});for(let i=0;i<200&&!fin;i++){if(d.querySelector('#storyWindow').open)d.querySelector('#storySkip').click();await new Promise(r=>setTimeout(r,20));}await p;assert.equal(L.items().stim,1);assert.equal(JSON.stringify(X.supply()),'{}');
+ // Choices: a choice whose display condition fails is left out; the picked choice's flags are saved.
+ L.setFlag('f-test',false);const cp=L.pickChoice('テスト',[{text:'A',flags:{a:true}},{text:'B',conds:{mode:'all',list:[{type:'flag',flagId:'f-test',on:true}]}}]);assert.equal(d.querySelectorAll('#labWinActions button').length,1);d.querySelector('#labWinActions [data-lab=choice0]').click();assert.equal((await cp).text,'A');assert.equal(L.flags().a,true);
+ // Tactical presets and supply.
+ const P=w.PROPreparation;w.location.hash='#prepare';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,400));P.addUnit('infantry');P.addUnit('scout');d.querySelector('#prepPresets').click();[...d.querySelectorAll('#prepChoices button')].find(b=>b.textContent.startsWith('保存 2')).click();
+ d.querySelector('[data-uid=infantry] [data-supply=infantry]').click();[...d.querySelectorAll('#prepChoices button')].find(b=>b.textContent.startsWith('戦闘糧食')).click();const atk=L.owned().find(u=>u.uid==='infantry').atk;d.querySelector('#prepConfirm').click();
+ const dep=w.PROField._live().groups.find(g=>g.faction==='player').members.find(m=>m.uid==='infantry');assert.equal(dep.unit.atk,Math.round(atk*1.2));assert.equal(L.items().stim||0,0);
+ assert.equal(L.getPreset('tactical',1).groups[0].members.length,2);}
+w.close();
 // 2) Maker source: draft units, evolutions and variants join the built-in data; invalid links are dropped.
 w=open({...saved,PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(draft)});D=w.PROTacticalData;L=w.PROUnitLab;
 assert.equal(D.source,'maker');assert.equal(D.makerName,'テストパック');assert(D.roster().some(u=>u.id==='td-u-a'));assert(!D.roster().some(u=>u.id==='td-u-b'));assert(D.roster().some(u=>u.id==='infantry'));
@@ -121,4 +138,4 @@ assert.equal(L.credits(),24800);assert(L.owned().some(u=>u.id==='tank'));assert(
 assert(w.document.querySelector('#dataSourceText').textContent.includes('テストパック'));w.close();
 // 3) Maker source selected but no draft: falls back to the built-in data.
 w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'builtin');w.close();
-console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), missions (lock, hidden, rewards, stars, records, recruits, deploy rules), item use (boosts, limits, EXP, base-only effects) and equipment (slots, stats, weapons), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
+console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), sortie support (auto lineup, estimate, presets, supply, choices), missions (lock, hidden, rewards, stars, records, recruits, deploy rules), item use (boosts, limits, EXP, base-only effects) and equipment (slots, stats, weapons), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
