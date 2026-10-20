@@ -85,6 +85,7 @@ function enemiesWindow(m,side='enemies'){const ally=side==='allies',list=clone(m
   else row('勢力',g.faction==='third'?'第三勢力（黄・全員と敵対）':'敵（赤）',()=>{if(g.faction==='third')delete g.faction;else g.faction='third';one(i);},'faction');
   row('増援（最初はいない）',g.reinforce?'増援':'最初から配置',()=>{if(g.reinforce)delete g.reinforce;else g.reinforce=true;one(i);},'reinforce');
   if(!ally||g.faction==='ally')row('AIルール（上から優先）',(g.aiRules||[]).length?(g.aiRules||[]).length+'件':'なし（AIパターンで動く）',()=>aiRulesWindow({...m,[side]:list},clone(g.aiRules||[]),r=>{if(r.length)g.aiRules=r;else delete g.aiRules;one(i);},()=>one(i)),'rules');
+  if(!ally||g.faction==='ally')for(const [k,label] of Object.entries(SMART))row('賢さ：'+label,g.smart?.[k]?'ON':'OFF',()=>{g.smart={...(g.smart||{}),[k]:!g.smart?.[k]};if(!g.smart[k])delete g.smart[k];if(!Object.keys(g.smart).length)delete g.smart;one(i);},'smart-'+k);
   if(!ally||g.faction==='ally'){row('AI',AI[g.ai?.pattern||'assault'],()=>{const ks=Object.keys(AI);g.ai={...g.ai,pattern:ks[(ks.indexOf(g.ai?.pattern||'assault')+1)%ks.length]};one(i);},'pattern');
   row('狙う相手',TARGET[g.ai?.target||'lowest_hp'],()=>{const ks=Object.keys(TARGET);g.ai={...g.ai,target:ks[(ks.indexOf(g.ai?.target||'lowest_hp')+1)%ks.length]};one(i);},'target');
   if(g.ai?.pattern==='ambush')row('反応距離',String(g.ai.triggerRange??4),()=>numberPrompt('反応距離',g.ai.triggerRange??4,1,30,v=>{if(v!=null)g.ai.triggerRange=v;one(i);},()=>one(i)),'triggerRange');
