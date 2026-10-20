@@ -335,7 +335,7 @@ function checkAchievements(){const fresh=[];for(const a of ach()){if(achieved[a.
  credits+=a.reward?.credits||0;for(const [id,n] of Object.entries(a.reward?.items||{}))items[id]=(items[id]||0)+n;fresh.push(a);notices.push('実績「'+a.name+'」を達成'+(a.reward?.credits?'（+'+a.reward.credits.toLocaleString()+' Cr）':''));}if(fresh.length)showCredits();return fresh;}
 const rewardText=a=>[a.reward?.credits?a.reward.credits.toLocaleString()+' Cr':'',...Object.entries(a.reward?.items||{}).map(([id,n])=>D.itemName(id)+'×'+n)].filter(Boolean).join('・')||'なし';
 // Battle records: totals and the last 20 battles (mission, outcome, turns, stars, credits and the battle log).
-function recordBattle(m,kind,rep,{outcome,turns,log=[]}){stats.battles++;stats[outcome]=(stats[outcome]||0)+1;history.unshift({day,id:m.id,name:m.name,kind,outcome,turns,stars:(rep?.stars||[]).filter(Boolean).length,credits:rep?.credits||0,log:log.slice(-400)});history=history.slice(0,20);save();window.PROSave?.autoSave();}
+function recordBattle(m,kind,rep,{outcome,turns,log=[]}){stats.battles++;stats[outcome]=(stats[outcome]||0)+1;history.unshift({day,id:m.id,name:m.name,kind,outcome,turns,stars:(rep?.stars||[]).filter(Boolean).length,credits:rep?.credits||0,log:log.slice(-1500)});history=history.slice(0,20);save();window.PROSave?.autoSave();}
 const OUT={win:'勝利',lose:'敗北',draw:'引き分け'};
 function openAchievements(){const list=ach().filter(a=>!a.hidden||achieved[a.id]);const n=ach().filter(a=>achieved[a.id]).length;
  win('実績','実績 '+n+' / '+ach().length,list.map(a=>(achieved[a.id]?'★ ':'☆ ')+a.name+' — '+(a.desc||'')+' ｜ 報酬：'+rewardText(a)+(achieved[a.id]?'（'+achieved[a.id]+'日目に達成）':'')).concat(ach().length>list.length?['？？？（隠し実績 '+(ach().length-list.length)+'件）']:[]),[['閉じる',close]]);}

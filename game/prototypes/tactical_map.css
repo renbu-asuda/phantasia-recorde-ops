@@ -48,3 +48,8 @@
 .field-tile.impass{background:#3a3430;color:#b9ada2}.field-tile.door{background:#5a3c26;color:#f0c9a0}
 .field-tile.goal-mark{box-shadow:inset 0 0 0 3px #e9d36a}.field-tile.target-squad{box-shadow:inset 0 0 0 3px #ff6f9a}
 .mission-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.mission-tabs button[aria-pressed=true]{outline:2px solid var(--accent)}
+.op-log{max-height:52vh;overflow:auto;background:#0b1217;border:1px solid #2a3a44;padding:8px 10px;font-size:12px;line-height:1.6;min-width:min(520px,80vw)}.op-log p{margin:0}
+.op-log .op-log-turn{color:var(--accent);font-weight:700;margin-top:6px}.op-log .op-log-battle{color:#ffb4a6}.op-log .op-log-event{color:#e9d36a}.op-log .op-log-system{color:#9fc8dc}.op-log .op-log-detail{color:#8a979f;padding-left:1em}
+.mission-tabs{flex-direction:row!important}.mission-tabs button{width:auto!important;min-height:34px!important;padding:4px 12px!important;flex:0 0 auto}
+.log-view .op-log{flex:0 0 auto;min-height:220px}.log-view{overflow:visible}
+@media (max-width:600px){.op-log{max-height:38vh;min-height:160px}}
