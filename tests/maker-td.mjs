@@ -168,7 +168,7 @@ M.openKind('tmissions');await new Promise(r=>setTimeout(r,50));$('listNew').clic
  ok();button($('inputActions'),'一覧へ戻る').click();ok();{const r=tm().enemies[0].aiRules;assert.equal(r.length,2);assert.equal(JSON.stringify(r[1].conds[0]),JSON.stringify({type:'not_reach',x:4,y:0,w:2}));assert.equal(JSON.stringify(r[1].acts[1].target),JSON.stringify({kind:'tag',value:'隊長'}));assert.equal(M.issues('tmissions',tm()).length,0,JSON.stringify(M.issues('tmissions',tm())));}
  d.querySelector('[data-field=map]').click();d.querySelector('[data-mode=ftag]').click();d.querySelector('[data-x="1"][data-y="1"]').click();$('inputValue').value='補給所、#前線';ok();ok();assert.equal(JSON.stringify(tm().facilityTags),JSON.stringify({'1,1':['補給所','前線']}));
  // Smart behaviour switches per squad.
- open('enemies','マップと配置');d.querySelector('#inputBody [data-squad="0"]').click();ef('smart-target');ef('smart-domain');ef('smart-domain');button($('inputActions'),'一覧へ戻る').click();ok();assert.equal(JSON.stringify(tm().enemies[0].smart),JSON.stringify({target:true}));
+ open('enemies','マップと配置');d.querySelector('#inputBody [data-squad="0"]').click();ef('smart-target');ef('smart-domain');ef('smart-domain');ef('smart-retreatHeal');ef('retreatAt');$('inputValue').value='25';ok();button($('inputActions'),'一覧へ戻る').click();ok();assert.equal(JSON.stringify(tm().enemies[0].smart),JSON.stringify({target:true,retreatHeal:true}));assert.equal(tm().enemies[0].retreatAt,25);
  // Spawning a squad that is not a reinforcement is reported.
  {const x=JSON.parse(JSON.stringify(tm()));x.events[0].actions[1].groupId='enemy-1';assert(M.issues('tmissions',x).some(i=>i.includes('増援に出す部隊')));}
  // Deleting the custom terrain turns its squares into plain ground.
