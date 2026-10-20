@@ -13,7 +13,9 @@ const read=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
 const FAC_FN=['income','supply','repair','defense','hq','reward','produce','gate','exit','resupply'];
 function normFacility(f){if(!f)return null;if(typeof f==='string')return {durability:20,functions:{[f]:{}}};const fn={};for(const k of FAC_FN)if(f.functions?.[k])fn[k]={...f.functions[k]};return Object.keys(fn).length?{durability:Number(f.durability)>0?Number(f.durability):20,functions:fn}:null;}
 // Stage 9: Tactical ammo (weapon 'ammo', per mission) and EN ('enCost' on weapons / skills) survive core normalization.
-const keepRes=(o,src)=>o&&{...o,...(Number(src.ammo)>0?{ammo:Number(src.ammo)}:{}),...(Number(src.enCost)>0?{enCost:Number(src.enCost)}:{})};
+const keepRes=(o,src)=>o&&{...o,...(Number(src.ammo)>0?{ammo:Number(src.ammo)}:{}),...(Number(src.enCost)>0?{enCost:Number(src.enCost)}:{}),...(src.tactical?{tactical:C.clone(src.tactical)}:{})};
+// A map-only skill (tacticalOnly) has no local-battle effect; it is kept for its tactical part.
+const skillOf=(x,ok)=>x.tacticalOnly?{id:x.id,name:x.name||x.id,tacticalOnly:true,tactical:C.clone(x.tactical||{})}:keepRes(ok(C.skill,{...x}),x);
 const parsePack=t=>{try{const d=JSON.parse(t||'null');return d&&d.format==='PRO_TD_PACK'&&typeof d==='object'?d:null;}catch(e){return null;}};
 function makerDraft(){return parsePack(read(DRAFT_KEY));}
 function packFile(){return parsePack(read(PACK_KEY));}
@@ -27,7 +29,7 @@ function fromMaker(d){const find=(k,id)=>(d[k]||[]).find(x=>x.id===id),ok=(f,x)=
   // Pilot profile skills may be pack skill IDs.
   const pilotProfile=u.pilotProfile&&{...u.pilotProfile,skills:[...(u.pilotProfile.skills||[]),...(u.pilotProfile.skillIds||[]).map(id=>find('skills',id)).filter(Boolean)]};
   const skillTree=(u.skillTree||[]).map(n=>({...n,skill:n.skill||(n.skillId?find('skills',n.skillId):null)})).filter(n=>n.id&&n.skill);
-  return {...rest,skillTree,...(pilotProfile?{pilotProfile}:{}),hp:Number(u.hp)||3000,atk:Number(u.atk)||0,def:Number(u.def)||0,mob:Number(u.mob)||0,acc:Number(u.acc)||0,weapons,skills:(skillIds||[]).map(id=>find('skills',id)).filter(Boolean).map(x=>keepRes(ok(C.skill,{...x}),x)).filter(Boolean),tags:u.tags||[],_player:!!deploy?.player};});
+  return {...rest,skillTree,...(pilotProfile?{pilotProfile}:{}),hp:Number(u.hp)||3000,atk:Number(u.atk)||0,def:Number(u.def)||0,mob:Number(u.mob)||0,acc:Number(u.acc)||0,weapons,skills:(skillIds||[]).map(id=>find('skills',id)).filter(Boolean).map(x=>skillOf(x,ok)).filter(Boolean),tags:u.tags||[],_player:!!deploy?.player};});
  const ids=new Set([...taken,...units.map(u=>u.id)]),has=id=>ids.has(id);
  // Custom terrains (T&D) usable as Tactical squares: keyed by terrain id, with kind, costs, blockTags and the
  // Dispatch combat effects kept for later use in local battles. Terrains without a Tactical square are skipped; one with a kind but no costs is impassable.
