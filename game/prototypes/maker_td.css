@@ -42,3 +42,4 @@
 .pix-swatch{min-width:44px;color:#fff;text-shadow:0 0 2px #000}
 .pix-preview{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
 .pix-thumb{display:inline-block;image-rendering:pixelated;background-color:#385342;border:1px solid #ffffff22}
+#inputColor{width:56px;height:40px;padding:0;border:1px solid var(--line);background:none}
