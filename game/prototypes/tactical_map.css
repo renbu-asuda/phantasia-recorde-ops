@@ -44,3 +44,7 @@
 .screen-fade{border:0;padding:0;margin:0;max-width:none;max-height:none;width:100vw;height:100vh;height:100dvh;background:#000;opacity:0;transition:opacity .3s ease;display:none;place-items:center;color:#9aa}.screen-fade[open]{display:grid}.screen-fade.shown{opacity:1}.screen-fade::backdrop{background:transparent}#screenFadeLabel{font-size:13px;letter-spacing:.2em}
 /* Mission talk / notices (T&D events) */
 #fieldChoiceBody.talk .talk-text{white-space:pre-wrap;line-height:1.8;margin:0 0 12px;min-width:min(420px,80vw)}
+/* Impassable squares, objective marks */
+.field-tile.impass{background:#3a3430;color:#b9ada2}.field-tile.door{background:#5a3c26;color:#f0c9a0}
+.field-tile.goal-mark{box-shadow:inset 0 0 0 3px #e9d36a}.field-tile.target-squad{box-shadow:inset 0 0 0 3px #ff6f9a}
+.mission-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.mission-tabs button[aria-pressed=true]{outline:2px solid var(--accent)}

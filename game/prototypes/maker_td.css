@@ -28,3 +28,4 @@
 .tmap-cell{width:auto;height:auto;aspect-ratio:1;min-width:16px;padding:0;font-size:9px;position:relative;overflow:hidden}.tmap-cell strong{font-size:9px;display:block;color:#d6ed83}.tmap-cell .tmap-enemy{color:#ffbaa8}
 .tmap-bad{outline:2px solid #ff8273;outline-offset:-2px}
 .tmap-cell .tmap-ally{color:#8fd3ff}
+.field-tile.impass{background:#3a3430;color:#b9ada2}.field-tile.door{background:#5a3c26;color:#f0c9a0}
