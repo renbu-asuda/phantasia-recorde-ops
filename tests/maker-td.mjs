@@ -198,6 +198,11 @@ M.openKind('tmissions');await new Promise(r=>setTimeout(r,50));$('listNew').clic
   let r=tm().enemies[0].aiRules.at(-1);assert.equal(JSON.stringify(r.conds[0]),JSON.stringify({type:'reach',x:1,y:1,w:2,h:3,area:'area-1'}));assert.equal(JSON.stringify(r.acts[0]),JSON.stringify({type:'move',x:3,y:0,w:2,h:2}));
   d.querySelector('[data-field=map]').click();d.querySelector('[data-mode=area]').click();cell(5,0);cell(6,1);ok();r=tm().enemies[0].aiRules.at(-1);assert.equal(JSON.stringify(r.conds[0]),JSON.stringify({type:'reach',x:5,y:0,w:2,h:2,area:'area-1'}),'follows the area');
   d.querySelector('[data-field=map]').click();d.querySelector('[data-mode=area]').click();d.querySelector('[data-maptool=delarea]').click();ok();assert(!tm().areas);assert(!('area' in tm().enemies[0].aiRules.at(-1).conds[0]));}
+ // Enemy wipe counting only the shown part of the map (needs a starting view).
+ {const has=()=>!!d.querySelector('[data-field="victory.seenOnly"]'),v0=JSON.stringify(tm().victory),setV=k=>{d.querySelector('[data-group="勝敗条件"]')?.click();d.querySelector('[data-field="victory.type"]').click();d.querySelector('#inputBody [data-choice="'+k+'"]').click();};
+  setV('enemy_wipe');assert(!has(),'hidden without a starting view');d.querySelector('[data-field=map]').click();d.querySelector('[data-mode=view]').click();d.querySelector('#inputBody [data-x="0"][data-y="0"]').click();d.querySelector('#inputBody [data-x="5"][data-y="4"]').click();ok();
+  d.querySelector('[data-group="勝敗条件"]')?.click();assert(has());d.querySelector('[data-field="victory.seenOnly"]').click();assert.equal(tm().victory.seenOnly,true);
+  d.querySelector('[data-field=map]').click();d.querySelector('[data-mode=view]').click();d.querySelector('[data-maptool=viewall]').click();ok();setV('boss');assert.equal(tm().victory.type,'boss',v0);}
  // Deeper checks: unreachable places, things that never happen, victory that can't be won.
  {const base=JSON.parse(JSON.stringify(tm())),iss=x=>M.issues('tmissions',x),has=(x,t)=>iss(x).some(z=>z.includes(t)),W=base.map.width,H=base.map.height;
   let x=JSON.parse(JSON.stringify(base));x.map.grid=x.map.grid.map((r,y)=>r.map((k,c)=>c===W-2?'k':k));x.victory={type:'reach',x:W-1,y:0};assert(has(x,'たどり着けません（勝てない作戦）'),JSON.stringify(iss(x)));

@@ -73,7 +73,7 @@ function openCommand(){if(!state||busy||state.outcome||!current())return;if(mode
 // Mission events may replace either condition (state.victory / state.defeat). Wiping out the enemy always wins.
 function outcome(){if(!state)return null;if(!state.outcome){fire();const m=mission(),v=state.victory||(typeof m.victory==='object'?m.victory:{type:m.victory||'enemy_wipe'}),f=state.defeat||(typeof m.defeat==='object'?m.defeat:{type:m.defeat||'player_wipe'}),pl=state.groups.filter(g=>g.faction==='player'),en=state.groups.filter(g=>g.faction==='enemy');
  if(!pl.length||(f.type!=='turn_limit'&&cond(f))||hqLost())state.outcome='defeat';
- else if(!en.length||(v.type!=='enemy_wipe'&&cond(v)))state.outcome='victory';
+ else if(!en.length||cond(v))state.outcome='victory';
  else if(f.type==='turn_limit'&&cond(f))state.outcome='defeat';
  if(state.outcome){log('system',state.outcome==='victory'?'作戦成功':'作戦失敗');fire(state.outcome);}}return state.outcome;}
 /* ---------- T&D mission events: reinforcements, withdrawals, talk / choices, flags, terrain and condition changes,
@@ -90,7 +90,7 @@ function cond(c,phase){if(!c)return false;const pl=state.groups.filter(g=>g.fact
  case 'unit_down':return (state.deployed||[]).some(d=>d.id===c.unitId)&&!pl.some(g=>allMembers(g).some(x=>x.unit.id===c.unitId))&&!(state.retreated||[]).some(r=>r.id===c.unitId);case 'loss':return lostAny();
  case 'objective_done':return state.objectives?.[c.objectiveId]==='done';case 'objective_failed':return state.objectives?.[c.objectiveId]==='failed';case 'game_flag':{const v=c.flagId in (state.gameFlags||{})?!!state.gameFlags[c.flagId]:!!window.PROUnitLab?.evalConds({list:[{type:'flag',flagId:c.flagId,on:true}]})?.ok;return v===(c.on!==false);}case 'capture':case 'captured':{const f=fac(c.x,c.y);return !!f&&f.owner===(c.by||'player');}case 'facility_lost':{const f=fac(c.x,c.y);return !!f&&['enemy','third'].includes(f.owner);}
  case 'game_cond':return !!window.PROUnitLab?.evalConds(c.conds||{list:[]})?.ok;
- case 'enemy_wipe':return !en.length;case 'player_wipe':return !pl.length;case 'within':return phase==='victory'&&state.turn<=c.turns;case 'no_loss':return phase==='victory'&&!lostAny();default:return false;}}
+ case 'enemy_wipe':return !(c.seenOnly?en.filter(seenG):en).length;case 'player_wipe':return !pl.length;case 'within':return phase==='victory'&&state.turn<=c.turns;case 'no_loss':return phase==='victory'&&!lostAny();default:return false;}}
 // Objectives: hidden (appear by event) → open → done / failed. A turn limit counts from the turn it appeared.
 // Events and objectives are re-checked until nothing changes, so a result can trigger the next event in the chain.
 function fire(phase){const m=mission();if(!m.events?.length&&!m.objectives?.length)return;state.fired=state.fired||[];state.flags=state.flags||{};state.objectives=state.objectives||{};state.objStart=state.objStart||{};
