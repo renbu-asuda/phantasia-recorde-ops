@@ -81,6 +81,11 @@ root.PROTacticalBuiltinPack={
  research:[{id:'r-data',name:'戦闘記録の解析',desc:'過去の戦闘を解析し、戦闘データを得る。',days:1,cost:{credits:500},unlock:{grantItems:{data:2}}},
   {id:'r-armor',name:'装甲改良',desc:'主力戦車改の生産技術。',days:2,cost:{credits:2000,items:{parts:3}},unlock:{register:['tank2']}},
   {id:'r-ace',name:'エース機の再現',desc:'エース偵察車を再現し、部隊に迎える。',days:3,requires:['r-armor'],cost:{credits:3000,items:{alloy:1,data:1}},unlock:{units:['scout_ace']}}],
+ // Achievements: a condition set (T&D) checked against the save; reward credits / items once. hidden: not shown until earned.
+ achievements:[{id:'ach-first',name:'初勝利',desc:'作戦に1回勝利する',conds:{mode:'all',list:[{type:'wins_total',cmp:'ge',value:1}]},reward:{credits:500}},
+  {id:'ach-train',name:'訓練修了',desc:'機動訓練を星3つでクリアする',conds:{mode:'all',list:[{type:'mission_stars',missionId:'training-01',cmp:'ge',value:3}]},reward:{items:{chip:1}}},
+  {id:'ach-armor',name:'技術者',desc:'装甲改良の研究を完了する',conds:{mode:'all',list:[{type:'research_done',researchId:'r-armor'}]},reward:{credits:1000}},
+  {id:'ach-rich',name:'資産家',desc:'資金を50,000Cr以上ためる',hidden:true,conds:{mode:'all',list:[{type:'credits_have',cmp:'ge',value:50000}]},reward:{items:{revive:1}}}],
  // Production / hire entries (same shape as T&D hires): cost in credits, limit = max hires (unset = no limit),
  // requires.missions = missions to clear first, conds = extra condition set, hidden = not listed until available.
  hires:[{id:'hire-aoi',unitId:'aoi',cost:1500},{id:'hire-infantry',unitId:'infantry',cost:800},{id:'hire-scout',unitId:'scout',cost:1500,limit:3},{id:'hire-tank',unitId:'tank',cost:2500,requires:{missions:['training-01']}},

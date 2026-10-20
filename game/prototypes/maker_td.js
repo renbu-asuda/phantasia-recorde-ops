@@ -3,12 +3,12 @@
    and reported. Draft is auto-saved to this browser; export is a T&D JSON pack (not the published format). */
 (function(){'use strict';
 const C=window.PROCore,$=id=>document.getElementById(id),DRAFT='PRO_TD_MAKER_DRAFT',FORMAT='PRO_TD_PACK';
-const KINDS={units:{label:'ユニット',en:'UNITS',prefix:'u'},weapons:{label:'武装',en:'WEAPONS',prefix:'w'},skills:{label:'スキル',en:'SKILLS',prefix:'s'},missions:{label:'ディスパッチ作戦',en:'DISPATCH MISSIONS',prefix:'m'},items:{label:'アイテム',en:'ITEMS',prefix:'i'},flags:{label:'フラグ',en:'FLAGS',prefix:'f'},terrains:{label:'独自の地形',en:'TERRAINS',prefix:'t'},research:{label:'研究',en:'RESEARCH',prefix:'r'},hires:{label:'雇用',en:'HIRES',prefix:'h'},evolutions:{label:'開発・進化',en:'EVOLUTION',prefix:'ev'},fusions:{label:'設計・合成',en:'FUSION',prefix:'fu'}};
+const KINDS={units:{label:'ユニット',en:'UNITS',prefix:'u'},weapons:{label:'武装',en:'WEAPONS',prefix:'w'},skills:{label:'スキル',en:'SKILLS',prefix:'s'},missions:{label:'ディスパッチ作戦',en:'DISPATCH MISSIONS',prefix:'m'},items:{label:'アイテム',en:'ITEMS',prefix:'i'},flags:{label:'フラグ',en:'FLAGS',prefix:'f'},terrains:{label:'独自の地形',en:'TERRAINS',prefix:'t'},research:{label:'研究',en:'RESEARCH',prefix:'r'},hires:{label:'雇用',en:'HIRES',prefix:'h'},evolutions:{label:'開発・進化',en:'EVOLUTION',prefix:'ev'},fusions:{label:'設計・合成',en:'FUSION',prefix:'fu'},achievements:{label:'実績',en:'ACHIEVEMENTS',prefix:'ac'}};
 const BUILTIN_TERRAINS=['標準','市街地','森林','砂漠','夜間','雪原','島嶼','月面','宇宙','水中'];
 const el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;};
 const clone=x=>JSON.parse(JSON.stringify(x));
 let data=empty(),kind='units',selectedId=null,openGroups=new Set();
-function empty(){return {format:FORMAT,version:1,packId:'td-pack',name:'新しいパック',units:[],weapons:[],skills:[],missions:[],items:[],flags:[],terrains:[],research:[],hires:[],evolutions:[],fusions:[]};}
+function empty(){return {format:FORMAT,version:1,packId:'td-pack',name:'新しいパック',units:[],weapons:[],skills:[],missions:[],items:[],flags:[],terrains:[],research:[],hires:[],evolutions:[],fusions:[],achievements:[]};}
 
 /* ---------- field schema: only fields the current game uses ---------- */
 const STAT=(key,label,min=0,max=1000000)=>({key,label,type:'number',min,max,group:'能力'});
@@ -125,6 +125,9 @@ FIELDS.evolutions=[{key:'name',label:'進化の名前',type:'text',group:'基本
   CONDS_FIELD('conds','進化の条件','条件'),{key:'register',label:'進化後のユニットを生産・雇用リストに登録する',type:'toggle',group:'結果'},
   {key:'carry.level',label:'レベル・経験値・スキルポイントを引き継ぐ',type:'toggle',group:'引き継ぐもの'},{key:'carry.equipment',label:'装備を引き継ぐ',type:'toggle',group:'引き継ぐもの'},{key:'carry.skills',label:'習得スキルを引き継ぐ',type:'toggle',group:'引き継ぐもの'},
   {key:'hidden',label:'条件を満たすまで表示しない',type:'toggle',group:'詳細'},{key:'note',label:'説明',type:'text',group:'詳細'}];
+// Achievements (T&D): a condition set checked against the player's save; reward once; hidden until earned.
+FIELDS.achievements=[{key:'name',label:'実績名',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},{key:'desc',label:'説明（達成方法）',type:'text',group:'基本'},
+  {key:'reward.credits',label:'報酬：資金（Cr）',type:'number',min:0,group:'報酬'},{key:'reward.items',label:'報酬：アイテム',type:'itemCounts',group:'報酬'},{key:'hidden',label:'達成するまで隠す',type:'toggle',group:'詳細'}];
 FIELDS.fusions=[{key:'name',label:'合成の名前',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},
   {key:'materials',label:'素材のユニット（2〜8体）',type:'materials',group:'基本'},CONDS_FIELD('conds','合成の条件','条件'),
   {key:'result.type',label:'結果',type:'select',choices:{unit:'新しいユニットを入手',register:'生産・雇用リストに登録のみ（ユニットは入手しない）',hire:'雇用を解禁'},group:'結果'},
@@ -134,6 +137,7 @@ FIELDS.fusions=[{key:'name',label:'合成の名前',type:'text',group:'基本'},
 FIELDS.missions.splice(FIELDS.missions.findIndex(f=>f.key==='requires.flags')+1,0,CONDS_FIELD('conds','追加の解放条件','解放条件'));
 FIELDS.hires.splice(FIELDS.hires.findIndex(f=>f.key==='requires.day')+1,0,CONDS_FIELD('conds','追加の雇える条件','雇える条件'));
 FIELDS.research.splice(FIELDS.research.findIndex(f=>f.key==='requires')+1,0,CONDS_FIELD('conds','追加の研究条件','研究に必要なもの'));
+FIELDS.achievements.splice(3,0,CONDS_FIELD('conds','達成条件','基本'));
 FIELDS.items.splice(FIELDS.items.findIndex(f=>f.key==='shop.requiresResearch')+1,0,CONDS_FIELD('conds','ショップに並ぶ追加の条件','ショップ'));
 FIELDS.items.splice(FIELDS.items.findIndex(f=>f.key==='effects')+1,0,CONDS_FIELD('useConds','使える条件','基本'));
 FIELDS.units.push(CONDS_FIELD('joinConds','加入の条件（ドロップ・雇用など）','育成・運用'));
@@ -147,7 +151,7 @@ const DEFAULT={units:()=>({name:'新しいユニット',role:'',tags:[],deploy:{
  skills:()=>({name:'新しいスキル',trigger:'battle_start',effect:'atk_up_pct',value:10,chance:100,maxUses:1,duration:3}),
  flags:()=>({name:'新しいフラグ',desc:''}),
  evolutions:()=>({name:'新しい進化',from:data.units[0]?.id,to:data.units[1]?.id,conds:{mode:'all',list:[{type:'unit_level',value:10}]},carry:{level:true,equipment:true,skills:true}}),
- fusions:()=>({name:'新しい合成',materials:[],result:{type:'unit',unitId:data.units[0]?.id,count:1}}),
+ fusions:()=>({name:'新しい合成',materials:[],result:{type:'unit',unitId:data.units[0]?.id,count:1}}),achievements:()=>({name:'新しい実績',desc:'',reward:{credits:0}}),
  research:()=>({name:'新しい研究',desc:'',cost:{credits:1000},requires:[],unlock:{}}),
  hires:()=>({name:'新しい雇用',unitId:data.units.find(u=>u.deploy?.player)?.id,cost:1000}),
  terrains:()=>({name:'新しい地形',desc:'',meleeHitPt:0,rangedHitPt:0,mobPct:0}),
@@ -178,6 +182,7 @@ function mapRefs(k,fn){const list=a=>a&&a.map(fn).filter(Boolean);mapCondRefs(k,
  if(k==='units'){for(const x of data.research)if(x.unlock?.units)x.unlock.units=list(x.unlock.units);for(const x of data.research)if(x.unlock?.register)x.unlock.register=list(x.unlock.register);for(const h of data.hires)if(h.unitId){const n=fn(h.unitId);if(n)h.unitId=n;else delete h.unitId;}}
  if(k==='missions')for(const h of data.hires)if(h.requires?.missions)h.requires.missions=list(h.requires.missions);
  if(k==='items'){for(const x of data.research){if(x.unlock?.items)x.unlock.items=list(x.unlock.items);if(x.cost?.items)x.cost.items=rekey(x.cost.items);if(x.unlock?.grantItems)x.unlock.grantItems=rekey(x.unlock.grantItems);}for(const h of data.hires)if(h.requires?.items)h.requires.items=list(h.requires.items);}
+ if(k==='items')for(const a of data.achievements)if(a.reward?.items){for(const id of Object.keys(a.reward.items)){const n=fn(id);if(n!==id){const v=a.reward.items[id];delete a.reward.items[id];if(n)a.reward.items[n]=v;}}}
  if(k==='items'){for(const m of data.missions)if(m.drops)m.drops=m.drops.filter(d=>{if(!d.itemId)return true;const n=fn(d.itemId);if(n)d.itemId=n;return !!n;});for(const it of data.items)for(const e of it.effects||[])if(e.type==='loot_box'&&e.table)e.table=e.table.filter(r=>{const n=fn(r.itemId);if(n)r.itemId=n;return !!n;});}}
 // Every condition set inside an owner (top-level, drops, events, choices …), found by walking the object.
 function condSets(o,out=[]){if(!o||typeof o!=='object')return out;if(Array.isArray(o)){for(const x of o)condSets(x,out);return out;}if(o.conds?.list)out.push(o);for(const [k,v] of Object.entries(o))if(k!=='conds'&&v&&typeof v==='object')condSets(v,out);return out;}
@@ -190,6 +195,7 @@ function refsOf(ok,o){const out=[];const add=(k,ids)=>{for(const id of ids||[])i
  if(ok==='missions'){add('units',missionUnitIds(o));add('items',(o.drops||[]).map(d=>d.itemId));add('units',(o.drops||[]).map(d=>d.unitId));}
  if(ok==='missions'){add('flags',[...Object.keys(o.requires?.flags||{}),...['win','lose','draw'].flatMap(r=>Object.keys(o.resultFlags?.[r]||{})),...(o.events||[]).flatMap(e=>Object.keys(e.flags||{})),...(o.story?.choices||[]).flatMap(c=>Object.keys(c.flags||{}))]);add('units',(o.events||[]).flatMap(e=>[e.unitId,e.requiredUnitId]));add('missions',o.requires?.missions);add('items',o.requires?.items);}
  if(ok==='missions'){const tid=n=>data.terrains.find(t=>t.name===n)?.id;add('terrains',[tid(o.terrain),...(o.events||[]).map(e=>tid(e.terrain))]);}
+ if(ok==='achievements')add('items',Object.keys(o.reward?.items||{}));
  if(ok==='research'){add('research',o.requires);add('units',o.unlock?.units);add('units',o.unlock?.register);add('items',[...(o.unlock?.items||[]),...Object.keys(o.cost?.items||{}),...Object.keys(o.unlock?.grantItems||{})]);}
  if(ok==='hires'){add('units',[o.unitId]);add('missions',o.requires?.missions);add('research',o.requires?.research);add('items',o.requires?.items);}
  if(ok==='items'){add('weapons',o.equip?.weaponIds);add('skills',o.equip?.skillIds);for(const e of o.effects||[]){if(e.type==='add_weapon')add('weapons',[e.weaponId]);if(e.type==='add_skill'||e.type==='remove_skill')add('skills',[e.skillId]);if(e.type==='recruit_unit')add('units',[e.unitId]);if(e.type==='loot_box')add('items',(e.table||[]).map(r=>r.itemId));}add('missions',[o.shop?.requiresMission]);add('research',[o.shop?.requiresResearch]);}
@@ -433,6 +439,8 @@ function convert(src){const report={converted:[],dropped:[]},out=empty();if(src.
  for(const k of ['author','packVersion','desc'])if(src[k])out[k]=String(src[k]);if(Array.isArray(src.dependencies))out.dependencies=[...src.dependencies];
  for(const x of arr(src,'research')){const o=pick(x,['id','name','desc','cost','requires','unlock','hidden','note']);o.id=uniq(x.id,'r');out.research.push(o);}
  for(const h of arr(src,'hires')){const o=pick(h,['id','unitId','cost','limit','requires','hidden','note']);o.id=uniq(h.id,'h');o.name=(units.find(u=>u.id===h.unitId)?.name||h.unitId)+'の雇用';out.hires.push(o);}
+ // T&D-only data (evolution, fusion, achievements) is copied as is.
+ for(const k of ['evolutions','fusions','achievements'])for(const x of arr(src,k))if(x&&x.id)(out[k]=out[k]||[]).push(clone(x));
  // Flags: dictionary entries first, then any flag a mission uses without a dictionary entry.
  const notes=src.flagNotes||{};for(const [id,n] of Object.entries(notes)){used.add(id);out.flags.push({id,name:n.name||id,desc:n.desc||''});}
  const prev=data;data=out;const missing=[...new Set(out.missions.flatMap(m=>refsOf('missions',m).filter(([k])=>k==='flags').map(([,id])=>id)))].filter(id=>!out.flags.some(f=>f.id===id));data=prev;for(const id of missing){used.add(id);out.flags.push({id,name:id,desc:''});}if(missing.length)report.converted.push('辞書になかったフラグ'+missing.length+'個を追加（名前はID）');

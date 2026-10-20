@@ -60,6 +60,8 @@ function showResult(){if(!state?.outcome||state.resultShown)return;state.resultS
  const losses=window.PROUnitLab?.handleLosses(dep.filter(x=>!alive.has(x.uid)).map(x=>x.uid))||[];
  const rep=window.PROUnitLab?.finishMission(P.mission(state.missionId),{outcome:win?'win':'lose',turns:state.turn,lost:dep.some(x=>!alive.has(x.uid)),hpPct:hpMax?hpNow/hpMax*100:0,reward:rw.credits||0,itemsWon:rw.items||{}});
  if(rep){add(win?'獲得資金':'回収資金',rep.credits.toLocaleString()+' CR');for(const it of rep.items)add('獲得アイテム',it.name+' ×'+it.count);if(win){const st=C.missionStars(P.mission(state.missionId));add('作戦評価',rep.stars.map((ok,i)=>(ok?'★':'☆')+window.PROUnitLab.starText(st[i])).join(' ／ '));if(rep.starCredits)add('初獲得の星ボーナス','+'+rep.starCredits.toLocaleString()+' CR（'+rep.newStars+'個）');for(const n of rep.recruits)add('加入',n);}}else if(!win)add('報酬','なし');for(const x of losses)add('撃破：'+x.name,x.text);
+ // Battle record: the mission's local-battle logs plus this result.
+ window.PROUnitLab?.recordBattle(P.mission(state.missionId),'tactical',rep,{outcome:win?'win':'lose',turns:state.turn,log:[...(state.missionLog||[]),'— 結果 —',...[...body.children].map(r=>r.textContent)]});
  // EXP for every deployed unit (published rules: halved on defeat and for fallen units, plus defeat EXP).
  const rows=(state.deployed||[]).map(x=>({...x,kills:state.killExp?.[x.uid]||0,amount:C.battleExp(rw.exp,{win,alive:alive.has(x.uid),kills:state.killExp?.[x.uid]||0})}));
  const gained=Object.fromEntries((window.PROUnitLab?.gainExp(rows.map(x=>({key:x.uid,amount:x.amount})))||[]).map(x=>[x.key,x]));// A finished mission advances the in-game day (research progresses).
@@ -92,7 +94,7 @@ function transferChoice(g,target){$('fieldChoiceTitle').textContent=g.name+' ⇄
 
 function switchTo(domain){const g=current();if(!g||g.faction!=='player'||mode||!T.canSwitch(g,domain))return;state.groups=state.groups.map(a=>a.id===g.id?T.switchDomain(g,domain):a);tell(D[domain]+'へ切替。行動は消費しません。');draw();}
 function deploy(snapshot){busy=false;const m=P.mission(snapshot.missionId);if(!m)throw Error('Unknown mission');({width:W,height:H}=P.size(m.id));const starts=P.starts(m.id);state={missionId:m.id,packId:P.packId,packVersion:P.version,surface:m.surface,name:m.name,turn:1,groups:snapshot.groups.filter(g=>g.members.length).map((g,i)=>({...T.grantReactivation(copy(g)),position:starts[i]||{x:i%3,y:3+Math.floor(i/3)}}))};if(!state.groups.length)throw Error('出撃部隊がありません');state.groups.push(...P.enemies(m.id));// Appearing in a mission counts as an encounter (allies and enemies). Deployed allies are kept for the EXP report.
-state.deployed=state.groups.filter(g=>g.faction==='player').flatMap(g=>g.members.map(x=>({uid:x.uid,name:x.unit.name,hp:x.unit.hp||1200})));state.killExp={};
+state.missionLog=[];state.deployed=state.groups.filter(g=>g.faction==='player').flatMap(g=>g.members.map(x=>({uid:x.uid,name:x.unit.name,hp:x.unit.hp||1200})));state.killExp={};
 for(const g of state.groups)window.PROUnitsSeen?.mark(g.members.map(x=>x.unit.id),g.faction==='enemy'?'enemy':'ally');selected=null;cursor=null;mode=null;undo=null;split=null;closeAfter();tell('マスを押して部隊を選んでください。');draw();}
 $('fieldCommit').onclick=()=>{const g=current();if(mode!=='moved'||!g)return;closeAfter();state.groups=state.groups.map(a=>a.id===g.id?T.endAction(g):a);undo=null;mode=null;tell(g.name+'は行動終了しました。');draw();};
 $('fieldBack').onclick=()=>{if(mode!=='moved')return;closeAfter();undoMove();mode='move';tell(HINT.move);draw();};$('fieldAfterAttack').onclick=()=>{closeAfter();startAttack();};
@@ -138,6 +140,8 @@ async function encounter(a,b,{watch=false,headless=false}={}){
  let local=null;try{const B=window.PROBattle,allies=T.living(P).map(m=>combatant(m,'ally')),enemies=T.living(E).map(m=>combatant(m,'enemy'));
  const result=await window.PROBattleScreen.play({title:a.name+' → '+b.name+' / 局地戦',allies,enemies,watch,headless,closeLabel:a.faction==='enemy'?'敵フェイズを続ける':'マップへ戻る',turnMax:3,speedSetting:'tacticalSpeed',sideLabels:{ally:P.name+'（'+role(P)+'）',enemy:E.name+'（'+role(E)+'）'},info:()=>'距離 '+d+' ｜ 攻撃側 '+tile(a.position.x,a.position.y).name+' ・ 防御側 '+tile(b.position.x,b.position.y).name+' ｜ 射程外のユニットは攻撃できません',outOfRange:u=>!reach(u),summary:r=>(r.stop==='turn_limit'?'3ターン経過・局地戦終了（作戦は継続）':'片側全滅・局地戦終了')+' / 味方残存 '+r.alliesAlive+'体・敵残存 '+r.enemiesAlive+'体',
   run:hooks=>B.runLocalBattle(local=B.createContext({allies,enemies,rng:B.mulberry32(state.turn*997+(state.encounters||0)),hooks}),{maxTurns:3,distance:d})});
+ // Keep this local battle's log for the mission record.
+ state.missionLog=[...(state.missionLog||[]),'— 第'+state.turn+'ターン '+a.name+' → '+b.name+' —',...[...($('fieldBattleLog')?.children||[])].map(p=>p.textContent)].slice(-400);
  // Defeat EXP goes to the player unit that destroyed the enemy (killer = the member's uid).
  for(const k of local?.killLog||[])if(k.killerSide==='ally'&&k.victimSide==='enemy'&&k.killer){state.killExp=state.killExp||{};state.killExp[k.killer]=(state.killExp[k.killer]||0)+C.defeatExp(enemies.find(x=>x.combatId===k.victim));}
  const persist=(g,units)=>{const out=copy(g);out.members=out.members.map(m=>{const u=units.find(x=>x.combatId===m.uid);if(!u)return m;return {...m,currentHp:Math.max(0,u.currentHp),combatState:copy(u)};}).filter(m=>m.currentHp===undefined||m.currentHp>0);return out;};
