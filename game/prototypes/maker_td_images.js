@@ -19,7 +19,10 @@ function editor(x){let S={size:x.size,palette:[...x.palette],px:x.px},tool='dot'
  const transform=f=>{push();const n=S.size,arr=S.px.split(''),out=new Array(n*n).fill('.');for(let j=0;j<n;j++)for(let i=0;i<n;i++){const [a,b]=f(i,j,n);if(a>=0&&b>=0&&a<n&&b<n)out[b*n+a]=arr[j*n+i];}S.px=out.join('');draw();};
  const tap=(a,b)=>{if(tool==='pick'){color=get(a,b);tool='dot';return draw();}if(tool==='rect'&&!rectStart){rectStart={x:a,y:b};return draw();}push();
   if(tool==='dot')setDot(a,b,color);else if(tool==='fill')fill(a,b);else if(tool==='rect'){for(let j=Math.min(b,rectStart.y);j<=Math.max(b,rectStart.y);j++)for(let i=Math.min(a,rectStart.x);i<=Math.max(a,rectStart.x);i++)setDot(i,j,color);rectStart=null;}draw();};
- const colorPrompt=(cur,done)=>textPrompt('色（#rrggbb）',cur||'#808080',v=>{const c=v.startsWith('#')?v:'#'+v;if(/^#[0-9a-fA-F]{6}$/.test(c))done(c.toLowerCase());else draw();},draw,7);
+ // Color: a color picker and the same value as #rrggbb text (either can be used; they follow each other).
+ const colorPrompt=(cur,done)=>win('色を選ぶ','カラーピッカーで選ぶか、#rrggbb で入れます。',body=>{const p=el('input');p.type='color';p.id='inputColor';p.value=cur||'#808080';const t=el('input');t.id='inputValue';t.value=cur||'#808080';t.maxLength=7;const sw=el('span',null,'pix-thumb');sw.style.width=sw.style.height='40px';sw.style.background=p.value;
+  p.oninput=p.onchange=()=>{t.value=p.value;sw.style.background=p.value;};t.oninput=()=>{const c=t.value.startsWith('#')?t.value:'#'+t.value;if(/^#[0-9a-fA-F]{6}$/.test(c)){p.value=c.toLowerCase();sw.style.background=c;}};const r=el('div',null,'pix-preview');r.append(p,sw,t);body.append(r);},
+  [['決定',()=>{const v=document.getElementById('inputValue').value.trim(),c=v.startsWith('#')?v:'#'+v;if(/^#[0-9a-fA-F]{6}$/.test(c))done(c.toLowerCase());else draw();}],['戻る',draw]]);
  const save=()=>{commit(o=>{o.size=S.size;o.palette=S.palette;o.px=S.px;});closeWin();};
  const draw=()=>win((x.name||'画像')+'（'+S.size+'×'+S.size+'）','道具と色を選んでドットを押します。四角は始点と終点の2回押し。スポイトは押したドットの色を拾います。',body=>{
   const row=(cls)=>{const r=el('div',null,cls||'td-nums');body.append(r);return r;};
