@@ -61,3 +61,4 @@
 .field-tile[class*=fac-]{position:relative}.field-tile[class*=fac-]::after{content:'';position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;border:1px solid #0008}
 .field-tile.fac-neutral::after{background:#bbb}.field-tile.fac-player::after{background:#d6ed83}.field-tile.fac-ally::after{background:#6fd18a}.field-tile.fac-enemy::after{background:#ff7d6b}.field-tile.fac-third::after{background:#e8d04a}
 .fac-dur{position:absolute;left:2px;bottom:1px;font-size:9px;font-style:normal;color:#fff;text-shadow:0 0 2px #000}
+.field-tile.map-closed{background:#0b1014;border-color:transparent;cursor:default}
