@@ -25,6 +25,8 @@ function combatant(def,side,combatId,extra={}){return prepare({...def,side,curre
 function createContext(o){
   const ctx={allies:o.allies,enemies:o.enemies,mission:o.mission||null,terrain:C.terrainMods(o.mission),turn:o.turn||0,stats:o.stats||{},rng:o.rng||(()=>Math.random()),hooks:{...NOOP_HOOKS,...(o.hooks||{})},enemyDefs:o.enemyDefs||{},unitDefs:o.unitDefs||{},killLog:o.killLog||[],pending:[],aborted:false,spawnCount:o.enemies.length,effects:{resistCount:0,resistSaved:0,tagCount:0,tagBonus:0}};
   for(const u of [...ctx.allies,...ctx.enemies])prepare(u);
+  // Optional per-side terrain (Tactical prototype: each side stands on its own square). Absent → ctx.terrain for both.
+  if(o.sideTerrain)ctx.sideTerrain={ally:o.sideTerrain.ally||{},enemy:o.sideTerrain.enemy||{}};
   ctx.flags={...(o.flags||{})};ctx.seenEvents=new Set();ctx.recording=!!o.record;ctx.timeline=[];
   if(ctx.recording){for(const key of ['log','logSkill','turnStart','actionEnd']){const fn=ctx.hooks[key];ctx.hooks[key]=(...args)=>{recordFrame(ctx,key,key==='log'?String(args[0]).replace(/<[^>]*>/g,''):key==='logSkill'?args[0].name+' / '+args[1].name+': '+args[2]:key==='turnStart'?'TURN '+args[0]:args[0].name+' / '+args[1].name);return fn(...args);};}recordFrame(ctx,'start','戦闘開始');}
   return ctx;
@@ -37,7 +39,7 @@ function statFor(ctx,u){return ctx.stats[u.combatId]||(ctx.stats[u.combatId]={na
 function rand(ctx,min,max){return ctx.rng()*(max-min)+min;}
 function chance(ctx,p){return ctx.rng()<p;}
 // Effective stat after buffs and terrain. With no modifiers this is exactly the unit's stat.
-function eff(ctx,u,stat){let v=num(u[stat],0),pct=0;for(const b of u.status?.buffs||[])if(b.stat===stat)pct+=b.pct;if(pct)v*=Math.max(0,1+pct/100);if(stat==='mob'&&ctx.terrain.mobPct)v*=Math.max(.1,1+ctx.terrain.mobPct/100);return Math.max(0,v);}
+function eff(ctx,u,stat){let v=num(u[stat],0),pct=0;for(const b of u.status?.buffs||[])if(b.stat===stat)pct+=b.pct;if(pct)v*=Math.max(0,1+pct/100);const tm=ctx.sideTerrain?ctx.sideTerrain[u.side]||{}:ctx.terrain;if(stat==='mob'&&tm.mobPct)v*=Math.max(.1,1+tm.mobPct/100);return Math.max(0,v);}
 
 // ---- skills ----
 function skillUses(u,id){return u.skillUses?.[id]||0;}
@@ -203,7 +205,9 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
     attackerStat.shots+=attempts;
     const defenseMods=triggerSkills(ctx,target,'when_targeted',{attacker,weapon,allies:ctx.allies,enemies:ctx.enemies,opponent:attacker});
     if(!attacker.alive)break;if(!target.alive)continue;
-    const baseHit=clamp(baseHitRate(eff(ctx,attacker,'acc'),eff(ctx,target,'mob'),weapon.accuracyPt+terrainHit)+attackMods.hitAdd+defenseMods.incomingHitAdd,.05,.95);
+    // Per-side terrain: the target's square sets the hit modifier (cover).
+    const hitTerrain=ctx.sideTerrain?((weapon.attackType==='melee'?ctx.sideTerrain[target.side]?.meleeHitPt:ctx.sideTerrain[target.side]?.rangedHitPt)||0):terrainHit;
+    const baseHit=clamp(baseHitRate(eff(ctx,attacker,'acc'),eff(ctx,target,'mob'),weapon.accuracyPt+hitTerrain)+attackMods.hitAdd+defenseMods.incomingHitAdd,.05,.95);
     const pierce=clamp(num(weapon.defPiercePct,0)+attackMods.defPierce,0,100);
     let targetHits=0,targetDmg=0,targetCrits=0,absorbed=0;
     for(let shot=0;shot<attempts;shot++){

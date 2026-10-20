@@ -474,7 +474,7 @@ $('gateForm').onsubmit=e=>{e.preventDefault();if($('gatePassword').value==='0000
 setTimeout(()=>$('gatePassword').focus(),0);
 load();showMenu();
 // Extension API for kinds defined in separate scripts (e.g. maker_td_tactical.js).
-const extend=Object.freeze({el,win,closeWin,commit,numberPrompt,message,clone,find,data:()=>data,save,
+const extend=Object.freeze({el,win,closeWin,commit,numberPrompt,message,clone,find,condsEditor,data:()=>data,save,
  registerKind(k,meta,make,fields,hooks={}){KINDS[k]=meta;FIELDS[k]=fields;DEFAULT[k]=make;EXTRA_KINDS.push(k);if(!Array.isArray(data[k]))data[k]=[];Object.assign(EXT.display,hooks.display||{});Object.assign(EXT.edit,hooks.edit||{});if(hooks.issues)EXT.issues[k]=hooks.issues;if(hooks.refs)EXT.refs[k]=hooks.refs;if(hooks.mapRefs)EXT.mapRefs.push(hooks.mapRefs);if(!$('menuView').hidden)showMenu();}});
 window.PROMakerTD=Object.freeze({extend,data:()=>clone(data),convert,applyImport,openKind,showMenu,find:(k,id)=>clone(find(k,id)),issues});
 })();
