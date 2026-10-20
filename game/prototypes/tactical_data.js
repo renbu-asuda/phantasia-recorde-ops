@@ -69,7 +69,11 @@ const merge=(a,x,origin)=>({...a,missions:[...a.missions,...x.tmissions.filter(m
 let raw=builtin;const extras=[];for(const {d,origin} of drafts){builtin=raw;let x=null;try{x=fromMaker(d);}catch(e){console.warn('pack skipped',origin.id,e.message);continue;}extras.push({...x,origin});raw=merge(raw,x,origin);}
 const extra=extras[0]||null,parts=[...(load.sample||(useSample&&!drafts.length)?['sample']:[]),...drafts.map(x=>x.origin.id)],sourceName=!parts.length?'none':parts.length===1?(parts[0].startsWith('pack:')?'pack':parts[0]):parts.join('+');
 // Weapons go through PROCore.weapon so ranges and defaults are validated exactly like maker data.
-const normUnit=u=>({...C.clone(u),weapons:(u.weapons||[]).map(w=>keepRes(C.weapon(w),w))});
+// Units without size / MOVE / movement aptitude get the defaults (size M, MOVE 5, ground B, other domains none).
+// A partly filled aptitude keeps its values; missing domains are none.
+const APT_NONE={ground:'none',air:'none',water:'none',underwater:'none',space:'none'},APT_DEFAULT={...APT_NONE,ground:'B'};
+const withDefaults=u=>({...u,size:u.size||'M',move:u.move??5,movementAptitude:u.movementAptitude?{...APT_NONE,...u.movementAptitude}:{...APT_DEFAULT}});
+const normUnit=u=>withDefaults({...C.clone(u),weapons:(u.weapons||[]).map(w=>keepRes(C.weapon(w),w))});
 
 // Variants inherit every field they leave unset from their base (recursively); id, base and separate stay their own.
 const rawById=new Map(raw.units.map(u=>[u.id,u]));
