@@ -47,7 +47,7 @@ async function start({watch}={}){const m=mission();if(!m||!chosen.length||window
  if(watch===undefined)watch=await askWatch(m);
  // Supply items are consumed now and boost their unit for this battle.
  const L=window.PROUnitLab,used={};for(const id of chosen){const it=supply[id];if(it&&L?.consumeItem(it))used[id]=it;}supply={};
-  const ctx=B.buildBattle({flags:L?.flags()||{},allies:chosen.map(id=>{const u=C.levelStats(DD.defs[id],lvOf(id));return used[id]?L.applySupply(u,used[id]):u;}),rows:chosen.map(id=>rowOf(DD.defs[id])),mission:m,enemyDefs:DD.defs,unitDefs:DD.defs},B.mulberry32(Date.now()%1000000));
+  const ctx=B.buildBattle({flags:L?.flags()||{},allies:chosen.map(id=>{const base=C.levelStats(DD.defs[id],lvOf(id)),u={...base,skills:[...(base.skills||[]),...(L?.dispatchTreeSkills(id)||[])]};return used[id]?L.applySupply(u,used[id]):u;}),rows:chosen.map(id=>rowOf(DD.defs[id])),mission:m,enemyDefs:DD.defs,unitDefs:DD.defs},B.mulberry32(Date.now()%1000000));
  // Event condition sets (T&D) are checked against the save; event flags are kept after the battle.
  ctx.hooks.eventOk=e=>!e.conds?.list?.length||!L||L.evalConds(e.conds);
  $('fieldBattleSpeed').value=window.PROField?.settings?.().dispatchSpeed||'1';const c=DD.conditions(m),names=Object.fromEntries(Object.entries(DD.defs).map(([k,d])=>[k,d.name]));
