@@ -30,7 +30,7 @@ root.PROTacticalBuiltinPack={
   {...base,id:'scout',joinVerb:'produce',catalog:'長射程の狙撃砲で敵の動きを止める偵察車両。',name:'偵察車',size:'M',move:7,movementAptitude:apt({ground:'A'}),weapons:[gun('狙撃砲',2,6)]},
   {...base,id:'tank',joinVerb:'produce',catalog:'厚い装甲と射撃武装を備えた地上戦の要。',name:'主力戦車',size:'L',move:4,movementAptitude:apt({ground:'B'}),weapons:[gun('射撃武装',1,3)]},
   {...base,id:'medic',joinVerb:'hire',catalog:'前線で味方を支える衛生兵。',name:'衛生兵',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
-  {...base,id:'robot',catalog:'地上・空中・宇宙を行き来できる汎用機動兵器。',name:'汎用機動兵器',size:'2XL',move:6,movementAptitude:apt({ground:'B',air:'B',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,3)]},
+  {...base,id:'robot',noFire:true,catalog:'地上・空中・宇宙を行き来できる汎用機動兵器。',name:'汎用機動兵器',size:'2XL',move:6,movementAptitude:apt({ground:'B',air:'B',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,3)]},
   {...base,id:'fighter',catalog:'空中を高速で移動する戦闘機。',name:'戦闘機',size:'XL',move:8,movementAptitude:apt({air:'A'}),weapons:[gun('射撃武装',1,3)]},
   {...base,id:'heavy',catalog:'巨大な陸戦兵器。動きは遅いが圧倒的な存在感。',name:'大型陸戦兵器',size:'3XL',move:3,movementAptitude:apt({ground:'D'}),weapons:[blade('近接武装')]},
   {...base,id:'boat',joinVerb:'produce',catalog:'沿岸を守る小型の哨戒艇。',name:'哨戒艇',size:'M',move:6,movementAptitude:apt({water:'B'}),weapons:[gun('射撃武装',1,3)]},
@@ -64,6 +64,7 @@ root.PROTacticalBuiltinPack={
   {id:'repair',name:'修理キット',desc:'ユニットの修理に使う。機動訓練をクリアすると購入できる。',price:300,shop:{requiresMission:'training-01'}},
   {id:'pass',name:'通行許可証',desc:'大切なもの。売却できない。',key:true},
   // Usable items (PROCore item effects) and equipment (equip: stats / weapons / skills, one item per slot).
+  {id:'revive',name:'緊急修理キット',desc:'大破・重傷のユニットを復帰させる。高価。',price:8000,effects:[{type:'revive_hp_pct',value:100}]},
   {id:'stim',name:'戦闘糧食',desc:'補給アイテム。次の出撃だけATK+20%。',price:400,effects:[{type:'sortie_buff',stat:'atk',value:20}]},
   {id:'chip',name:'強化チップ',desc:'使うとATKが永続的に20上がる。1体3回まで。',price:800,limitPerUnit:3,effects:[{type:'stat_up_flat',stat:'atk',value:20}]},
   {id:'manual',name:'訓練マニュアル',desc:'使うと経験値300を得る。',price:500,effects:[{type:'exp_gain',value:300}]},

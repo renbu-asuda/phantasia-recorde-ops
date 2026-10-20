@@ -16,7 +16,7 @@ let anywhere=false,infoMode=false;
 function compatibility(u,g){if(u.move===undefined||!u.movementAptitude)return 'MOVE・地形移動適性が未設定';if(anywhere)return '';try{const m={uid:u.id,unit:u};T.defaultDomain(m,scenario().surface);if(g?.mode!=='auto'&&g?.mode&&!T.supports(m,g.mode))return domains[g.mode]+'に対応していません';}catch(e){return 'この戦場の移動領域に対応していません';}return '';}
 function stats(g){return g.members.length?T.formation(g):{count:0,size:0,valid:false};}
 // Mission deploy rules (minimum level, banned tags, deploy_tags) apply only when a mission is chosen.
-function reason(u,g){const why=compatibility(u,g)||(!anywhere&&window.PROUnitLab?.deployProblem(P.mission(missionId),u,u.level||1))||'';if(why)return why;return T.joinReason(g.members.map(m=>m.unit),u);}
+function reason(u,g){const why=(u.down?(u.down==='injured'?'重傷':'大破')+'のため出撃できません（修理・治療が必要）':'')||compatibility(u,g)||(!anywhere&&window.PROUnitLab?.deployProblem(P.mission(missionId),u,u.level||1))||'';if(why)return why;return T.joinReason(g.members.map(m=>m.unit),u);}
 function setDomains(g){for(const m of g.members){if(anywhere){delete m.domain;continue;}try{m.domain=g.mode==='auto'?T.defaultDomain(m,scenario().surface):g.mode;}catch(e){delete m.domain;}}}
 function tell(text){$('prepNotice').textContent=text;}
 function button(text,fn,cls='secondary'){const b=el('button',cls,text);b.type='button';b.onclick=fn;return b;}
