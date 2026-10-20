@@ -30,7 +30,9 @@ root.PROTacticalBuiltinPack={
   // Impassable squares (no movement costs); events can change them (e.g. a gate that opens).
   k:{name:'障害物',kind:'impass',costs:{}},
   g:{name:'閉じた門',kind:'door',costs:{}},
-  o:{name:'開いた門',kind:'ground',costs:{ground:1,air:1}}
+  o:{name:'開いた門',kind:'ground',costs:{ground:1,air:1}},
+  // Facility squares: facility type 'supply' lets a group standing there use items (more facility types later).
+  y:{name:'補給基地',kind:'facility',costs:{ground:1,air:1},facility:'supply'}
  },
  units:[
   {...base,id:'infantry',skillTree:[node('inf-aim',1,1,[],{name:'狙いを定める',trigger:'before_attack',effect:'hit_up_pt',value:10}),node('inf-charge',2,3,['inf-aim'],{name:'突撃',trigger:'before_attack',effect:'def_pierce_pct',value:20}),node('inf-rally',3,5,['inf-charge'],{name:'鼓舞',trigger:'battle_start',effect:'atk_up_pct',value:10,target:'allies'})],joinVerb:'hire',catalog:'最も数の多い基本戦力。どんな地形でも頼りになる。',name:'歩兵小隊',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
