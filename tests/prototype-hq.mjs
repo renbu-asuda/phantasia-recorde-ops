@@ -94,6 +94,23 @@ w=open({});{const L=w.PROUnitLab,d=w.document,u=id=>L.owned().find(x=>x.uid===id
  // Formation and battle use the boosted, equipped unit.
  assert(d.querySelector('#prepUnitList [data-unit=tank]'));saved=dump(w);}
 w.close();w=open(saved);{const u=w.PROUnitLab.owned().find(x=>x.uid==='robot');assert(u.weapons.some(x=>x.name==='ミサイル'));assert.equal(w.PROUnitLab.owned().find(x=>x.uid==='tank').level,3);}w.close();
+// Missions: lock / hidden, rewards received on a Tactical victory, stars and first-star bonus, record, recruits,
+// PRO・D rewards and recruit-locked units, deploy rules.
+w=open({});{const L=w.PROUnitLab,D=w.PROTacticalData,DD=w.PRODispatchData,d=w.document,F=w.PROField;
+ assert.equal(L.missionLock(D.mission('training-01')),'');assert(L.missionLock(D.mission('combat-01')).includes('機動訓練'));assert(L.missionHidden(D.mission('combat-02')));
+ w.location.hash='#missions';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,400));assert(!d.querySelector('[aria-label="軌道上の遭遇"]'));d.querySelector('[aria-label="沿岸防衛線"]').click();assert(d.querySelector('#deploy').disabled);assert(!d.querySelector('#detailLock').hidden);
+ const c0=L.credits();F.deploy({missionId:'training-01',groups:[{id:'g1',name:'第1部隊',faction:'player',mode:'auto',members:[{uid:'infantry',unit:L.owned().find(u=>u.uid==='infantry')}]}]});const st=F._live();st.groups=st.groups.filter(g=>g.faction==='player');st.outcome='victory';st.turn=4;F.showResult();
+ const body=d.querySelector('#fieldResultBody').textContent;assert(body.includes('修理キット ×1'));assert(body.includes('★クリア'));assert(body.includes('★8ターン以内'));assert(body.includes('古参兵'));assert.equal(L.credits(),c0+800+3*160);assert.equal(L.items().repair,1);
+ assert.equal(JSON.stringify(L.record('training-01')),JSON.stringify({clears:1,best:4,stars:[true,true,true]}));assert(L.owned().some(u=>u.id==='veteran'));assert.equal(L.missionLock(D.mission('combat-01')),'');assert(L.missionHidden(D.mission('combat-02')));
+ // A second clear pays no star bonus again.
+ const r2=L.finishMission(D.mission('training-01'),{outcome:'win',turns:9,reward:800});assert.equal(r2.starCredits,0);assert.equal(L.record('training-01').best,4);assert.equal(L.record('training-01').clears,2);
+ // Loss: 12% of the reward, no record.
+ const r3=L.finishMission(D.mission('combat-01'),{outcome:'lose',turns:3,reward:2400});assert.equal(r3.credits,288);assert.equal(L.record('combat-01').clears,0);
+ // PRO・D: recruit-locked unit appears after its mission is cleared; drops and stars go to the save.
+ const locked=Object.values(DD.defs).find(u=>u.recruit?.locked&&u.recruit.missionId);if(locked){const m=DD.mission(locked.recruit.missionId);const r=L.finishMission(m,{outcome:'win',turns:5,reward:m.reward,recruitPool:Object.values(DD.defs),itemName:DD.itemName});assert(r.recruits.includes(locked.name));assert(L.recruited().includes(locked.id));}
+ // Deploy rules: minimum level.
+ assert.equal(L.deployProblem({requires:{minLevel:3}},{tags:[]},2),'Lv3以上が必要');assert.equal(L.deployProblem({requires:{minLevel:3}},{tags:[]},3),'');saved=dump(w);}
+w.close();w=open(saved);assert.equal(w.PROUnitLab.record('training-01').clears,2);w.close();
 // 2) Maker source: draft units, evolutions and variants join the built-in data; invalid links are dropped.
 w=open({...saved,PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(draft)});D=w.PROTacticalData;L=w.PROUnitLab;
 assert.equal(D.source,'maker');assert.equal(D.makerName,'テストパック');assert(D.roster().some(u=>u.id==='td-u-a'));assert(!D.roster().some(u=>u.id==='td-u-b'));assert(D.roster().some(u=>u.id==='infantry'));
@@ -104,4 +121,4 @@ assert.equal(L.credits(),24800);assert(L.owned().some(u=>u.id==='tank'));assert(
 assert(w.document.querySelector('#dataSourceText').textContent.includes('テストパック'));w.close();
 // 3) Maker source selected but no draft: falls back to the built-in data.
 w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'builtin');w.close();
-console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), item use (boosts, limits, EXP, base-only effects) and equipment (slots, stats, weapons), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
+console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), missions (lock, hidden, rewards, stars, records, recruits, deploy rules), item use (boosts, limits, EXP, base-only effects) and equipment (slots, stats, weapons), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');

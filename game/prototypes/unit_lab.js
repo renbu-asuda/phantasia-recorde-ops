@@ -7,10 +7,10 @@ const seen=()=>window.PROUnitsSeen;
 // (unit ids registered by evolution or fusion settings) and PRO・D unit levels (by unit id). Stats follow PROCore.levelStats.
 // Starting units keep their unit id as uid (the formation screen and its tests address them that way).
 const HQ_KEY='PRO_TACTICAL_HQ',START_CREDITS=24800;
-let serial=1,credits=START_CREDITS,owned=D.roster().map(u=>({uid:u.id,id:u.id})),registered=[],dlv={},hired={},cleared=[],items=D.startItems(),day=1,done=[],active=null,notices=[];
+let serial=1,credits=START_CREDITS,owned=D.roster().map(u=>({uid:u.id,id:u.id})),registered=[],dlv={},hired={},cleared=[],items=D.startItems(),day=1,done=[],active=null,notices=[],records={},flags={},recruited=[],wins=0;
 // A save made with another data source (built-in / maker) is ignored; units missing from the data are dropped.
-try{const h=JSON.parse(localStorage.getItem(HQ_KEY)||'null');if(h&&h.source===D.source&&Array.isArray(h.owned)){owned=h.owned.filter(o=>{try{D.unit(o.id);return typeof o.uid==='string';}catch(e){return false;}});credits=Number.isFinite(h.credits)?h.credits:START_CREDITS;registered=Array.isArray(h.registered)?h.registered:[];dlv=h.dlv&&typeof h.dlv==='object'?h.dlv:{};hired=h.hired&&typeof h.hired==='object'?h.hired:{};cleared=Array.isArray(h.cleared)?h.cleared:[];items=h.items&&typeof h.items==='object'?h.items:D.startItems();day=h.day>=1?h.day:1;done=Array.isArray(h.done)?h.done:[];active=h.active&&D.research().some(r=>r.id===h.active.id)?h.active:null;notices=Array.isArray(h.notices)?h.notices:[];serial=h.serial||1;}}catch(e){}
-function save(){try{localStorage.setItem(HQ_KEY,JSON.stringify({source:D.source,owned,credits,serial,registered,dlv,hired,cleared,items,day,done,active,notices}));}catch(e){}}
+try{const h=JSON.parse(localStorage.getItem(HQ_KEY)||'null');if(h&&h.source===D.source&&Array.isArray(h.owned)){owned=h.owned.filter(o=>{try{D.unit(o.id);return typeof o.uid==='string';}catch(e){return false;}});credits=Number.isFinite(h.credits)?h.credits:START_CREDITS;registered=Array.isArray(h.registered)?h.registered:[];dlv=h.dlv&&typeof h.dlv==='object'?h.dlv:{};hired=h.hired&&typeof h.hired==='object'?h.hired:{};cleared=Array.isArray(h.cleared)?h.cleared:[];items=h.items&&typeof h.items==='object'?h.items:D.startItems();day=h.day>=1?h.day:1;done=Array.isArray(h.done)?h.done:[];active=h.active&&D.research().some(r=>r.id===h.active.id)?h.active:null;notices=Array.isArray(h.notices)?h.notices:[];records=h.records&&typeof h.records==='object'?h.records:{};flags=h.flags&&typeof h.flags==='object'?h.flags:{};recruited=Array.isArray(h.recruited)?h.recruited:[];wins=h.wins|0;serial=h.serial||1;}}catch(e){}
+function save(){try{localStorage.setItem(HQ_KEY,JSON.stringify({source:D.source,owned,credits,serial,registered,dlv,hired,cleared,items,day,done,active,notices,records,flags,recruited,wins}));}catch(e){}}
 // An owned unit's stats: level stats, then permanent item boosts (mods flat, pct %), then equipment. Item-added
 // weapons / skills / tags and equipped weapons / skills are appended. Equipment slots: unit.equipSlots (default 2) + bonus.
 const SLOT_DEFAULT=2,SLOT_MAX=8,STATS=['hp','atk','def','mob','acc'],tryW=w=>{try{return C.weapon(w);}catch(e){return null;}},tryS=x=>{try{return C.skill({...x});}catch(e){return null;}};
@@ -21,7 +21,7 @@ function unitOf(o){const u=C.levelStats(D.unit(o.id),o.lv||1),gear=(o.equip||[])
  return {...u,weapons:[...(u.weapons||[]),...(o.weapons||[]),...gear.flatMap(it=>(it.equip.weapons||[]).map(tryW).filter(Boolean))],skills:[...(u.skills||[]),...(o.skills||[]),...gear.flatMap(it=>(it.equip.skills||[]).map(tryS).filter(Boolean))],tags:[...tags],
   id:o.id,uid:o.uid,exp:o.exp||0,sp:o.sp||0,slots:slotsOf(o),equip:Array.from({length:slotsOf(o)},(_,i)=>(o.equip||[])[i]||null)};}
 const counts=()=>owned.reduce((m,o)=>(m[o.id]=(m[o.id]||0)+1,m),{});
-const state=u=>({credits,units:counts(),items:{...items},reserved:{items:{...(active?.reserve||{})}},research:done,flags:{},day,cleared,hires:hired,unit:u?{...u,level:u.level||1}:undefined,rng:()=>0});
+const state=u=>({credits,units:counts(),items:{...items},reserved:{items:{...(active?.reserve||{})}},research:done,flags:{...flags},wins,stars:Object.fromEntries(Object.entries(records).map(([k,r])=>[k,(r.stars||[]).filter(Boolean).length])),day,cleared,hires:hired,unit:u?{...u,level:u.level||1}:undefined,rng:()=>0});
 const name=id=>seen().has(id)?D.unit(id).name:'？？？';
 const CMP={ge:'以上',le:'以下',eq:'ちょうど',lt:'未満'};
 // Short text for the condition types the samples use; other types fall back to their id.
@@ -192,6 +192,41 @@ function openEquip(uid){const u=unitOf(owned.find(o=>o.uid===uid)),stat=k=>k.toU
 function pickGear(uid,slot){const o=owned.find(x=>x.uid===uid),cur=(o.equip||[])[slot]||null,gear=D.items().filter(it=>it.equip&&(items[it.id]||0)>0);
  const desc=it=>Object.entries(it.equip.stats||{}).map(([k,v])=>k.toUpperCase()+(v>0?'+':'')+v).concat((it.equip.weapons||[]).map(w=>'武装「'+w.name+'」')).join(' ・ ');
  win('装備','枠'+(slot+1)+'に装備するもの',[cur?'いま：'+D.itemName(cur):'いま：空き'],[...gear.map(it=>[(it.id===cur?'✓ ':'')+it.name+'（使える '+free(it.id)+'）'+(desc(it)?' '+desc(it):''),()=>{equip(uid,slot,it.id);renderEquip();openEquip(uid);},it.id!==cur&&free(it.id)<1,'gear-'+it.id]),['外す',()=>{equip(uid,slot,null);renderEquip();openEquip(uid);},!cur,'unequip'],['戻る',()=>openEquip(uid)]]);}
+/* ---------- missions (Tactical and PRO・D) ---------- */
+// Same rules as the published game: requires.flags / missions / items (key items owned) / research, the mission's
+// condition set, and allowed weekdays (real weekday). Hidden missions are not listed while locked. Records keep
+// clears, best turns and stars; new stars pay starReward (default 20% of the reward) once.
+const record=id=>records[id]||{clears:0,best:0,stars:[]};
+function missionLock(m){const r=m.requires||{};
+ if(r.flags&&Object.entries(r.flags).some(([k,v])=>!!flags[k]!==!!v))return '分岐条件：'+Object.entries(r.flags).map(([k,v])=>k+(v?'':'（OFF）')).join('・');
+ const miss=(r.missions||[]).filter(id=>!cleared.includes(id));if(miss.length)return '前提作戦が未クリア：'+miss.map(id=>missionName(id)).join('・');
+ const keys=(r.items||[]).filter(id=>!((items[id]||0)>0));if(keys.length)return '必要なキーアイテム：'+keys.map(D.itemName).join('・');
+ const res=(r.research||[]).filter(id=>!done.includes(id));if(res.length)return '必要な研究：'+res.map(id=>rById(id)?.name||id).join('・');
+ if(m.conds?.list?.length&&!C.evalConds(m.conds,state()).ok)return '条件：'+condsText(m.conds);
+ if(m.days?.length&&!m.days.includes(new Date().getDay()))return '出撃できる曜日：'+m.days.map(d=>'日月火水木金土'[d]).join('・');return '';}
+// Deploy rules (published rules): minimum level, terrain-banned tags, the mission's deploy_tags rule.
+function deployProblem(m,u,level=1){if(m?.requires?.minLevel&&level<m.requires.minLevel)return 'Lv'+m.requires.minLevel+'以上が必要';
+ let ban=[];try{ban=C.terrainMods(m).banTags||[];}catch(e){}const tags=u.tags||[],b=ban.filter(t=>tags.includes(t));if(b.length)return '地形「'+(m.terrain||'')+'」では「'+b.join('・')+'」は出撃不可';
+ const rule=(m?.rules||[]).find(r=>r&&r.type==='deploy_tags');if(rule){try{const ok=C.checkRequirements(rule,u);if(!ok.ok)return '出撃制限 '+ok.reason;}catch(e){}}return '';}
+const missionHidden=m=>!!m.hidden&&!!missionLock(m);
+let missionName=id=>D.mission(id)?.name||id;const setMissionNames=f=>{missionName=f;};
+// Star checks: clear, no_loss (no deployed unit fell), turns_le, hp_ge (remaining HP % of the deployed units).
+function evalStars(m,{win,turns,lost,hpPct}){return C.missionStars(m).map(s=>win&&(s.type==='clear'||(s.type==='no_loss'&&!lost)||(s.type==='turns_le'&&turns<=s.value)||(s.type==='hp_ge'&&hpPct>=s.value)));}
+const starText=s=>s.type==='clear'?'クリア':s.type==='no_loss'?'撃破されずにクリア':s.type==='turns_le'?s.value+'ターン以内':s.type==='hp_ge'?'残りHP'+s.value+'%以上':s.type;
+// finishMission: credits (win: reward; draw 25%; loss 12%), drops (row conditions, then rate) on a win, stars and
+// their first-time bonus, the record, cleared list and win count, and units whose recruit.missionId is this mission.
+function finishMission(m,{outcome,turns,lost=false,hpPct=100,reward=0,itemsWon={},recruitPool=null,itemName=D.itemName}){const win=outcome==='win',rep={credits:0,items:[],stars:[],newStars:0,starCredits:0,recruits:[]};
+ rep.credits=Math.round(win?reward:reward*(outcome==='draw'?.25:.12));credits+=rep.credits;
+ if(win){for(const [id,n] of Object.entries(itemsWon)){items[id]=(items[id]||0)+n;rep.items.push({id,name:itemName(id),count:n});}
+  for(const d of m.drops||[]){if(d.conds?.list?.length&&!C.evalConds(d.conds,state()).ok)continue;let p;try{p=C.dropChance(d);}catch(e){p=(d.chance??100)/100;}if(Math.random()>=p)continue;const n=(d.min??1)+Math.floor(Math.random()*((d.max??d.min??1)-(d.min??1)+1));
+   if(d.unitId){let ok=true;try{D.unit(d.unitId);}catch(e){ok=false;}if(ok){for(let i=0;i<n;i++)owned.push({uid:d.unitId+'#'+serial++,id:d.unitId,lv:1,exp:0,sp:0});seen().mark([d.unitId],'joined');rep.items.push({id:d.unitId,name:D.unit(d.unitId).name+'（ユニット）',count:n});}}
+   else{items[d.itemId]=(items[d.itemId]||0)+n;rep.items.push({id:d.itemId,name:itemName(d.itemId),count:n});}}
+  const rec={...record(m.id)};rec.clears++;rec.best=rec.best?Math.min(rec.best,turns):turns;rep.stars=evalStars(m,{win,turns,lost,hpPct});rec.stars=rep.stars.map((ok,i)=>{if(ok&&!(rec.stars||[])[i])rep.newStars++;return ok||!!(rec.stars||[])[i];});
+  rep.starCredits=rep.newStars*(m.starReward??Math.round(reward*.2));credits+=rep.starCredits;records[m.id]=rec;wins++;if(!cleared.includes(m.id))cleared.push(m.id);
+  // Recruits: Tactical units join the owned roster; PRO・D units (other data) are only marked recruited.
+  for(const u of recruitPool||D.units())if(u.recruit?.missionId===m.id&&!recruited.includes(u.id)){recruited.push(u.id);let mine=true;try{D.unit(u.id);}catch(e){mine=false;}if(mine)owned.push({uid:u.id+'#'+serial++,id:u.id,lv:1,exp:0,sp:0});seen().mark([u.id],'joined');rep.recruits.push(u.name);}
+  for(const [id,v] of Object.entries(m.resultFlags||{}))flags[id]=v;}
+ showCredits();save();return rep;}
 const markCleared=id=>{if(id&&!cleared.includes(id)){cleared.push(id);save();}};
 function focusTile(grid,uid){$(grid).querySelector('[data-uid="'+uid+'"]')?.focus();}
 $('fusionReset').onclick=()=>{anchor=null;picks=[];pending=null;renderFusion();};
@@ -203,5 +238,5 @@ function grant(entries,get,put,nameOf){const out=[];for(const {key,amount} of en
 const gainExp=entries=>grant(entries,uid=>{const o=owned.find(x=>x.uid===uid);return o&&{lv:o.lv||1,exp:o.exp||0,sp:o.sp||0};},(uid,r)=>Object.assign(owned.find(x=>x.uid===uid),{lv:r.lv,exp:r.exp,sp:r.sp}),uid=>D.unit(owned.find(x=>x.uid===uid).id).name);
 const dispatchLevel=id=>({lv:1,exp:0,sp:0,...(dlv[id]||{})});
 const gainDispatchExp=(entries,names={})=>grant(entries,dispatchLevel,(id,r)=>{dlv[id]={lv:r.lv,exp:r.exp,sp:r.sp};},id=>names[id]||id);
-window.PROUnitLab=Object.freeze({renderUse,renderEquip,useItem,equip,free,setUseItem:id=>{useItemId=id;usePick=null;},renderShop,renderStorage,buy,sell,renderResearch,advanceDay,startResearch,cancelResearch,day:()=>day,items:()=>({...items}),done:()=>[...done],active:()=>active&&{...active},renderEvolve,renderFusion,renderProduction,markCleared,cleared:()=>[...cleared],gainExp,gainDispatchExp,dispatchLevel,registered:()=>[...registered],register,owned:()=>owned.map(unitOf),credits:()=>credits,reset(){serial=1;credits=START_CREDITS;owned=D.roster().map(u=>({uid:u.id,id:u.id}));registered=[];dlv={};hired={};cleared=[];items=D.startItems();day=1;done=[];active=null;notices=[];evoPick=null;prodPick=null;anchor=null;picks=[];pending=null;showCredits();save();}});
+window.PROUnitLab=Object.freeze({deployProblem,missionLock,missionHidden,record,finishMission,evalStars,starText,setMissionNames,recruited:()=>[...recruited],flags:()=>({...flags}),setFlag:(k,v)=>{flags[k]=v;save();},renderUse,renderEquip,useItem,equip,free,setUseItem:id=>{useItemId=id;usePick=null;},renderShop,renderStorage,buy,sell,renderResearch,advanceDay,startResearch,cancelResearch,day:()=>day,items:()=>({...items}),done:()=>[...done],active:()=>active&&{...active},renderEvolve,renderFusion,renderProduction,markCleared,cleared:()=>[...cleared],gainExp,gainDispatchExp,dispatchLevel,registered:()=>[...registered],register,owned:()=>owned.map(unitOf),credits:()=>credits,reset(){serial=1;credits=START_CREDITS;owned=D.roster().map(u=>({uid:u.id,id:u.id}));registered=[];dlv={};hired={};cleared=[];items=D.startItems();day=1;done=[];active=null;notices=[];records={};flags={};recruited=[];wins=0;evoPick=null;prodPick=null;anchor=null;picks=[];pending=null;showCredits();save();}});
 })();
