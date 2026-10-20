@@ -128,6 +128,24 @@ w=open({});{const L=w.PROUnitLab,DD=w.PRODispatchData,X=w.PRODispatch,d=w.docume
  const dep=w.PROField._live().groups.find(g=>g.faction==='player').members.find(m=>m.uid==='infantry');assert.equal(dep.unit.atk,Math.round(atk*1.2));assert.equal(L.items().stim||0,0);
  assert.equal(L.getPreset('tactical',1).groups[0].members.length,2);}
 w.close();
+// Defeat: ordinary units are lost, key units (noFire, not hireable) are wrecked and can't sortie until repaired
+// (expensive) or revived with an item; dismissal (解雇 / 解体) and its limits; PRO・D losses.
+w=open({});{const L=w.PROUnitLab,d=w.document,F=w.PROField,u=id=>L.owned().find(x=>x.uid===id),act=k=>d.querySelector('#labWinActions [data-lab='+k+']'),closeW=()=>[...d.querySelectorAll('#labWinActions button')].find(b=>['閉じる','戻る'].includes(b.textContent)).click();
+ L.equip('robot',0,'scope');F.deploy({missionId:'training-01',groups:[{id:'g1',name:'第1部隊',faction:'player',mode:'auto',members:[{uid:'robot',unit:u('robot')},{uid:'scout',unit:u('scout')},{uid:'infantry',unit:u('infantry')}]}]});const st=F._live();
+ st.groups=st.groups.filter(g=>g.faction==='player').map(g=>({...g,members:g.members.filter(m=>m.uid==='infantry')}));st.outcome='victory';F.showResult();const body=d.querySelector('#fieldResultBody').textContent;
+ assert(body.includes('撃破：偵察車失われた'));assert(body.includes('撃破：汎用機動兵器大破'));assert(!u('scout'));assert.equal(u('robot').down,'wrecked');assert(L.isKey(w.PROTacticalData.unit('robot')));
+ // Wrecked units can't be added to a formation.
+ w.location.hash='#formation';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,400));assert(d.querySelector('#prepUnitList [data-unit=robot]').classList.contains('blocked'));assert(d.querySelector('#prepUnitList [data-unit=robot]').getAttribute('aria-label').includes('大破'));
+ // Repair screen: cost is high; credits or an item.
+ const cost=L.repairCost(u('robot'));assert(cost>=6000,String(cost));L.renderCare();const t=d.querySelector('#careGrid [data-uid=robot]');t.click();d.querySelector('#careGrid [data-uid=robot]').click();assert(act('care').textContent.includes(cost.toLocaleString()));const c0=L.credits();act('care').click();closeW();assert.equal(L.credits(),c0-cost);assert.equal(u('robot').down,null);
+ L.handleLosses(['robot']);L.buy('revive');L.renderCare();d.querySelector('#careGrid [data-uid=robot]').click();d.querySelector('#careGrid [data-uid=robot]').click();act('item-revive').click();closeW();assert.equal(u('robot').down,null);assert.equal(L.items().revive||0,0);
+ // Dismissal: hire → 解雇, produce → 解体; key units can't be dismissed; equipment goes back.
+ L.renderFire();assert(d.querySelector('#fireGrid [data-uid=robot]').classList.contains('blocked'));const f=d.querySelector('#fireGrid [data-uid=tank]');f.click();d.querySelector('#fireGrid [data-uid=tank]').click();assert(act('fire').textContent.includes('解体'));act('fire').click();closeW();assert(!u('tank'));
+ assert(L.dismiss('robot').includes('できません'));L.equip('medic',0,'plate');assert.equal(L.free('plate'),0);assert.equal(L.dismiss('medic'),'');assert.equal(L.free('plate'),1);
+ // PRO・D: a lost unit leaves the sortie list; a noFire unit is badly injured / wrecked.
+ const DD=w.PRODispatchData,key=Object.values(DD.defs).find(x=>x.noFire&&x.deploy?.player),plain=DD.players().find(x=>!x.noFire&&!x.recruit?.locked);const out=L.handleDispatchLosses([plain,...(key?[key]:[])]);assert.equal(out[0].result,'lost');assert.equal(L.dispatchState(plain.id),'lost');
+ w.PRODispatch.show(DD.listing()[0].id);assert(!d.querySelector('[data-pick="'+plain.id+'"]'));if(key){assert.equal(out[1].result,'down');L.renderCare();assert(d.querySelector('#careGrid [data-uid="d:'+key.id+'"]'));}saved=dump(w);}
+w.close();w=open(saved);assert(!w.PROUnitLab.owned().some(x=>x.uid==='scout'));w.close();
 // 2) Maker source: draft units, evolutions and variants join the built-in data; invalid links are dropped.
 w=open({...saved,PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(draft)});D=w.PROTacticalData;L=w.PROUnitLab;
 assert.equal(D.source,'maker');assert.equal(D.makerName,'テストパック');assert(D.roster().some(u=>u.id==='td-u-a'));assert(!D.roster().some(u=>u.id==='td-u-b'));assert(D.roster().some(u=>u.id==='infantry'));
@@ -138,4 +156,4 @@ assert.equal(L.credits(),24800);assert(L.owned().some(u=>u.id==='tank'));assert(
 assert(w.document.querySelector('#dataSourceText').textContent.includes('テストパック'));w.close();
 // 3) Maker source selected but no draft: falls back to the built-in data.
 w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'builtin');w.close();
-console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), sortie support (auto lineup, estimate, presets, supply, choices), missions (lock, hidden, rewards, stars, records, recruits, deploy rules), item use (boosts, limits, EXP, base-only effects) and equipment (slots, stats, weapons), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
+console.log('PASS: test save (owned units, credits, levels) across reload, level and EXP rules, mission EXP, level-gated evolution, register / carry settings, register-only fusion, PRO・D EXP, research (days, reservation, cancel, unlocks), shop and storage (gated listing, buy, sell, key and reserved items), defeat (lost / wrecked, repair, revive, dismissal, PRO・D), sortie support (auto lineup, estimate, presets, supply, choices), missions (lock, hidden, rewards, stars, records, recruits, deploy rules), item use (boosts, limits, EXP, base-only effects) and equipment (slots, stats, weapons), production / hire (cost, limit, missions, hidden conditions, registered units), maker draft as data source');
