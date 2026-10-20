@@ -9,18 +9,20 @@ const slotKey=i=>i==='auto'?'PRO_TACTICAL_SLOT_AUTO':'PRO_TACTICAL_SLOT_'+(i+1),
 const get=k=>{try{return localStorage.getItem(k);}catch(e){return null;}},put=(k,v)=>{try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);return true;}catch(e){return false;}};
 const parse=t=>{try{return JSON.parse(t);}catch(e){return null;}};
 // The current progress as a save bundle.
-function snapshot(){window.PROUnitLab?.flush();const hq=parse(get(KEYS.hq))||{};return {format:FORMAT,version:1,savedAt:new Date().toISOString(),source:window.PROTacticalData?.source||'none',summary:{day:hq.day||1,credits:hq.credits??null,units:(hq.owned||[]).length,wins:hq.wins||0},hq,seen:parse(get(KEYS.seen))||{}};}
+function snapshot(){window.PROUnitLab?.flush();const hq=parse(get(KEYS.hq))||{};return {format:FORMAT,version:1,savedAt:new Date().toISOString(),source:window.PROTacticalData?.source||'none',load:window.PROTacticalData?.load?.()||null,summary:{day:hq.day||1,credits:hq.credits??null,units:(hq.owned||[]).length,wins:hq.wins||0},hq,seen:parse(get(KEYS.seen))||{}};}
 function valid(s){return !!s&&s.format===FORMAT&&s.version===1&&s.hq&&typeof s.hq==='object'&&Array.isArray(s.hq.owned)&&typeof s.seen==='object';}
 const read=i=>{const s=parse(get(slotKey(i)));return valid(s)?s:null;};
-function describe(s,withTime=true){if(!s)return '空き';const d=new Date(s.savedAt),t=isNaN(d)?'':d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});return ({maker:'［メーカー］',pack:'［パック］',sample:'［サンプル］'}[s.source]||'')+s.summary.day+'日目 ・ 資金 '+(s.summary.credits??0).toLocaleString()+' Cr ・ '+s.summary.units+'体 ・ 勝利'+s.summary.wins+(t&&withTime?'（'+t+'）':'');}
+function describe(s,withTime=true){if(!s)return '空き';const d=new Date(s.savedAt),t=isNaN(d)?'':d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});return ({maker:'［メーカー］',pack:'［パック］',sample:'［サンプル］'}[s.source]||(String(s.source).includes('+')?'［複数パック］':''))+s.summary.day+'日目 ・ 資金 '+(s.summary.credits??0).toLocaleString()+' Cr ・ '+s.summary.units+'体 ・ 勝利'+s.summary.wins+(t&&withTime?'（'+t+'）':'');}
 function saveSlot(i){return put(slotKey(i),JSON.stringify(snapshot()));}
 const autoSave=()=>saveSlot('auto');
 const suspended=()=>!!get(SUSPEND);
 // apply(save): write progress back (switching the data source if needed) and reload. Returns a reason when refused.
 function apply(s,{reload=true}={}){if(!valid(s))return 'セーブデータの形式が違います';
  if(s.source==='maker'&&!window.PROTacticalData?.hasMakerDraft?.())return 'メーカーの下書きがないため、メーカーのデータで作ったセーブは読み込めません';
- if(s.source==='pack'&&!window.PROTacticalData?.hasPack?.())return 'パックファイルが読み込まれていないため、パックのデータで作ったセーブは読み込めません';
- put(SUSPEND,null);put(KEYS.hq,JSON.stringify(s.hq));put(KEYS.seen,JSON.stringify(s.seen));put(KEYS.source,['maker','pack','sample','none'].includes(s.source)?s.source:s.source==='builtin'?'sample':'none');if(reload)location.reload();return '';}
+ if(s.source==='pack'&&!s.load&&!window.PROTacticalData?.hasPack?.())return 'パックファイルが読み込まれていないため、パックのデータで作ったセーブは読み込めません';
+ // Saves made with several sources restore the same combination (every pack must still be stored here).
+ if(s.load){const have=(window.PROTacticalData?.packs?.()||[]).map(p=>p.packId),miss=(s.load.packs||[]).filter(id=>!have.includes(id));if(miss.length)return 'このセーブに使われたパック（'+miss.join('・')+'）が読み込まれていないため読み込めません';if(s.load.maker&&!window.PROTacticalData?.hasMakerDraft?.())return 'メーカーの下書きがないため、このセーブは読み込めません';}
+ put(SUSPEND,null);put(KEYS.hq,JSON.stringify(s.hq));put(KEYS.seen,JSON.stringify(s.seen));if(s.load){put(KEYS.source,null);window.PROTacticalData?.setLoad(s.load);}else{put('PRO_TACTICAL_LOAD',null);put(KEYS.source,['maker','pack','sample','none'].includes(s.source)?s.source:s.source==='builtin'?'sample':'none');}if(reload)location.reload();return '';}
 function exportFile(){const s=snapshot(),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(s,null,1)],{type:'application/json'}));a.download='pro-tactical-save-day'+s.summary.day+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 function importText(text){const s=parse(text);if(!valid(s))return 'セーブデータの形式が違います';return apply(s);}
 // Window (shared command window). Each slot: save / load / delete, all with a confirm step.
