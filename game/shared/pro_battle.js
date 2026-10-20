@@ -43,13 +43,13 @@ function eff(ctx,u,stat){let v=num(u[stat],0),pct=0;for(const b of u.status?.buf
 
 // ---- skills ----
 function skillUses(u,id){return u.skillUses?.[id]||0;}
-function consumeSkill(u,sk){if(!u.skillUses)u.skillUses={};u.skillUses[sk.id]=(u.skillUses[sk.id]||0)+1;}
+function consumeSkill(u,sk){if(sk.enCost>0&&u.en!=null)u.en=Math.max(0,u.en-sk.enCost);if(!u.skillUses)u.skillUses={};u.skillUses[sk.id]=(u.skillUses[sk.id]||0)+1;}
 function condOk(ctx,u,sk,info){const c=sk.cond;if(!c)return true;if(c.all)return c.all.every(x=>condOk(ctx,u,{cond:x},info));if(c.any)return c.any.some(x=>condOk(ctx,u,{cond:x},info));switch(c.type){
   case 'hp_below':return u.currentHp/u.maxHp*100<=c.value;case 'hp_above':return u.currentHp/u.maxHp*100>=c.value;
   case 'turn_ge':return ctx.turn>=c.value;case 'turn_le':return ctx.turn<=c.value;
   case 'target_tag':return !!info.opponent&&tagsOf(info.opponent).includes(c.tag);
   case 'allies_le':return sideOf(ctx,u).filter(alive).length<=c.value;case 'enemies_le':return oppOf(ctx,u).filter(alive).length<=c.value;}return true;}
-function skillReady(ctx,u,sk,info){if(sk.maxUses>0&&skillUses(u,sk.id)>=sk.maxUses)return false;if(!condOk(ctx,u,sk,info))return false;return chance(ctx,clamp(sk.chance,0,100)/100);}
+function skillReady(ctx,u,sk,info){if(sk.enCost>0&&u.en!=null&&u.en<sk.enCost)return false;if(sk.maxUses>0&&skillUses(u,sk.id)>=sk.maxUses)return false;if(!condOk(ctx,u,sk,info))return false;return chance(ctx,clamp(sk.chance,0,100)/100);}
 // Signed HP effects bypass DEF/shields; damage still uses death/guts/kill accounting.
 function healAmount(u,sk){if(!u.alive||!sk.value||(sk.value<0&&u.currentHp<=0))return 0;const raw=sk.effect==='heal_maxhp_pct'?u.maxHp*sk.value/100:sk.value;const amount=Math.sign(raw)*Math.max(1,Math.round(Math.abs(raw)));const before=u.currentHp;u.currentHp=clamp(u.currentHp+amount,0,u.maxHp);return Math.round(u.currentHp-before);}
 function applyHpEvent(ctx,u,sk,info){
@@ -127,7 +127,10 @@ function weaponMatchesResist(w,type){return Object.hasOwn(C.DAMAGE_TYPES,type)?w
 function weaponTypeLabel(w){return `${attackTypeLabel(w.attackType)}・${damageTypeLabel(w.damageType)}`;}
 
 // ---- weapons and targets ----
-function weaponReady(ctx,u,w){const st=u.weaponState?.[w.name];if(!st)return true;if(w.usesPerBattle&&st.used>=w.usesPerBattle)return false;if(w.cooldown&&ctx.turn<st.readyTurn)return false;return true;}
+// Tactical ammo / EN (prototype): only weapons with ammo or enCost (never set by the published game) are limited here.
+function resourceReady(u,w){if(w.ammo>0&&u.ammo&&(u.ammo[w.name]??w.ammo)<=0)return false;if(w.enCost>0&&u.en!=null&&u.en<w.enCost)return false;return true;}
+function spendResource(u,w){if(w.ammo>0&&u.ammo)u.ammo[w.name]=Math.max(0,(u.ammo[w.name]??w.ammo)-1);if(w.enCost>0&&u.en!=null)u.en=Math.max(0,u.en-w.enCost);}
+function weaponReady(ctx,u,w){if(!resourceReady(u,w))return false;const st=u.weaponState?.[w.name];if(!st)return true;if(w.usesPerBattle&&st.used>=w.usesPerBattle)return false;if(w.cooldown&&ctx.turn<st.readyTurn)return false;return true;}
 function weaponInRange(w,distance){const min=w.minRange??1,max=w.maxRange??1;return Number.isInteger(min)&&Number.isInteger(max)&&min>=1&&max>=min&&distance>=min&&distance<=max;}
 function chooseWeapon(ctx,attacker){
   if(ctx.localDistance!==undefined){const source=attacker.weapons?.length?attacker.weapons:[BASIC_WEAPON],ws=source.filter(w=>weaponInRange(w,ctx.localDistance)&&weaponReady(ctx,attacker,w));if(!ws.length)return null;let r=ctx.rng()*ws.reduce((n,w)=>n+Math.max(.01,num(w.weight,1)),0);for(const w of ws){r-=Math.max(.01,num(w.weight,1));if(r<=0)return w;}return ws[ws.length-1];}
@@ -135,7 +138,7 @@ function chooseWeapon(ctx,attacker){
   const total=ws.reduce((sum,w)=>sum+Math.max(.01,num(w.weight,1)),0);let r=ctx.rng()*total;
   for(const w of ws){r-=Math.max(.01,num(w.weight,1));if(r<=0)return w;}return ws[ws.length-1];
 }
-function markWeaponUsed(ctx,u,w){if(!w.usesPerBattle&&!w.cooldown)return;const st=u.weaponState[w.name]||(u.weaponState[w.name]={used:0,readyTurn:0});st.used++;if(w.cooldown)st.readyTurn=ctx.turn+w.cooldown+1;}
+function markWeaponUsed(ctx,u,w){spendResource(u,w);if(!w.usesPerBattle&&!w.cooldown)return;const st=u.weaponState[w.name]||(u.weaponState[w.name]={used:0,readyTurn:0});st.used++;if(w.cooldown)st.readyTurn=ctx.turn+w.cooldown+1;}
 function chooseTargets(ctx,attacker,opponents,count,weapon){
   let pool=opponents.filter(alive);if(!pool.length)return [];
   // Melee cannot reach the back row while anyone stands in front.
