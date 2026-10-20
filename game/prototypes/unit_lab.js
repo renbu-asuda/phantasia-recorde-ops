@@ -172,7 +172,9 @@ function openStorage(id){const it=D.item(id),eq=equipped(id),why=usable(it)?useB
 const BASE_EFFECTS=['stat_up_flat','stat_up_pct','all_stats_up_flat','exp_gain','skill_point','credits_gain','add_skill','remove_skill','add_weapon','remove_weapon','add_tag','remove_tag','recruit_unit','equip_slot','loot_box'];
 const usable=it=>(it.effects||[]).length>0&&it.effects.every(e=>BASE_EFFECTS.includes(e.type));
 const needsUnit=it=>it.scope!=='party'&&(it.effects||[]).some(e=>!['credits_gain','recruit_unit','loot_box'].includes(e.type));
-function useBlock(it,o){if(!usable(it))return (it.effects||[]).length?'作戦中に使う効果です（拠点では使えません）':'使えないアイテムです';if(free(it.id)<1)return '使える数がありません';
+// Tag requirements (requires.allTags / anyTags / noneTags) gate using and equipping an item on a unit.
+const tagBlock=(it,o)=>{if(!it?.requires||!o)return '';try{const r=C.checkRequirements(it.requires,unitOf(o));return r.ok?'':r.reason;}catch(e){return '';}};
+function useBlock(it,o){if(!usable(it))return (it.effects||[]).length?'作戦中に使う効果です（拠点では使えません）':'使えないアイテムです';if(free(it.id)<1)return '使える数がありません';{const t=tagBlock(it,o);if(t)return t;}
  if(o&&it.limitPerUnit&&(o.used?.[it.id]||0)>=it.limitPerUnit)return 'このユニットにはもう使えません（'+it.limitPerUnit+'回まで）';
  if(it.useConds?.list?.length&&!C.evalConds(it.useConds,state(o?unitOf(o):undefined)).ok)return '条件：'+condsText(it.useConds);return '';}
 function applyEffect(e,o,notes){const add=(k,v)=>{o.mods=o.mods||{};o.mods[k]=(o.mods[k]||0)+v;};switch(e.type){
@@ -191,7 +193,7 @@ function useItem(id,uid){const it=D.item(id);if(!it)return '不明なアイテ�
  const notes=[],targets=it.scope==='party'?owned:target?[target]:[];for(const e of it.effects||[]){if(['credits_gain','recruit_unit','loot_box'].includes(e.type))applyGlobal(e,notes);else for(const o of targets)applyEffect(e,o,notes);}
  items[id]-=1;for(const o of targets){o.used=o.used||{};o.used[id]=(o.used[id]||0)+1;}save();return notes;}
 // equip(uid, slot, itemId|null): an item can be equipped only while a free copy remains.
-function equip(uid,slot,id){const o=owned.find(x=>x.uid===uid);if(!o||slot<0||slot>=slotsOf(o))return false;const cur=(o.equip||[])[slot]||null;if(id&&id!==cur){const it=D.item(id);if(!it?.equip||free(id)<1)return false;}o.equip=Array.from({length:slotsOf(o)},(_,i)=>(o.equip||[])[i]||null);o.equip[slot]=id||null;save();return true;}
+function equip(uid,slot,id){const o=owned.find(x=>x.uid===uid);if(!o||slot<0||slot>=slotsOf(o))return false;const cur=(o.equip||[])[slot]||null;if(id&&id!==cur){const it=D.item(id);if(!it?.equip||free(id)<1||tagBlock(it,o))return false;}o.equip=Array.from({length:slotsOf(o)},(_,i)=>(o.equip||[])[i]||null);o.equip[slot]=id||null;save();return true;}
 let usePick=null,useItemId=null,equipPick=null;
 function renderUse(){const it=D.item(useItemId);if(!it){tell('useTitleSub','');return;}tell('useTitleSub',it.name+'（使える数 '+free(it.id)+'）を使うユニットを選び、もう一度押して決定');
  const list=owned.map(unitOf);G.render($('useGrid'),list,{selected:u=>u.uid===usePick,reason:u=>useBlock(it,owned.find(o=>o.uid===u.uid)),badge:u=>'Lv'+u.level+(it.limitPerUnit?' '+((owned.find(o=>o.uid===u.uid).used?.[it.id])||0)+'/'+it.limitPerUnit:''),onPick:u=>{if(usePick===u.uid){confirmUse(it,u);return;}usePick=u.uid;renderUse();focusTile('useGrid',u.uid);}});
@@ -203,7 +205,7 @@ function openEquip(uid){const u=unitOf(owned.find(o=>o.uid===uid)),stat=k=>k.toU
  win('装備',u.name,['Lv'+u.level+' ｜ '+['hp','atk','def','mob','acc'].map(stat).join(' ・ '),'武装：'+u.weapons.map(w=>w.name).join('・')],[...u.equip.map((id,i)=>['枠'+(i+1)+'：'+(id?D.itemName(id):'空き'),()=>pickGear(uid,i),false,'slot'+i]),['ユニット情報',()=>window.PROField?.showUnit(u)],['閉じる',()=>{close();renderEquip();}]]);}
 function pickGear(uid,slot){const o=owned.find(x=>x.uid===uid),cur=(o.equip||[])[slot]||null,gear=D.items().filter(it=>it.equip&&(items[it.id]||0)>0);
  const desc=it=>Object.entries(it.equip.stats||{}).map(([k,v])=>k.toUpperCase()+(v>0?'+':'')+v).concat((it.equip.weapons||[]).map(w=>'武装「'+w.name+'」')).join(' ・ ');
- win('装備','枠'+(slot+1)+'に装備するもの',[cur?'いま：'+D.itemName(cur):'いま：空き'],[...gear.map(it=>[(it.id===cur?'✓ ':'')+it.name+'（使える '+free(it.id)+'）'+(desc(it)?' '+desc(it):''),()=>{equip(uid,slot,it.id);renderEquip();openEquip(uid);},it.id!==cur&&free(it.id)<1,'gear-'+it.id]),['外す',()=>{equip(uid,slot,null);renderEquip();openEquip(uid);},!cur,'unequip'],['戻る',()=>openEquip(uid)]]);}
+ win('装備','枠'+(slot+1)+'に装備するもの',[cur?'いま：'+D.itemName(cur):'いま：空き'],[...gear.map(it=>{const tb=tagBlock(it,o);return [(it.id===cur?'✓ ':'')+it.name+'（使える '+free(it.id)+'）'+(desc(it)?' '+desc(it):'')+(tb&&it.id!==cur?' — '+tb:''),()=>{equip(uid,slot,it.id);renderEquip();openEquip(uid);},it.id!==cur&&(free(it.id)<1||!!tb),'gear-'+it.id];}),['外す',()=>{equip(uid,slot,null);renderEquip();openEquip(uid);},!cur,'unequip'],['戻る',()=>openEquip(uid)]]);}
 /* ---------- missions (Tactical and PRO・D) ---------- */
 // Same rules as the published game: requires.flags / missions / items (key items owned) / research, the mission's
 // condition set, and allowed weekdays (real weekday). Hidden missions are not listed while locked. Records keep
