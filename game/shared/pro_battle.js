@@ -372,6 +372,8 @@ async function checkpoint(ctx){
   }
   const wave=1+(ctx.plan?.waves||[]).filter(w=>w.spawned).length;
   for(const e of ctx.mission?.events||[]){if(ctx.seenEvents.has(e.id))continue;
+    // Optional extra condition set (T&D): the caller decides through hooks.eventOk; published data has none.
+    if(e.conds&&ctx.hooks.eventOk&&!ctx.hooks.eventOk(e))continue;
     if(e.requiredUnitId&&!ctx.allies.some(u=>(u.baseId||u.base||u.key||u.id)===e.requiredUnitId||u.id===e.requiredUnitId))continue;
     const boss=ctx.plan?.boss;
     const ok=e.when==='turn'?ctx.turn>=e.value:e.when==='wave'?wave>=e.value:e.when==='boss_hp'?!!boss&&boss.currentHp/boss.maxHp*100<=e.value:e.when==='unit_down'?[...ctx.allies,...ctx.enemies].some(u=>!u.alive&&(u.key===e.unitId||u.baseId===e.unitId||u.id===e.unitId)):false;
