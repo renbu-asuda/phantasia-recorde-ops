@@ -412,6 +412,8 @@ w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'non
 // Empty start: standard terrains only, no units / missions / items; the mission list explains how to load data; the
 // sample pack can be chosen from the data source window.
 w=open({PRO_TACTICAL_SOURCE:'none'});{const D=w.PROTacticalData,L=w.PROUnitLab,$=id=>w.document.getElementById(id);assert.equal(D.source,'none');assert.equal(D.missions().length,0);assert.equal(D.units().length,0);assert.equal(L.owned().length,0);assert.deepEqual({...L.items()},{});assert(Object.keys(D.terrainTypes()).includes('p'));
+ // No PRO・D units from the published data either (skill tree, boarding, …).
+ assert.equal(w.PRODispatchData.players().length,0);w.location.hash='#tree';w.dispatchEvent(new w.Event('hashchange'));assert.equal(w.document.querySelectorAll('#treeGrid .ug-tile').length,0);w.location.hash='#board';w.dispatchEvent(new w.Event('hashchange'));assert.equal(w.document.querySelectorAll('#boardGrid .ug-tile').length,0);
  w.location.hash='#missions';w.dispatchEvent(new w.Event('hashchange'));assert($('missionList').textContent.includes('作戦がありません'));assert($('deploy').disabled);
  $('dataSource').click();$('labWinActions').querySelector('[data-lab=src-sample]').click();$('labWinActions').querySelector('[data-lab=run]').click();assert.equal(w.localStorage.getItem('PRO_TACTICAL_SOURCE'),'sample');}w.close();
 // 4) Pack file loaded in the hub: data source, colored custom squares, separate test save; sortie cost (rate % of the sum).
