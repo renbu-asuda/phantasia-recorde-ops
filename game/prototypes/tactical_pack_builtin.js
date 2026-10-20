@@ -32,7 +32,9 @@ root.PROTacticalBuiltinPack={
   g:{name:'閉じた門',kind:'door',costs:{}},
   o:{name:'開いた門',kind:'ground',costs:{ground:1,air:1}},
   // Facility squares: facility type 'supply' lets a group standing there use items (more facility types later).
-  y:{name:'補給基地',kind:'facility',costs:{ground:1,air:1},facility:'supply'}
+  y:{name:'補給基地',kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{supply:{},repair:{pct:20}}}},
+  c:{name:'都市',kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{income:{amount:1000},defense:{hitPt:-10}}}},
+  q:{name:'本拠地',kind:'facility',costs:{ground:1,air:1},facility:{durability:30,functions:{hq:{},income:{amount:2000},supply:{},repair:{pct:20},defense:{hitPt:-15}}}}
  },
  units:[
   {...base,id:'infantry',skillTree:[node('inf-aim',1,1,[],{name:'狙いを定める',trigger:'before_attack',effect:'hit_up_pt',value:10}),node('inf-charge',2,3,['inf-aim'],{name:'突撃',trigger:'before_attack',effect:'def_pierce_pct',value:20}),node('inf-rally',3,5,['inf-charge'],{name:'鼓舞',trigger:'battle_start',effect:'atk_up_pct',value:10,target:'allies'})],joinVerb:'hire',catalog:'最も数の多い基本戦力。どんな地形でも頼りになる。',name:'歩兵小隊',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
