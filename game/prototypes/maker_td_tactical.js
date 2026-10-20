@@ -10,7 +10,7 @@ const MAP_MIN=6,MAP_MAX=30,SIZES=C.UNIT_SIZES;
 // Standard terrains (system, one-letter keys) — not sample data.
 const BUILTIN=window.PROTacticalTerrains||{};
 // Terrain palette: built-in square types (one-letter keys) + custom terrains that have Tactical movement costs.
-function palette(){return [...Object.entries(BUILTIN).map(([k,t])=>({key:k,name:t.name,kind:t.kind,facility:!!facFns(t.facility).length})),...data().terrains.filter(t=>t.tactical?.kind||Object.keys(t.tactical?.costs||{}).length).map(t=>({key:t.id,name:t.name+(Object.keys(t.tactical.costs||{}).length?'':'（進入不可）'),kind:t.tactical.kind||'ground',color:t.tactical.color,imageId:t.imageId,facility:!!facFns(t.tactical.facility).length,custom:true}))];}
+function palette(){return [...Object.entries(BUILTIN).map(([k,t])=>({key:k,name:t.name,kind:t.kind,imageId:data().terrainLooks?.[k]?.imageId,facility:!!facFns(t.facility).length})),...data().terrains.filter(t=>t.tactical?.kind||Object.keys(t.tactical?.costs||{}).length).map(t=>({key:t.id,name:t.name+(Object.keys(t.tactical.costs||{}).length?'':'（進入不可）'),kind:t.tactical.kind||'ground',color:t.tactical.color,imageId:t.imageId,facility:!!facFns(t.tactical.facility).length,custom:true}))];}
 const terrainOf=key=>palette().find(p=>p.key===key);
 /* ---------- facilities (stage 8): functions combined freely + durability; owners are set per square on the mission map ---------- */
 const FAC_FN={income:'収入（毎ターン戦場資金）',supply:'補給（作戦中のアイテム）',repair:'修理（ターン開始時にHP回復）',defense:'防御補正（局地戦で当たりにくい）',hq:'本拠地（取られたら敗北）',reward:'占領時の報酬（初回）',produce:'生産（戦場資金で部隊を作る）',gate:'出撃口（控え部隊を投入）',exit:'撤退口（部隊が撤退できる）',resupply:'弾薬・EN補給（上で全回復・近くは補給線）'};

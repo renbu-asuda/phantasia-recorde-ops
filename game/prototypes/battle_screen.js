@@ -22,7 +22,9 @@ async function play(o){
  const gate=async()=>{while(paused&&!mode.skip&&!steps)await new Promise(r=>setTimeout(r,60));if(steps)steps--;};
  const update=window.PROBattleView.createRenderer($('localAllyTeam'),$('localEnemyTeam'));
  const mark=()=>{if(!o.outOfRange)return;for(const u of [...o.allies,...o.enemies]){const c=$('card_'+u.combatId);if(c)c.classList.toggle('out-of-range',!!u.alive&&o.outOfRange(u));}};
- const render=(force=false)=>{if(!watch||mode.skip&&!force)return;update(o.allies,o.enemies,visual);mark();info();};
+ // Pixel images (prototype packs) become the card picture the shared battle view already shows (unit.image).
+ const pics=()=>{for(const u of [...o.allies,...o.enemies])if(!u.image){const im=window.PROTacticalData?.unitImage?.(u),url=im&&window.PROPixel?.dataUrl(im);if(url)u.image=url;}};pics();
+ const render=(force=false)=>{if(!watch||mode.skip&&!force)return;pics();update(o.allies,o.enemies,visual);mark();info();};
  const fire=(u,weapon)=>{if(mode.skip)return;const lane=$('localShotLane');lane.className='shot-lane';void lane.offsetWidth;lane.style.setProperty('--shot-duration',(380/speed())+'ms');lane.style.setProperty('--fx',weapon.fxColor||(u.side==='ally'?'#7fc3ff':'#ff8f89'));lane.className='shot-lane '+(u.side==='ally'?'ally-shot':'enemy-shot')+' fire';};
  const pop=(t,dmg,crit)=>{if(mode.skip||!watch)return;const c=$('card_'+t.combatId);if(!c)return;const s=document.createElement('span');s.className='dmg-pop'+(crit?' crit':'')+(dmg<0?' heal':'');s.textContent=dmg<0?'+'+Math.round(-dmg):Math.round(dmg);c.append(s);setTimeout(()=>s.remove(),900/speed());};
  const append=(text,cls)=>{const t=strip(text);logs.push({t,cls});if(watch&&!mode.skip){$('fieldBattleLog').append(line(t,cls));$('fieldBattleLog').scrollTop=$('fieldBattleLog').scrollHeight;}};

@@ -45,6 +45,12 @@ X.registerKind('images',{label:'画像（ドット絵）',en:'PIXEL IMAGES',pref
  {display:{pixedit:(v,x)=>imageText(x),imgref:v=>{const x=v&&data().images.find(i=>i.id===v);return x?x.name+'（'+imageText(x)+'）':v?'⚠ '+v:'なし';}},
   edit:{pixedit:(f,x)=>editor(x),imgref:(f,x)=>pick('画像',{'':'なし',...Object.fromEntries(data().images.map(i=>[i.id,i.name]))},x.imageId||'',k=>{commit(o=>{if(k)o.imageId=k;else delete o.imageId;});closeWin();},closeWin)},
   issues:x=>PX.issues(x),
-  mapRefs:(k,fn)=>{if(k!=='images')return;for(const kk of ['units','terrains'])for(const o of data()[kk]||[])if(o.imageId){const n=fn(o.imageId);if(n)o.imageId=n;else delete o.imageId;}}});
+  mapRefs:(k,fn)=>{if(k!=='images')return;for(const kk of ['units','terrains'])for(const o of data()[kk]||[])if(o.imageId){const n=fn(o.imageId);if(n)o.imageId=n;else delete o.imageId;}const L=data().terrainLooks;if(L)for(const [t,v] of Object.entries(L)){const n=fn(v.imageId);if(n)v.imageId=n;else delete L[t];}}});
+// Pack setting: pixel images replacing the look of standard (built-in, one-letter) terrains: terrainLooks {key:{imageId}}.
+const BUILTIN=window.PROTacticalTerrains||{};
+function looksWindow(){const L=clone(data().terrainLooks||{}),img=id=>data().images.find(i=>i.id===id);
+ const draw=()=>win('標準地形の見た目','このパックを読み込むと、標準の地形がここで選んだ画像で表示されます（性能は変わりません）。',body=>{const l=el('div',null,'cmd-list');for(const [k,t] of Object.entries(BUILTIN)){const cur=L[k]?.imageId,b=btn('',()=>pick(t.name+'の画像',{'':'なし（標準の色）',...Object.fromEntries(data().images.map(i=>[i.id,i.name]))},cur||'',v=>{if(v)L[k]={imageId:v};else delete L[k];draw();},draw),'unit-row setting-row td-row');b.dataset.look=k;const x=cur&&img(cur);if(x)b.append(thumb(x,28));b.append(el('span',t.name),el('b',x?x.name:cur?'⚠ '+cur:'標準の色'));l.append(b);}body.append(l);},
+  [['決定',()=>{commit(o=>{if(Object.keys(L).length)o.terrainLooks=L;else delete o.terrainLooks;});closeWin();}],['戻る',closeWin]]);draw();}
+X.registerType('tlooks',{display:v=>{const n=Object.keys(v||{}).length;return n?n+'種類を上書き':'上書きなし';},edit:()=>looksWindow()});
 window.PROMakerImages=Object.freeze({editor,thumb,imageText});
 })();
