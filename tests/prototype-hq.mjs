@@ -450,6 +450,18 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    s=start();G=id=>s.groups.find(g=>g.id===id);const S2={...bu,size:'S'};G('e1').members=[{uid:'h1',domain:'ground',unit:S2,currentHp:Math.round(bu.hp*0.3)},{uid:'h2',domain:'ground',unit:S2},{uid:'h3',domain:'ground',unit:S2}];G('e1').position={x:5,y:5};
    G('e2').members=[{uid:'f1',domain:'ground',unit:S2},{uid:'f2',domain:'ground',unit:S2},{uid:'f3',domain:'ground',unit:S2}];G('e2').position={x:6,y:5};G('e1').smart={reorg:true};G('e1').ai=G('e2').ai={pattern:'hold'};G('g1').position={x:0,y:5};
    await F.endTurn();assert(G('e2').members.some(m=>m.uid==='h1'),'wounded unit moved to the rear squad '+F.opLog().map(e=>e.s).slice(-4).join('|'));assert(G('e1').members.some(m=>m.uid.startsWith('f')));w.close();}
+  // Building blocks: the smart behaviours rebuilt from button rules (squad memo flags, merge / split acts, new conditions).
+  {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const F=w.PROField,L=w.PROUnitLab,T=w.PROTactical,D=w.PROTacticalData,inf=L.owned().find(x=>x.uid===SX('infantry')),bu=D.unit('td-u-b');
+   const start=()=>{F.deploy({missionId:'tm-reach',groups:[T.initializeDomains({id:'g1',name:'第1部隊',faction:'player',mode:'auto',members:[{uid:SX('infantry'),unit:inf}]},'ground')]});return F._live();};
+   let s=start(),G=id=>s.groups.find(g=>g.id===id);s.terrain={'4,5':'y'};F.fac(4,5).st.owner='enemy';const e1=G('e1');e1.ai={pattern:'hold'};
+   e1.aiRules=[{conds:[{type:'hp_le',pct:30}],acts:[{type:'retreat'},{type:'memo_set',flag:'休み'}]},{conds:[{type:'memo',flag:'休み'},{type:'hp_le',pct:79}],acts:[{type:'retreat'}]},{conds:[{type:'memo',flag:'休み'}],acts:[{type:'memo_clear',flag:'休み'}]}];
+   e1.members[0].currentHp=Math.round(bu.hp*0.2);assert(F.planEnemy('e1').x<7,'memo retreat');assert(e1.memo?.['休み']);e1.members[0].currentHp=Math.round(bu.hp*0.6);assert(F.planEnemy('e1').x<7,'memo keeps resting');
+   e1.members[0].currentHp=Math.round(bu.hp*0.9);assert.equal(F.planEnemy('e1').x,7);assert(!e1.memo['休み'],'memo cleared');
+   s=start();G=id=>s.groups.find(g=>g.id===id);const flyer={...bu,name:'飛行機',size:'S',movementAptitude:{ground:'B',air:'B',water:'none',underwater:'none',space:'none'}},walker={...bu,name:'歩兵機',size:'S'};
+   G('e1').members=[{uid:'m1',domain:'ground',unit:flyer},{uid:'m2',domain:'ground',unit:walker}];G('e1').ai={pattern:'hold'};G('e1').aiRules=[{conds:[{type:'mixed_air'},{type:'count_le',count:2}],acts:[{type:'split',how:'fly'},{type:'wait'}]}];s.groups=s.groups.filter(g=>g.id!=='e2');await F.endTurn();
+   assert(s.groups.some(g=>g.faction==='enemy'&&g.members.length===1&&g.members[0].uid==='m1'),'split act');
+   s=start();G=id=>s.groups.find(g=>g.id===id);G('e2').position={x:7,y:4};G('e1').ai=G('e2').ai={pattern:'hold'};G('e1').members[0].unit={...G('e1').members[0].unit,size:'S'};G('e2').members[0].unit={...G('e2').members[0].unit,size:'S'};
+   G('e1').aiRules=[{conds:[{type:'weak_ally_near'}],acts:[{type:'merge',with:'any'}]}];await F.endTurn();assert.equal(s.groups.filter(g=>g.faction==='enemy').length,1,'merge act');w.close();}
   // Maker star conditions, first-star bonus and drops on a win.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const F=w.PROField,L=w.PROUnitLab,$=id=>w.document.getElementById(id);const k0=L.free((SX('fieldkit')));
    F.deploy({missionId:'tm-g',groups:[w.PROTactical.initializeDomains({id:'g1',name:'第1部隊',faction:'player',mode:'auto',members:[{uid:(SX('infantry')),unit:L.owned().find(x=>x.uid===(SX('infantry')))}]},'ground')]});const s=F._live();s.groups=s.groups.filter(g=>g.faction==='player');s.outcome='victory';s.talkQueue=[];F.showResult();
