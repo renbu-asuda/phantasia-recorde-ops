@@ -259,9 +259,42 @@ function aiRuleIssues(m,g){const out=[],w=m.map?.width,h=m.map?.height,inside=a=
 const MOVE_ACTS=['wait','move','defend','capture','assault','ambush','retreat','resupply','return','defend_threat'];
 
 /* ---------- test play ---------- */
-function trial(m){const iss=checks(m);if(iss.length){message('試しプレイできません',iss);return;}try{localStorage.setItem('PRO_TACTICAL_SOURCE','maker');}catch(e){}X.save();location.href='tactical_hub.html?trial='+encodeURIComponent(m.id)+'#missions';}
+// Test play: opens the mission in the Tactical hub with the maker draft added to the data sources. Every hub save key
+// (PRO_TACTICAL_*) is snapshotted first and put back when the hub returns here, so nothing from the test play is kept.
+let trialParty='save',trialUnits=[];
+function trial(m){const iss=checks(m);if(iss.length){message('試しプレイできません',iss);return;}
+ const names=()=>trialUnits.map(id=>find('units',id)?.name||'⚠'+id),go=()=>{if(trialParty==='maker'&&!trialUnits.length)return;const snapshot={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('PRO_TACTICAL_'))snapshot[k]=localStorage.getItem(k);}
+   let l={};try{l=JSON.parse(snapshot.PRO_TACTICAL_LOAD||'null')||{};}catch(e){}const src=snapshot.PRO_TACTICAL_SOURCE;localStorage.removeItem('PRO_TACTICAL_SOURCE');localStorage.setItem('PRO_TACTICAL_LOAD',JSON.stringify({sample:!!l.sample||src==='sample'||src==='builtin',maker:true,packs:Array.isArray(l.packs)?l.packs:[]}));
+   localStorage.setItem('PRO_TACTICAL_TESTPLAY',JSON.stringify({missionId:m.id,party:trialParty,units:trialParty==='maker'?trialUnits:[],snapshot}));}catch(e){}X.save();location.href='tactical_hub.html?trial='+encodeURIComponent(m.id)+(trialParty==='maker'?'#map':'#missions');};
+ const draw=()=>rowsWin('試しプレイ','タクティカルの画面で作戦を試します。終わったら「メーカーへ戻る」で戻ります。試しプレイ中の資金・ユニット・経験値・セーブはすべて元に戻ります。',[
+   ['自分の部隊',trialParty==='maker'?'メーカーで組む試し部隊':'今のセーブの部隊（出撃準備から）',()=>{trialParty=trialParty==='maker'?'save':'maker';draw();},'party'],
+   ...(trialParty==='maker'?[['＋ ユニットを足す（'+trialUnits.length+'/8）',names().join('・')||'まだいません',()=>{if(trialUnits.length>=8)return draw();pick('試し部隊に足すユニット',Object.fromEntries(data().units.map(u=>[u.id,u.name])),null,k=>{trialUnits.push(k);draw();},draw);},'addunit'],...trialUnits.map((id,i)=>['外す：'+names()[i],'',()=>{trialUnits.splice(i,1);draw();},'unit'+i])]:[])],
+  [['試しプレイを始める',go],['戻る',closeWin]]);draw();}
 
 /* ---------- checks ---------- */
+/* Deeper checks (stage 11): ranges nobody can reach, things that never happen, victory that can't be won.
+   Reach uses any movement domain over squares with movement costs; squares changed by an event's terrain action count with their new terrain. */
+const costsOf=k=>BUILTIN[k]?.costs||find('terrains',k)?.tactical?.costs||{},passable=k=>Object.keys(costsOf(k)).length>0;
+function reachFrom(m,from){const w=m.map.width,h=m.map.height,open=new Set();for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(passable(m.map.grid[y]?.[x]))open.add(x+','+y);
+ for(const e of m.events||[])for(const a of e.actions||[])if(a.type==='terrain'&&passable(a.key))for(let y=a.y;y<a.y+(a.h||1);y++)for(let x=a.x;x<a.x+(a.w||1);x++)open.add(x+','+y);
+ const seen=new Set(),q=from.filter(p=>p&&open.has(p.x+','+p.y)).map(p=>[p.x,p.y]);for(const [x,y] of q)seen.add(x+','+y);while(q.length){const [x,y]=q.pop();for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const k=(x+dx)+','+(y+dy);if(open.has(k)&&!seen.has(k)){seen.add(k);q.push([x+dx,y+dy]);}}}return seen;}
+const hits=(set,r)=>{for(let y=r.y;y<r.y+(r.h||1);y++)for(let x=r.x;x<r.x+(r.w||1);x++)if(set.has(x+','+y))return true;return false;};
+function deepChecks(m){const out=[];if(!Array.isArray(m.map?.grid)||m.map.grid.length!==m.map.height)return out;const starts=m.playerStarts||[],pl=reachFrom(m,starts),events=m.events||[],acts=events.flatMap(e=>e.actions||[]);
+ const enemyFrom=reachFrom(m,squadsOf(m).filter(g=>!(m.allies||[]).includes(g)||g.faction==='ally').map(g=>g.position)),ok=r=>Number.isFinite(r?.x)&&Number.isFinite(r?.y);
+ // Unreachable places.
+ const v=m.victory||{type:'enemy_wipe'};if(v.type==='reach'&&ok(v)&&starts.length&&!hits(pl,v))out.push('勝利条件：到達するマスに味方がたどり着けません（勝てない作戦）');
+ for(const e of events){const t=e.trigger||{};if(t.type==='reach'&&ok(t)&&starts.length&&!hits(pl,t))out.push('イベント「'+e.name+'」：きっかけの範囲に味方がたどり着けません');if(t.type==='enemy_reach'&&ok(t)&&!hits(enemyFrom,t))out.push('イベント「'+e.name+'」：きっかけの範囲に敵がたどり着けません');}
+ for(const g of squadsOf(m)){if(!g.position)continue;const r=reachFrom(m,[g.position]);(g.aiRules||[]).forEach((rule,i)=>{for(const a of rule.acts||[])if(['move','defend'].includes(a.type)&&ok(a)&&!hits(r,a))out.push(g.name+'のAIルール'+(i+1)+'：移動先にたどり着けません');});}
+ // Things that never happen.
+ const spawned=new Set(acts.filter(a=>a.type==='spawn').map(a=>a.groupId));for(const g of squadsOf(m))if(g.reinforce&&!spawned.has(g.id))out.push(g.name+'：増援ですが、どのイベントからも出されません');
+ const flagsSet=new Set([...acts.filter(a=>a.type==='flag').map(a=>a.flag),...acts.filter(a=>a.type==='choice').flatMap(a=>(a.options||[]).map(o=>o.flag))]);
+ for(const e of events){const t=e.trigger||{};if(t.type==='flag'&&t.flag&&!flagsSet.has(t.flag))out.push('イベント「'+e.name+'」：フラグ「'+t.flag+'」がどこでも立たないので起こりません');}
+ // Victory that can't be won.
+ if(v.type==='boss'){const g=(m.enemies||[]).find(x=>x.id===v.groupId);if(g?.reinforce&&!spawned.has(g.id))out.push('勝利条件：撃破する部隊が出てこないので勝てません');}
+ if(v.type==='flag'&&v.flag&&!flagsSet.has(v.flag))out.push('勝利条件：フラグ「'+v.flag+'」がどこでも立たないので勝てません');
+ const f=m.defeat||{};if(v.type==='defend'&&f.type==='turn_limit'&&v.turns>=f.turns)out.push('勝利条件：守りきるターン数が敗北のターン制限以上なので勝てません');
+ if(v.type==='objective_done'){const o=(m.objectives||[]).find(x=>x.id===v.objectiveId);if(o?.appear==='event'&&!acts.some(a=>a.type==='objective'&&a.id===o.id&&a.result==='start'))out.push('勝利条件：作戦内ミッションが発生しないので勝てません');}
+ return out;}
 function checks(m){const out=[],w=m.map?.width,h=m.map?.height;if(!(w>=MAP_MIN&&w<=MAP_MAX&&h>=MAP_MIN&&h<=MAP_MAX))out.push('マップの広さは'+MAP_MIN+'〜'+MAP_MAX+'マスです');
  if(!Array.isArray(m.map?.grid)||m.map.grid.length!==h||m.map.grid.some(r=>!Array.isArray(r)||r.length!==w))out.push('マップの大きさとマスの数が合いません');else{const bad=new Set();for(const r of m.map.grid)for(const k of r)if(!terrainOf(k))bad.add(k);if(bad.size)out.push('使えない地形：'+[...bad].join('・'));}
  const inside=p=>p&&p.x>=0&&p.y>=0&&p.x<w&&p.y<h,key=p=>p.x+','+p.y;if(!(m.playerStarts||[]).length)out.push('味方の初期位置がありません');if((m.playerStarts||[]).some(p=>!inside(p)))out.push('マップの外に味方の初期位置があります');{const v=m.map?.view;if(v){if(!(inside(v)&&inside({x:v.x+v.w-1,y:v.y+v.h-1})))out.push('開始時の表示範囲がマップの外です');else if((m.playerStarts||[]).some(p=>!(p.x>=v.x&&p.y>=v.y&&p.x<v.x+v.w&&p.y<v.y+v.h)))out.push('開始時の表示範囲の外に味方の初期位置があります');}}
@@ -280,6 +313,7 @@ function checks(m){const out=[],w=m.map?.width,h=m.map?.height;if(!(w>=MAP_MIN&&
    if(a.type==='map_expand'&&!inside(a))out.push(w+'：広げる範囲がマップの外です');if(a.type==='map_expand'&&!m.map?.view)out.push(w+'：「開始時の表示範囲」が未設定なので、マップを広げる意味がありません');if(a.type==='terrain'&&(!terrainOf(a.key)||!inside(a)))out.push(w+'：地形の変更が正しくありません');if(a.type==='victory'||a.type==='defeat'){const c=condIssue(m,a.cond,w+'の'+(a.type==='victory'?'勝利':'敗北')+'条件');if(c)out.push(c);}if(a.type==='objective'&&!(m.objectives||[]).some(o=>o.id===a.id))out.push(w+'：作戦内ミッションを選んでください');if(a.type==='resupply'&&a.scope==='group'&&!ids.has(a.groupId))out.push(w+'：補給する部隊を選んでください');if(a.type==='game_flag'&&!find('flags',a.flagId))out.push(w+'：ゲームのフラグを選んでください');if(a.type==='ai'&&!(m.enemies||[]).some(g=>g.id===a.groupId))out.push(w+'：AIを変える敵部隊を選んでください');}}
  for(const g of squadsOf(m))out.push(...aiRuleIssues(m,g));
  for(const o of m.objectives||[]){if(o.appear==='event'&&!(m.events||[]).some(e=>(e.actions||[]).some(a=>a.type==='objective'&&a.id===o.id&&a.result==='start')))out.push('ミッション「'+o.name+'」：発生させるイベントがありません');const s=condIssue(m,o.success,'ミッション「'+o.name+'」の成功条件');if(s)out.push(s);if(o.fail){const f2=condIssue(m,o.fail,'ミッション「'+o.name+'」の失敗条件');if(f2)out.push(f2);}}
+ out.push(...deepChecks(m));
  return out;}
 
 X.registerKind('tmissions',{label:'タクティカル作戦',en:'TACTICAL MISSIONS',prefix:'tm'},blankMission,[
