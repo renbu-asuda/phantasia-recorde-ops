@@ -212,7 +212,7 @@ function pickGear(uid,slot){const o=owned.find(x=>x.uid===uid),cur=(o.equip||[])
 // condition set, and allowed weekdays (real weekday). Hidden missions are not listed while locked. Records keep
 // clears, best turns and stars; new stars pay starReward (default 20% of the reward) once.
 const record=id=>records[id]||{clears:0,best:0,stars:[]};
-function missionLock(m){const r=m.requires||{};
+function missionLock(m){if(m&&window.PROTrialMission===m.id)return '';const r=m.requires||{};
  if(r.flags&&Object.entries(r.flags).some(([k,v])=>!!flags[k]!==!!v))return '分岐条件：'+Object.entries(r.flags).map(([k,v])=>k+(v?'':'（OFF）')).join('・');
  const miss=(r.missions||[]).filter(id=>!cleared.includes(id));if(miss.length)return '前提作戦が未クリア：'+miss.map(id=>missionName(id)).join('・');
  const keys=(r.items||[]).filter(id=>!((items[id]||0)>0));if(keys.length)return '必要なキーアイテム：'+keys.map(D.itemName).join('・');

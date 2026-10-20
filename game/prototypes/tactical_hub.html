@@ -24,6 +24,8 @@ $('gateForm').onsubmit=e=>{e.preventDefault();if($('gatePassword').value===GATE_
 try{if(sessionStorage.getItem('PRO_TACTICAL_GATE')==='1'){unlocked=true;$('gate').hidden=true;$('shell').inert=false;}}catch(e){}
 setTimeout(()=>{if(!unlocked)$('gatePassword').focus();},0);
 let selected=missions[0].id,filter='all',lastFocus;
+// Test play from the T&D maker (?trial=<mission id>): select it and skip its unlock check.
+const trialId=new URLSearchParams(location.search).get('trial');if(trialId&&missions.some(m=>m.id===trialId)){selected=trialId;window.PROTrialMission=trialId;}
 function select(id){selected=id;render();}
 // Full mission data for lock / record checks (the list entries are display summaries).
 const fullMission=m=>m.kind==='dispatch'?window.PRODispatchData.mission(m.id):window.PROTacticalData.mission(m.id);
