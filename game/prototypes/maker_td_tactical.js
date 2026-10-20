@@ -4,10 +4,11 @@
    and test play. Loaded after
    maker_td.js; it registers its kind, fields, editors and checks through PROMakerTD.extend. */
 (function(){'use strict';
-const X=window.PROMakerTD.extend,C=window.PROCore,B=window.PROTacticalBuiltinPack;
+const X=window.PROMakerTD.extend,C=window.PROCore;
 const {el,win,closeWin,commit,numberPrompt,find,data,clone,message,condsEditor}=X;
 const MAP_MIN=6,MAP_MAX=30,SIZES=C.UNIT_SIZES;
-const BUILTIN=B?.terrains||{};
+// Standard terrains (system, one-letter keys) — not sample data.
+const BUILTIN=window.PROTacticalTerrains||{};
 // Terrain palette: built-in square types (one-letter keys) + custom terrains that have Tactical movement costs.
 function palette(){return [...Object.entries(BUILTIN).map(([k,t])=>({key:k,name:t.name,kind:t.kind,facility:!!facFns(t.facility).length})),...data().terrains.filter(t=>t.tactical?.kind||Object.keys(t.tactical?.costs||{}).length).map(t=>({key:t.id,name:t.name+(Object.keys(t.tactical.costs||{}).length?'':'（進入不可）'),kind:t.tactical.kind||'ground',color:t.tactical.color,facility:!!facFns(t.tactical.facility).length,custom:true}))];}
 const terrainOf=key=>palette().find(p=>p.key===key);

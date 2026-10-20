@@ -9,7 +9,7 @@ const roster=()=>window.PROUnitLab?window.PROUnitLab.owned():P.roster().map(u=>(
 // Drop members that are no longer owned and follow evolutions and level-ups (same uid, new unit or stats).
 function sync(){const own=new Map(roster().map(u=>[u.uid,u]));for(const g of groups){g.members=g.members.filter(m=>own.has(m.uid));for(const m of g.members)if(m.unit.id!==own.get(m.uid).id||m.unit.level!==own.get(m.uid).level){m.unit=C.clone(own.get(m.uid));setDomains(g);}}}
 const scenarios=Object.fromEntries(P.missions().map(m=>[m.id,{name:m.name,goal:m.goal,surface:m.surface}]));
-let missionId='training-01',sequence=2,active='group-1',groups=[{id:'group-1',name:'第1部隊',faction:'player',mode:'auto',members:[]}],lastFocus;
+let missionId=null,sequence=2,active='group-1',groups=[{id:'group-1',name:'第1部隊',faction:'player',mode:'auto',members:[]}],lastFocus;
 const scenario=()=>scenarios[missionId],current=()=>groups.find(g=>g.id===active),occupied=id=>groups.find(g=>g.members.some(m=>m.uid===id));
 // anywhere: opened from the unit menu with no mission chosen, so battlefield (surface / domain) checks are skipped.
 let anywhere=false,infoMode=false;
@@ -20,7 +20,7 @@ function reason(u,g){const why=(window.PROUnitLab?.crewProblem(u.uid)||'')||(u.d
 function setDomains(g){for(const m of g.members){if(anywhere){delete m.domain;continue;}try{m.domain=g.mode==='auto'?T.defaultDomain(m,scenario().surface):g.mode;}catch(e){delete m.domain;}}}
 function tell(text){$('prepNotice').textContent=text;}
 function button(text,fn,cls='secondary'){const b=el('button',cls,text);b.type='button';b.onclick=fn;return b;}
-function redraw(){const s=scenario();$('prepMissionName').textContent=s.name;$('prepMissionInfo').textContent='勝利条件：'+s.goal+' ｜ 基準領域：'+domains[s.surface];$('prepRosterTarget').textContent=current().name+'に追加';
+function redraw(){const s=scenario()||{name:'（作戦なし）',goal:'—',surface:'ground'};$('prepMissionName').textContent=s.name;$('prepMissionInfo').textContent='勝利条件：'+s.goal+' ｜ 基準領域：'+domains[s.surface];$('prepRosterTarget').textContent=current().name+'に追加';
  const q=$('prepSearch').value.trim().toLocaleLowerCase(),list=(sync(),roster()).filter(u=>window.PROUnitGrid.matches(u,q));
  // Map-style unit grid: tap adds to the target squad, tap an assigned unit takes it out, blocked tiles explain why.
  window.PROUnitGrid.render($('prepUnitList'),list,{search:false,selected:u=>!!occupied(u.uid),badge:u=>occupied(u.uid)?.name.replace('部隊','')||'MOVE '+(u.move??'—'),reason:u=>occupied(u.uid)?'':reason(u,current()),onPick:u=>{if(infoMode){window.PROField?.showUnit(u);return;}const owner=occupied(u.uid);if(owner){removeUnit(owner.id,u.uid);tell(u.name+'を'+owner.name+'から外しました');return;}const r=reason(u,current());if(r){tell(u.name+'：'+r);return;}addUnit(u.uid);}});
