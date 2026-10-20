@@ -31,7 +31,7 @@ const FIELDS={
   {key:'move',label:'MOVE',type:'number',min:0,max:99,group:'タクティカル',help:'マップの移動力。'},
   ...Object.entries(C.MOVEMENT_DOMAINS).map(([k,l])=>({key:'movementAptitude.'+k,label:l+'の移動適性',type:'select',choices:APT,group:'タクティカル'})),
   {key:'growth.hp',label:'成長：HP',type:'number',min:0,group:'育成・運用'},{key:'growth.atk',label:'成長：ATK',type:'number',min:0,group:'育成・運用'},{key:'growth.def',label:'成長：DEF',type:'number',min:0,group:'育成・運用'},{key:'growth.mob',label:'成長：MOB',type:'number',min:0,group:'育成・運用'},{key:'growth.acc',label:'成長：ACC',type:'number',min:0,group:'育成・運用'},
-  {key:'exp',label:'撃破時の経験値',type:'number',min:0,group:'育成・運用'},{key:'sortieCost',label:'出撃費用',type:'number',min:0,group:'育成・運用'},{key:'capture',label:'占領力（タクティカル・空欄＝5、0で占領できない）',type:'number',min:0,max:999,group:'育成・運用'},{key:'hireCost',label:'生産・雇用の費用（リスト登録時・Cr）',type:'number',min:0,group:'育成・運用'},{key:'joinVerb',label:'加入の呼び方',type:'select',choices:{hire:'雇用（人など）',produce:'生産（機械など）'},help:'表示だけの違いで、処理は同じです。',group:'育成・運用'},{key:'equipSlots',label:'装備枠の数',type:'number',min:0,max:6,group:'育成・運用'},
+  {key:'exp',label:'撃破時の経験値',type:'number',min:0,group:'育成・運用'},{key:'sortieCost',label:'出撃費用',type:'number',min:0,group:'育成・運用'},{key:'capture',label:'占領力（タクティカル・空欄＝5、0で占領できない）',type:'number',min:0,max:999,group:'育成・運用'},{key:'en',label:'最大EN（タクティカル・空欄＝ENを使わない）',type:'number',min:0,max:99999,group:'育成・運用'},{key:'supplier',label:'補給能力（%・部隊のターン開始時に弾薬・EN回復＋補給コマンド。空欄＝なし）',type:'number',min:0,max:100,group:'育成・運用'},{key:'hireCost',label:'生産・雇用の費用（リスト登録時・Cr）',type:'number',min:0,group:'育成・運用'},{key:'joinVerb',label:'加入の呼び方',type:'select',choices:{hire:'雇用（人など）',produce:'生産（機械など）'},help:'表示だけの違いで、処理は同じです。',group:'育成・運用'},{key:'equipSlots',label:'装備枠の数',type:'number',min:0,max:6,group:'育成・運用'},
   {key:'noFire',label:'解雇できない（重要ユニット）',type:'toggle',group:'育成・運用'},{key:'recruit.locked',label:'最初は仲間にいない',type:'toggle',group:'育成・運用'},{key:'note',label:'メモ',type:'text',group:'育成・運用'},{key:'skillTree',label:'スキルツリー（SPで習得）',type:'skillTree',group:'育成・運用'},{key:'catalog',label:'図鑑の文章',type:'text',multiline:true,max:1000,group:'図鑑'},{key:'base',label:'ベースユニット（未設定＝なし）',type:'select',help:'元にするユニット。どの項目も自由に変えられ、コピーの感覚でも使えます。',choices:x=>Object.fromEntries(data.units.filter(u=>u.id!==x.id).map(u=>[u.id,u.name])),group:'図鑑'},{key:'separate',label:'ベースユニットと別扱い（図鑑・遭遇を分ける）',type:'toggle',show:x=>!!x.base,group:'図鑑'}],
  weapons:[
   {key:'name',label:'武装名',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},
@@ -39,7 +39,7 @@ const FIELDS={
   {key:'useUnitAtk',label:'ユニットのATKを参照',type:'toggle',group:'威力',help:'ON：（ATK＋基礎攻撃力）×威力％。OFF：基礎攻撃力×威力％。'},{key:'baseAtk',label:'基礎攻撃力',type:'number',min:0,group:'威力'},
   {key:'powerPct',label:'威力 %',type:'number',min:0,group:'威力'},{key:'accuracyPt',label:'命中補正 pt',type:'number',min:-100,max:100,group:'威力'},{key:'critPt',label:'CRIT補正 pt',type:'number',min:-100,max:100,group:'威力'},{key:'targetCount',label:'対象数',type:'number',min:1,max:8,group:'威力'},
   {key:'minRange',label:'最小射程（マス）',type:'number',min:1,max:99,group:'タクティカル'},{key:'maxRange',label:'最大射程（マス）',type:'number',min:1,max:99,group:'タクティカル'},
-  {key:'usesPerBattle',label:'1戦闘の使用回数（0=無制限）',type:'number',min:0,max:99,group:'使用制限'},{key:'cooldown',label:'使用後に待つTURN',type:'number',min:0,max:99,group:'使用制限'},
+  {key:'usesPerBattle',label:'1戦闘の使用回数（0=無制限）',type:'number',min:0,max:99,group:'使用制限'},{key:'ammo',label:'弾数（タクティカル・作戦中に持ち越し、補給で回復。空欄=無制限）',type:'number',min:0,max:999,group:'使用制限'},{key:'enCost',label:'消費EN（タクティカル）',type:'number',min:0,max:9999,group:'使用制限'},{key:'cooldown',label:'使用後に待つTURN',type:'number',min:0,max:99,group:'使用制限'},
   {key:'defPiercePct',label:'DEF貫通 %',type:'number',min:0,max:100,group:'詳細'},{key:'weight',label:'抽選ウェイト（使われやすさ）',type:'number',min:0.01,group:'詳細'},{key:'minDamage',label:'最低ダメージ',type:'number',min:0,group:'詳細'},{key:'hitsMin',label:'最小HIT数',type:'number',min:1,max:100,group:'詳細'},{key:'hitsMax',label:'最大HIT数',type:'number',min:1,max:100,group:'詳細'},{key:'hitPowerPct',label:'1HITの威力 %',type:'number',min:0,group:'詳細'},
   {key:'fxColor',label:'演出色（#RRGGBB）',type:'color',group:'詳細'},{key:'note',label:'メモ',type:'text',group:'詳細'}],
  skills:[
@@ -47,7 +47,7 @@ const FIELDS={
   {key:'trigger',label:'いつ発動する？',type:'select',choices:C.triggers,group:'基本',after:s=>{if(!C.allowed[s.trigger]?.includes(s.effect))s.effect=C.allowed[s.trigger][0];}},
   {key:'effect',label:'何が起きる？',type:'select',choices:s=>Object.fromEntries((C.allowed[s.trigger]||[]).map(x=>[x,C.skillEffects[x]])),group:'基本'},
   {key:'resistType',label:'耐性の対象',type:'select',choices:C.RESIST_TYPES,group:'基本',show:s=>s.effect==='weapon_resist_pct'},
-  {key:'value',label:'効果の大きさ',type:'number',min:-1000000,group:'基本'},{key:'chance',label:'発動率 %',type:'number',min:0,max:100,group:'基本'},{key:'maxUses',label:'1戦闘の発動回数（0=無制限）',type:'number',min:0,group:'基本'},
+  {key:'value',label:'効果の大きさ',type:'number',min:-1000000,group:'基本'},{key:'chance',label:'発動率 %',type:'number',min:0,max:100,group:'基本'},{key:'maxUses',label:'1戦闘の発動回数（0=無制限）',type:'number',min:0,group:'基本'},{key:'enCost',label:'消費EN（タクティカル）',type:'number',min:0,max:9999,group:'基本'},
   {key:'target',label:'効果の対象',type:'select',choices:C.skillTargets,group:'基本',show:s=>C.TARGETED_EFFECTS.includes(s.effect)},
   {key:'duration',label:'持続TURN',type:'number',min:1,max:99,group:'基本',show:s=>C.DURATION_EFFECTS.includes(s.effect)},
   {key:'tag',label:'特効タグ',type:'text',group:'基本',show:s=>s.effect==='tag_damage_up_pct'},{key:'note',label:'メモ',type:'text',group:'詳細'}]};
@@ -67,7 +67,7 @@ FIELDS.missions=[
 FIELDS.items=[
   {key:'name',label:'アイテム名',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},{key:'desc',label:'説明',type:'text',group:'基本'},
   {key:'effects',label:'使ったときの効果',type:'effects',group:'基本'},{key:'price',label:'価格（Cr・空欄=売らない）',type:'number',min:0,group:'基本'},
-  {key:'scope',label:'使う相手',type:'select',choices:{unit:'1体に使う',party:'部隊全体に使う'},group:'基本'},{key:'limitPerUnit',label:'1体あたりの使用回数（空欄=無制限）',type:'number',min:0,max:999,group:'基本'},{key:'key',label:'キーアイテム（使わない・売れない）',type:'toggle',group:'基本'},
+  {key:'scope',label:'使う相手',type:'select',choices:{unit:'1体に使う',party:'部隊全体に使う'},group:'基本'},{key:'limitPerUnit',label:'1体あたりの使用回数（空欄=無制限）',type:'number',min:0,max:999,group:'基本'},{key:'resupply',label:'作戦中：弾薬・ENを回復する%（補給施設の上で使う）',type:'number',min:0,max:100,group:'基本'},{key:'key',label:'キーアイテム（使わない・売れない）',type:'toggle',group:'基本'},
   {key:'requires.allTags',label:'使える条件：必須タグ',type:'tags',group:'使える条件'},{key:'requires.anyTags',label:'使える条件：いずれかのタグ',type:'tags',group:'使える条件'},{key:'requires.noneTags',label:'使える条件：除外タグ',type:'tags',group:'使える条件'},
   {key:'equip',label:'装備品にする',type:'equipToggle',group:'装備'},
   ...['hp','atk','def','mob','acc'].map(k=>({key:'equip.stats.'+k,label:'装備補正：'+C.stats[k],type:'number',min:-1000000,group:'装備',show:i=>!!i.equip})),
@@ -414,7 +414,7 @@ function message(title,lines,actions=[['閉じる',()=>$('msgWin').close()]]){$(
 const LEGACY_SKILLS={heavy:{name:'重装火力',trigger:'before_attack',effect:'damage_up_pct',value:8,chance:100,maxUses:0},regen:{name:'再生',trigger:'turn_end',effect:'heal_maxhp_pct',value:7,chance:100,maxUses:0},cloak:{name:'見えざる傘',trigger:'when_targeted',effect:'enemy_hit_down_pt',value:22,chance:100,maxUses:1}};
 const WEAPON_KEYS=['id','name','attackType','damageType','useUnitAtk','baseAtk','powerPct','accuracyPt','critPt','targetCount','minRange','maxRange','usesPerBattle','cooldown','defPiercePct','weight','minDamage','hitsMin','hitsMax','hitPowerPct','fxColor','effects','note'];
 const SKILL_KEYS=['id','name','trigger','effect','resistType','value','chance','maxUses','target','duration','tag','cond','effects','note'];
-const UNIT_KEYS=['id','name','role','mark','tags','deploy','capture','hp','atk','def','mob','acc','weaponIds','skillIds','row','ai','crew','size','move','movementAptitude','growth','exp','sortieCost','equipSlots','noFire','recruit','note','skillTree','phases','pilotProfile','image','joinConds','catalog','base','separate','hireCost','joinVerb'];
+const UNIT_KEYS=['id','name','role','mark','tags','deploy','capture','en','supplier','hp','atk','def','mob','acc','weaponIds','skillIds','row','ai','crew','size','move','movementAptitude','growth','exp','sortieCost','equipSlots','noFire','recruit','note','skillTree','phases','pilotProfile','image','joinConds','catalog','base','separate','hireCost','joinVerb'];
 const ITEM_KEYS=['id','name','desc','effects','price','scope','limitPerUnit','key','requires','equip','shop','note','conds','useConds'];
 const MISSION_KEYS=['id','name','diff','desc','tags','reward','maxDeploy','terrain','enemies','enemyRows','objective','rules','waves','story','exp','hidden','note','drops','requires','stars','starReward','days','events','resultFlags','conds'];
 const pick=(o,keys)=>Object.fromEntries(keys.filter(k=>o[k]!==undefined).map(k=>[k,clone(o[k])]));

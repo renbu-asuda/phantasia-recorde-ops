@@ -32,9 +32,9 @@ root.PROTacticalBuiltinPack={
   g:{name:'閉じた門',kind:'door',costs:{}},
   o:{name:'開いた門',kind:'ground',costs:{ground:1,air:1}},
   // Facility squares: facility type 'supply' lets a group standing there use items (more facility types later).
-  y:{name:'補給基地',kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{supply:{},repair:{pct:20}}}},
+  y:{name:'補給基地',kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{supply:{},repair:{pct:20},resupply:{range:3,linePct:30}}}},
   c:{name:'都市',kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{income:{amount:1000},defense:{hitPt:-10}}}},
-  q:{name:'本拠地',kind:'facility',costs:{ground:1,air:1},facility:{durability:30,functions:{hq:{},income:{amount:2000},supply:{},repair:{pct:20},defense:{hitPt:-15}}}}
+  q:{name:'本拠地',kind:'facility',costs:{ground:1,air:1},facility:{durability:30,functions:{hq:{},income:{amount:2000},supply:{},repair:{pct:20},defense:{hitPt:-15},resupply:{range:2,linePct:30}}}}
  },
  units:[
   {...base,id:'infantry',skillTree:[node('inf-aim',1,1,[],{name:'狙いを定める',trigger:'before_attack',effect:'hit_up_pt',value:10}),node('inf-charge',2,3,['inf-aim'],{name:'突撃',trigger:'before_attack',effect:'def_pierce_pct',value:20}),node('inf-rally',3,5,['inf-charge'],{name:'鼓舞',trigger:'battle_start',effect:'atk_up_pct',value:10,target:'allies'})],joinVerb:'hire',catalog:'最も数の多い基本戦力。どんな地形でも頼りになる。',name:'歩兵小隊',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
@@ -79,6 +79,8 @@ root.PROTacticalBuiltinPack={
   // Usable items (PROCore item effects) and equipment (equip: stats / weapons / skills, one item per slot).
   {id:'revive',name:'緊急修理キット',desc:'大破・重傷のユニットを復帰させる。高価。',price:8000,effects:[{type:'revive_hp_pct',value:100}]},
   // In-mission use (Tactical map → アイテム): heals one unit by half of its max HP.
+  // In-mission resupply (stage 9): restores ammo and EN of one unit.
+  {id:'ammopack',name:'弾薬・ENパック',desc:'作戦中に使う。1体の弾薬とENを全回復する。',price:400,effects:[],resupply:100},
   {id:'fieldkit',name:'応急修理キット',desc:'作戦中に使う。1体のHPを最大HPの50%回復する。',price:600,effects:[{type:'heal_hp_pct',value:50}]},
   {id:'stim',name:'戦闘糧食',desc:'補給アイテム。次の出撃だけATK+20%。',price:400,effects:[{type:'sortie_buff',stat:'atk',value:20}]},
   {id:'chip',name:'強化チップ',desc:'使うとATKが永続的に20上がる。1体3回まで。',price:800,limitPerUnit:3,effects:[{type:'stat_up_flat',stat:'atk',value:20}]},
@@ -87,7 +89,7 @@ root.PROTacticalBuiltinPack={
   {id:'scope',name:'精密照準器',desc:'装備するとACC+60。',price:1200,equip:{stats:{acc:60}}},
   {id:'plate',name:'増加装甲',desc:'装備するとDEF+80・MOB-20。車両・機動兵器のみ。',requires:{anyTags:['車両','機動兵器']},price:1500,equip:{stats:{def:80,mob:-20}}},
   {id:'launcher',name:'追加ミサイル',desc:'装備すると武装「ミサイル」（射程2〜4）が増える。',price:2000,equip:{weapons:[{name:'ミサイル',attackType:'ranged',damageType:'physical',powerPct:120,accuracyPt:0,targetCount:1,minRange:2,maxRange:4}]}}],
- startItems:{fieldkit:2,parts:5,alloy:1,pass:1,chip:2,manual:1,scope:1,plate:1,stim:2},
+ startItems:{fieldkit:2,ammopack:1,parts:5,alloy:1,pass:1,chip:2,manual:1,scope:1,plate:1,stim:2},
  research:[{id:'r-data',name:'戦闘記録の解析',desc:'過去の戦闘を解析し、戦闘データを得る。',days:1,cost:{credits:500},unlock:{grantItems:{data:2}}},
   {id:'r-armor',name:'装甲改良',desc:'主力戦車改の生産技術。',days:2,cost:{credits:2000,items:{parts:3}},unlock:{register:['tank2']}},
   {id:'r-ace',name:'エース機の再現',desc:'エース偵察車を再現し、部隊に迎える。',days:3,requires:['r-armor'],cost:{credits:3000,items:{alloy:1,data:1}},unlock:{units:['scout_ace']}}],
