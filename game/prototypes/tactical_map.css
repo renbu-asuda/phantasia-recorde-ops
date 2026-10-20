@@ -58,3 +58,6 @@
 .field-tile.f-third{box-shadow:inset 0 0 0 2px #e8d04a}.field-tile.f-third strong{color:#ffe36a}
 .field-tile.f-guest{box-shadow:inset 0 0 0 2px #7fd4ff}.field-tile.f-guest strong{color:#9fe0ff}.field-tile.f-mixed strong{color:#9fe0ff}
 .squad-row.ally{border-left:4px solid #6fd18a}.squad-row.third{border-left:4px solid #e8d04a}.tile-unit.ally{color:#8ff0a8}.tile-unit.third{color:#ffe36a}
+.field-tile[class*=fac-]{position:relative}.field-tile[class*=fac-]::after{content:'';position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;border:1px solid #0008}
+.field-tile.fac-neutral::after{background:#bbb}.field-tile.fac-player::after{background:#d6ed83}.field-tile.fac-ally::after{background:#6fd18a}.field-tile.fac-enemy::after{background:#ff7d6b}.field-tile.fac-third::after{background:#e8d04a}
+.fac-dur{position:absolute;left:2px;bottom:1px;font-size:9px;font-style:normal;color:#fff;text-shadow:0 0 2px #000}
