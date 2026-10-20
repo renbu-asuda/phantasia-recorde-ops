@@ -35,3 +35,10 @@
 .tmap-cell.tmap-out{opacity:.35}
 .tmap-cell.tmap-sel{outline:2px solid var(--accent);outline-offset:-2px}.tmap-cell.tmap-start{outline:2px dashed var(--accent);outline-offset:-2px}
 .tmap-cell.tmap-exit{box-shadow:inset 0 0 0 3px #7fd6ff}
+/* Pixel image editor (maker_td_images.js). */
+.pix-grid{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:1px;background:#0b1217;padding:1px;max-width:min(100%,520px);aspect-ratio:1}
+.pix-cell{min-height:0;min-width:0;padding:0;border:0;aspect-ratio:1;background:transparent}
+.pix-clear{background:repeating-conic-gradient(#3a4650 0 25%,#26313a 0 50%) 0 0/8px 8px}
+.pix-swatch{min-width:44px;color:#fff;text-shadow:0 0 2px #000}
+.pix-preview{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.pix-thumb{display:inline-block;image-rendering:pixelated;background-color:#385342;border:1px solid #ffffff22}
