@@ -45,6 +45,8 @@ root.PROTacticalBuiltinPack={
   {id:'target_water',base:'target_ground',separate:false,movementAptitude:apt({water:'B'})},
   {id:'target_space',base:'target_ground',separate:false,movementAptitude:apt({space:'B'})},
   {id:'scout_ace',base:'scout',separate:true,joinVerb:'produce',hireCost:4200,name:'エース偵察車',hp:1500,acc:600,catalog:'敵軍のエースが駆る改造偵察車。'},
+  // Joins when the given mission is first cleared (recruit.missionId).
+  {...base,id:'veteran',name:'古参兵',catalog:'機動訓練の教官。訓練を終えると部隊に加わる。',joinVerb:'hire',recruit:{missionId:'training-01'},size:'S',move:5,hp:1500,atk:220,def:150,movementAptitude:apt({ground:'A'}),weapons:[blade('近接武装'),gun('小銃',1,2)]},
   // Reached only by evolution or fusion (sample).
   {...base,id:'tank2',name:'主力戦車改',catalog:'主力戦車を改修した発展型。',size:'L',move:5,hp:1500,atk:220,def:170,movementAptitude:apt({ground:'B'}),weapons:[gun('改良射撃武装',1,3)]},
   {...base,id:'scout2',name:'高速偵察車',catalog:'偵察車の足回りを強化した高速型。',size:'M',move:9,movementAptitude:apt({ground:'A'}),weapons:[gun('狙撃砲',2,6)]},
@@ -83,17 +85,19 @@ root.PROTacticalBuiltinPack={
  fusions:[{id:'fu-ranger',materials:[{unitId:'infantry'},{unitId:'medic',consume:false}],result:{type:'unit',unitId:'ranger',count:1,register:true}},{id:'fu-commander',materials:[{unitId:'robot'},{unitId:'fighter'}],carry:{level:true},result:{type:'unit',unitId:'commander',count:1},conds:{mode:'all',list:[{type:'credits_use',value:5000}]}},
   {id:'fu-ace',materials:[{unitId:'scout',consume:false},{unitId:'tank',consume:false}],result:{type:'register',unitId:'scout_ace'},conds:{mode:'all',list:[{type:'credits_use',value:2000}]}}],
  roster:['infantry','scout','tank','medic','robot','fighter','heavy','boat','sub','marine','spacecraft','unset'],
+ // Missions: requires (missions / items / flags / research), hidden (not listed while locked), stars (default: clear,
+ // no losses, 10 turns), result credits / exp / items (received on victory).
  /* AI patterns (prototype): assault | ambush (waits until a foe is within triggerRange) | hold (never moves)
     | cautious (retreats below retreatHpPct). target: lowest_hp | nearest | strongest. */
  missions:[
-  {id:'training-01',code:'TR-01',kind:'training',name:'機動訓練',desc:'平原を舞台に、部隊の移動と交戦の流れを確認する訓練作戦。',goal:'敵部隊の全滅',terrainLabel:'地上・空中',formation:'地上対応の部隊',reward:'1,200 Cr',color:'#29453e',
-   surface:'ground',map:{width:12,height:9,rows:ground},playerStarts:starts,victory:'enemy_wipe',defeat:'player_wipe',result:{credits:800,exp:60,item:'訓練記録'},
+  {id:'training-01',code:'TR-01',kind:'training',name:'機動訓練',desc:'平原を舞台に、部隊の移動と交戦の流れを確認する訓練作戦。',goal:'敵部隊の全滅',terrainLabel:'地上・空中',formation:'地上対応の部隊',reward:'800 Cr',color:'#29453e',
+   surface:'ground',map:{width:12,height:9,rows:ground},playerStarts:starts,victory:'enemy_wipe',defeat:'player_wipe',result:{credits:800,exp:60,items:{repair:1}},stars:[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:8}],
    enemies:[enemyGroup('enemy-0','敵第1部隊','target_ground',5,4,{pattern:'assault',target:'lowest_hp'}),enemyGroup('enemy-1','敵第2部隊','target_ground',9,4,{pattern:'assault',target:'lowest_hp'})]},
-  {id:'combat-01',code:'OP-01',kind:'combat',name:'沿岸防衛線',desc:'海岸線に展開する敵部隊を迎撃。水上・水中に対応する編成を想定したサンプル。',goal:'敵部隊の全滅',terrainLabel:'水上・水中・空中',formation:'水域対応の部隊',reward:'2,800 Cr',color:'#23434e',
-   surface:'water',map:{width:12,height:9,rows:water},playerStarts:starts,victory:'enemy_wipe',defeat:'player_wipe',result:{credits:2400,exp:150,item:'沿岸防衛章'},
+  {id:'combat-01',code:'OP-01',kind:'combat',name:'沿岸防衛線',desc:'海岸線に展開する敵部隊を迎撃。水上・水中に対応する編成を想定したサンプル。',goal:'敵部隊の全滅',terrainLabel:'水上・水中・空中',formation:'水域対応の部隊',reward:'2,400 Cr',color:'#23434e',
+   surface:'water',map:{width:12,height:9,rows:water},playerStarts:starts,victory:'enemy_wipe',defeat:'player_wipe',result:{credits:2400,exp:150,items:{parts:2}},requires:{missions:['training-01']},
    enemies:[enemyGroup('enemy-0','敵第1部隊','target_water',5,4,{pattern:'ambush',target:'nearest',triggerRange:5}),enemyGroup('enemy-1','敵第2部隊','target_water',9,4,{pattern:'hold',target:'lowest_hp'})]},
   {id:'combat-02',code:'OP-02',kind:'combat',name:'軌道上の遭遇',desc:'宇宙空間で遭遇した敵部隊を排除する。宇宙適性を確認するためのサンプル。',goal:'敵部隊の全滅',terrainLabel:'宇宙',formation:'宇宙対応の部隊',reward:'3,600 Cr',color:'#222d48',
-   surface:'space',map:{width:12,height:9,rows:space},playerStarts:starts,victory:'enemy_wipe',defeat:'player_wipe',result:{credits:3600,exp:220,item:'軌道航法データ'},
+   surface:'space',map:{width:12,height:9,rows:space},playerStarts:starts,victory:'enemy_wipe',defeat:'player_wipe',result:{credits:3600,exp:220,items:{alloy:1}},hidden:true,requires:{missions:['combat-01']},
    enemies:[enemyGroup('enemy-0','敵第1部隊','target_space',5,4,{pattern:'cautious',target:'strongest',retreatHpPct:50}),enemyGroup('enemy-1','敵第2部隊','target_space',9,4,{pattern:'assault',target:'nearest'})]}
  ]
 };
