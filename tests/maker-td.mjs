@@ -208,8 +208,19 @@ M.openKind('tmissions');await new Promise(r=>setTimeout(r,50));$('listNew').clic
   f('victory.detail');ef('ctype');ch('all');ef('cadd');ef('ctype');ch('unit_defeated');ef('cunit');ch(A('core-u-tiger'));dec();ef('cadd');ef('ctype');ch('capture_all');ef('ctag');$('inputValue').value='#拠点';ok();dec();
   assert(d.body.textContent.includes(' かつ '),d.querySelector('#inputBody').textContent.slice(0,300));dec();assert.equal(JSON.stringify(tm().victory),JSON.stringify({type:'all',conds:[{type:'unit_defeated',unitId:A('core-u-tiger')},{type:'capture_all',tag:'拠点'}]}));assert(!M.issues('tmissions',tm()).some(x=>x.includes('勝利条件')),JSON.stringify(M.issues('tmissions',tm())));
   f('defeat.detail');ef('ctype');ch('any');dec();assert(M.issues('tmissions',tm()).some(x=>x.includes('「または」の条件を足してください')));f('defeat.detail');ef('ctype');ch('player_wipe');dec();
-  f('victory.detail');ef('ctype');ch('reach');ef('cwho');ch(A('core-u-tiger'));dec();assert.equal(tm().victory.unitId,A('core-u-tiger'));
+  f('victory.detail');ef('ctype');ch('reach');ef('cwho');ch(A('core-u-tiger'));dec();assert.equal(JSON.stringify(tm().victory.unitIds),JSON.stringify([A('core-u-tiger')]));
   f('victory.type');ch(v0.type);if(v0.groupId){f('victory.groupId');ch(v0.groupId);}assert.equal(tm().victory.type,v0.type);}
+ // Display texts apart from conditions: mission fields, objective texts, event actions changing texts only / conditions + texts; several units withdrawing.
+ {const f=k=>{d.querySelector('[data-group="勝敗条件"]')?.click();d.querySelector('[data-field="'+k+'"]').click();},dec=()=>button($('inputActions'),'決定').click(),v0=tm().victory;
+  f('victoryLabel');$('inputValue').value='隊長を逃がすな';dec();assert.equal(tm().victoryLabel,'隊長を逃がすな');
+  f('victory.detail');ef('ctype');ch('units_out');ef('cwho');ch(A('core-u-tiger'));ef('cwho');d.querySelector('#inputBody [data-choice]').click();assert.equal(tm().victory.type,v0.type,'not saved before 決定');dec();
+  {const v=tm().victory;assert.equal(v.type,'units_out');assert.equal(v.unitIds.length,2);assert(!M.issues('tmissions',tm()).some(x=>x.includes('勝利条件')));}
+  f('victory.detail');ef('cexit');dec();assert(M.issues('tmissions',tm()).some(x=>x.includes('撤退エリアを決めるか')));
+  f('victory.type');ch(v0.type);if(v0.groupId){f('victory.groupId');ch(v0.groupId);}
+  const ob=(tm().objectives||[])[0];open('events','イベント');button($('inputActions'),'イベントを追加').click();
+  button($('inputActions'),'起こすことを追加').click();ch('victory');ef('keep');ef('text');$('inputValue').value='新しい目標';ok();button($('inputActions'),'戻る').click();
+  if(ob){button($('inputActions'),'起こすことを追加').click();ch('objective_change');ef('objective');ch(ob.id);ef('text');$('inputValue').value='急げ';ok();button($('inputActions'),'戻る').click();}
+  button($('inputActions'),'一覧へ戻る').click();ok();const acts=tm().events.at(-1).actions;assert.equal(JSON.stringify(acts[0]),JSON.stringify({type:'victory',cond:{type:'enemy_wipe'},keep:true,text:'新しい目標'}));if(ob)assert.equal(JSON.stringify(acts[1]),JSON.stringify({type:'objective_change',id:ob.id,text:'急げ'}));}
  // Deeper checks: unreachable places, things that never happen, victory that can't be won.
  {const base=JSON.parse(JSON.stringify(tm())),iss=x=>M.issues('tmissions',x),has=(x,t)=>iss(x).some(z=>z.includes(t)),W=base.map.width,H=base.map.height;
   let x=JSON.parse(JSON.stringify(base));x.map.grid=x.map.grid.map((r,y)=>r.map((k,c)=>c===W-2?'k':k));x.victory={type:'reach',x:W-1,y:0};assert(has(x,'たどり着けません（勝てない作戦）'),JSON.stringify(iss(x)));
