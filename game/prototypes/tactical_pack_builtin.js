@@ -4,6 +4,8 @@
 const apt=(o)=>({ground:'none',air:'none',water:'none',underwater:'none',space:'none',...o});
 const base={hp:1200,atk:180,def:130,mob:250,acc:500,skills:[],tags:[]};
 const gun=(name,minRange,maxRange)=>({name,attackType:'ranged',damageType:'physical',powerPct:100,accuracyPt:10,targetCount:1,minRange,maxRange});
+// Skill tree node (published shape): id, cost (SP), minLevel, requires (node ids), skill.
+const node=(id,cost,minLevel,requires,skill)=>({id,cost,minLevel,requires,skill:{id:'s-'+id,chance:100,maxUses:0,...skill}});
 const blade=(name)=>({name,attackType:'melee',damageType:'physical',powerPct:100,accuracyPt:10,targetCount:1,minRange:1,maxRange:1});
 const target=(id,domain)=>({id,name:'訓練標的',size:'M',move:3,movementAptitude:apt({[domain]:'B'}),hp:1000,atk:130,def:100,mob:150,acc:450,weapons:[],skills:[],tags:['標的']});
 const ground=['fpppppprpmpp','pppppfprpmpp','pppfmpprpmfp','pfppmpprfmpp','ppppmpfbpppp','ppppmpprpppf','ppfpmpprpfpp','fpppppprpppp','pppppfprpppp'];
@@ -26,8 +28,8 @@ root.PROTacticalBuiltinPack={
   x:{name:'デブリ',kind:'debris',costs:{space:2}}
  },
  units:[
-  {...base,id:'infantry',joinVerb:'hire',catalog:'最も数の多い基本戦力。どんな地形でも頼りになる。',name:'歩兵小隊',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
-  {...base,id:'scout',joinVerb:'produce',catalog:'長射程の狙撃砲で敵の動きを止める偵察車両。',name:'偵察車',size:'M',move:7,movementAptitude:apt({ground:'A'}),weapons:[gun('狙撃砲',2,6)]},
+  {...base,id:'infantry',skillTree:[node('inf-aim',1,1,[],{name:'狙いを定める',trigger:'before_attack',effect:'hit_up_pt',value:10}),node('inf-charge',2,3,['inf-aim'],{name:'突撃',trigger:'before_attack',effect:'def_pierce_pct',value:20}),node('inf-rally',3,5,['inf-charge'],{name:'鼓舞',trigger:'battle_start',effect:'atk_up_pct',value:10,target:'allies'})],joinVerb:'hire',catalog:'最も数の多い基本戦力。どんな地形でも頼りになる。',name:'歩兵小隊',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
+  {...base,id:'scout',skillTree:[node('sc-eye',1,1,[],{name:'観測',trigger:'before_attack',effect:'hit_up_pt',value:15}),node('sc-ap',2,4,['sc-eye'],{name:'徹甲弾',trigger:'before_attack',effect:'def_pierce_pct',value:30})],joinVerb:'produce',catalog:'長射程の狙撃砲で敵の動きを止める偵察車両。',name:'偵察車',size:'M',move:7,movementAptitude:apt({ground:'A'}),weapons:[gun('狙撃砲',2,6)]},
   {...base,id:'tank',joinVerb:'produce',catalog:'厚い装甲と射撃武装を備えた地上戦の要。',name:'主力戦車',size:'L',move:4,movementAptitude:apt({ground:'B'}),weapons:[gun('射撃武装',1,3)]},
   {...base,id:'medic',joinVerb:'hire',catalog:'前線で味方を支える衛生兵。',name:'衛生兵',size:'S',move:5,movementAptitude:apt({ground:'B'}),weapons:[blade('近接武装')]},
   {...base,id:'robot',noFire:true,catalog:'地上・空中・宇宙を行き来できる汎用機動兵器。',name:'汎用機動兵器',size:'2XL',move:6,movementAptitude:apt({ground:'B',air:'B',space:'B'}),weapons:[blade('格闘武装'),gun('ビームライフル',1,3)]},
