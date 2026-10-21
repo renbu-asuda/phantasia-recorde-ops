@@ -9,7 +9,7 @@ function open(store,query=''){const w=new Window({url:'http://localhost/'+file+q
  for(const dl of w.document.querySelectorAll('dialog')){dl.showModal=()=>dl.setAttribute('open','');dl.close=()=>{dl.removeAttribute('open');dl.dispatchEvent(new w.Event('close'));};}
  {const C=w.HTMLCanvasElement?.prototype;if(C){C.getContext=()=>({fillRect(){},set fillStyle(v){}});C.toDataURL=()=>'data:image/png;base64,UElY';}}for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);w.eval(src?fs.readFileSync(path.resolve(path.dirname(file),src[1]),'utf8'):m[2]);}
  // These tests were written for a start of 24,800 Cr (the game now starts at 10,000): a fresh save gets the difference.
- {let hq=null;try{hq=JSON.parse(store.PRO_TACTICAL_HQ||'null');}catch(e){}if(w.PROUnitLab&&(!hq||hq.source!==w.PROTacticalData.source))w.PROUnitLab.spend(-14800);}return w;}
+ if(w.PROUnitLab&&!store.PRO_TACTICAL_HQ)w.PROUnitLab.spend(-14800);return w;}
 const dump=w=>Object.fromEntries(Object.keys(w.localStorage).map(k=>[k,w.localStorage.getItem(k)]));
 // The test draft builds on the built-in sample pack (dependency 'sample').
 const draft={format:'PRO_TD_PACK',version:1,packId:'td-test',name:'テストパック',dependencies:['sample'],
@@ -218,8 +218,8 @@ w=open({...saved,PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d
 assert.equal(D.source,'maker');assert.equal(D.makerName,'テストパック');assert(D.roster().some(u=>u.id==='td-u-a'));assert(!D.roster().some(u=>u.id==='td-u-b'));assert(D.roster().some(u=>u.id===(SX('infantry'))));
 assert.equal(D.unit('td-u-a').weapons[0].name,'試作ライフル');assert.equal(D.unit('td-u-b').weapons.length,1);assert.equal(D.unit('td-u-a2').hp,2400);assert.equal(D.catalogId('td-u-a2'),'td-u-a');assert.equal(D.unit('td-u-a').catalog,'メーカーで作った試作機。');
 assert(D.evolutions().some(e=>e.id==='td-e-1'));{const tt=D.terrainTypes();assert.equal(tt['td-t-swamp'].costs.ground,3);assert.deepEqual([...tt['td-t-swamp'].blockTags],['車両']);assert.equal(tt['td-t-swamp'].effects.meleeHitPt,-10);assert(!tt['td-t-dispatch']);assert(tt.p);}assert(!D.fusions().some(f=>f.id==='td-f-bad'));
-// The built-in save is not used for the maker source: owned units start from the merged roster.
-assert.equal(L.credits(),24800);assert(L.owned().some(u=>u.id===(SX('tank'))));assert(L.owned().some(u=>u.id==='td-u-a'));
+// One save for every pack combination: the save continues (credits kept) and the new pack's starting roster joins.
+assert.equal(L.credits(),JSON.parse(saved.PRO_TACTICAL_HQ).credits);assert(L.owned().some(u=>u.id===(SX('tank'))));assert(L.owned().some(u=>u.id==='td-u-a'));
 assert(w.document.querySelector('#dataSourceText').textContent.includes('テストパック'));w.close();
 // T&D Tactical missions: loaded with custom terrain squares; win / lose conditions; test play selection.
 {const grid=Array.from({length:6},(_,y)=>Array.from({length:8},(_,x)=>x===4&&y===0?'td-t-swamp':'p'));const tm=(id,victory,defeat)=>({id,name:'試作作戦'+id,map:{width:8,height:6,grid},playerStarts:[{x:0,y:0}],enemies:[{id:'e1',name:'敵A',position:{x:7,y:5},members:[{unit:'td-u-b'}],ai:{pattern:'hold'}},{id:'e2',name:'敵B',position:{x:7,y:0},members:[{unit:'td-u-b',name:'隊長'}],ai:{pattern:'hold'}}],victory,defeat,result:{credits:300,exp:10}});
@@ -571,7 +571,16 @@ w=open({PRO_TACTICAL_SOURCE:'none'});{const D=w.PROTacticalData,L=w.PROUnitLab,$
  w=open(st);const D2=w.PROTacticalData,L=w.PROUnitLab;assert.equal(D2.source,'sample+pack:pk-test','sample (already on) + the pack');assert.equal(D2.origins().map(o=>o.name).join(),'内蔵サンプル,読み込みパック');assert.equal(D2.sortieRate,50);assert.equal(D2.terrainTypes()['td-t-swamp'].color,'#123456');assert(L.owned().some(u=>u.id==='td-u-a'));assert(w.document.querySelector('#dataSourceText').textContent.includes('読み込みパック'));assert.equal(w.PROSave.snapshot().source,'sample+pack:pk-test');assert.equal(w.PROSave.snapshot().load.packs.join(),'pk-test');
  const P=w.PROPreparation;w.location.hash='#prepare';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,300));const uid=L.owned().find(u=>u.id==='td-u-a').uid;P.addUnit(uid);await new Promise(r=>setTimeout(r,50));
  assert(w.document.querySelector('#prepSummary').textContent.includes('出撃費用 150 Cr'),w.document.querySelector('#prepSummary').textContent);const c0=L.credits();w.document.querySelector('#prepConfirm').click();assert.equal(L.credits(),c0-150);
+ // Pack management: one save; turning a pack off lists what leaves the save; a newer file of a stored pack lists the differences.
+ {const $w=id=>w.document.getElementById(id),body=()=>$w('labWinBody').textContent;$w('dataSource').click();assert.equal($w('labWinKind').textContent,'パック管理');assert(body().includes('セーブは1つです'));assert(body().includes('読み込みパック'));assert(!$w('labWinActions').querySelector('[data-lab=src-maker]'),'no maker draft choice');
+  $w('labWinActions').querySelector('[data-lab="src-pack-pk-test"]').click();$w('labWinActions').querySelector('[data-lab=apply]').click();assert(body().includes('セーブから消えます'),body());assert(body().includes('試作機A'));[...$w('labWinActions').querySelectorAll('button')].find(b=>b.textContent==='戻る').click();
+  const neu={...pk,packVersion:'2',units:[{...pk.units[0],name:'試作機A改'},...pk.units.slice(2)]},f=$w('packFile');Object.defineProperty(f,'files',{configurable:true,value:[{text:async()=>JSON.stringify(neu)}]});f.onchange();await new Promise(r=>setTimeout(r,50));
+  assert(body().includes('新しい版')||$w('labWinTitle').textContent.includes('新しい版'),$w('labWinTitle').textContent);assert(body().includes('→ 2'));assert(body().includes('変わる 試作機A改'),body());assert(body().includes('消える'),body());
+  $w('labWinActions').querySelector('[data-lab=run]').click();assert.equal(D2.storedPack('pk-test').packVersion,'2');$w('labWindow').close();}
+ w.PROUnitLab.flush();globalThis.st3={...dump(w),PRO_TACTICAL_LOAD:JSON.stringify({sample:true,maker:false,packs:[]})};
  D2.clearPack();assert(!D2.hasPack());assert.equal(JSON.parse(w.localStorage.getItem('PRO_TACTICAL_LOAD')).packs.length,0);w.close();}
+// One save: with the pack turned off the save continues without that pack's units.
+{w=open(st3);const L=w.PROUnitLab;assert(!L.owned().some(u=>u.id==='td-u-a'),'pack units leave the save');assert(L.owned().length>0,'other units stay');w.close();}
 // 5) Several packs at once (no sample): missions and units from both; the mission filter has one item per pack.
 {const grid=Array.from({length:6},()=>Array(8).fill('p')),pk=(id,name,uid,mid)=>({format:'PRO_TD_PACK',version:1,packId:id,name,units:[{id:uid,name:name+'機',size:'M',move:5,movementAptitude:{ground:'B',air:'none',water:'none',underwater:'none',space:'none'},hp:2000,atk:200,def:100,mob:200,acc:400,weaponIds:[],skillIds:[],deploy:{player:true}}],
   tmissions:[{id:mid,name:name+'作戦',kind:'combat',map:{width:8,height:6,grid},playerStarts:[{x:0,y:0}],enemies:[{id:'e1',name:'敵',position:{x:7,y:5},members:[{unit:uid}]}],victory:{type:'enemy_wipe'},defeat:{type:'player_wipe'},result:{credits:100,exp:10}}],weapons:[],skills:[],items:[],terrains:[],flags:[],missions:[],research:[],hires:[],evolutions:[],fusions:[],achievements:[]});

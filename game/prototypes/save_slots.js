@@ -12,7 +12,7 @@ const parse=t=>{try{return JSON.parse(t);}catch(e){return null;}};
 function snapshot(){window.PROUnitLab?.flush();const hq=parse(get(KEYS.hq))||{};return {format:FORMAT,version:1,savedAt:new Date().toISOString(),source:window.PROTacticalData?.source||'none',load:window.PROTacticalData?.load?.()||null,summary:{day:hq.day||1,credits:hq.credits??null,units:(hq.owned||[]).length,wins:hq.wins||0},hq,seen:parse(get(KEYS.seen))||{}};}
 function valid(s){return !!s&&s.format===FORMAT&&s.version===1&&s.hq&&typeof s.hq==='object'&&Array.isArray(s.hq.owned)&&typeof s.seen==='object';}
 const read=i=>{const s=parse(get(slotKey(i)));return valid(s)?s:null;};
-function describe(s,withTime=true){if(!s)return '空き';const d=new Date(s.savedAt),t=isNaN(d)?'':d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});return ({maker:'［メーカー］',pack:'［パック］',sample:'［サンプル］'}[s.source]||(String(s.source).includes('+')?'［複数パック］':''))+s.summary.day+'日目 ・ 資金 '+(s.summary.credits??0).toLocaleString()+' Cr ・ '+s.summary.units+'体 ・ 勝利'+s.summary.wins+(t&&withTime?'（'+t+'）':'');}
+function describe(s,withTime=true){if(!s)return '空き';const d=new Date(s.savedAt),t=isNaN(d)?'':d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});return ({maker:'［メーカー］',pack:'［パック］',sample:'［内蔵パック］'}[s.source]||(String(s.source).includes('+')?'［複数パック］':''))+s.summary.day+'日目 ・ 資金 '+(s.summary.credits??0).toLocaleString()+' Cr ・ '+s.summary.units+'体 ・ 勝利'+s.summary.wins+(t&&withTime?'（'+t+'）':'');}
 function saveSlot(i){return put(slotKey(i),JSON.stringify(snapshot()));}
 const autoSave=()=>saveSlot('auto');
 const suspended=()=>!!get(SUSPEND);
