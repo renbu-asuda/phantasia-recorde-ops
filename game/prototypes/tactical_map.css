@@ -68,3 +68,5 @@
 .field-tile .unit-pic{position:absolute;inset:8%;image-rendering:pixelated;pointer-events:none}.field-tile.has-unit-pic strong{position:absolute;left:2px;bottom:1px;font-size:10px;text-shadow:0 0 3px #000}
 .pic-thumb{display:inline-block;width:32px;height:32px;image-rendering:pixelated;vertical-align:middle;margin-right:6px;flex:0 0 auto}
 .unit-big-pic{display:block;width:96px;height:96px;image-rendering:pixelated;margin:0 auto 8px;background-color:#16242b}
+.field-tile .area-ov{position:absolute;inset:0;border:1px dashed;pointer-events:none;z-index:0}
+.field-tile .area-name{position:absolute;left:2px;top:1px;font-size:9px;font-weight:700;text-shadow:0 0 3px #000,0 0 2px #000;pointer-events:none;z-index:2;white-space:nowrap}
