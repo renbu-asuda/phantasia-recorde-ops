@@ -73,6 +73,15 @@ function lookButtons(a,kind,push,draw,add){add('色：'+(a.color||'推奨色'),'
  add('メーカーで表示：'+(a.edit===false?'しない':'する'),'aedit',()=>{push();if(a.edit===false)delete a.edit;else a.edit=false;draw();});
  const gDef=kind==='exit';add('ゲームで表示：'+((a.game??gDef)?'する':'しない'),'agame',()=>{push();const v=!(a.game??gDef);if(v===gDef)delete a.game;else a.game=v;draw();});
  add('名前を表示：'+(a.label===false?'しない':'する'),'alabel',()=>{push();if(a.label===false)delete a.label;else a.label=false;draw();});}
+// Map scales: standard steps (ratio = width of one square, infantry 1) plus the pack's own steps (mapScales).
+const STD_SCALES=[{id:'infantry',name:'歩兵',ratio:1},{id:'vehicle',name:'車両',ratio:2},{id:'air',name:'航空',ratio:4},{id:'fleet',name:'艦隊',ratio:8}];
+const allScales=()=>[...STD_SCALES,...(data().mapScales||[]).filter(x=>x.id&&!STD_SCALES.some(y=>y.id===x.id))];
+const scaleText=id=>{const x=allScales().find(s=>s.id===(id||'infantry'));return x?x.name+'（×'+x.ratio+'）':'⚠ '+id;};
+X.registerType('tscale',{display:v=>scaleText(v)+(v?'':'・既定'),edit:(f,x)=>pick('縮尺',Object.fromEntries(allScales().map(s=>[s.id,s.name+'（1マスの広さ ×'+s.ratio+'）'])),x[f.key]||'infantry',k=>{commit(o=>{if(k==='infantry')delete o[f.key];else o[f.key]=k;});closeWin();},closeWin)});
+function scalesWindow(){const list=clone(data().mapScales||[]);const one=i=>{const x=list[i],bk=()=>one(i);rowsWin(x.name,'',[['名前',x.name,()=>textPrompt('縮尺の名前',x.name,v=>{if(v)x.name=v;bk();},bk,12),'name'],['倍率',String(x.ratio),()=>numberPrompt('倍率（1マスの広さ・歩兵＝1）',x.ratio,1,1000,v=>{if(v)x.ratio=v;bk();},bk),'ratio']],[['この縮尺を消す',()=>{list.splice(i,1);draw();}],['一覧へ戻る',()=>draw()]]);};const draw=()=>rowsWin('独自の縮尺','標準（歩兵1・車両2・航空4・艦隊8）に加えて、このパックだけの縮尺の段階を作れます。倍率は1マスの広さ（歩兵＝1）。',[
+  ...list.map((x,i)=>[x.name+'（×'+x.ratio+'）',x.id,()=>one(i),'scale'+i])],
+  [['＋ 縮尺を追加',()=>{if(list.length>=12)return;let n=1;while(list.some(x=>x.id==='scale-'+n))n++;list.push({id:'scale-'+n,name:'縮尺'+n,ratio:16});draw();}],['決定',()=>{commit(o=>{if(list.length)o.mapScales=list;else delete o.mapScales;});closeWin();}],['戻る',closeWin]]);draw();}
+X.registerType('tscales',{display:v=>(v||[]).length?(v||[]).map(x=>x.name+'×'+x.ratio).join('・'):'なし（標準だけ）',edit:()=>scalesWindow()});
 /* ---------- map editor ---------- */
 // Map editor: paint tools (1 square / row / rectangle / fill), placements, facility owners and tags, the starting view
 // (map limit) and resizing from any side. Undo / redo keep snapshots; tapping the same square twice opens its details.
@@ -345,12 +354,13 @@ function checks(m){const out=[],w=m.map?.width,h=m.map?.height;if(!(w>=MAP_MIN&&
    if(a.type==='area_show'&&!areaName(m,a.target))out.push(w+'：表示を変えるエリアを選んでください');if(a.type==='exit_area'&&!inside(a))out.push(w+'：撤退エリアがマップの外です');if(a.type==='map_expand'&&!inside(a))out.push(w+'：広げる範囲がマップの外です');if(a.type==='map_expand'&&!m.map?.view)out.push(w+'：「開始時の表示範囲」が未設定なので、マップを広げる意味がありません');if(a.type==='terrain'&&(!terrainOf(a.key)||!inside(a)))out.push(w+'：地形の変更が正しくありません');if(a.type==='victory'||a.type==='defeat'){const c=condIssue(m,a.cond,w+'の'+(a.type==='victory'?'勝利':'敗北')+'条件');if(c)out.push(c);}if(a.type==='objective'&&!(m.objectives||[]).some(o=>o.id===a.id))out.push(w+'：作戦内ミッションを選んでください');if(a.type==='resupply'&&a.scope==='group'&&!ids.has(a.groupId))out.push(w+'：補給する部隊を選んでください');if(a.type==='game_flag'&&!find('flags',a.flagId))out.push(w+'：ゲームのフラグを選んでください');if(a.type==='ai'&&!(m.enemies||[]).some(g=>g.id===a.groupId))out.push(w+'：AIを変える敵部隊を選んでください');}}
  for(const g of squadsOf(m))out.push(...aiRuleIssues(m,g));
  for(const o of m.objectives||[]){if(o.appear==='event'&&!(m.events||[]).some(e=>(e.actions||[]).some(a=>a.type==='objective'&&a.id===o.id&&a.result==='start')))out.push('ミッション「'+o.name+'」：発生させるイベントがありません');const s=condIssue(m,o.success,'ミッション「'+o.name+'」の成功条件');if(s)out.push(s);if(o.fail){const f2=condIssue(m,o.fail,'ミッション「'+o.name+'」の失敗条件');if(f2)out.push(f2);}}
+ if(m.scale&&!allScales().some(x=>x.id===m.scale))out.push('マップの縮尺「'+m.scale+'」が見つかりません（パックの独自の縮尺を確認してください）');
  out.push(...deepChecks(m));
  return out;}
 
 X.registerKind('tmissions',{label:'タクティカル作戦',en:'TACTICAL MISSIONS',prefix:'tm'},blankMission,[
  {key:'name',label:'作戦名',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},{key:'desc',label:'説明',type:'text',group:'基本'},{key:'code',label:'作戦コード（例：OP-03）',type:'text',max:12,group:'基本'},
- {key:'kind',label:'種別',type:'select',choices:{training:'訓練',combat:'実戦'},group:'基本'},{key:'surface',label:'基準の領域',type:'select',choices:{ground:'地上',water:'水上',space:'宇宙'},group:'基本'},{key:'color',label:'一覧の色',type:'color',group:'基本'},
+ {key:'kind',label:'種別',type:'select',choices:{training:'訓練',combat:'実戦'},group:'基本'},{key:'surface',label:'基準の領域',type:'select',choices:{ground:'地上',water:'水上',space:'宇宙'},group:'基本'},{key:'scale',label:'マップの縮尺',type:'tscale',group:'基本',help:'1マスの広さ。ユニットのMOVE・射程の縮尺と違えば換算されます（×ユニットの倍率÷マップの倍率、四捨五入・最低1）。空欄なら歩兵。'},{key:'color',label:'一覧の色',type:'color',group:'基本'},
  {key:'map',label:'マップ（地形・初期位置・敵の位置）',type:'tmap',group:'マップと配置'},{key:'enemies',label:'敵部隊（敵・第三勢力）',type:'tenemies',group:'マップと配置'},{key:'allies',label:'味方部隊（ゲスト・味方AI・増援）',type:'tallies',group:'マップと配置'},
  {key:'victory.type',label:'勝利条件',type:'select',choices:VICTORY,group:'勝敗条件'},{key:'victory.seenOnly',label:'敵の全滅：見えている範囲の敵だけ数える（隠れた範囲の敵は数えない）',type:'toggle',group:'勝敗条件',show:m=>(m.victory?.type||'enemy_wipe')==='enemy_wipe'&&!!m.map?.view},{key:'victory.groupId',label:'撃破する敵部隊',type:'select',choices:m=>Object.fromEntries((m.enemies||[]).map(g=>[g.id,g.name])),group:'勝敗条件',show:m=>m.victory?.type==='boss'},
  {key:'victory.x',label:'到達するマス：横（左端が0）',type:'number',min:0,max:MAP_MAX-1,group:'勝敗条件',show:m=>m.victory?.type==='reach'},{key:'victory.y',label:'到達するマス：縦（上端が0）',type:'number',min:0,max:MAP_MAX-1,group:'勝敗条件',show:m=>m.victory?.type==='reach'},
