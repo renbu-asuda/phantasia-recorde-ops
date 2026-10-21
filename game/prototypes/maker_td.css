@@ -46,3 +46,4 @@
 .tmap-cell{position:relative}.tmap-cell .tmap-ov{position:absolute;inset:0;border:1px dashed;pointer-events:none}
 .tmap-cell .tmap-ovname{position:absolute;left:1px;top:0;font-size:9px;font-weight:700;text-shadow:0 0 3px #000,0 0 2px #000;pointer-events:none;white-space:nowrap;z-index:1}
 .tmap-cell.tmap-pre{box-shadow:inset 0 0 0 999px #ffffff38;outline:1px dashed #fff;outline-offset:-1px}
+.pix-grid.pix-wide{max-width:min(100%,900px);aspect-ratio:3}.pix-banner{display:inline-block;image-rendering:pixelated;background-color:#29453e;border:1px solid #ffffff22}
