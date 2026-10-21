@@ -476,7 +476,7 @@ function loadBase(){const need=[['VAIS_UNIT_PACK','../outer_ops_units.js'],['VAI
 function outputPack(){const probs=[];for(const k of Object.keys(KINDS))for(const x of Array.isArray(data[k])?data[k]:[])for(const p of issues(k,x))probs.push((KINDS[k].label)+'「'+(x.name||x.id)+'」：'+p);
  const run=()=>{const text=JSON.stringify({...data,testState:undefined,format:FORMAT,version:1,pack:true,exportedAt:new Date().toISOString()},null,2),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=(data.packId||'td-pack')+'.pack.json';document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);message('パック出力',['「'+a.download+'」を保存しました。タクティカルの拠点 → 記録・設定 → データの読み込み元 → パックファイルを読み込む で遊べます。']);};
  if(!probs.length){run();return;}message('問題があります（'+probs.length+'件）',[...probs.slice(0,12),...(probs.length>12?['ほか'+(probs.length-12)+'件']:[]),'このまま出力すると、遊ぶ側では使えないデータ（作戦など）が読み込まれません。'],[['このまま出力する',()=>{$('msgWin').close();run();}],['戻る',()=>$('msgWin').close()]]);}
-function exportPack(){const text=JSON.stringify({...data,testState:undefined,format:FORMAT,version:1,exportedAt:new Date().toISOString()},null,2),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=(data.packId||'td-pack')+'.td.json';document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);message('書き出し',['T&D形式（'+a.download+'）で保存しました。公開中のゲームでは読み込めない、プロトタイプ用の形式です。']);}
+function exportPack(){const text=JSON.stringify({...data,testState:undefined,format:FORMAT,version:1,exportedAt:new Date().toISOString()},null,2),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=(data.packId||'td-pack')+'.td.json';document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);message('書き出し',['T&D形式（'+a.download+'）で保存しました。ゲームの「データの読み込み元」で読み込めます。']);}
 
 /* ---------- wiring ---------- */
 for(const b of document.querySelectorAll('[data-open]'))b.onclick=()=>fade(()=>openKind(b.dataset.open));
@@ -485,9 +485,7 @@ $('menuImport').onclick=()=>$('importFile').click();$('importFile').onchange=asy
 $('menuBase').onclick=loadBase;$('menuPack').onclick=()=>fade(()=>openKind('pack'));$('menuTest').onclick=()=>fade(()=>openKind('test'));$('menuOutput').onclick=outputPack;$('menuExport').onclick=exportPack;
 $('menuReset').onclick=()=>message('すべて消す',['作っているデータをすべて消して、新しく始めます。元に戻せません。'],[['消して始める',()=>{data=empty();selectedId=null;save();$('msgWin').close();showMenu();}],['やめる',()=>$('msgWin').close()]]);
 for(const d of document.querySelectorAll('dialog.cmd-window'))d.addEventListener('cancel',e=>e.preventDefault());
-// Creator gate (same placeholder as the game prototype; not a security boundary).
-$('gateForm').onsubmit=e=>{e.preventDefault();if($('gatePassword').value==='0000'){$('gatePassword').value='';fade(()=>{$('gate').hidden=true;$('shell').inert=false;showMenu();});}else{$('gateError').textContent='パスワードが違います。';$('gatePassword').select();}};
-setTimeout(()=>$('gatePassword').focus(),0);
+
 load();showMenu();
 // Extension API for kinds defined in separate scripts (e.g. maker_td_tactical.js).
 const extend=Object.freeze({el,win,closeWin,commit,numberPrompt,message,clone,find,condsEditor,data:()=>data,save,

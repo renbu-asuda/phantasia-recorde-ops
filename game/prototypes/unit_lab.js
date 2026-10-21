@@ -6,12 +6,12 @@ const seen=()=>window.PROUnitsSeen;
 // Test player state: owned units (uid → unit id, level, EXP, skill points), credits, the production / hire list
 // (unit ids registered by evolution or fusion settings) and PRO・D unit levels (by unit id). Stats follow PROCore.levelStats.
 // Starting units keep their unit id as uid (the formation screen and its tests address them that way).
-const HQ_KEY='PRO_TACTICAL_HQ',START_CREDITS=24800;
+const HQ_KEY='PRO_TACTICAL_HQ',START_CREDITS=10000;
 let serial=1,credits=START_CREDITS,owned=D.roster().map(u=>({uid:u.id,id:u.id})),registered=[],dlv={},hired={},cleared=[],items=D.startItems(),day=1,done=[],active=null,notices=[],records={},flags={},recruited=[],wins=0,presets={dispatch:[],tactical:[]},dlost=[],ddown={},dtree={},boards={},dboards={},achieved={},history=[],stats={battles:0,win:0,lose:0,draw:0};
 // A save made with another data source (built-in / maker) is ignored; units missing from the data are dropped.
 try{const h=JSON.parse(localStorage.getItem(HQ_KEY)||'null');if(h&&h.source===D.source&&Array.isArray(h.owned)){owned=h.owned.filter(o=>{try{D.unit(o.id);return typeof o.uid==='string';}catch(e){return false;}});credits=Number.isFinite(h.credits)?h.credits:START_CREDITS;registered=Array.isArray(h.registered)?h.registered:[];dlv=h.dlv&&typeof h.dlv==='object'?h.dlv:{};hired=h.hired&&typeof h.hired==='object'?h.hired:{};cleared=Array.isArray(h.cleared)?h.cleared:[];items=h.items&&typeof h.items==='object'?h.items:D.startItems();day=h.day>=1?h.day:1;done=Array.isArray(h.done)?h.done:[];active=h.active&&D.research().some(r=>r.id===h.active.id)?h.active:null;notices=Array.isArray(h.notices)?h.notices:[];records=h.records&&typeof h.records==='object'?h.records:{};flags=h.flags&&typeof h.flags==='object'?h.flags:{};recruited=Array.isArray(h.recruited)?h.recruited:[];wins=h.wins|0;dlost=Array.isArray(h.dlost)?h.dlost:[];dtree=h.dtree&&typeof h.dtree==='object'?h.dtree:{};boards=h.boards&&typeof h.boards==='object'?h.boards:{};achieved=h.achieved&&typeof h.achieved==='object'?h.achieved:{};history=Array.isArray(h.history)?h.history:[];stats={battles:0,win:0,lose:0,draw:0,...(h.stats||{})};dboards=h.dboards&&typeof h.dboards==='object'?h.dboards:{};ddown=h.ddown&&typeof h.ddown==='object'?h.ddown:{};presets=h.presets&&typeof h.presets==='object'?{dispatch:h.presets.dispatch||[],tactical:h.presets.tactical||[]}:{dispatch:[],tactical:[]};serial=h.serial||1;}}catch(e){}
 // save() also checks achievements (each pays its reward once; the check itself saves again without recursing).
-let checking=false;function save(){if(!checking){checking=true;try{checkAchievements();}finally{checking=false;}}try{localStorage.setItem(HQ_KEY,JSON.stringify({source:D.source,owned,credits,serial,registered,dlv,hired,cleared,items,day,done,active,notices,records,flags,recruited,wins,presets,dlost,ddown,dtree,boards,dboards,achieved,history,stats}));}catch(e){}}
+let checking=false;function save(){try{showCredits();}catch(e){}if(!checking){checking=true;try{checkAchievements();}finally{checking=false;}}try{localStorage.setItem(HQ_KEY,JSON.stringify({source:D.source,owned,credits,serial,registered,dlv,hired,cleared,items,day,done,active,notices,records,flags,recruited,wins,presets,dlost,ddown,dtree,boards,dboards,achieved,history,stats}));}catch(e){}}
 // Skills learned from the unit's skill tree (published shape: nodes with id, cost, minLevel, requires, skill).
 const treeSkills=(u,got)=>(u.skillTree||[]).filter(n=>(got||[]).includes(n.id)).map(n=>tryS(n.skill)).filter(Boolean);
 // An owned unit's stats: level stats, then permanent item boosts (mods flat, pct %), then equipment. Item-added
@@ -45,7 +45,7 @@ const condsText=cs=>cs?.list?.length?cs.list.map(condText).join(cs.mode==='any'?
 function register(id){if(!registered.includes(id))registered.push(id);seen().mark([id],'registered');save();}
 const carryText=keep=>keep?'レベル・経験値・スキルポイントを引き継ぐ':'Lv1から（引き継がない）';
 function pay(costs){for(const c of costs)if(c.credits!=null)credits-=c.credits;showCredits();save();}
-function showCredits(){const b=$('hubCredits');if(b)b.textContent=credits.toLocaleString();}
+function showCredits(){const b=$('hubCredits');if(b)b.textContent=credits.toLocaleString();const u=$('hubUnits');if(u)u.textContent=owned.length.toLocaleString();}
 function tell(id,text){$(id).textContent=text;}
 // Window shared by both screens: commands in a list, a confirm step, and results.
 function win(kind,title,lines,acts){$('labWinKind').textContent=kind;$('labWinTitle').textContent=title;$('labWinBody').replaceChildren(...lines.map(t=>{const p=document.createElement('p');p.className='catalog-line';p.textContent=t;return p;}));

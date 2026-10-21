@@ -7,7 +7,9 @@ function open(store,query=''){const w=new Window({url:'http://localhost/'+file+q
  // Tests run on the built-in sample pack unless a source is given (the game itself starts empty).
  if(!('PRO_TACTICAL_SOURCE' in store)&&!('PRO_TACTICAL_LOAD' in store))w.localStorage.setItem('PRO_TACTICAL_SOURCE','sample');for(const [k,v] of Object.entries(store))w.localStorage.setItem(k,v);w.document.write(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
  for(const dl of w.document.querySelectorAll('dialog')){dl.showModal=()=>dl.setAttribute('open','');dl.close=()=>{dl.removeAttribute('open');dl.dispatchEvent(new w.Event('close'));};}
- {const C=w.HTMLCanvasElement?.prototype;if(C){C.getContext=()=>({fillRect(){},set fillStyle(v){}});C.toDataURL=()=>'data:image/png;base64,UElY';}}for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);w.eval(src?fs.readFileSync(path.resolve(path.dirname(file),src[1]),'utf8'):m[2]);}return w;}
+ {const C=w.HTMLCanvasElement?.prototype;if(C){C.getContext=()=>({fillRect(){},set fillStyle(v){}});C.toDataURL=()=>'data:image/png;base64,UElY';}}for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);w.eval(src?fs.readFileSync(path.resolve(path.dirname(file),src[1]),'utf8'):m[2]);}
+ // These tests were written for a start of 24,800 Cr (the game now starts at 10,000): a fresh save gets the difference.
+ {let hq=null;try{hq=JSON.parse(store.PRO_TACTICAL_HQ||'null');}catch(e){}if(w.PROUnitLab&&(!hq||hq.source!==w.PROTacticalData.source))w.PROUnitLab.spend(-14800);}return w;}
 const dump=w=>Object.fromEntries(Object.keys(w.localStorage).map(k=>[k,w.localStorage.getItem(k)]));
 // The test draft builds on the built-in sample pack (dependency 'sample').
 const draft={format:'PRO_TD_PACK',version:1,packId:'td-test',name:'テストパック',dependencies:['sample'],
@@ -23,7 +25,7 @@ w=open(saved);assert.equal(w.PROUnitLab.credits(),21800);assert(w.PROUnitLab.own
 // The formation list reads the restored units.
 assert(w.document.querySelector(('#prepUnitList [data-unit='+SX('tank2')+']')));
 // Records menu: resetting the test save restores the starting units and credits.
-w.document.querySelector('#resetSave').click();w.document.querySelector('#labWinActions [data-lab=run]').click();assert.equal(w.PROUnitLab.credits(),24800);assert(!w.PROUnitLab.owned().some(u=>u.id===(SX('tank2'))));assert(!JSON.parse(w.localStorage.getItem('PRO_TACTICAL_HQ')).owned.some(o=>o.id===(SX('tank2'))));w.close();
+w.document.querySelector('#resetSave').click();w.document.querySelector('#labWinActions [data-lab=run]').click();assert.equal(w.PROUnitLab.credits(),10000,'a cleared save starts at 10,000');assert(!w.PROUnitLab.owned().some(u=>u.id===(SX('tank2'))));assert(!JSON.parse(w.localStorage.getItem('PRO_TACTICAL_HQ')).owned.some(o=>o.id===(SX('tank2'))));w.close();
 // Levels: PRO rules (100×Lv to next, growth per level), EXP from a won mission, Lv5 unlocks the scout evolution.
 {const C=w.PROCore;assert.deepEqual({...C.gainExp({lv:1,exp:0},250)},{lv:2,exp:150,sp:1,ups:1});assert.equal(C.gainExp({lv:2,exp:0,sp:3},700).sp,5);
  assert.equal(C.defeatExp({exp:40}),40);assert.equal(C.defeatExp({hp:1500,atk:200}),15);assert.equal(C.battleExp(100,{win:true,alive:true,kills:15}),115);assert.equal(C.battleExp(100,{win:false,alive:false}),25);assert.equal(C.gainExp({lv:1,exp:0},1000).lv,5);assert.equal(C.gainExp({lv:49,exp:0},99999).lv,50);assert.equal(C.gainExp({lv:49,exp:0},99999).exp,0);
@@ -39,7 +41,7 @@ w=open({});{const L=w.PROUnitLab,d=w.document,two=(g,id)=>{const t=d.querySelect
  L.gainExp([{key:(SX('tank')),amount:300}]);L.renderEvolve();two('evolveGrid',(SX('tank')));d.querySelector(('#labWinActions [data-lab='+SX('evo-tank')+']')).click();assert(d.querySelector('#labWinBody').textContent.includes('引き継ぐ'));run();closeW();const t2=L.owned().find(u=>u.uid===(SX('tank')));assert.equal(t2.id,(SX('tank2')));assert.equal(t2.level,3);assert.deepEqual([...L.registered()],[(SX('tank2'))]);assert(w.PROUnitsSeen.how((SX('tank2'))).registered);
  L.renderFusion();two('fusionGrid',(SX('scout')));d.querySelector(('#fusionGrid [data-unit='+SX('tank2')+']'));assert(d.querySelector('#fusionStep').textContent.includes('偵察車'));
  // tank was evolved away, so the register-only recipe (scout + tank) is no longer possible; reset and try it with fresh units.
- L.reset();L.renderFusion();two('fusionGrid',(SX('scout')));d.querySelector(('#fusionGrid [data-unit='+SX('tank')+']')).click();assert(d.querySelector('#labWinBody').textContent.includes('生産・雇用リストに エース偵察車'));assert(d.querySelector('#labWinBody').textContent.includes('ユニットは増えません'));run();closeW();assert.equal(L.owned().length,12);assert(L.registered().includes((SX('scout_ace'))));assert.equal(L.credits(),22800);
+ L.reset();L.spend(-14800);L.renderFusion();two('fusionGrid',(SX('scout')));d.querySelector(('#fusionGrid [data-unit='+SX('tank')+']')).click();assert(d.querySelector('#labWinBody').textContent.includes('生産・雇用リストに エース偵察車'));assert(d.querySelector('#labWinBody').textContent.includes('ユニットは増えません'));run();closeW();assert.equal(L.owned().length,12);assert(L.registered().includes((SX('scout_ace'))));assert.equal(L.credits(),22800);
  L.gainExp([{key:(SX('robot')),amount:1000}]);L.renderFusion();two('fusionGrid',(SX('robot')));d.querySelector(('#fusionGrid [data-unit='+SX('fighter')+']')).click();run();closeW();const cm=L.owned().find(u=>u.id===(SX('commander')));assert.equal(cm.level,5);assert(!L.registered().includes((SX('commander'))));
  L.renderFusion();two('fusionGrid',(SX('infantry')));d.querySelector(('#fusionGrid [data-unit='+SX('medic')+']')).click();run();closeW();assert.equal(L.owned().find(u=>u.id===(SX('ranger'))).level,1);assert(L.registered().includes((SX('ranger'))));
  // PRO・D EXP: kept per unit id in the same test save.
@@ -428,7 +430,7 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
   // Test play from the maker: party built from maker units, map opens directly, returning restores every PRO_TACTICAL_* key.
   {const tp={missionId:'tm-reach',party:'maker',units:['td-u-a','td-u-a'],snapshot:{PRO_TACTICAL_LOAD:'{"sample":true,"maker":false,"packs":[]}',PRO_TACTICAL_KEEP:'1'}};
    w=open({PRO_TACTICAL_LOAD:JSON.stringify({sample:true,maker:true,packs:[]}),PRO_TD_MAKER_DRAFT:JSON.stringify(d2),PRO_TACTICAL_TESTPLAY:JSON.stringify(tp)},'?trial=tm-reach#missions');w.dispatchEvent(new w.Event('load'));
-   const s=w.PROField._live();assert(s&&s.missionId==='tm-reach','deployed');assert.equal(s.groups.filter(g=>g.faction==='player').flatMap(g=>g.members).length,2);assert(w.document.getElementById('testplayBack'));
+   const s=w.PROField._live();assert(s&&s.missionId==='tm-reach','deployed');assert.equal(s.groups.filter(g=>g.faction==='player').flatMap(g=>g.members).length,2);assert(w.document.getElementById('testplayBack'));assert(!w.document.getElementById('researchDayTest').hidden,'development buttons in a test play');
    w.localStorage.setItem('PRO_TACTICAL_CREDITS_JUNK','x');s.outcome='victory';s.talkQueue=[];w.PROField.showResult();assert(w.document.getElementById('fieldResultBack').textContent.includes('メーカーへ戻る'));
    try{w.PROTestplay.back();}catch(e){}const left=Object.keys(w.localStorage).filter(k=>k.startsWith('PRO_TACTICAL_')).sort();assert.deepEqual(left,['PRO_TACTICAL_KEEP','PRO_TACTICAL_LOAD'],'restored '+left.join(','));assert.equal(w.localStorage.getItem('PRO_TACTICAL_LOAD'),tp.snapshot.PRO_TACTICAL_LOAD);
    assert(!w.PROTestplay.active());try{w.close();}catch(e){}}
@@ -545,7 +547,11 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
  w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});}
 w.close();
 // 3) Maker source selected but no draft: an empty start (the sample pack is not loaded by default).
-w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'none');w.close();
+w=open({PRO_TACTICAL_SOURCE:'maker'});assert.equal(w.PROTacticalData.source,'none');
+// Release display: real credits / unit count (a cleared save: 10,000 Cr and no units), the briefing asks for a pack, development buttons only in a test play.
+{const d=w.document;d.querySelector('#resetSave').click();d.querySelector('#labWinActions [data-lab=run]').click();assert.equal(d.querySelector('#hubCredits').textContent,'10,000');assert.equal(d.querySelector('#hubUnits').textContent,'0');
+ assert(d.querySelector('#briefing').textContent.includes('パックを読み込んでください'));assert(d.querySelector('#researchDayTest').hidden&&d.querySelector('#catalogReset').hidden);for(const t of ['SAMPLE','サンプル拠点','試験用','製作者テスト','テストマップ'])assert(!d.body.textContent.includes(t),t);}
+w.close();
 // Empty start: standard terrains only, no units / missions / items; the mission list explains how to load data; the
 // sample pack can be chosen from the data source window.
 w=open({PRO_TACTICAL_SOURCE:'none'});{const D=w.PROTacticalData,L=w.PROUnitLab,$=id=>w.document.getElementById(id);assert.equal(D.source,'none');assert.equal(D.missions().length,0);assert.equal(D.units().length,0);assert.equal(L.owned().length,0);assert.deepEqual({...L.items()},{});assert(Object.keys(D.terrainTypes()).includes('p'));
