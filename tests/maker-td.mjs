@@ -5,7 +5,7 @@ for(const dialog of w.document.querySelectorAll('dialog')){dialog.showModal=()=>
 for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);const code=src?fs.readFileSync(path.resolve(path.dirname(file),src[1]),'utf8'):m[2];new vm.Script(code);w.eval(code);}
 const d=w.document,$=id=>d.getElementById(id),button=(root,name)=>[...root.querySelectorAll('button')].find(b=>b.textContent.includes(name)),M=w.PROMakerTD,A=x=>M.alias(x),FID=x=>M.data().packId+'-'+x;
 // Gate, menu, empty draft.
-assert(!$('gate').hidden);$('gatePassword').value='1111';$('gateForm').dispatchEvent(new w.Event('submit',{cancelable:true}));assert(!$('gate').hidden);$('gatePassword').value='0000';$('gateForm').dispatchEvent(new w.Event('submit',{cancelable:true}));await new Promise(r=>setTimeout(r,800));assert($('gate').hidden);assert(!$('menuView').hidden);
+assert(!$('gate'),'no password screen');assert(!d.querySelector('.testbar'));await new Promise(r=>setTimeout(r,50));assert(!$('menuView').hidden);
 // Create a unit, edit a number through the input window, create-and-link a weapon from the unit.
 d.querySelector('[data-open=units]').click();await new Promise(r=>setTimeout(r,800));assert(!$('listView').hidden);$('listNew').click();let u=M.data().units[0];assert.equal(u.id,'td-pack-U-000000');
 d.querySelector('[data-field=hp]').click();assert($('inputWin').open);$('inputValue').value='4200';button($('inputActions'),'決定').click();assert.equal(M.data().units[0].hp,4200);
