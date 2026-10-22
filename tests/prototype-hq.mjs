@@ -349,6 +349,30 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    s.groups.find(g=>g.id==='g1').position={x:5,y:0};F.focusGroup('g1');assert(!$('fieldRetreat').hidden);F.retreat();[...$('fieldChoiceBody').querySelectorAll('button')].find(b=>b.textContent==='撤退する').click();assert(!s.groups.some(g=>g.id==='g1'));assert(s.retreated.some(r=>r.uid===(SX('infantry'))));{const gu={...w.PROTactical.initializeDomains({id:'gst',name:'ゲスト隊',faction:'player',guest:true,mode:'auto',members:[{uid:'guest-x-0',unit:{...p1.members[0].unit}}]},'ground'),position:{x:5,y:0}};s.groups.push(gu);F.focusGroup('gst');assert(!$('fieldRetreat').hidden,'guests can use an exit');F.retreat();[...$('fieldChoiceBody').querySelectorAll('button')].find(b=>b.textContent==='撤退する').click();assert(s.retreated.some(r=>r.uid==='guest-x-0'));}
    s.groups=s.groups.filter(g=>g.faction==='player');assert.equal(F.checkOutcome(),'victory');s.talkQueue=[];F.showResult();const body=$('fieldResultBody').textContent;
    assert(body.includes('加入（戦場で生産）'),body);assert.equal(L.owned().length,n0+1);assert(L.owned().some(u=>u.id===hid&&u.uid.includes('#')));assert(!body.includes('（撃破された）'),body);w.close();}
+  // Pilots: placed squads (any faction), in-mission production and hires carry a pilot; costs include it. Owned units that
+  // would fail the sortie crew check (no required pilot) can't be produced either.
+  {const mech={id:'td-pm',name:'要パイロット機',crew:'required',hp:2000,atk:200,def:100,mob:100,acc:300,move:5,size:'M',weaponIds:['td-w-1'],skillIds:[]},pil={id:'td-pp',name:'試験パイロット',size:'S',hp:500,atk:50,def:50,mob:50,acc:50,weaponIds:[],skillIds:[],pilotProfile:{stats:{atk:100,acc:40},growthPct:0}};
+   const yard=Array.from({length:6},(_,y)=>Array.from({length:8},(_,x)=>y===0&&x>=2&&x<=5?'td-t-yard':'p'));
+   const d3={...d2,units:[...d2.units,mech,pil],hires:[...(d2.hires||[]),{id:'td-h-pm',name:'要パイロット機の雇用',unitId:'td-pm',cost:600,pilot:{unit:'td-pp',lv:3}}],
+    tmissions:[...d2.tmissions,{...tm('tm-pilot',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:8,height:6,grid:yard},facilities:{'2,0':'player','3,0':'player','4,0':'player','5,0':'player'},funds:{player:5000},produceKeep:true,production:[{unitId:'td-pm',cost:100,pilot:{unit:'td-pp',lv:2}}],
+     enemies:[{id:'ep',name:'敵機隊',position:{x:7,y:5},members:[{unit:'td-pm',pilot:{unit:'td-pp',lv:5}}]}],allies:[{id:'ap',name:'友軍機',faction:'ally',ai:{pattern:'hold'},position:{x:0,y:5},members:[{unit:'td-pm',pilot:{unit:'td-pp',lv:1}}]}]}]};
+   w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d3)});const F=w.PROField,L=w.PROUnitLab,D=w.PROTacticalData,$=id=>w.document.getElementById(id),base=D.unit('td-pm');
+   assert(D.missions().some(m=>m.id==='tm-pilot'),'mission with pilots loads');
+   // Hire with a pilot: both join, the pilot already aboard; the machine passes the crew check.
+   const mu=L.addOwned('td-pm',{unit:'td-pp',lv:3}),pu=L.boards()[mu];assert(pu,'pilot boarded');assert.equal(L.owned().find(u=>u.uid===pu).level,3);assert.equal(L.crewProblem(mu),'');assert.equal(L.owned().find(u=>u.uid===mu).pilot.name,'試験パイロット');
+   assert(L.hireList().find(h=>h.unitId==='td-pm').pilot.unit==='td-pp');
+   const bare=L.addOwned('td-pm');assert(L.crewProblem(bare).includes('パイロットが必要'));
+   const sq=(id,uid)=>w.PROTactical.initializeDomains({id,name:id+'隊',faction:'player',mode:'auto',members:[{uid,unit:L.owned().find(x=>x.uid===uid)}]},'ground');
+   F.deploy({missionId:'tm-pilot',groups:[sq('g1',(SX('infantry')))]});const s=F._live();F.show();
+   const em=s.groups.find(g=>g.id==='ep').members[0].unit;assert.equal(em.atk,base.atk+100);assert.equal(em.acc,base.acc+40);assert.equal(em.pilot.name,'試験パイロット');assert.equal(em.pilot.lv,5);
+   const am=s.groups.find(g=>g.id==='ap').members[0].unit;assert.equal(am.atk,base.atk+100);
+   F.pick(2,0);F.pick(2,0);$('fieldMapCommand').close();F.openProduce();const bs=[...$('fieldChoiceBody').querySelectorAll('[data-prod]')];
+   const lb=bs.find(b=>b.dataset.prod==='list:td-pm');assert(lb&&lb.textContent.includes('パイロット 試験パイロット Lv2'),lb?.textContent);
+   const owned=bs.filter(b=>b.dataset.prod==='owned:td-pm');assert.equal(owned.length,1,'the machine without its required pilot is not offered');
+   lb.click();const pg=s.groups.find(g=>g.position.x===2&&g.position.y===0);assert.equal(pg.members[0].unit.atk,base.atk+100);assert.equal(s.funds.player,4900);
+   F.pick(3,0);F.pick(3,0);$('fieldMapCommand').close();F.openProduce();[...$('fieldChoiceBody').querySelectorAll('[data-prod="hire:td-pm"]')][0].click();const hp=s.produced.find(p=>p.keep&&p.unitId==='td-pm');assert(hp&&hp.pilot.unit==='td-pp');
+   const n0=L.owned().length;s.groups=s.groups.filter(g=>g.faction==='player');assert.equal(F.checkOutcome(),'victory');s.talkQueue=[];F.showResult();
+   assert.equal(L.owned().length,n0+2,'kept unit joins with its pilot');const km=L.owned().filter(u=>u.id==='td-pm').at(-1);assert(L.boards()[km.uid]);assert.equal(L.crewProblem(km.uid),'');w.close();}
   // Preparation: a squad can be marked as reserve (up to the mission's limit); reserves are not placed at the start.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const P=w.PROPreparation,L=w.PROUnitLab,$=id=>w.document.getElementById(id);P.setMission('tm-prod');P.addUnit((SX('infantry')));$('prepAddGroup').click();
    const other=L.owned().find(u=>u.uid!==(SX('infantry'))&&u.size==='S'&&u.movementAptitude?.ground&&u.movementAptitude.ground!=='none').uid;P.addUnit(other);const rbs=[...w.document.querySelectorAll('#prepGroups [data-reserve]')];assert.equal(rbs.length,2);rbs[1].click();
