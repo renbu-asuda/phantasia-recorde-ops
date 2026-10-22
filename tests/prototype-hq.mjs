@@ -373,6 +373,23 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    F.pick(3,0);F.pick(3,0);$('fieldMapCommand').close();F.openProduce();[...$('fieldChoiceBody').querySelectorAll('[data-prod="hire:td-pm"]')][0].click();const hp=s.produced.find(p=>p.keep&&p.unitId==='td-pm');assert(hp&&hp.pilot.unit==='td-pp');
    const n0=L.owned().length;s.groups=s.groups.filter(g=>g.faction==='player');assert.equal(F.checkOutcome(),'victory');s.talkQueue=[];F.showResult();
    assert.equal(L.owned().length,n0+2,'kept unit joins with its pilot');const km=L.owned().filter(u=>u.id==='td-pm').at(-1);assert(L.boards()[km.uid]);assert.equal(L.crewProblem(km.uid),'');w.close();}
+  // Forms (stage 10) ①: 変形 — a form group linked one way in the data works both ways; before acting, free, any number of
+  // times; HP keeps its ratio; the original unit id still counts for conditions; command shown only when usable; AI smart.form.
+  {const apt={ground:'B',air:'none',water:'none',underwater:'none',space:'none'};
+   const fa={id:'td-tf-a',name:'人型',size:'M',hp:2000,atk:100,def:100,mob:100,acc:300,move:3,movementAptitude:apt,weaponIds:['td-w-1'],skillIds:['td-s-tf'],transformTo:['td-tf-b','td-tf-c']},fb={id:'td-tf-b',name:'高速形態',size:'M',hp:1000,atk:80,def:60,mob:200,acc:300,move:9,movementAptitude:apt,weaponIds:['td-w-1'],skillIds:[]},fc={id:'td-tf-c',name:'空中形態',size:'M',hp:1000,atk:80,def:60,mob:200,acc:300,move:9,movementAptitude:{...apt,ground:'none',air:'A'},weaponIds:[],skillIds:[]};
+   const d4={...d2,units:[...d2.units,fa,fb,fc],skills:[...(d2.skills||[]),{id:'td-s-tf',name:'変形機構',tacticalOnly:true,tactical:{transform:{on:true}}}],
+    tmissions:[...d2.tmissions,{...tm('tm-form',{type:'unit_defeated',unitId:'td-tf-a'},{type:'player_wipe'}),map:{width:20,height:6,grid:Array.from({length:6},()=>Array(20).fill('p'))},enemies:[{id:'ef',name:'変形隊',position:{x:19,y:5},smart:{form:true},ai:{pattern:'assault',target:'lowest_hp'},members:[{unit:'td-tf-a'}]}]}]};
+   w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d4)});const F=w.PROField,L=w.PROUnitLab,D=w.PROTacticalData,$=id=>w.document.getElementById(id);
+   assert.equal(D.formGroup('td-tf-b').join(),'td-tf-a,td-tf-c','links work both ways');
+   const uid=L.addOwned('td-tf-a'),sq=(id,u)=>w.PROTactical.initializeDomains({id,name:id+'隊',faction:'player',mode:'auto',members:[{uid:u,unit:L.owned().find(x=>x.uid===u)}]},'ground');
+   F.deploy({missionId:'tm-form',groups:[sq('g1',uid)]});const s=F._live();F.show();const g1=()=>s.groups.find(g=>g.id==='g1');g1().members[0].currentHp=1000;
+   F.focusGroup('g1');assert(!$('fieldTransform').hidden,'transform command shown');$('fieldTransform').click();
+   const fb1=$('fieldChoiceBody').querySelector('[data-form="'+uid+'>td-tf-b"]'),fc1=$('fieldChoiceBody').querySelector('[data-form="'+uid+'>td-tf-c"]');assert(fb1&&!fb1.disabled);assert(fc1.disabled&&fc1.textContent.includes('領域'),fc1.textContent);
+   fb1.click();let m=g1().members[0];assert.equal(m.unit.id,'td-tf-b');assert.equal(m.unit.baseId,'td-tf-a');assert.equal(m.currentHp,500);assert(w.PROTactical.beforeAction(g1()),'no action used');assert(F.opLog().some(e=>e.s.includes('人型が高速形態に変形')));
+   $('fieldChoiceBody').querySelector('[data-form="'+uid+'>td-tf-a"]').click();m=g1().members[0];assert.equal(m.unit.id,'td-tf-a');assert.equal(m.unit.baseId,undefined);assert.equal(m.currentHp,1000);
+   g1().members[0].action={moved:true};F.focusGroup('g1');assert($('fieldTransform').hidden,'hidden when not usable (default: usable only)');
+   // Conditions follow the original unit: an enemy-side 'unit_defeated td-tf-a' does not count a living transformed one as gone.
+   await F.endTurn();const ef=s.groups.find(g=>g.id==='ef');assert.equal(ef.members[0].unit.id,'td-tf-b','AI took the faster form');assert(F.opLog().some(e=>e.s.includes('変形隊の人型が高速形態に変形')));assert.notEqual(F.checkOutcome(),'victory','transformed enemy still counts as td-tf-a');w.close();}
   // Preparation: a squad can be marked as reserve (up to the mission's limit); reserves are not placed at the start.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const P=w.PROPreparation,L=w.PROUnitLab,$=id=>w.document.getElementById(id);P.setMission('tm-prod');P.addUnit((SX('infantry')));$('prepAddGroup').click();
    const other=L.owned().find(u=>u.uid!==(SX('infantry'))&&u.size==='S'&&u.movementAptitude?.ground&&u.movementAptitude.ground!=='none').uid;P.addUnit(other);const rbs=[...w.document.querySelectorAll('#prepGroups [data-reserve]')];assert.equal(rbs.length,2);rbs[1].click();
