@@ -108,3 +108,9 @@ html.fixed-page .shell>footer{padding:8px 0}
 @media(max-width:480px){html.fixed-page .shell>header{height:60px}html.fixed-page main{padding-top:12px}html.fixed-page .heading{margin-bottom:10px;align-items:center}html.fixed-page .heading .sub{display:none}html.fixed-page .heading .eyebrow{margin-bottom:4px}html.fixed-page h1{font-size:22px;margin:0}html.fixed-page .heading .secondary{min-height:38px;padding:8px 12px}}
 @media(max-width:800px){html.fixed-page .facility-status{padding:8px 12px}html.fixed-page .facility-status>.eyebrow{display:none}html.fixed-page .facility-status div{padding:5px 2px;display:flex;gap:10px;align-items:baseline}html.fixed-page .facility-status span{flex:none}html.fixed-page .facility-status b{flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}html.fixed-page .facility-status b.open{white-space:normal}}
 .fac-store{position:absolute;right:2px;top:1px;font-size:9px;font-style:normal;color:#ffe08a;background:#000a;padding:0 2px;border-radius:2px}
+/* 気力 gauge (tension.js): bar with the 通常 / 強気 bounds; colour by state. */
+.tension-gauge{margin-top:4px;font-size:11px;color:#c9d6f5}.tension-gauge .t-label b{font-weight:700}.tension-gauge .t-num{opacity:.8}
+.tension-gauge .t-bar{position:relative;height:6px;background:#1b2330;border-radius:3px;overflow:hidden;margin-top:2px}.tension-gauge .t-fill{height:100%;transition:width .2s}
+.tension-gauge .t-bar i{position:absolute;top:0;bottom:0;width:1px;background:#ffffff66}
+.t-confused .t-fill{background:#8a5cc7}.t-confused b{color:#c9a6ff}.t-weak .t-fill{background:#5b8fd6}.t-weak b{color:#9cc0f5}.t-normal .t-fill{background:#78ca9a}.t-normal b{color:#a9e6c2}.t-strong .t-fill{background:#f0a040}.t-strong b{color:#ffc477}.t-super .t-fill{background:linear-gradient(90deg,#ff5a5a,#ffd84a)}.t-super b{color:#ffd84a}
+.unit-row .tension-gauge{flex-basis:100%}
