@@ -22,8 +22,8 @@
 <script src="../shared/pro_core.js"></script><script src="../outer_ops_units.js"></script><script src="../outer_ops_missions.js"></script><script src="../outer_ops_items.js"></script><script src="dispatch_data.js"></script><script src="tactical_terrains.js"></script><script src="tactical_pack_sample.js"></script><script src="pixel_image.js"></script><script src="tactical_data.js"></script><script src="../shared/pro_unit_grid.js"></script><script src="../shared/pro_encounter.js"></script><script>// Encounter flags for this test save. Roster units have joined, so they count as met.
 window.PROUnitsSeen=window.PROEncounter.create({key:'PRO_TACTICAL_ENCOUNTER',resolve:window.PROTacticalData.catalogId});window.PROUnitsSeen.mark(window.PROTacticalData.roster().map(u=>u.id),'joined');</script><script>
 'use strict';
-// PRO・D missions from the published data come with the sample pack only (an empty start has no missions).
-const missions=[...window.PROTacticalData.missions(),...(window.PROTacticalData.usesSample?window.PRODispatchData.listing().map(m=>({...m,origin:{id:'sample',name:'内蔵サンプル'}})):[])].map(m=>({...m,terrain:m.terrainLabel}));
+// PRO・D missions: the published ones with the built-in pack, plus each loaded pack's ディスパッチ作戦.
+const missions=[...window.PROTacticalData.missions(),...window.PRODispatchData.listing()].map(m=>({...m,terrain:m.terrainLabel}));
 // Filter bar: すべて / タクティカル / ディスパッチ, then one item per loaded pack (the sample, the maker draft, each pack file).
 {const bar=document.querySelector('.filter[aria-label=ミッション絞り込み]');for(const o of window.PROTacticalData.origins()){const b=document.createElement('button');b.dataset.filter='origin:'+o.id;b.setAttribute('aria-pressed','false');b.textContent=o.name;bar.append(b);}}
 const $=id=>document.getElementById(id);
