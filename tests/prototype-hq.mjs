@@ -468,6 +468,12 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    F.pick(1,0);F.pick(1,0);$('fieldStorage').click();$('fieldChoiceBody').querySelector('[data-release=g1]').click();assert(G('g1')&&w.PROTactical.canAct(G('g1')),'released squad can act');
    s.groups=s.groups.filter(g=>g.id!=='es1');G('g2').position={x:5,y:0};F.fac(5,0).st.dur=1;F.focusGroup('g2');F.capture();assert.equal(F.fac(5,0).owner,'player');const cap=s.stored['5,0'][0];assert(cap.faction==='player'&&cap.guest&&cap.captured,'captured with the facility');
    assert.equal(F.checkOutcome(),'victory');s.talkQueue=[];const n0=L.owned().length;F.showResult();assert.equal(L.owned().length,n0+1,'captured unit joins (capturedJoin)');w.close();}
+  // Release range: the squad's setting (here 1) replaces the default 4.
+  {const hangar={id:'td-t-hangar',name:'格納庫',tactical:{kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{storage:{count:8,size:8,releaseRange:6}}}}};
+   const d10={...d2,terrains:[...d2.terrains,hangar],tmissions:[...d2.tmissions,{...tm('tm-range',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:10,height:6,grid:Array.from({length:6},(_,y)=>Array.from({length:10},(_,x)=>x===8&&y===5?'td-t-hangar':'p'))},facilities:{'8,5':'enemy'},enemies:[{id:'es1',name:'格納隊',stored:true,releaseRange:1,position:{x:8,y:5},members:[{unit:'td-u-b'}]}]}]};
+   w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d10)});const F=w.PROField,L=w.PROUnitLab;const u1=L.addOwned('td-u-a');
+   F.deploy({missionId:'tm-range',groups:[w.PROTactical.initializeDomains({id:'g1',name:'g1隊',faction:'player',mode:'auto',members:[{uid:u1,unit:L.owned().find(x=>x.uid===u1)}]},'ground')]});const s=F._live();F.show();const G=id=>s.groups.find(g=>g.id===id);
+   G('g1').position={x:6,y:5};await F.endTurn();assert(!G('es1')&&s.stored['8,5'],'2 squares away: stays inside (range 1)');G('g1').position={x:7,y:5};await F.endTurn();assert(G('es1'),'1 square away: comes out');w.close();}
   // Faction change ⑥ (event action 'side'): an enemy squad defects to the player as a guest at the start; an AI ally
   // betrays at turn 2 and counts as an enemy for the win; a pending reinforcement arrives on its new side.
   {const d9={...d2,tmissions:[...d2.tmissions,{...tm('tm-side',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:10,height:6,grid:Array.from({length:6},()=>Array(10).fill('p'))},

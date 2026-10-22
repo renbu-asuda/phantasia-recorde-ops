@@ -350,7 +350,8 @@ function openTransform(){const g=current();if(!g||!transformShown(g))return;choi
    on the facility square and acts normally. On its side's turn stored squads are reset, repaired and resupplied by the
    facility's functions. When the facility is captured, the squads inside are captured with it (both ways): taken by the
    player they become guests (they join after a win when the mission allows it). AI: rule act 'release', otherwise a
-   stored squad comes out when an opponent is within 4 squares. Production can go straight into storage. ---------- */
+   stored squad comes out when an opponent is within its release range (squad releaseRange, else the storage's
+   releaseRange, else 4 squares). Production can go straight into storage. ---------- */
 const storeCfg=f=>f?.def.functions.storage||null;
 const storedAt=(x,y)=>(state.stored||{})[key(x,y)]||[];
 function setStored(x,y,list){state.stored=state.stored||{};if(list.length)state.stored[key(x,y)]=list;else delete state.stored[key(x,y)];}
@@ -367,7 +368,7 @@ function storeTurn(faction){for(const [k,list] of Object.entries(state.stored||{
 function captureStored(x,y,faction){const list=storedAt(x,y);if(!list.length)return;setStored(x,y,list.map(g=>{const o=copy(g);o.faction=faction;if(faction==='player'){o.guest=true;o.captured=true;o.mode='auto';delete o.ai;delete o.aiRules;delete o.smart;}else{o.ai={pattern:'assault',target:'lowest_hp'};delete o.guest;delete o.aiRules;}return o;}));const names=list.map(g=>g.name).join('・');log('event',OWNER[faction]+'が'+tile(x,y).name+at({x,y})+'に格納されていた'+names+'を鹵獲');note(tile(x,y).name+'に格納されていた'+names+'を'+(faction==='player'?'鹵獲しました（ゲストとして使えます）。':OWNER[faction]+'が鹵獲しました。'));}
 // AI release before the faction's squads act.
 function aiRelease(faction){const out=[];for(const [k,list] of Object.entries(state.stored||{})){const [x,y]=k.split(',').map(Number);for(const g of list.filter(g=>g.faction===faction)){if(groupAt(x,y))break;const gg={...g,position:{x,y}},r=(g.aiRules||[]).find(r=>(r.conds||[]).every(c=>aiCond(gg,c))),ruled=(g.aiRules||[]).some(r=>(r.acts||[]).some(a=>a.type==='release'));
-  const go=r?(r.acts||[]).some(a=>a.type==='release'):!ruled&&opponents(gg).some(b=>dist({x,y},b.position)<=4);if(go&&!releaseGroup(x,y,g.id,PHASE_TAG[faction]||''))out.push((PHASE_TAG[faction]||'')+g.name+'が'+tile(x,y).name+'から出撃');}}return out;}
+  const range=Number(g.releaseRange)||Number(storeCfg(fac(x,y))?.releaseRange)||4,go=r?(r.acts||[]).some(a=>a.type==='release'):!ruled&&opponents(gg).some(b=>dist({x,y},b.position)<=range);if(go&&!releaseGroup(x,y,g.id,PHASE_TAG[faction]||''))out.push((PHASE_TAG[faction]||'')+g.name+'が'+tile(x,y).name+'から出撃');}}return out;}
 // Player: store command, storage window (release, swap inside a swap facility).
 function openStore(){const g=current();if(!g||!canStore(g))return;choice(g.name+'を格納',root=>{root.className='cmd-list';const {x,y}=g.position,c=storeCfg(fac(x,y)),u=usage(storedAt(x,y));root.append(el('p',tile(x,y).name+'に部隊ごと格納します（行動終了）。格納中 '+u.count+'/'+(Number(c.count)||8)+'体・総サイズ'+u.size+'/'+(Number(c.size)||8)+'。','cmd-hint'),button('格納する',()=>{storeGroup(g);$('fieldChoice').close();tell(g.name+'を格納しました。');draw();checkEnd();}),button('戻る',()=>{$('fieldChoice').close();openCommand();}));});}
 function openStorage(){const c=cursor;if(!state||!c)return;const f=fac(c.x,c.y);if(!f||f.owner!=='player'||!storeCfg(f))return;if($('fieldMapCommand').open)$('fieldMapCommand').close();const draw2=()=>choice(tile(c.x,c.y).name+'：格納庫',root=>{root.className='cmd-list';const cfg=storeCfg(f),u=usage(storedAt(c.x,c.y));root.append(el('p','格納中 '+u.count+'/'+(Number(cfg.count)||8)+'体・総サイズ'+u.size+'/'+(Number(cfg.size)||8)+'。出した部隊はそのまま行動できます（格納したターンは行動済み）。','cmd-hint'));
