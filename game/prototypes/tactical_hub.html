@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>/* Display settings (拠点の設定): PC view (a 1280px wide viewport), large text, and a notice inside LINE's in-app browser.
+<html lang="ja" class="fixed-page"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>/* Display settings (拠点の設定): PC view (a 1280px wide viewport), large text, and a notice inside LINE's in-app browser.
  Stored with the other settings in PRO_TACTICAL_SETTINGS (viewMode / textSize); changing them reloads the page. */
 (function(){var o={};try{o=JSON.parse(localStorage.getItem('PRO_TACTICAL_SETTINGS')||'{}')||{};}catch(e){}var mode=o.viewMode==='pc'?'pc':'mobile',text=o.textSize==='large'?'large':'normal',meta=document.querySelector('meta[name=viewport]');
  if(meta&&mode==='pc')meta.setAttribute('content','width=1280');if(text==='large')document.documentElement.classList.add('pro-text-large');

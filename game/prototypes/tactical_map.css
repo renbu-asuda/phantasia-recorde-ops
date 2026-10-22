@@ -81,15 +81,15 @@ html.pro-text-large body{zoom:1.15}
    A long button list at the bottom scrolls on its own instead of being cut off. */
 .cmd-window>*{flex-shrink:0}.cmd-window>.cmd-scroll{flex:1 1 auto;min-height:60px}.cmd-window>.cmd-list{max-height:55dvh;overflow-y:auto}
 /* Fixed page (no page scrolling): header and screen headings stay, the screen's body scrolls inside its frame. */
-html,body{height:100%;overflow:hidden}
-.shell{height:100dvh;display:flex;flex-direction:column}
-.shell>header,.shell>footer{flex:none}
-.shell>main{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;padding-bottom:12px}
-.shell>main>section:not([hidden]){flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
-.shell>main>section>.heading{flex:none}
+html.fixed-page,html.fixed-page body{height:100%;overflow:hidden}
+html.fixed-page .shell{height:100dvh;display:flex;flex-direction:column}
+html.fixed-page .shell>header,html.fixed-page .shell>footer{flex:none}
+html.fixed-page .shell>main{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;padding-bottom:12px}
+html.fixed-page .shell>main>section:not([hidden]){flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+html.fixed-page .shell>main>section>.heading{flex:none}
 .view-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
-.shell>footer{padding:8px 0}
-@media(max-width:800px){.shell>footer{display:none}}
+html.fixed-page .shell>footer{padding:8px 0}
+@media(max-width:800px){html.fixed-page .shell>footer{display:none}}
 /* The frame that scrolls on each screen (fixed page): the frame stays in place and its contents move. */
 .view-body:has(>.unit-grid),.view-body:has(>.cmd-window-inline),.view-body:has(>.facility-layout),.view-body:has(>.missions){display:flex;flex-direction:column;overflow:hidden}
 .view-body>.unit-grid{flex:1 1 auto;min-height:0;overflow-y:auto;align-content:start;grid-auto-rows:max-content}
