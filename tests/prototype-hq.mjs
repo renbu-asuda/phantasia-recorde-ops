@@ -485,6 +485,9 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    w.location.hash='#missions';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,300));w.location.hash='#base';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,300));
    assert.equal(L.briefs()[0].key,'clear:tm-inf');assert(txt().includes('見事な勝利でした'),txt());assert(q('#briefing [data-brief=last]').textContent.includes('勝利'));
    q('#briefHistory').click();assert.equal(q('#labWinTitle').textContent,'過去のお知らせ');assert(q('#labWinBody').textContent.includes('ようこそ')&&q('#labWinBody').textContent.includes('見事な勝利でした'));w.close();}
+  // Dispatch missions: unlock / first clear texts too (built-in PRO・D missions here; texts set on the loaded data).
+  {w=open({});const L=w.PROUnitLab,DD=w.PRODispatchData,id=DD.listing()[0].id,m=DD.mission(id);m.unlockText='派遣先が見つかった';m.clearText='派遣成功';L.checkBriefs();assert(L.briefs().some(b=>b.key==='unlock:'+id&&b.text==='派遣先が見つかった'));
+   L.finishMission(m,{outcome:'win',turns:3});assert.equal(L.briefs()[0].key,'clear:'+id);assert.equal(L.briefs()[0].text,'派遣成功');w.close();}
   // Map scale: MOVE and weapon ranges are converted by unit ratio ÷ map ratio (rounded, at least 1); mixed squads use the slowest.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const F=w.PROField,L=w.PROUnitLab,T=w.PROTactical,D=w.PROTacticalData,inf=L.owned().find(x=>x.uid===SX('infantry')),tank=D.unit('td-u-tank');
    assert.equal(JSON.stringify(D.scales().map(x=>x.ratio)),'[1,2,4,8,16]');assert.equal(D.scaleOf('space').name,'宇宙戦略');assert.equal(D.scaleOf(undefined).id,'infantry');
