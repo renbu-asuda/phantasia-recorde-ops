@@ -390,6 +390,26 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    g1().members[0].action={moved:true};F.focusGroup('g1');assert($('fieldTransform').hidden,'hidden when not usable (default: usable only)');
    // Conditions follow the original unit: an enemy-side 'unit_defeated td-tf-a' does not count a living transformed one as gone.
    await F.endTurn();const ef=s.groups.find(g=>g.id==='ef');assert.equal(ef.members[0].unit.id,'td-tf-b','AI took the faster form');assert(F.opLog().some(e=>e.s.includes('変形隊の人型が高速形態に変形')));assert.notEqual(F.checkOutcome(),'victory','transformed enemy still counts as td-tf-a');w.close();}
+  // Forms ②: 換装 — on a swap facility of the side or carried in a carrier; no action used, HP ratio, battlefield funds;
+  // the swap group is separate from the transform group; AI rule act 'form' (swap).
+  {const apt={ground:'B',air:'none',water:'none',underwater:'none',space:'none'},U=(id,name,hp,extra={})=>({id,name,size:'M',hp,atk:100,def:100,mob:100,acc:300,move:4,movementAptitude:apt,weaponIds:['td-w-1'],skillIds:[],...extra});
+   const units=[U('td-sw-a','標準装備',2000,{skillIds:['td-s-sw','td-s-tf2'],swapTo:['td-sw-b','td-sw-c'],transformTo:['td-sw-x']}),U('td-sw-b','砲撃装備',1000),U('td-sw-c','近接装備',4000),U('td-sw-x','飛行形態',2000),U('td-sw-car','輸送艦',3000,{size:'L',skillIds:['td-s-hold']})];
+   const dock={id:'td-t-dock',name:'整備ドック',tactical:{kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{swap:{cost:100}}}}};
+   const d5={...d2,units:[...d2.units,...units],terrains:[...d2.terrains,dock],skills:[...(d2.skills||[]),{id:'td-s-sw',name:'換装システム',tacticalOnly:true,tactical:{swap:{on:true}}},{id:'td-s-tf2',name:'変形',tacticalOnly:true,tactical:{transform:{on:true}}},{id:'td-s-hold',name:'格納庫',tacticalOnly:true,tactical:{carry:{count:2,maxSize:'L',swapCost:50}}}],
+    tmissions:[...d2.tmissions,{...tm('tm-swap',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:10,height:6,grid:Array.from({length:6},(_,y)=>Array.from({length:10},(_,x)=>(x===1&&y===0)||(x===9&&y===5)?'td-t-dock':'p'))},facilities:{'1,0':'player','9,5':'enemy'},funds:{player:1000,enemy:1000},
+     enemies:[{id:'es',name:'換装隊',position:{x:9,y:5},aiRules:[{conds:[],acts:[{type:'form',how:'swap',to:'td-sw-c'},{type:'wait'}]}],members:[{unit:'td-sw-a'}]}]}]};
+   w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d5)});const F=w.PROField,L=w.PROUnitLab,D=w.PROTacticalData,$=id=>w.document.getElementById(id);
+   assert.equal(D.formGroup('td-sw-b','swapTo').join(),'td-sw-a,td-sw-c');assert.equal(D.formGroup('td-sw-b','transformTo').join(),'','swap and transform groups are separate');
+   const ua=L.addOwned('td-sw-a'),uc=L.addOwned('td-sw-car'),sq=(id,u)=>w.PROTactical.initializeDomains({id,name:id+'隊',faction:'player',mode:'auto',members:[{uid:u,unit:L.owned().find(x=>x.uid===u)}]},'ground');
+   F.deploy({missionId:'tm-swap',groups:[sq('g1',ua),sq('g2',uc)]});const s=F._live();F.show();const G=id=>s.groups.find(g=>g.id===id);G('g1').position={x:1,y:0};G('g2').position={x:3,y:3};G('g1').members[0].currentHp=1000;
+   G('g2').members[0].cargo=[{uid:'cargo-1',unit:D.unit('td-sw-b'),domain:'ground',action:{}}];
+   F.focusGroup('g1');assert(!$('fieldSwap').hidden,'swap on the dock');$('fieldSwap').click();const sb=$('fieldChoiceBody').querySelector('[data-swap="'+ua+'>td-sw-b"]');assert(sb&&!sb.disabled&&sb.textContent.includes('戦場資金 100'),sb?.textContent);
+   sb.click();let m=G('g1').members[0];assert.equal(m.unit.id,'td-sw-b');assert.equal(m.unit.baseId,'td-sw-a');assert.equal(m.currentHp,500);assert.equal(s.funds.player,900);assert(w.PROTactical.beforeAction(G('g1')));assert(F.opLog().some(e=>e.s.includes('標準装備が砲撃装備に換装（整備ドック・戦場資金-100）')));
+   F.focusGroup('g1');assert($('fieldTransform').hidden,'the swap form does not get the transform group');
+   $('fieldSwap').click();$('fieldChoiceBody').querySelector('[data-swap="'+ua+'>td-sw-a"]').click();m=G('g1').members[0];assert.equal(m.unit.id,'td-sw-a');assert.equal(m.currentHp,1000);F.focusGroup('g1');assert(!$('fieldTransform').hidden,'back on the base form: transform again');
+   G('g1').position={x:5,y:5};F.focusGroup('g1');assert($('fieldSwap').hidden,'no swap away from the dock');
+   F.focusGroup('g2');assert(!$('fieldSwap').hidden,'carried units can swap');$('fieldSwap').click();const cb=$('fieldChoiceBody').querySelector('[data-swap="cargo-1>td-sw-c"]');assert(cb.textContent.includes('輸送艦の中'),cb.textContent);cb.click();assert.equal(G('g2').members[0].cargo[0].unit.id,'td-sw-c');assert.equal(s.funds.player,750);
+   await F.endTurn();assert.equal(s.groups.find(g=>g.id==='es').members[0].unit.id,'td-sw-c','AI rule swap');assert.equal(s.funds.enemy,900);w.close();}
   // Preparation: a squad can be marked as reserve (up to the mission's limit); reserves are not placed at the start.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const P=w.PROPreparation,L=w.PROUnitLab,$=id=>w.document.getElementById(id);P.setMission('tm-prod');P.addUnit((SX('infantry')));$('prepAddGroup').click();
    const other=L.owned().find(u=>u.uid!==(SX('infantry'))&&u.size==='S'&&u.movementAptitude?.ground&&u.movementAptitude.ground!=='none').uid;P.addUnit(other);const rbs=[...w.document.querySelectorAll('#prepGroups [data-reserve]')];assert.equal(rbs.length,2);rbs[1].click();

@@ -18,7 +18,7 @@ const LOAD_KEY='PRO_TACTICAL_LOAD',PACKS_KEY='PRO_TACTICAL_PACK_FILES';
 const read=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
 /* Facilities (stage 8): a square's facility is a set of functions plus durability. Legacy 'supply' string → supply only.
    functions: income {amount}, supply {}, repair {pct}, defense {hitPt}, hq {}, reward {credits, items, flag}. */
-const FAC_FN=['income','supply','repair','defense','hq','reward','produce','gate','exit','resupply'];
+const FAC_FN=['income','supply','repair','defense','hq','reward','produce','gate','exit','resupply','swap'];
 function normFacility(f){if(!f)return null;if(typeof f==='string')return {durability:20,functions:{[f]:{}}};const fn={};for(const k of FAC_FN)if(f.functions?.[k])fn[k]={...f.functions[k]};return Object.keys(fn).length?{durability:Number(f.durability)>0?Number(f.durability):20,functions:fn}:null;}
 // Stage 9: Tactical ammo (weapon 'ammo', per mission) and EN ('enCost' on weapons / skills) survive core normalization.
 const keepRes=(o,src)=>o&&{...o,...(Number(src.ammo)>0?{ammo:Number(src.ammo)}:{}),...(Number(src.enCost)>0?{enCost:Number(src.enCost)}:{}),...(src.tactical?{tactical:C.clone(src.tactical)}:{})};
