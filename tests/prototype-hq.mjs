@@ -447,6 +447,27 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    const blog=[...q('#fieldBattleLog').children].map(x=>x.textContent).join('\n');q('#fieldBattleClose').click();await new Promise(r=>setTimeout(r,30));if(q('#storyWindow').open)q('#storySkip').click();const res=await dp;
    assert(blog.includes('重装機がパージ：脱出ポッドに'),blog.slice(0,600));assert(blog.includes('試作機が撃破された！ 脱出ポッドで脱出'),blog.slice(0,800));assert(blog.includes('量産機が撃破された！ パイロットエースパイロットが脱出'));assert.equal(res.outcome,'win');
    assert.equal(L2.dispatchState('td-es-m'),'lost','the machine is lost');assert.equal(L2.dispatchState('td-es-p'),null,'the pilot survives');assert.equal(L2.dispatchState('td-es-a'),null);w.close();}
+  // Facility storage ⑤: store a whole squad (action ends), production into a new / existing stored squad, stored squads
+  // count for win / lose, are repaired on their side's turn, AI release when a foe is near, capture takes the squads inside.
+  {const hangar={id:'td-t-hangar',name:'格納庫',tactical:{kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{storage:{count:16,size:16},repair:{pct:50},produce:{list:[{unitId:'td-u-b',cost:100}]}}}}};
+   const grid=Array.from({length:6},(_,y)=>Array.from({length:10},(_,x)=>(x===1&&y===0)||(x===8&&y===5)||(x===5&&y===0)?'td-t-hangar':'p'));
+   const d8={...d2,terrains:[...d2.terrains,hangar],tmissions:[...d2.tmissions,{...tm('tm-store',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:10,height:6,grid},facilities:{'1,0':'player','8,5':'enemy','5,0':'enemy'},funds:{player:1000},capturedJoin:true,
+    enemies:[{id:'es1',name:'格納隊',stored:true,position:{x:8,y:5},members:[{unit:'td-u-b'}]},{id:'es2',name:'待機隊',stored:true,position:{x:5,y:0},aiRules:[{conds:[],acts:[{type:'wait'}]}],members:[{unit:'td-u-b'}]}]}]};
+   w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d8)});const F=w.PROField,L=w.PROUnitLab,$=id=>w.document.getElementById(id);
+   const u1=L.addOwned('td-u-a'),u2=L.addOwned('td-u-a'),sq=(id,u)=>w.PROTactical.initializeDomains({id,name:id+'隊',faction:'player',mode:'auto',members:[{uid:u,unit:L.owned().find(x=>x.uid===u)}]},'ground');
+   F.deploy({missionId:'tm-store',groups:[sq('g1',u1),sq('g2',u2)]});const s=F._live();F.show();const G=id=>s.groups.find(g=>g.id===id);G('g1').position={x:1,y:0};G('g2').position={x:3,y:3};G('g1').members[0].currentHp=100;
+   assert(!G('es1')&&s.stored['8,5'][0].id==='es1','enemy squad starts stored');assert.notEqual(F.checkOutcome(),'victory','stored enemies count');
+   F.focusGroup('g1');assert(!$('fieldStore').hidden,'store command');$('fieldStore').click();[...$('fieldChoiceBody').querySelectorAll('button')].find(b=>b.textContent==='格納する').click();assert(!G('g1')&&s.stored['1,0'][0].id==='g1');
+   F.pick(1,0);F.pick(1,0);assert(!$('fieldStorage').hidden&&$('fieldStorage').textContent.includes('1部隊'));$('fieldMapCommand').close();
+   F.openProduce();$('fieldChoiceBody').querySelector('[data-prod="list:td-u-b"]').click();assert($('fieldChoiceBody').querySelector('[data-dest="add:g1"]'),'choose where it goes');$('fieldChoiceBody').querySelector('[data-dest="add:g1"]').click();
+   assert.equal(s.stored['1,0'][0].members.length,2);assert.equal(s.funds.player,900);
+   F.openProduce();$('fieldChoiceBody').querySelector('[data-prod="list:td-u-b"]').click();$('fieldChoiceBody').querySelector('[data-dest="new"]').click();assert.equal(s.stored['1,0'].length,2,'a new stored squad');
+   G('g2').position={x:6,y:5};await F.endTurn();
+   assert(G('es1')&&G('es1').position.x===8,'AI released the stored squad when a foe came near');assert(s.stored['5,0'][0].id==='es2','a waiting rule keeps it inside');
+   const g1s=s.stored['1,0'].find(g=>g.id==='g1');assert(g1s.members[0].currentHp>100,'repaired inside');
+   F.pick(1,0);F.pick(1,0);$('fieldStorage').click();$('fieldChoiceBody').querySelector('[data-release=g1]').click();assert(G('g1')&&w.PROTactical.canAct(G('g1')),'released squad can act');
+   s.groups=s.groups.filter(g=>g.id!=='es1');G('g2').position={x:5,y:0};F.fac(5,0).st.dur=1;F.focusGroup('g2');F.capture();assert.equal(F.fac(5,0).owner,'player');const cap=s.stored['5,0'][0];assert(cap.faction==='player'&&cap.guest&&cap.captured,'captured with the facility');
+   assert.equal(F.checkOutcome(),'victory');s.talkQueue=[];const n0=L.owned().length;F.showResult();assert.equal(L.owned().length,n0+1,'captured unit joins (capturedJoin)');w.close();}
   // Preparation: a squad can be marked as reserve (up to the mission's limit); reserves are not placed at the start.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const P=w.PROPreparation,L=w.PROUnitLab,$=id=>w.document.getElementById(id);P.setMission('tm-prod');P.addUnit((SX('infantry')));$('prepAddGroup').click();
    const other=L.owned().find(u=>u.uid!==(SX('infantry'))&&u.size==='S'&&u.movementAptitude?.ground&&u.movementAptitude.ground!=='none').uid;P.addUnit(other);const rbs=[...w.document.querySelectorAll('#prepGroups [data-reserve]')];assert.equal(rbs.length,2);rbs[1].click();
