@@ -275,10 +275,11 @@ const hireable=id=>D.hires().some(h=>h.unitId===id)||registered.includes(id);
 const isKey=u=>!!u?.noFire&&!hireable(u.id);
 const downKind=u=>(u?.tags||[]).includes('生身')?'injured':'wrecked',DOWN={wrecked:'大破',injured:'重傷'};
 const downText=k=>DOWN[k]||'';
-function handleLosses(uids){const out=[];uids=[...uids,...uids.map(u=>boards[u]).filter(Boolean)];for(const uid of uids){const o=owned.find(x=>x.uid===uid);if(!o)continue;const u=D.unit(o.id);
+// spare: uids that survived (a pilot that escaped from its destroyed machine is not lost with it).
+function handleLosses(uids,spare=[]){const out=[];uids=[...uids,...uids.map(u=>boards[u]).filter(p=>p&&!spare.includes(p))];for(const uid of uids){const o=owned.find(x=>x.uid===uid);if(!o)continue;const u=D.unit(o.id);
  if(isKey(u)){o.down=downKind(u);for(const [k,v] of Object.entries(boards))if(k===uid||v===uid)delete boards[k];out.push({name:u.name,result:'down',text:downText(o.down)+'（出撃不可・修理・治療が必要）'});}else{owned=owned.filter(x=>x!==o);for(const [k,v] of Object.entries(boards))if(k===uid||v===uid)delete boards[k];out.push({name:u.name,result:'lost',text:'失われた'});}}save();return out;}
 // PRO・D units: the same rule by unit id (they have no hire entries in the prototype, so only noFire units are kept).
-function handleDispatchLosses(units){const out=[],DDd=window.PRODispatchData;units=[...units,...units.map(u=>DDd?.defs[dboards[u.id]]).filter(Boolean)];for(const u of units){for(const [k,v] of Object.entries(dboards))if(k===u.id||v===u.id)delete dboards[k];if(u.noFire){ddown[u.id]=downKind(u);out.push({name:u.name,result:'down',text:downText(ddown[u.id])+'（出撃不可・修理・治療が必要）'});}else{if(!dlost.includes(u.id))dlost.push(u.id);out.push({name:u.name,result:'lost',text:'失われた'});}}save();return out;}
+function handleDispatchLosses(units,spare=[]){const out=[],DDd=window.PRODispatchData;units=[...units,...units.map(u=>!spare.includes(dboards[u.id])&&DDd?.defs[dboards[u.id]]).filter(Boolean)];for(const u of units){for(const [k,v] of Object.entries(dboards))if(k===u.id||v===u.id)delete dboards[k];if(u.noFire){ddown[u.id]=downKind(u);out.push({name:u.name,result:'down',text:downText(ddown[u.id])+'（出撃不可・修理・治療が必要）'});}else{if(!dlost.includes(u.id))dlost.push(u.id);out.push({name:u.name,result:'lost',text:'失われた'});}}save();return out;}
 const repairCost=u=>Math.max(1000,Math.round(((Number(u.hp)||1000)*5+(u.level||1)*500)/100)*100);
 const reviveItems=()=>D.items().filter(it=>(it.effects||[]).some(e=>e.type==='revive_hp_pct')&&free(it.id)>0);
 // recover(key, how): key = owned uid, or 'd:'+PRO・D unit id; how = 'credits' or an item id.
