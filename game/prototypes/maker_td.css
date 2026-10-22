@@ -54,3 +54,6 @@ html.fixed-page #listView>.td-layout{flex:1 1 auto;min-height:0;grid-template-ro
 html.fixed-page .td-side{display:flex;flex-direction:column;min-height:0}html.fixed-page .td-side>.td-tools{flex:none}html.fixed-page .td-items{flex:1 1 auto;min-height:0;overflow-y:auto;align-content:start}
 html.fixed-page .td-editor{min-height:0;overflow-y:auto}
 @media(max-width:760px){html.fixed-page #listView>.td-layout{display:flex;flex-direction:column}html.fixed-page .td-side{flex:0 0 auto;max-height:34%}html.fixed-page .td-editor{flex:1 1 auto;min-height:0}}
+@media(max-width:760px){html.fixed-page header{height:auto;min-height:0;padding:8px 0}html.fixed-page header .brand{font-size:16px}html.fixed-page header .brand span{display:none}html.fixed-page main{padding-top:10px}html.fixed-page #listView>.td-head{margin-bottom:8px}html.fixed-page #listView>.td-head h1{font-size:22px;margin:0}
+ html.fixed-page .td-side{max-height:40%}html.fixed-page .td-tools{flex-direction:row;gap:6px;margin-bottom:4px}html.fixed-page .td-tools input{flex:1;min-width:0}html.fixed-page .td-tools .primary{flex:none;width:auto;min-height:40px;padding:8px 12px;white-space:nowrap}
+ .td-editor-actions button{white-space:nowrap}.td-row b{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}}

@@ -11,3 +11,5 @@
 @media(max-width:480px){.unit-grid{--ug-tile:64px}}
 .ug-searchbar{display:flex;gap:8px;align-items:center;margin:0 0 6px}.ug-search{flex:1;min-width:0;padding:10px;border:1px solid #32424d;background:#0e161c;color:inherit;font:inherit}.ug-count{color:#a7b8c4;font-size:12px;white-space:nowrap}.ug-tile[hidden]{display:none}
 .ug-tile .ug-pic{position:absolute;inset:14% 14% 22%;image-rendering:pixelated;pointer-events:none}.ug-tile.has-pic strong{position:relative;z-index:1;text-shadow:0 0 3px #000}
+/* Keeps each tile at least as tall as it is wide even where aspect-ratio is ignored inside scrolling grids (older Safari), so rows never overlap. */
+.unit-grid{grid-auto-rows:max-content}.ug-tile::before{content:"";width:0;padding-bottom:calc(100% - 14px);flex:none}
