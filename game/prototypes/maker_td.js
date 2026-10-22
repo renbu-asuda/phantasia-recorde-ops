@@ -3,14 +3,14 @@
    and reported. Draft is auto-saved to this browser; export is a T&D JSON pack (not the published format). */
 (function(){'use strict';
 const C=window.PROCore,$=id=>document.getElementById(id),DRAFT='PRO_TD_MAKER_DRAFT',FORMAT='PRO_TD_PACK';
-const KINDS={units:{label:'ユニット',en:'UNITS',prefix:'u'},weapons:{label:'武装',en:'WEAPONS',prefix:'w'},skills:{label:'スキル',en:'SKILLS',prefix:'s'},missions:{label:'ディスパッチ作戦',en:'DISPATCH MISSIONS',prefix:'m'},items:{label:'アイテム',en:'ITEMS',prefix:'i'},flags:{label:'フラグ',en:'FLAGS',prefix:'f'},terrains:{label:'独自の地形',en:'TERRAINS',prefix:'t'},research:{label:'研究',en:'RESEARCH',prefix:'r'},hires:{label:'雇用',en:'HIRES',prefix:'h'},evolutions:{label:'開発・進化',en:'EVOLUTION',prefix:'ev'},fusions:{label:'設計・合成',en:'FUSION',prefix:'fu'},achievements:{label:'実績',en:'ACHIEVEMENTS',prefix:'ac'},notices:{label:'お知らせ',en:'NOTICES',prefix:'nt'}};
+const KINDS={units:{label:'ユニット',en:'UNITS',prefix:'u'},weapons:{label:'武装',en:'WEAPONS',prefix:'w'},skills:{label:'スキル',en:'SKILLS',prefix:'s'},missions:{label:'ディスパッチ作戦',en:'DISPATCH MISSIONS',prefix:'m'},items:{label:'アイテム',en:'ITEMS',prefix:'i'},flags:{label:'フラグ',en:'FLAGS',prefix:'f'},vars:{label:'変数',en:'VARIABLES',prefix:'v'},terrains:{label:'独自の地形',en:'TERRAINS',prefix:'t'},research:{label:'研究',en:'RESEARCH',prefix:'r'},hires:{label:'雇用',en:'HIRES',prefix:'h'},evolutions:{label:'開発・進化',en:'EVOLUTION',prefix:'ev'},fusions:{label:'設計・合成',en:'FUSION',prefix:'fu'},achievements:{label:'実績',en:'ACHIEVEMENTS',prefix:'ac'},notices:{label:'お知らせ',en:'NOTICES',prefix:'nt'}};
 const BUILTIN_TERRAINS=['標準','市街地','森林','砂漠','夜間','雪原','島嶼','月面','宇宙','水中'];
 const el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;};
 const clone=x=>JSON.parse(JSON.stringify(x));
 // Kinds added by extension scripts (PROMakerTD.extend.registerKind) and their field-type hooks.
 const EXTRA_KINDS=[],EXT={display:{},edit:{},issues:{},refs:{},mapRefs:[]};
 let data=empty(),kind='units',selectedId=null,openGroups=new Set();
-function empty(){return {format:FORMAT,version:1,packId:'td-pack',name:'新しいパック',units:[],weapons:[],skills:[],missions:[],items:[],flags:[],terrains:[],research:[],hires:[],evolutions:[],fusions:[],achievements:[],notices:[],...Object.fromEntries(EXTRA_KINDS.map(k=>[k,[]]))};}
+function empty(){return {format:FORMAT,version:1,packId:'td-pack',name:'新しいパック',units:[],weapons:[],skills:[],missions:[],items:[],flags:[],vars:[],terrains:[],research:[],hires:[],evolutions:[],fusions:[],achievements:[],notices:[],...Object.fromEntries(EXTRA_KINDS.map(k=>[k,[]]))};}
 
 /* ---------- field schema: only fields the current game uses ---------- */
 const STAT=(key,label,min=0,max=1000000)=>({key,label,type:'number',min,max,group:'能力'});
@@ -85,10 +85,11 @@ FIELDS.items=[
   {key:'note',label:'メモ',type:'text',group:'詳細'}];
 FIELDS.missions.splice(FIELDS.missions.findIndex(f=>f.key==='story.before'),0,{key:'drops',label:'ドロップ（勝利時）',type:'drops',group:'報酬'});
 
+FIELDS.vars=[{key:'name',label:'変数名（会話の {変数名} で値を表示）',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},{key:'desc',label:'説明（何を数えるか）',type:'text',group:'基本'},{key:'scope',label:'使う範囲',type:'select',choices:{game:'ゲーム全体（セーブに残る）',mission:'作戦の中だけ（作戦ごとに初期値から）'},group:'基本'},{key:'initial',label:'初期値',type:'number',min:-1000000000,max:1000000000,group:'値'},{key:'min',label:'最小値（空欄で制限なし）',type:'number',min:-1000000000,max:1000000000,group:'値'},{key:'max',label:'最大値（空欄で制限なし）',type:'number',min:-1000000000,max:1000000000,group:'値'}];
 FIELDS.flags=[{key:'name',label:'フラグ名',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},{key:'desc',label:'説明（どうなると立つか）',type:'text',group:'基本'}];
 FIELDS.missions.splice(FIELDS.missions.findIndex(f=>f.key==='exp'),0,
   {key:'requires.missions',label:'クリアが必要な作戦',type:'refs',ref:'missions',group:'解放条件'},{key:'requires.items',label:'必要なキーアイテム',type:'refs',ref:'items',group:'解放条件'},{key:'requires.minLevel',label:'必要なレベル（部隊の最高Lv）',type:'number',min:1,max:99,group:'解放条件'},{key:'requires.flags',label:'必要なフラグ',type:'flagmap',group:'解放条件'},
-  {key:'resultFlags.win',label:'勝利で立てるフラグ',type:'flagmap',group:'フラグ・分岐'},{key:'resultFlags.lose',label:'敗北で立てるフラグ',type:'flagmap',group:'フラグ・分岐'},{key:'resultFlags.draw',label:'引き分けで立てるフラグ',type:'flagmap',group:'フラグ・分岐'},
+  {key:'resultFlags.win',label:'勝利で立てるフラグ',type:'flagmap',group:'フラグ・分岐'},{key:'resultFlags.lose',label:'敗北で立てるフラグ',type:'flagmap',group:'フラグ・分岐'},{key:'resultFlags.draw',label:'引き分けで立てるフラグ',type:'flagmap',group:'フラグ・分岐'},{key:'resultVars.win',label:'勝利で変える変数',type:'varops',group:'フラグ・分岐'},{key:'resultVars.lose',label:'敗北・引き分けで変える変数',type:'varops',group:'フラグ・分岐'},
   {key:'story.choices',label:'作戦前の選択肢',type:'choices',group:'フラグ・分岐'},{key:'story.defeat',label:'敗北後の会話',type:'lines',group:'フラグ・分岐'},
   {key:'events',label:'作戦中のイベント',type:'events',group:'イベント'});
 FIELDS.terrains=[{key:'name',label:'地形名（20文字まで）',type:'text',max:20,group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},{key:'imageId',label:'マスの画像（ドット絵・なしなら色）',type:'imgref',group:'基本'},{key:'desc',label:'説明',type:'text',group:'基本'},
@@ -118,16 +119,16 @@ const COND_TYPES={
  unit_owned:{label:'ユニットの所持数',p:['unitId','cmp','count']},unit_deployed:{label:'ユニットが出撃している',p:['unitId']},
  item_has:{label:'アイテムの所持数（消費しない）',p:['itemId','cmp','count']},item_use:{label:'アイテムを消費する',p:['itemId','count']},
  credits_have:{label:'資金（消費しない）',p:['cmp','value']},credits_use:{label:'資金を消費する',p:['value']},
- flag:{label:'フラグの状態',p:['flagId','on']},mission_clear:{label:'作戦をクリア済み',p:['missionId']},mission_stars:{label:'作戦の星の数',p:['missionId','cmp','value']},wins_total:{label:'勝利回数（全作戦）',p:['cmp','value']},
+ flag:{label:'フラグの状態',p:['flagId','on']},var:{label:'変数の値',p:['varId','cmp','value']},mission_clear:{label:'作戦をクリア済み',p:['missionId']},mission_stars:{label:'作戦の星の数',p:['missionId','cmp','value']},wins_total:{label:'勝利回数（全作戦）',p:['cmp','value']},
  research_done:{label:'研究が完了している',p:['researchId']},hired:{label:'雇用した回数',p:['hireId','cmp','count']},evolved:{label:'進化を行った',p:['evolutionId']},fused:{label:'合成を行った',p:['fusionId']},
  day:{label:'経過日数',p:['cmp','value']},weekday:{label:'曜日',p:['clock','days']},chance:{label:'確率（%）',p:['value']}};
-const COND_REF={unitId:'units',itemId:'items',flagId:'flags',missionId:'missions',researchId:'research',hireId:'hires',evolutionId:'evolutions',fusionId:'fusions'};
+const COND_REF={unitId:'units',itemId:'items',flagId:'flags',varId:'vars',missionId:'missions',researchId:'research',hireId:'hires',evolutionId:'evolutions',fusionId:'fusions'};
 const CMP={ge:'以上',le:'以下',eq:'ちょうど',lt:'未満'},WEEK=['日','月','火','水','木','金','土'];
 const condText=c=>{const t=COND_TYPES[c.type];if(!t)return c.type;const nm=(k,id)=>find(k,id)?.name||(id?'⚠'+id:'未選択'),cmp=v=>v+(CMP[c.cmp||'ge']);let s;switch(c.type){
  case 'unit_level':s='Lv'+cmp(c.value);break;case 'unit_stat':s=(STAT_LABEL[c.stat]||c.stat)+' '+cmp(c.value);break;case 'unit_tag':s='タグ「'+(c.tag||'')+'」';break;
  case 'unit_owned':s=nm('units',c.unitId)+'を'+cmp(c.count??1)+'体所持';break;case 'unit_deployed':s=nm('units',c.unitId)+'が出撃';break;
  case 'item_has':s=nm('items',c.itemId)+'を'+cmp(c.count??1)+'個所持';break;case 'item_use':s=nm('items',c.itemId)+'×'+(c.count||1)+'消費';break;
- case 'credits_have':s='資金'+cmp(c.value);break;case 'credits_use':s='資金'+c.value+'消費';break;case 'flag':s=nm('flags',c.flagId)+'が'+(c.on===false?'OFF':'ON');break;
+ case 'credits_have':s='資金'+cmp(c.value);break;case 'credits_use':s='資金'+c.value+'消費';break;case 'var':s='変数「'+nm('vars',c.varId)+'」が'+cmp(c.value);break;case 'flag':s=nm('flags',c.flagId)+'が'+(c.on===false?'OFF':'ON');break;
  case 'mission_clear':s=nm('missions',c.missionId)+'クリア';break;case 'mission_stars':s=nm('missions',c.missionId)+'の星'+cmp(c.value);break;case 'wins_total':s='勝利'+cmp(c.value)+'回';break;
  case 'research_done':s=nm('research',c.researchId)+'完了';break;case 'hired':s=nm('hires',c.hireId)+'を'+cmp(c.count??1)+'回雇用';break;case 'evolved':s=nm('evolutions',c.evolutionId)+'済み';break;case 'fused':s=nm('fusions',c.fusionId)+'済み';break;
  case 'day':s=cmp(c.value)+'日目';break;case 'weekday':s=(c.clock==='game'?'ゲーム内':'現実')+'の'+(c.days||[]).map(d=>WEEK[d]).join('・')+'曜日';break;case 'chance':s=c.value+'%の確率';break;default:s=t.label;}
@@ -168,6 +169,7 @@ const DEFAULT={units:()=>({name:'新しいユニット',role:'',tags:[],deploy:{
  weapons:()=>({name:'新しい武装',...clone(C.weaponDefaults),useUnitAtk:true,baseAtk:250,minRange:1,maxRange:1}),
  skills:()=>({name:'新しいスキル',trigger:'battle_start',effect:'atk_up_pct',value:10,chance:100,maxUses:1,duration:3}),
  flags:()=>({name:'新しいフラグ',desc:''}),
+ vars:()=>({name:'新しい変数',desc:'',scope:'game',initial:0}),
  evolutions:()=>({name:'新しい進化',from:data.units[0]?.id,to:data.units[1]?.id,conds:{mode:'all',list:[{type:'unit_level',value:10}]},carry:{level:true,equipment:true,skills:true}}),
  fusions:()=>({name:'新しい合成',materials:[],result:{type:'unit',unitId:data.units[0]?.id,count:1}}),achievements:()=>({name:'新しい実績',desc:'',reward:{credits:0}}),notices:()=>({name:'新しいお知らせ',body:''}),
  research:()=>({name:'新しい研究',desc:'',cost:{credits:1000},requires:[],unlock:{}}),
@@ -179,7 +181,7 @@ const allIds=()=>new Set(Object.keys(KINDS).flatMap(k=>data[k].map(x=>x.id)));
 /* IDs: '<packId>-<visible>'. The pack part is hidden (input, search, lists and references show the visible part only), so
    packs by different authors don't collide. Suggested visible IDs are '<CODE>-<6 digits>' using the smallest free number
    (numbers freed by deletion are reused). CODE is the kind's English initials; new kinds get a unique code automatically. */
-const CODES={units:'U',weapons:'W',skills:'S',items:'I',missions:'DM',tmissions:'TM',flags:'F',terrains:'T',research:'R',hires:'H',evolutions:'E',fusions:'FU',achievements:'A'};
+const CODES={units:'U',weapons:'W',skills:'S',items:'I',missions:'DM',tmissions:'TM',flags:'F',vars:'V',terrains:'T',research:'R',hires:'H',evolutions:'E',fusions:'FU',achievements:'A'};
 function codeOf(k){if(CODES[k])return CODES[k];const used=new Set(Object.values(CODES)),words=String(KINDS[k]?.en||k).toUpperCase().split(/[^A-Z]+/).filter(Boolean);let c=words.map(w=>w[0]).join('')||k.slice(0,2).toUpperCase(),last=words.at(-1)||c,i=1;while(used.has(c))c=c+(last[i++]||String(i));return CODES[k]=c;}
 const pre=()=>(data.packId||'td-pack')+'-',shownId=id=>id&&String(id).startsWith(pre())?String(id).slice(pre().length):id;
 function nextId(k){const ids=allIds(),c=codeOf(k);for(let n=0;;n++){const id=pre()+c+'-'+String(n).padStart(6,'0');if(!ids.has(id))return id;}}
@@ -191,7 +193,7 @@ const find=(k,id)=>data[k].find(x=>x.id===id);
 const missionUnitIds=m=>[...(m.enemies||[]),...(m.waves||[]).flatMap(w=>w.enemies||[]),...(m.objective?.escortUnitId?[m.objective.escortUnitId]:[])];
 /* Every ID link in the pack, in one place. mapRefs(kind, fn) rewrites links to `kind` (fn returns the new ID,
    or null to drop the link); refsOf(ownerKind, owner) lists [kind,id] pairs it points to. */
-function mapRefs(k,fn){const list=a=>a&&a.map(fn).filter(Boolean);for(const f of EXT.mapRefs)f(k,fn);mapCondRefs(k,fn);
+function mapRefs(k,fn){const list=a=>a&&a.map(fn).filter(Boolean);for(const f of EXT.mapRefs)f(k,fn);mapCondRefs(k,fn);if(k==='vars')mapVarRefs(fn);
  if(k==='units'){for(const u of data.units)if(u.base){const n=fn(u.base);if(n)u.base=n;else{delete u.base;delete u.separate;}}for(const e of data.evolutions)for(const f of ['from','to'])if(e[f]){const n=fn(e[f]);if(n)e[f]=n;else delete e[f];}for(const fu of data.fusions){if(fu.materials)fu.materials=fu.materials.filter(m=>{const n=fn(m.unitId);if(n)m.unitId=n;return !!n;});if(fu.result?.unitId){const n=fn(fu.result.unitId);if(n)fu.result.unitId=n;else delete fu.result.unitId;}}}
  // Skill tree nodes reference pack skills by skillId; a deleted skill removes its node (and links to it).
  if(k==='skills')for(const u of data.units)if(u.pilotProfile?.skillIds)u.pilotProfile.skillIds=list(u.pilotProfile.skillIds);
@@ -216,7 +218,11 @@ function mapRefs(k,fn){const list=a=>a&&a.map(fn).filter(Boolean);for(const f of
 function condSets(o,out=[]){if(!o||typeof o!=='object')return out;if(Array.isArray(o)){for(const x of o)condSets(x,out);return out;}if(o.conds?.list)out.push(o);for(const [k,v] of Object.entries(o))if(k!=='conds'&&v&&typeof v==='object')condSets(v,out);return out;}
 const condRefs=o=>condSets(o).flatMap(h=>h.conds.list.flatMap(c=>Object.entries(COND_REF).filter(([f])=>c[f]).map(([f,k])=>[k,c[f]])));
 function mapCondRefs(k,fn){for(const ok of Object.keys(KINDS))for(const o of data[ok])for(const h of condSets(o)){h.conds.list=h.conds.list.filter(c=>{for(const [f,rk] of Object.entries(COND_REF))if(rk===k&&c[f]){const n=fn(c[f]);if(!n)return false;c[f]=n;}return true;});if(!h.conds.list.length)delete h.conds;}}
-function refsOf(ok,o){const out=[];const add=(k,ids)=>{for(const id of ids||[])if(id)out.push([k,id]);};if(EXT.refs[ok])for(const [k,id] of EXT.refs[ok](o))add(k,[id]);for(const [k,id] of condRefs(o))add(k,[id]);
+// Variable references anywhere in an owner (changes, event actions, mission conditions): objects with varId.
+function varIdHolders(o,out=[]){if(!o||typeof o!=='object')return out;if(Array.isArray(o)){for(const x of o)varIdHolders(x,out);return out;}if(typeof o.varId==='string')out.push(o);for(const v of Object.values(o))if(v&&typeof v==='object')varIdHolders(v,out);return out;}
+// Renamed variables follow; a change (op) of a deleted variable is removed, other references are left for the checks.
+function mapVarRefs(fn){const walk=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o)){for(let i=o.length-1;i>=0;i--){const x=o[i];if(x&&typeof x==='object'&&typeof x.varId==='string'&&!fn(x.varId)&&'op' in x&&!('type' in x))o.splice(i,1);else walk(x);}return;}if(typeof o.varId==='string'){const n=fn(o.varId);if(n)o.varId=n;}for(const v of Object.values(o))walk(v);};for(const ok of Object.keys(KINDS))for(const x of data[ok])walk(x);}
+function refsOf(ok,o){const out=[];const add=(k,ids)=>{for(const id of ids||[])if(id)out.push([k,id]);};for(const h of varIdHolders(o))if(!(h.list&&h.mode))add('vars',[h.varId]);if(EXT.refs[ok])for(const [k,id] of EXT.refs[ok](o))add(k,[id]);for(const [k,id] of condRefs(o))add(k,[id]);
  if(ok==='evolutions')add('units',[o.from,o.to]);
  if(ok==='fusions'){add('units',[...(o.materials||[]).map(m=>m.unitId),o.result?.type!=='hire'?o.result?.unitId:null]);add('hires',[o.result?.type==='hire'?o.result?.hireId:null]);}
  if(ok==='units'){add('weapons',o.weaponIds);add('skills',o.skillIds);add('skills',(o.skillTree||[]).map(n=>n.skillId));add('skills',o.pilotProfile?.skillIds);add('units',[o.base,o.purgeTo,o.escapeTo,...(o.transformTo||[]),...(o.swapTo||[])]);}
@@ -240,7 +246,7 @@ function idProblem(id,self){if(!id)return 'IDが空です';if(!/^[A-Za-z0-9_-]+$
 function packIssues(){const out=[];if(!/^[A-Za-z0-9_-]+$/.test(data.packId||''))out.push('パックIDは半角英数字・_・-です');if(!data.name)out.push('パック名がありません');const bad=Object.keys(KINDS).flatMap(k=>data[k].filter(x=>issues(k,x).length).map(x=>KINDS[k].label+'「'+x.name+'」'));if(bad.length)out.push('問題のあるデータ'+bad.length+'件：'+bad.slice(0,5).join('・')+(bad.length>5?'…':''));return out;}
 // Form group of a unit (links in both directions), without the unit itself.
 function formGroupIds(id,key='transformTo'){const seen=new Set([id]),todo=[id];while(todo.length){const c=todo.pop();for(const u of data.units){const n=u.id===c?(u[key]||[]):(u[key]||[]).includes(c)?[u.id]:[];for(const t of n)if(!seen.has(t)){seen.add(t);todo.push(t);}}}seen.delete(id);return [...seen];}
-function issues(k,x){const out=[];if(!x.name)out.push('名前がありません');if(EXT.issues[k])out.push(...EXT.issues[k](x));if(k==='weapons'){try{C.weapon(x);}catch(e){out.push(e.message);}if((x.minRange??1)>(x.maxRange??1))out.push('最大射程は最小射程以上にしてください');}
+function issues(k,x){const out=[];if(!x.name)out.push('名前がありません');if(k==='vars'){const mn=x.min,mx=x.max,has=v=>v!=null&&v!=='';if(has(mn)&&has(mx)&&Number(mn)>Number(mx))out.push('最小値が最大値より大きくなっています');if(has(mn)&&(Number(x.initial)||0)<Number(mn)||has(mx)&&(Number(x.initial)||0)>Number(mx))out.push('初期値が最小値〜最大値の外です');if(/[{}]/.test(x.name||''))out.push('変数名に { } は使えません');}if(EXT.issues[k])out.push(...EXT.issues[k](x));if(k==='weapons'){try{C.weapon(x);}catch(e){out.push(e.message);}if((x.minRange??1)>(x.maxRange??1))out.push('最大射程は最小射程以上にしてください');}
  if(k==='skills'){if(x.tacticalOnly){const t=x.tactical||{};if(!(t.carry?.count>0||t.transform?.on||t.swap?.on||t.purge?.on||t.escape?.on||t.eject||t.enRegen>0||t.ammoRegen>0||t.carryCare?.on))out.push('マップ専用スキルにタクティカルの効果がありません');}else{try{C.skill({...x,id:x.id||'tmp'});}catch(e){out.push(e.message);}}}
  if(k==='units'&&x.base){const seen=new Set([x.id]);let b=find('units',x.base);while(b?.base){if(seen.has(b.id)){out.push('ベースユニットが循環しています');break;}seen.add(b.id);b=find('units',b.base);}}
  if(k==='units'){const esk=(x.skillIds||[]).map(sid=>find('skills',sid)?.tactical?.escape).find(e=>e?.on);if(esk&&(esk.mode||'unit')==='unit'&&!x.escapeTo)out.push('脱出スキル（別のユニットになる）がありますが、脱出先がありません');if(x.escapeTo===x.id)out.push('脱出先に自分自身は入れられません');else if(x.escapeTo&&!find('units',x.escapeTo))out.push('脱出先「'+x.escapeTo+'」が見つかりません');}
@@ -369,6 +375,16 @@ function dropIssue(d){try{C.drop({...d,itemId:d.itemId||d.unitId||'x'});}catch(e
 // Where a flag is set (with its value) and where it is required, for the flag screen.
 function flagSites(id){const set=[],use=[];for(const m of data.missions){const v=m.requires?.flags?.[id];if(v!==undefined)use.push([m,'解放条件：'+(v?'ON':'OFF')+'が必要']);for(const [r,l] of [['win','勝利'],['lose','敗北'],['draw','引き分け']]){const x=m.resultFlags?.[r]?.[id];if(x!==undefined)set.push([m,l+'で'+(x?'ON':'OFF')]);}(m.events||[]).forEach((e,i)=>{const x=e.flags?.[id];if(x!==undefined)set.push([m,'イベント'+(i+1)+'で'+(x?'ON':'OFF')]);});(m.story?.choices||[]).forEach((c,i)=>{const x=c.flags?.[id];if(x!==undefined)set.push([m,'選択肢「'+c.text+'」で'+(x?'ON':'OFF')]);});}return {set,use};}
 function newFlag(name){const f={id:nextId('flags'),name:name||'新しいフラグ',desc:''};data.flags.push(f);return f;}
+// Variable changes: [{varId, op: add | sub | set, value}].
+const VAR_OP={add:'足す',sub:'引く',set:'にする'};
+const varOpText=o=>(find('vars',o.varId)?.name||'⚠'+(o.varId||'?'))+(o.op==='set'?'を'+(o.value??0)+'に':o.op==='sub'?' −'+(o.value??0):' +'+(o.value??0));
+const varOpsText=ops=>(ops||[]).length?ops.map(varOpText).join('・'):'なし';
+function varOpsWindow(title,ops0,done,back){const ops=clone(ops0||[]);const one=i=>{const o=ops[i];win('変数を変える '+(i+1),'',body=>{const l=el('div',null,'cmd-list');const row=(label,val,fn,key)=>{const b=el('button',null,'unit-row setting-row td-row');b.type='button';b.dataset.vfield=key;b.append(el('span',label),el('b',val));b.onclick=fn;l.append(b);};
+  row('変数',find('vars',o.varId)?.name||'未選択',()=>win('変数を選ぶ','',b=>{const l2=el('div',null,'cmd-list');for(const v of data.vars){const x=el('button',(v.id===o.varId?'✓ ':'')+v.name+'（'+v.id+'）');x.type='button';x.dataset.choice=v.id;x.onclick=()=>{o.varId=v.id;one(i);};l2.append(x);}if(!data.vars.length)l2.append(el('p','変数がありません（メニューの「変数」で作ります）。','cmd-hint'));b.append(l2);},[['戻る',()=>one(i)]]),'var');
+  row('どうする',VAR_OP[o.op||'add'],()=>{const ks=Object.keys(VAR_OP);o.op=ks[(ks.indexOf(o.op||'add')+1)%ks.length];one(i);},'op');
+  row('値',String(o.value??0),()=>numberPrompt('値',o.value,-1000000000,1000000000,v=>{if(v!=null)o.value=v;one(i);},()=>one(i)),'value');body.append(l);},[['これを外す',()=>{ops.splice(i,1);draw();}],['戻る',draw]]);};
+ const draw=()=>win(title,'上から順に変えます。',body=>{const l=el('div',null,'cmd-list');ops.forEach((o,i)=>{const b=el('button',(i+1)+'. '+varOpText(o));b.type='button';b.dataset.varop=i;b.onclick=()=>one(i);l.append(b);});if(!ops.length)l.append(el('p','変える変数はありません。','cmd-hint'));body.append(l);},[['＋ 変数を変える',()=>{if(ops.length>=16)return;ops.push({varId:data.vars[0]?.id,op:'add',value:1});one(ops.length-1);}],['決定',()=>done(ops.filter(o=>o.varId))],['戻る',back]]);draw();}
+EXT.display.varops=v=>varOpsText(v);EXT.edit.varops=(f,x)=>{const cur=f.key.split('.').reduce((o,k)=>o?.[k],x);varOpsWindow(f.label,cur,v=>{commit(o=>{const ks=f.key.split('.'),last=ks.pop();let t=o;for(const k of ks)t=t[k]=t[k]||{};if(v.length)t[last]=v;else delete t[last];if(o.resultVars&&!Object.keys(o.resultVars).length)delete o.resultVars;});closeWin();},closeWin);};
 const flagText=map=>{const e=Object.entries(map||{});return e.length?e.map(([id,v])=>(find('flags',id)?.name||'⚠'+id)+'='+(v?'ON':'OFF')).join('・'):'なし';};
 // Each flag cycles 変更しない → ON → OFF; new flags can be created on the spot.
 function flagMapWindow(title,map0,done,back){const map={...(map0||{})};const draw=()=>win(title,'押すたびに「指定しない → ON → OFF」と切り替わります。',body=>{const l=el('div',null,'cmd-list');for(const f of data.flags){const v=map[f.id],b=el('button',null,'unit-row setting-row td-row');b.type='button';b.dataset.flag=f.id;b.append(el('span',f.name+'（'+f.id+'）'),el('b',v===undefined?'指定しない':v?'ON':'OFF'));b.onclick=()=>{if(v===undefined)map[f.id]=true;else if(v)map[f.id]=false;else delete map[f.id];draw();};l.append(b);}if(!data.flags.length)l.append(el('p','フラグがまだありません。','cmd-hint'));body.append(l);},[['＋ 新しいフラグを作る',()=>win('新しいフラグ','フラグの名前（例：森ルートを選んだ）',b=>{const t=el('input');t.id='inputValue';b.append(t);},[['作る',()=>{const n=$('inputValue').value.trim();if(!n){$('inputError').textContent='名前を入れてください';return;}const f=newFlag(n);map[f.id]=true;save();draw();}],['戻る',draw]])],['決定',()=>done(Object.keys(map).length?map:undefined)],['戻る',back]]);draw();}
@@ -378,6 +394,7 @@ function choicesWindow(m){const list=clone(m.story?.choices||[]);const saveAll=(
   row('選択肢の文',c.text||'未設定',()=>win('選択肢の文','',b=>{const t=el('input');t.id='inputValue';t.value=c.text||'';t.maxLength=100;b.append(t);},[['決定',()=>{const v=$('inputValue').value.trim();if(!v){$('inputError').textContent='本文は必須です';return;}c.text=v;one(i);}],['戻る',()=>one(i)]]),'text');
   row('表示条件',condsText(c.conds),()=>condsEditor('この選択肢を表示する条件',c.conds,v=>{if(v)c.conds=v;else delete c.conds;one(i);},()=>one(i)),'conds');
   row('立てるフラグ',flagText(c.flags),()=>flagMapWindow('選んだら立てるフラグ',c.flags,v=>{c.flags=v||{};one(i);},()=>one(i)),'flags');
+  row('変数を変える',varOpsText(c.vars),()=>varOpsWindow('選んだら変える変数',c.vars,v=>{if(v.length)c.vars=v;else delete c.vars;one(i);},()=>one(i)),'vars');
   row('選んだあとの会話',(c.lines||[]).length+'行',()=>linesEditor('選んだあとの会話',c.lines||[],v=>{c.lines=v;one(i);},()=>one(i)),'lines');body.append(l);},[['この選択肢を削除',()=>{list.splice(i,1);top();}],['一覧へ戻る',top]]);};top();}
 const EVENT_WHEN={turn:'TURN到達',wave:'第n波の登場',boss_hp:'ボスのHPが%以下',unit_down:'指定ユニットの撃破'};
 function eventsWindow(m){const list=clone(m.events||[]);const saveAll=()=>commit(o=>{if(list.length)o.events=list;else delete o.events;});const uname=id=>id?(find('units',id)?.name||'⚠'+id):'なし';
@@ -410,7 +427,8 @@ function condsEditor(title,cs0,done,back){const cs=clone(cs0||{mode:'all',list:[
  const one=i=>{const c=cs.list[i],t=COND_TYPES[c.type];win('条件 '+(i+1)+'：'+t.label,'',body=>{const l=el('div',null,'cmd-list');const row=(label,val,fn,key)=>{const b=el('button',null,'unit-row setting-row td-row');b.type='button';b.dataset.cfield=key;b.append(el('span',label),el('b',val));b.onclick=fn;l.append(b);};
   for(const p of t.p){if(COND_REF[p]){const rk=COND_REF[p];row(KINDS[rk].label,c[p]?(find(rk,c[p])?.name||'⚠'+c[p]):'未選択',()=>choose(KINDS[rk].label+'を選ぶ',Object.fromEntries(data[rk].map(it=>[it.id,it.name+'（'+it.id+'）'])),c[p],id=>{c[p]=id;one(i);},()=>one(i)),p);}
    if(p==='cmp')row('比べ方',CMP[c.cmp||'ge'],()=>{const ks=Object.keys(CMP);c.cmp=ks[(ks.indexOf(c.cmp||'ge')+1)%ks.length];one(i);},'cmp');
-   if(p==='value'){const [mn,mx]=c.type==='chance'?[1,100]:c.type==='mission_stars'?[0,3]:c.type==='unit_level'?[1,99]:[0,1e12];row(c.type==='chance'?'確率（%）':c.type==='unit_level'?'レベル':c.type==='day'?'日数':c.type==='mission_stars'?'星の数':c.type==='wins_total'?'回数':c.type==='unit_stat'?'能力値':'金額（Cr）',String(c.value),()=>numberPrompt('値',c.value,mn,mx,v=>{if(v!=null)c.value=v;one(i);},()=>one(i)),'value');}
+   if(p==='value'&&c.type==='var')row('値',String(c.value??0),()=>numberPrompt('値',c.value,-1000000000,1000000000,v=>{if(v!=null)c.value=v;one(i);},()=>one(i)),'value');
+   if(p==='value'&&c.type!=='var'){const [mn,mx]=c.type==='chance'?[1,100]:c.type==='mission_stars'?[0,3]:c.type==='unit_level'?[1,99]:[0,1e12];row(c.type==='chance'?'確率（%）':c.type==='unit_level'?'レベル':c.type==='day'?'日数':c.type==='mission_stars'?'星の数':c.type==='wins_total'?'回数':c.type==='unit_stat'?'能力値':'金額（Cr）',String(c.value),()=>numberPrompt('値',c.value,mn,mx,v=>{if(v!=null)c.value=v;one(i);},()=>one(i)),'value');}
    if(p==='count')row('数',String(c.count??1),()=>numberPrompt('数',c.count,0,999,v=>{if(v!=null)c.count=v;one(i);},()=>one(i)),'count');
    if(p==='on')row('状態',c.on===false?'OFF':'ON',()=>{c.on=c.on===false;one(i);},'on');
     if(p==='clock')row('どの曜日',c.clock==='game'?'ゲーム内（作戦終了で進む）':'現実（午前0時に切り替え）',()=>{c.clock=c.clock==='game'?'real':'game';one(i);},'clock');

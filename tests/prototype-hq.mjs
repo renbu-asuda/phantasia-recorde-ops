@@ -498,6 +498,21 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    G('g1').position={x:4,y:5};await F.endTurn();assert(inside('e1'),'still repairing (70 %) though a foe is within 4 squares');
    G('g1')&&(G('g1').position={x:4,y:5});await F.endTurn();assert(G('e1')&&!G('e1')._rest,'back out when repaired');
    assert(inside('e2')&&!inside('e2')._rest,'return without a carrier: parked in storage while its return rule holds');assert(F.opLog().some(e=>e.s.includes('帰還隊が格納庫(9,6)に格納（後退）')));w.close();}
+  // Variables (変数): game variables change during a mission (shown in talk, usable in conditions and game condition sets),
+  // are written to the save when it ends (result changes too, kept within min / max); mission variables live in the mission.
+  {const d12={...d2,vars:[{id:'v-rep',name:'評判',scope:'game',initial:0,max:5},{id:'v-cnt',name:'撃破数',scope:'mission',initial:1}],
+    tmissions:[...d2.tmissions,{...tm('tm-var',{type:'enemy_wipe'},{type:'player_wipe'}),resultVars:{win:[{varId:'v-rep',op:'add',value:10}]},
+     events:[{id:'v1',name:'開始',trigger:{type:'start'},actions:[{type:'var',varId:'v-rep',op:'add',value:2},{type:'var',varId:'v-cnt',op:'add',value:2},{type:'talk',lines:[{speaker:'司令',text:'評判は{評判}、撃破数は{撃破数}'}]}]},
+      {id:'v2',name:'数えた',trigger:{type:'var',varId:'v-cnt',cmp:'ge',value:3},actions:[{type:'flag',flag:'counted'}]},
+      {id:'v3',name:'ゲーム条件',trigger:{type:'game_cond',conds:{mode:'all',list:[{type:'var',varId:'v-rep',cmp:'ge',value:2}]}},actions:[{type:'flag',flag:'famous'}]}]}]};
+   w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d12)});const F=w.PROField,L=w.PROUnitLab,D=w.PROTacticalData;
+   assert.equal(D.vars().length,2);assert.equal(L.vars()['v-rep'],0);assert.equal(L.vars()['v-cnt'],undefined,'mission variables are not in the save');
+   const u1=L.addOwned('td-u-a');F.deploy({missionId:'tm-var',groups:[w.PROTactical.initializeDomains({id:'g1',name:'g1隊',faction:'player',mode:'auto',members:[{uid:u1,unit:L.owned().find(x=>x.uid===u1)}]},'ground')]});const s=F._live();F.show();F.checkOutcome();F.checkOutcome();
+   assert(F.opLog().some(e=>e.s.includes('変数「評判」+2 → 2（作戦終了時に反映）')),F.opLog().map(e=>e.s).join('\n'));assert.equal(s.vars['v-cnt'],3);assert(s.flags.counted,'mission variable condition');assert(s.flags.famous,'game condition set sees the change');assert.equal(L.vars()['v-rep'],0,'not saved yet');
+   await new Promise(r=>setTimeout(r,30));assert(w.document.getElementById('fieldChoiceBody').textContent.includes('評判は2、撃破数は3'),w.document.getElementById('fieldChoiceBody').textContent);
+   s.talkQueue=[];s.groups=s.groups.filter(g=>g.faction==='player');assert.equal(F.checkOutcome(),'victory');F.showResult();assert.equal(L.vars()['v-rep'],5,'2 + 10, kept at the max 5');
+   assert(L.evalConds({mode:'all',list:[{type:'var',varId:'v-rep',cmp:'eq',value:5}]}).ok);assert(!L.evalConds({mode:'all',list:[{type:'var',varId:'v-rep',cmp:'lt',value:5}]}).ok);
+   L.changeVars([{varId:'v-rep',op:'sub',value:7}]);assert.equal(L.vars()['v-rep'],-2);L.changeVars([{varId:'v-rep',op:'set',value:3}]);assert.equal(L.vars()['v-rep'],3);w.close();}
   // Preparation: a squad can be marked as reserve (up to the mission's limit); reserves are not placed at the start.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const P=w.PROPreparation,L=w.PROUnitLab,$=id=>w.document.getElementById(id);P.setMission('tm-prod');P.addUnit((SX('infantry')));$('prepAddGroup').click();
    const other=L.owned().find(u=>u.uid!==(SX('infantry'))&&u.size==='S'&&u.movementAptitude?.ground&&u.movementAptitude.ground!=='none').uid;P.addUnit(other);const rbs=[...w.document.querySelectorAll('#prepGroups [data-reserve]')];assert.equal(rbs.length,2);rbs[1].click();
