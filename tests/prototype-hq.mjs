@@ -486,6 +486,18 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    const e1=G('e1');s.groups=s.groups.filter(g=>g.id!=='e1');assert.equal(F.checkOutcome(),'victory','no enemies left after the defection');s.outcome=null;s.resultShown=false;s.groups.push(e1);
    await F.endTurn();const a1=G('a1');assert(a1&&a1.faction==='enemy'&&a1.ai.pattern==='hold'&&!a1.aiRules,'the ally betrayed (rules dropped)');assert(G('e3')&&G('e3').faction==='ally','the reinforcement arrives on its new side');
    assert.notEqual(F.checkOutcome(),'victory','the traitor counts as an enemy');w.close();}
+  // AI rest in storage: a wounded smart squad (撤退・回復) and a squad told to return (no carrier) enter an own storage
+  // facility; the resting one stays inside until repaired to its return HP even with a foe in release range.
+  {const hangar={id:'td-t-hangar',name:'格納庫',tactical:{kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{storage:{count:16,size:16},repair:{pct:50}}}}};
+   const d11={...d2,terrains:[...d2.terrains,hangar],tmissions:[...d2.tmissions,{...tm('tm-rest',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:10,height:6,grid:Array.from({length:6},(_,y)=>Array.from({length:10},(_,x)=>x===8&&y===5?'td-t-hangar':'p'))},facilities:{'8,5':'enemy'},
+    enemies:[{id:'e1',name:'負傷隊',position:{x:7,y:5},smart:{retreatHeal:true},members:[{unit:'td-u-b'}]},{id:'e2',name:'帰還隊',position:{x:8,y:3},aiRules:[{conds:[],acts:[{type:'return'}]}],members:[{unit:'td-u-b'}]}]}]};
+   w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d11)});const F=w.PROField,L=w.PROUnitLab;const u1=L.addOwned('td-u-a');
+   F.deploy({missionId:'tm-rest',groups:[w.PROTactical.initializeDomains({id:'g1',name:'g1隊',faction:'player',mode:'auto',members:[{uid:u1,unit:L.owned().find(x=>x.uid===u1)}]},'ground')]});const s=F._live();F.show();const G=id=>s.groups.find(g=>g.id===id),inside=id=>(s.stored['8,5']||[]).find(g=>g.id===id);
+   G('g1').position={x:4,y:5};const e1=G('e1').members[0],max=e1.unit.hp||1200;e1.currentHp=Math.round(max*0.2);
+   await F.endTurn();assert(inside('e1')&&inside('e1')._rest,'wounded squad went in to rest');assert(F.opLog().some(e=>e.s.includes('負傷隊が格納庫(9,6)に格納（後退）')));
+   G('g1').position={x:4,y:5};await F.endTurn();assert(inside('e1'),'still repairing (70 %) though a foe is within 4 squares');
+   G('g1')&&(G('g1').position={x:4,y:5});await F.endTurn();assert(G('e1')&&!G('e1')._rest,'back out when repaired');
+   assert(inside('e2')&&!inside('e2')._rest,'return without a carrier: parked in storage while its return rule holds');assert(F.opLog().some(e=>e.s.includes('帰還隊が格納庫(9,6)に格納（後退）')));w.close();}
   // Preparation: a squad can be marked as reserve (up to the mission's limit); reserves are not placed at the start.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const P=w.PROPreparation,L=w.PROUnitLab,$=id=>w.document.getElementById(id);P.setMission('tm-prod');P.addUnit((SX('infantry')));$('prepAddGroup').click();
    const other=L.owned().find(u=>u.uid!==(SX('infantry'))&&u.size==='S'&&u.movementAptitude?.ground&&u.movementAptitude.ground!=='none').uid;P.addUnit(other);const rbs=[...w.document.querySelectorAll('#prepGroups [data-reserve]')];assert.equal(rbs.length,2);rbs[1].click();
