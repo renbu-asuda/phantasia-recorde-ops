@@ -114,3 +114,5 @@ html.fixed-page .shell>footer{padding:8px 0}
 .tension-gauge .t-bar i{position:absolute;top:0;bottom:0;width:1px;background:#ffffff66}
 .t-confused .t-fill{background:#8a5cc7}.t-confused b{color:#c9a6ff}.t-weak .t-fill{background:#5b8fd6}.t-weak b{color:#9cc0f5}.t-normal .t-fill{background:#78ca9a}.t-normal b{color:#a9e6c2}.t-strong .t-fill{background:#f0a040}.t-strong b{color:#ffc477}.t-super .t-fill{background:linear-gradient(90deg,#ff5a5a,#ffd84a)}.t-super b{color:#ffd84a}
 .unit-row .tension-gauge{flex-basis:100%}
+/* 味方支援 reach of the selected squad: a dashed gold frame inside the square (separate from the blue move frame). */
+.field-tile.support-zone{position:relative}.field-tile.support-zone::after{content:'';position:absolute;inset:5px;border:2px dashed #ffd84acc;border-radius:3px;pointer-events:none}
