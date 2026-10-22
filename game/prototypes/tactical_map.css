@@ -71,3 +71,5 @@
 .field-tile .area-ov{position:absolute;inset:0;border:1px dashed;pointer-events:none;z-index:0}
 .field-tile .area-name{position:absolute;left:2px;top:1px;font-size:9px;font-weight:700;text-shadow:0 0 3px #000,0 0 2px #000;pointer-events:none;z-index:2;white-space:nowrap}
 #detailMap.has-image{image-rendering:pixelated;background-color:#263f44}
+html.pro-text-large body{zoom:1.15}
+.line-notice{margin:10px;padding:12px 14px;border:2px solid #f0c040;border-radius:10px;background:#2e2610;color:#fff3cf;font:14px/1.7 system-ui,sans-serif}.line-notice a{display:inline-block;margin-top:6px;padding:6px 12px;border-radius:8px;background:#f0c040;color:#2a2000;font-weight:bold;text-decoration:none}

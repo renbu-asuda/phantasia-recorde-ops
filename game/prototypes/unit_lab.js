@@ -238,7 +238,8 @@ const starText=s=>s.type==='clear'?'クリア':s.type==='no_loss'?'撃破され�
 function addBrief(key,title,text){if(!text||briefs.some(b=>b.key===key))return false;briefs.unshift({key,day,title,text});briefs=briefs.slice(0,100);return true;}
 // Pack notices whose conditions hold now, and unlock texts of missions that are open now.
 function checkBriefs(){let n=0;for(const x of D.notices?.()||[])if((!x.conds?.list?.length||C.evalConds(x.conds,state()).ok)&&addBrief('notice:'+x.id,x.name||'お知らせ',x.body))n++;
- for(const m of D.missions?.()||[])if(m.unlockText&&!missionHidden(m)&&!missionLock(m)&&addBrief('unlock:'+m.id,'新しい作戦「'+m.name+'」',m.unlockText))n++;if(n)save();return n;}
+ const DD=window.PRODispatchData,dm=DD?(DD.listing?.()||[]).map(x=>DD.mission(x.id)).filter(Boolean):[];
+ for(const m of [...(D.missions?.()||[]),...dm])if(m.unlockText&&!missionHidden(m)&&!missionLock(m)&&addBrief('unlock:'+m.id,'新しい作戦「'+m.name+'」',m.unlockText))n++;if(n)save();return n;}
 function finishMission(m,{outcome,turns,lost=false,hpPct=100,reward=0,itemsWon={},recruitPool=null,itemName=D.itemName}){const win=outcome==='win',rep={credits:0,items:[],stars:[],newStars:0,starCredits:0,recruits:[]};
  rep.credits=Math.round(win?reward:reward*(outcome==='draw'?.25:.12));credits+=rep.credits;
  if(win){for(const [id,n] of Object.entries(itemsWon)){items[id]=(items[id]||0)+n;rep.items.push({id,name:itemName(id),count:n});}

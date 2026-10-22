@@ -3,7 +3,7 @@ import fs from 'node:fs';import path from 'node:path';import assert from 'node:a
 const SID=JSON.parse(fs.readFileSync('tests/sample-ids.json','utf8')),SX=x=>SID[x]||x;
 // Test save (owned units, credits) and the T&D maker draft as a data source, each checked across a page reload.
 const file='game/prototypes/tactical_hub.html',html=fs.readFileSync(file,'utf8');
-function open(store,query=''){const w=new Window({url:'http://localhost/'+file+query,settings:{enableJavaScriptEvaluation:true,disableJavaScriptFileLoading:true,disableCSSFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});w.scrollTo=()=>{};
+function open(store,query='',ua=''){const w=new Window({url:'http://localhost/'+file+query,settings:{...(ua?{navigator:{userAgent:ua}}:{}),enableJavaScriptEvaluation:true,disableJavaScriptFileLoading:true,disableCSSFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});w.scrollTo=()=>{};
  // Tests run on the built-in sample pack unless a source is given (the game itself starts empty).
  if(!('PRO_TACTICAL_SOURCE' in store)&&!('PRO_TACTICAL_LOAD' in store))w.localStorage.setItem('PRO_TACTICAL_SOURCE','sample');for(const [k,v] of Object.entries(store))w.localStorage.setItem(k,v);w.document.write(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
  for(const dl of w.document.querySelectorAll('dialog')){dl.showModal=()=>dl.setAttribute('open','');dl.close=()=>{dl.removeAttribute('open');dl.dispatchEvent(new w.Event('close'));};}
@@ -485,6 +485,14 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    w.location.hash='#missions';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,300));w.location.hash='#base';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,300));
    assert.equal(L.briefs()[0].key,'clear:tm-inf');assert(txt().includes('見事な勝利でした'),txt());assert(q('#briefing [data-brief=last]').textContent.includes('勝利'));
    q('#briefHistory').click();assert.equal(q('#labWinTitle').textContent,'過去のお知らせ');assert(q('#labWinBody').textContent.includes('ようこそ')&&q('#labWinBody').textContent.includes('見事な勝利でした'));w.close();}
+  // Dispatch missions: unlock / first clear texts too (built-in PRO・D missions here; texts set on the loaded data).
+  {w=open({});const L=w.PROUnitLab,DD=w.PRODispatchData,id=DD.listing()[0].id,m=DD.mission(id);m.unlockText='派遣先が見つかった';m.clearText='派遣成功';L.checkBriefs();assert(L.briefs().some(b=>b.key==='unlock:'+id&&b.text==='派遣先が見つかった'));
+   L.finishMission(m,{outcome:'win',turns:3});assert.equal(L.briefs()[0].key,'clear:'+id);assert.equal(L.briefs()[0].text,'派遣成功');w.close();}
+  // Display settings: PC view and large text in the settings window (stored with the other settings, applied on load); LINE notice.
+  {w=open({});const q=sel=>w.document.querySelector(sel);w.PROField.openSettings();assert(q('[data-setting=viewMode]')&&q('[data-setting=textSize]'));w.PROView.apply=()=>{};q('[data-setting=viewMode]').click();q('[data-setting=textSize]').click();
+   const st=JSON.parse(w.localStorage.getItem('PRO_TACTICAL_SETTINGS'));assert.equal(st.viewMode,'pc');assert.equal(st.textSize,'large');const keep=dump(w);w.close();assert(!q('#proLineNotice'));
+   w=open(keep);assert.equal(w.document.querySelector('meta[name=viewport]').getAttribute('content'),'width=1280');assert(w.document.documentElement.classList.contains('pro-text-large'));assert(!w.document.getElementById('proLineNotice'));w.close();
+   w=open({},'','Mozilla/5.0 (iPhone) Line/13.0');assert(w.document.getElementById('proLineNotice'),'LINE in-app browser notice');assert(w.document.querySelector('#proLineNotice a').href.includes('openExternalBrowser=1'));w.close();}
   // Map scale: MOVE and weapon ranges are converted by unit ratio ÷ map ratio (rounded, at least 1); mixed squads use the slowest.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const F=w.PROField,L=w.PROUnitLab,T=w.PROTactical,D=w.PROTacticalData,inf=L.owned().find(x=>x.uid===SX('infantry')),tank=D.unit('td-u-tank');
    assert.equal(JSON.stringify(D.scales().map(x=>x.ratio)),'[1,2,4,8,16]');assert.equal(D.scaleOf('space').name,'宇宙戦略');assert.equal(D.scaleOf(undefined).id,'infantry');
