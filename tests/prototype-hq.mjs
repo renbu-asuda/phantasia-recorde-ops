@@ -468,6 +468,18 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    F.pick(1,0);F.pick(1,0);$('fieldStorage').click();$('fieldChoiceBody').querySelector('[data-release=g1]').click();assert(G('g1')&&w.PROTactical.canAct(G('g1')),'released squad can act');
    s.groups=s.groups.filter(g=>g.id!=='es1');G('g2').position={x:5,y:0};F.fac(5,0).st.dur=1;F.focusGroup('g2');F.capture();assert.equal(F.fac(5,0).owner,'player');const cap=s.stored['5,0'][0];assert(cap.faction==='player'&&cap.guest&&cap.captured,'captured with the facility');
    assert.equal(F.checkOutcome(),'victory');s.talkQueue=[];const n0=L.owned().length;F.showResult();assert.equal(L.owned().length,n0+1,'captured unit joins (capturedJoin)');w.close();}
+  // Faction change ⑥ (event action 'side'): an enemy squad defects to the player as a guest at the start; an AI ally
+  // betrays at turn 2 and counts as an enemy for the win; a pending reinforcement arrives on its new side.
+  {const d9={...d2,tmissions:[...d2.tmissions,{...tm('tm-side',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:10,height:6,grid:Array.from({length:6},()=>Array(10).fill('p'))},
+    enemies:[{id:'e1',name:'敵本隊',position:{x:9,y:5},members:[{unit:'td-u-b'}]},{id:'e2',name:'離反隊',position:{x:9,y:0},members:[{unit:'td-u-b'}]},{id:'e3',name:'後続隊',reinforce:true,position:{x:5,y:5},members:[{unit:'td-u-b'}]}],
+    allies:[{id:'a1',name:'友軍隊',faction:'ally',ai:{pattern:'hold'},aiRules:[{conds:[],acts:[{type:'wait'}]}],position:{x:0,y:5},members:[{unit:'td-u-b'}]}],
+    events:[{id:'v1',name:'離反',trigger:{type:'start'},actions:[{type:'side',groupId:'e2',to:'player'},{type:'side',groupId:'e3',to:'ally'}]},{id:'v2',name:'裏切り',trigger:{type:'turn',turns:2},actions:[{type:'side',groupId:'a1',to:'enemy',pattern:'hold'},{type:'spawn',groupId:'e3'}]}]}]};
+   w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d9)});const F=w.PROField,L=w.PROUnitLab;const u1=L.addOwned('td-u-a');
+   F.deploy({missionId:'tm-side',groups:[w.PROTactical.initializeDomains({id:'g1',name:'g1隊',faction:'player',mode:'auto',members:[{uid:u1,unit:L.owned().find(x=>x.uid===u1)}]},'ground')]});const s=F._live();F.show();F.checkOutcome();const G=id=>s.groups.find(g=>g.id===id);
+   assert(G('e2').faction==='player'&&G('e2').guest&&!G('e2').ai,'enemy defected as a guest');assert(F.opLog().some(e=>e.s.includes('離反隊が味方（ゲスト）に寝返った')));
+   const e1=G('e1');s.groups=s.groups.filter(g=>g.id!=='e1');assert.equal(F.checkOutcome(),'victory','no enemies left after the defection');s.outcome=null;s.resultShown=false;s.groups.push(e1);
+   await F.endTurn();const a1=G('a1');assert(a1&&a1.faction==='enemy'&&a1.ai.pattern==='hold'&&!a1.aiRules,'the ally betrayed (rules dropped)');assert(G('e3')&&G('e3').faction==='ally','the reinforcement arrives on its new side');
+   assert.notEqual(F.checkOutcome(),'victory','the traitor counts as an enemy');w.close();}
   // Preparation: a squad can be marked as reserve (up to the mission's limit); reserves are not placed at the start.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const P=w.PROPreparation,L=w.PROUnitLab,$=id=>w.document.getElementById(id);P.setMission('tm-prod');P.addUnit((SX('infantry')));$('prepAddGroup').click();
    const other=L.owned().find(u=>u.uid!==(SX('infantry'))&&u.size==='S'&&u.movementAptitude?.ground&&u.movementAptitude.ground!=='none').uid;P.addUnit(other);const rbs=[...w.document.querySelectorAll('#prepGroups [data-reserve]')];assert.equal(rbs.length,2);rbs[1].click();
