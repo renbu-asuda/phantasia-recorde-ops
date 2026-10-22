@@ -95,7 +95,7 @@ function triggerSkills(ctx,u,trigger,info={}){
   if(!u.alive)return result;
   for(const group of u.skills||[]){
     if(!u.alive)break;
-    if(group.trigger!==trigger||!skillReady(ctx,u,group,info))continue;
+    if(group.trigger!==trigger||!skillReady(ctx,u,group,info)||(ctx.hooks.skillOk&&!ctx.hooks.skillOk(u,group)))continue;
     consumeSkill(u,group);let groupApplied=false;
     for(const [ei,part] of (group.effects||[group]).entries()){
     if(!u.alive)break;const sk={...group,...part,id:group.effects?group.id+':'+ei:group.id};
@@ -132,7 +132,7 @@ function weaponTypeLabel(w){return `${attackTypeLabel(w.attackType)}・${damageT
 // Tactical ammo / EN (prototype): only weapons with ammo or enCost (never set by the published game) are limited here.
 function resourceReady(u,w){if(w.ammo>0&&u.ammo&&(u.ammo[w.name]??w.ammo)<=0)return false;if(w.enCost>0&&u.en!=null&&u.en<w.enCost)return false;return true;}
 function spendResource(u,w){if(w.ammo>0&&u.ammo)u.ammo[w.name]=Math.max(0,(u.ammo[w.name]??w.ammo)-1);if(w.enCost>0&&u.en!=null)u.en=Math.max(0,u.en-w.enCost);}
-function weaponReady(ctx,u,w){if(!resourceReady(u,w))return false;const st=u.weaponState?.[w.name];if(!st)return true;if(w.usesPerBattle&&st.used>=w.usesPerBattle)return false;if(w.cooldown&&ctx.turn<st.readyTurn)return false;return true;}
+function weaponReady(ctx,u,w){if(!resourceReady(u,w))return false;if(ctx.hooks.weaponOk&&!ctx.hooks.weaponOk(u,w))return false;const st=u.weaponState?.[w.name];if(!st)return true;if(w.usesPerBattle&&st.used>=w.usesPerBattle)return false;if(w.cooldown&&ctx.turn<st.readyTurn)return false;return true;}
 function weaponInRange(w,distance){const min=w.minRange??1,max=w.maxRange??1;return Number.isInteger(min)&&Number.isInteger(max)&&min>=1&&max>=min&&distance>=min&&distance<=max;}
 function chooseWeapon(ctx,attacker){
   if(ctx.localDistance!==undefined){const source=attacker.weapons?.length?attacker.weapons:[BASIC_WEAPON],ws=source.filter(w=>weaponInRange(w,ctx.localDistance)&&weaponReady(ctx,attacker,w));if(!ws.length)return null;let r=ctx.rng()*ws.reduce((n,w)=>n+Math.max(.01,num(w.weight,1)),0);for(const w of ws){r-=Math.max(.01,num(w.weight,1));if(r<=0)return w;}return ws[ws.length-1];}
@@ -189,6 +189,7 @@ function handleDeath(ctx,u,killer){
   if(u.currentHp>0)return false;
   // Optional (T&D prototype only): a destroyed unit may come back as another unit in place (脱出). Absent → unchanged.
   const rep=ctx.hooks.replaceOnDeath?.(u,killer);
+  if(killer)ctx.hooks.tensionEvent?.('kill',killer,u);
   if(rep?.def){ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,replaced:true});if(killer)statFor(ctx,killer).kills++;replaceCombatant(u,rep.def,rep.extra);if(rep.text)ctx.hooks.log(`<span class="skill">${esc(rep.text)}</span>`);ctx.hooks.render();return true;}
   u.currentHp=0;u.alive=false;
   ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn});
@@ -215,17 +216,19 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
     if(!attacker.alive)break;if(!target.alive)continue;
     // Per-side terrain: the target's square sets the hit modifier (cover).
     const hitTerrain=ctx.sideTerrain?((weapon.attackType==='melee'?ctx.sideTerrain[target.side]?.meleeHitPt:ctx.sideTerrain[target.side]?.rangedHitPt)||0):terrainHit;
-    const baseHit=clamp(baseHitRate(eff(ctx,attacker,'acc'),eff(ctx,target,'mob'),weapon.accuracyPt+hitTerrain)+attackMods.hitAdd+defenseMods.incomingHitAdd,.05,.95);
+    // Optional (T&D prototype): tension (気力) modifiers {dmg, hit, crit} of this attacker against this target.
+    const tm=H.tensionMods?.(attacker,target)||{dmg:1,hit:0,crit:0};
+    const baseHit=clamp(baseHitRate(eff(ctx,attacker,'acc'),eff(ctx,target,'mob'),weapon.accuracyPt+hitTerrain)+attackMods.hitAdd+defenseMods.incomingHitAdd+tm.hit,.05,.95);
     const pierce=clamp(num(weapon.defPiercePct,0)+attackMods.defPierce,0,100);
     let targetHits=0,targetDmg=0,targetCrits=0,absorbed=0;
     for(let shot=0;shot<attempts;shot++){
       if(!target.alive||!attacker.alive)break;
       if(!chance(ctx,baseHit))continue;
-      const critRate=clamp(.05+weapon.critPt/100+attackMods.critAdd,.01,.50),crit=chance(ctx,critRate);
+      const critRate=clamp(.05+weapon.critPt/100+attackMods.critAdd+tm.crit,.01,.50),crit=chance(ctx,critRate);
       const perHitMin=Math.max(0,Math.round(weapon.minDamage));
       const def=eff(ctx,target,'def')*(1-pierce/100);
       let raw=Math.max(perHitMin,(C.weaponAttack(weapon,eff(ctx,attacker,'atk'))-def)*(weapon.hitPowerPct/100)*rand(ctx,.90,1.10));
-      raw*=attackMods.damageMult;
+      raw*=attackMods.damageMult*tm.dmg;
       {const before=raw;for(const b of attackMods.tagBonus)if(tagsOf(target).includes(b.tag))raw*=Math.max(0,1+b.pct/100);if(raw>before+.5){const g=Math.round(raw-before);ctx.effects.tagCount++;ctx.effects.tagBonus+=g;actionTag+=g;}}
       if(opts.scale!==undefined)raw*=opts.scale;
       if(crit){raw*=1.5;targetCrits++;actionCrits++;lastCritTarget=target;}
@@ -235,6 +238,7 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
       target.currentHp-=dmg;targetHits++;targetDmg+=dmg;actionHits++;actionDmg+=dmg;attackerStat.hits++;attackerStat.damage+=dmg;statFor(ctx,target).damageTaken+=dmg;
       if(target.currentHp<=0&&target.alive){if(handleDeath(ctx,target,attacker)){killCount++;lastKilled=target;break;}}
     }
+    if(targetHits>0)H.tensionEvent?.('hit',target,attacker);else if(target.alive)H.tensionEvent?.('evade',target,attacker);
     if(targetHits>0){H.popDamage(target,targetDmg,targetCrits>0,targetHits,weapon);if(target.alive)triggerSkills(ctx,target,'after_damaged',{attacker,weapon,damage:targetDmg,opponent:attacker,counter:opts.counter});}
     else if(target.alive)triggerSkills(ctx,target,'on_evade',{attacker,weapon,opponent:attacker,counter:opts.counter});
     targetResults.push({target,hits:targetHits,damage:targetDmg,crits:targetCrits,attempts,down:!target.alive,absorbed});
@@ -251,14 +255,16 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
     if(killCount>0)triggerSkills(ctx,attacker,'on_kill',{kills:killCount,weapon,opponent:lastKilled});
     if(actionCrits>0)triggerSkills(ctx,attacker,'on_crit',{weapon,opponent:lastCritTarget});
   }
+  if(attacker.alive)H.tensionEvent?.('attack',attacker);
   await H.actionEnd(attacker,weapon,targets,summary);
   return {hits:actionHits,damage:actionDmg,kills:killCount,crits:actionCrits};
 }
 async function processPending(ctx){
-  while(ctx.pending.length){const p=ctx.pending.shift();if(!p.unit.alive||!p.target.alive)continue;const w=ctx.localDistance!==undefined?chooseWeapon(ctx,p.unit):(p.unit.weapons||[])[0]||BASIC_WEAPON;if(!w)continue;await resolveWeapon(ctx,p.unit,w,[p.target],{counter:true,scale:p.scale});}
+  while(ctx.pending.length){const p=ctx.pending.shift();if(!p.unit.alive||!p.target.alive)continue;if(ctx.hooks.canAttack&&!ctx.hooks.canAttack(p.unit))continue;const w=ctx.localDistance!==undefined?chooseWeapon(ctx,p.unit):(p.unit.weapons||[])[0]||BASIC_WEAPON;if(!w)continue;await resolveWeapon(ctx,p.unit,w,[p.target],{counter:true,scale:p.scale});}
 }
 async function attack(ctx,attacker){
   if(!attacker.alive)return;
+  if(ctx.hooks.canAttack&&!ctx.hooks.canAttack(attacker)){ctx.hooks.log(`<span class="skill">[混乱]</span> ${esc(attacker.name)} は攻撃できない`,'sys');return;}
   if(attacker.status?.stun>0){attacker.status.stun--;ctx.hooks.log(`<span class="skill">[STUN]</span> ${esc(attacker.name)} は行動できない`,'sys');return;}
   for(let round=0;round<2;round++){
     const opp=oppOf(ctx,attacker);if(!opp.some(alive)||!attacker.alive)return;
