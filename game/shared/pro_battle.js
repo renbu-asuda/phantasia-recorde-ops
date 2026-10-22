@@ -22,6 +22,8 @@ function prepare(u){
   return u;
 }
 function combatant(def,side,combatId,extra={}){return prepare({...def,side,currentHp:def.hp,maxHp:def.hp,alive:true,skillUses:{},combatId,...extra});}
+// Turns a combatant into another unit in place (same object, side and combatId), full HP unless extra says otherwise.
+function replaceCombatant(u,def,extra={}){const side=u.side,combatId=u.combatId;for(const k of Object.keys(u))delete u[k];return Object.assign(u,combatant(def,side,combatId,extra));}
 function createContext(o){
   const ctx={allies:o.allies,enemies:o.enemies,mission:o.mission||null,terrain:C.terrainMods(o.mission),turn:o.turn||0,stats:o.stats||{},rng:o.rng||(()=>Math.random()),hooks:{...NOOP_HOOKS,...(o.hooks||{})},enemyDefs:o.enemyDefs||{},unitDefs:o.unitDefs||{},killLog:o.killLog||[],pending:[],aborted:false,spawnCount:o.enemies.length,effects:{resistCount:0,resistSaved:0,tagCount:0,tagBonus:0}};
   for(const u of [...ctx.allies,...ctx.enemies])prepare(u);
@@ -185,6 +187,9 @@ function handleDeath(ctx,u,killer){
   if(!u.alive||u._resolvingDeath)return false;u._resolvingDeath=true;
   try{triggerSkills(ctx,u,'on_death',{opponent:killer});}finally{delete u._resolvingDeath;}
   if(u.currentHp>0)return false;
+  // Optional (T&D prototype only): a destroyed unit may come back as another unit in place (脱出). Absent → unchanged.
+  const rep=ctx.hooks.replaceOnDeath?.(u,killer);
+  if(rep?.def){ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,replaced:true});if(killer)statFor(ctx,killer).kills++;replaceCombatant(u,rep.def,rep.extra);if(rep.text)ctx.hooks.log(`<span class="skill">${esc(rep.text)}</span>`);ctx.hooks.render();return true;}
   u.currentHp=0;u.alive=false;
   ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn});
   if(killer)statFor(ctx,killer).kills++;
@@ -430,7 +435,7 @@ function unitPower(a){const ws=(a.weapons&&a.weapons.length)?a.weapons:[BASIC_WE
 let STD_POWER=0;
 function powerRatio(a){if(!STD_POWER)STD_POWER=unitPower(STANDARD_UNIT);return Math.sqrt(unitPower(a)/STD_POWER);}
 function starCount(r){return r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;}
-root.PROBattle=Object.freeze({version:'1.6.0',checkpoint,condOk,recordFrame,DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,weaponInRange,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runLocalBattle,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+root.PROBattle=Object.freeze({version:'1.6.0',checkpoint,condOk,recordFrame,DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,weaponInRange,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,replaceCombatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runLocalBattle,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);
 
 
