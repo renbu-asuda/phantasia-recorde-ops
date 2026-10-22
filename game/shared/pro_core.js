@@ -428,7 +428,7 @@ function serialize(marker,p){return '/* PRO data pack */\nwindow.'+marker+' = '+
 // starts (weekBase) and then advances on its own with the in-game day (missions end); a restart re-bases it.
 // mode 'any' with costs: every satisfied entry that costs something is an option; pick chooses (default the first).
 // An entry whose target ID is unselected never holds, even when negated (the makers report it as an error).
-const COND_NEED={unit_owned:'unitId',unit_deployed:'unitId',item_has:'itemId',item_use:'itemId',flag:'flagId',mission_clear:'missionId',mission_stars:'missionId',research_done:'researchId',hired:'hireId',evolved:'evolutionId',fused:'fusionId'};
+const COND_NEED={var:'varId',unit_owned:'unitId',unit_deployed:'unitId',item_has:'itemId',item_use:'itemId',flag:'flagId',mission_clear:'missionId',mission_stars:'missionId',research_done:'researchId',hired:'hireId',evolved:'evolutionId',fused:'fusionId'};
 // Research takes days: credits are paid at start, other costs at completion and stay reserved until then.
 // Cancelling refunds the credits and releases the reservation.
 function researchCosts(costs){return {start:costs.filter(c=>c.credits!=null),complete:costs.filter(c=>c.credits==null)};}
@@ -442,7 +442,7 @@ function evalConds(cs,st={}){const list=cs?.list||[];if(!list.length)return {ok:
   case 'unit_owned':return cmp(c,num(st.units,c.unitId),c.count??1);case 'unit_deployed':return (st.deployed||[]).includes(c.unitId);
   case 'item_has':return cmp(c,num(st.items,c.itemId),c.count??1);case 'item_use':return num(st.items,c.itemId)-num(st.reserved?.items,c.itemId)-(spent.items[c.itemId]||0)>=(c.count||1);
   case 'credits_have':return cmp(c,Number(st.credits)||0,c.value);case 'credits_use':return (Number(st.credits)||0)-spent.credits>=c.value;
-  case 'flag':return has(st.flags,c.flagId)===(c.on!==false);case 'mission_clear':return has(st.cleared,c.missionId);case 'mission_stars':return cmp(c,num(st.stars,c.missionId),c.value);
+  case 'flag':return has(st.flags,c.flagId)===(c.on!==false);case 'var':return cmp(c,Number(st.vars?.[c.varId])||0,Number(c.value)||0);case 'mission_clear':return has(st.cleared,c.missionId);case 'mission_stars':return cmp(c,num(st.stars,c.missionId),c.value);
   case 'wins_total':return cmp(c,Number(st.wins)||0,c.value);case 'research_done':return has(st.research,c.researchId);case 'hired':return cmp(c,num(st.hires,c.hireId),c.count??1);
   case 'evolved':return has(st.evolved,c.evolutionId);case 'fused':return has(st.fused,c.fusionId);case 'day':return cmp(c,Number(st.day)||1,c.value);
   case 'weekday':return (c.days||[]).includes(c.clock==='game'?gameWeekday(st.day,st.weekBase):(st.now||new Date()).getDay());case 'chance':return rng()*100<c.value;default:return false;}};
