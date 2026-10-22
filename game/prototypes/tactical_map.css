@@ -92,7 +92,7 @@ html,body{height:100%;overflow:hidden}
 @media(max-width:800px){.shell>footer{display:none}}
 /* The frame that scrolls on each screen (fixed page): the frame stays in place and its contents move. */
 .view-body:has(>.unit-grid),.view-body:has(>.cmd-window-inline),.view-body:has(>.facility-layout),.view-body:has(>.missions){display:flex;flex-direction:column;overflow:hidden}
-.view-body>.unit-grid{flex:1 1 auto;min-height:0;overflow-y:auto;align-content:start}
+.view-body>.unit-grid{flex:1 1 auto;min-height:0;overflow-y:auto;align-content:start;grid-auto-rows:max-content}
 .view-body>.cmd-window-inline{flex:0 1 auto;min-height:0;display:flex;flex-direction:column}
 .cmd-window-inline>.cmd-list{min-height:0;overflow-y:auto}
 .view-body>.facility-layout{flex:1 1 auto;min-height:0;align-items:start}
