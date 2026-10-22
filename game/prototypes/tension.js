@@ -35,5 +35,11 @@ function hooks(ctx){const S=settings(),has=u=>!!u?.tcfg,eff=u=>S.effects[stateOf
   canAttack:u=>!has(u)||u.tension>0,
   weaponOk:(u,w)=>!has(u)||meets(u.tension,u.tcfg,w?.tactical?.tensionMin),
   skillOk:(u,s)=>!has(u)||meets(u.tension,u.tcfg,s?.tactical?.tensionMin)};}
-window.PROTension=Object.freeze({STATES,LABEL,DEFAULTS,MAX_CAP,settings,config,stateOf,meets,text,hooks});
+// Gauge: a bar with the 通常 / 強気 bounds marked; the colour follows the state. html() for the battle cards, el() for DOM.
+const pct=(v,c)=>Math.max(0,Math.min(100,v/c.max*100));
+function gaugeHtml(v,c){if(!c)return '';const st=stateOf(v,c);return `<div class="tension-gauge t-${st}" data-tension="${v}"><span class="t-label">気力 <b>${LABEL[st]}</b> <span class="t-num">${v}/${c.max}</span></span><div class="t-bar"><div class="t-fill" style="width:${pct(v,c)}%"></div><i style="left:${pct(c.normalMin,c)}%"></i><i style="left:${pct(c.strongMin,c)}%"></i></div></div>`;}
+function gaugeEl(v,c){const d=document.createElement('div');d.innerHTML=gaugeHtml(v,c);return d.firstElementChild;}
+// Updates a gauge made by gaugeHtml / gaugeEl in place.
+function updateGauge(g,v,c){if(!g||!c)return;const st=stateOf(v,c);g.className='tension-gauge t-'+st;g.dataset.tension=v;g.querySelector('.t-label b').textContent=LABEL[st];g.querySelector('.t-num').textContent=v+'/'+c.max;g.querySelector('.t-fill').style.width=pct(v,c)+'%';}
+window.PROTension=Object.freeze({STATES,LABEL,DEFAULTS,MAX_CAP,settings,config,stateOf,meets,text,hooks,gaugeHtml,gaugeEl,updateGauge});
 })();
