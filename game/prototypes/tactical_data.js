@@ -102,6 +102,11 @@ const P_STATS=['hp','atk','def','mob','acc'],trySkill=x=>{try{return C.skill({..
 function withPilot(u,spec){if(!spec?.unit||C.crewOf(u)==='none')return u;const p=units.get(spec.unit);if(!p?.pilotProfile)return u;const lv=spec.lv||1,b=C.pilotBonus(p.pilotProfile,lv);
  for(const k of P_STATS)if(u[k]!=null&&b[k])u[k]+=b[k];const apt=p.pilotProfile.aptitude;if(apt?.pct&&(apt.tags||[]).some(t=>(u.tags||[]).includes(t)))for(const k of ['atk','mob','acc'])if(u[k]!=null)u[k]=Math.round(u[k]*(1+apt.pct/100));
  u.skills=[...(u.skills||[]),...(p.pilotProfile.skills||[]).map(trySkill).filter(Boolean)];u.pilot={unitId:p.id,name:p.name,lv};return u;}
+// Form groups (stage 10): units linked by key ('transformTo' = 変形) form one group in both directions, so one link
+// set in the maker is enough. formGroup(id) → every unit id of the group except id itself (in data order).
+function formGroup(id,key='transformTo'){const edges=new Map();const link=(a,b)=>{if(!units.has(a)||!units.has(b)||a===b)return;if(!edges.has(a))edges.set(a,new Set());if(!edges.has(b))edges.set(b,new Set());edges.get(a).add(b);edges.get(b).add(a);};
+ for(const u of raw.units)for(const t of u[key]||[])link(u.id,t);const seen=new Set([id]),todo=[id];while(todo.length)for(const n of edges.get(todo.pop())||[])if(!seen.has(n)){seen.add(n);todo.push(n);}
+ return raw.units.map(u=>u.id).filter(x=>x!==id&&seen.has(x));}
 // A square type by key (terrain changes from events).
 function terrain(k){const t=raw.terrains[k];return t?{kind:t.kind,name:t.name,costs:{...t.costs},blockTags:[...(t.blockTags||[])],effects:fx(t),...(normFacility(t.facility)?{facility:normFacility(t.facility)}:{}),...(t.color?{color:t.color}:{}),...(t.imageId?{imageId:t.imageId}:{})}:null;}
 // Catalog: a variant that is not separate shares its base's entry (and encounter flag).
@@ -114,7 +119,7 @@ function setPackText(text){const d=parsePack(text);if(!d)return 'T&D形式のパ
 function removePack(id){const list=storedPacks().filter(x=>String(x.packId)!==String(id));try{localStorage.setItem(PACKS_KEY,JSON.stringify(list));localStorage.removeItem(PACK_KEY);const l=loadSet();l.packs=l.packs.filter(p=>p!==String(id));localStorage.setItem(LOAD_KEY,JSON.stringify(l));}catch(e){}}
 function setLoad(l){try{localStorage.setItem(LOAD_KEY,JSON.stringify({sample:!!l.sample,maker:!!l.maker,packs:(l.packs||[]).map(String)}));localStorage.removeItem(SOURCE_KEY);}catch(e){}}
 const packList=()=>storedPacks().map(p=>({name:p.name||p.packId||'パック',packId:String(p.packId||''),exportedAt:p.exportedAt||'',dependsOnSample:(p.dependencies||[]).includes('sample')}));
-window.PROTacticalData=Object.freeze({withPilot:(u,spec)=>withPilot(C.clone(u),spec),source:sourceName,load:()=>({...load,packs:[...load.packs]}),setLoad,origins:()=>[...(useSample?[SAMPLE_ORIGIN]:[]),...extras.map(x=>({...x.origin}))],makerName:extra?.name||null,hasMakerDraft:()=>!!makerDraft(),packs:packList,removePack,hasPack:()=>packList().length>0,packInfo:()=>packList()[0]||null,
+window.PROTacticalData=Object.freeze({formGroup,withPilot:(u,spec)=>withPilot(C.clone(u),spec),source:sourceName,load:()=>({...load,packs:[...load.packs]}),setLoad,origins:()=>[...(useSample?[SAMPLE_ORIGIN]:[]),...extras.map(x=>({...x.origin}))],makerName:extra?.name||null,hasMakerDraft:()=>!!makerDraft(),packs:packList,removePack,hasPack:()=>packList().length>0,packInfo:()=>packList()[0]||null,
  // Pack management: what a pack holds (stored pack file or the built-in 'sample'), its starting roster, and the save diff helpers.
  packDetail:id=>{const d=id==='sample'?SAMPLE:storedPacks().find(p=>String(p.packId)===String(id));if(!d)return null;const names=a=>Object.fromEntries((a||[]).filter(x=>x&&x.id).map(x=>[x.id,x.name||x.id]));const deps=(d.dependencies||[]).map(String);
   return {id:String(id),name:id==='sample'?'内蔵パック（サンプル）':d.name||d.packId||'パック',author:d.author||'',version:d.packVersion||d.version||'',desc:d.desc||'',deps,missing:deps.filter(x=>x!=='sample'&&!storedPacks().some(p=>String(p.packId)===x)&&!(x==='sample'&&SAMPLE)),
