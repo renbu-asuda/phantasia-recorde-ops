@@ -3,14 +3,14 @@
    and reported. Draft is auto-saved to this browser; export is a T&D JSON pack (not the published format). */
 (function(){'use strict';
 const C=window.PROCore,$=id=>document.getElementById(id),DRAFT='PRO_TD_MAKER_DRAFT',FORMAT='PRO_TD_PACK';
-const KINDS={units:{label:'ユニット',en:'UNITS',prefix:'u'},weapons:{label:'武装',en:'WEAPONS',prefix:'w'},skills:{label:'スキル',en:'SKILLS',prefix:'s'},missions:{label:'ディスパッチ作戦',en:'DISPATCH MISSIONS',prefix:'m'},items:{label:'アイテム',en:'ITEMS',prefix:'i'},flags:{label:'フラグ',en:'FLAGS',prefix:'f'},terrains:{label:'独自の地形',en:'TERRAINS',prefix:'t'},research:{label:'研究',en:'RESEARCH',prefix:'r'},hires:{label:'雇用',en:'HIRES',prefix:'h'},evolutions:{label:'開発・進化',en:'EVOLUTION',prefix:'ev'},fusions:{label:'設計・合成',en:'FUSION',prefix:'fu'},achievements:{label:'実績',en:'ACHIEVEMENTS',prefix:'ac'}};
+const KINDS={units:{label:'ユニット',en:'UNITS',prefix:'u'},weapons:{label:'武装',en:'WEAPONS',prefix:'w'},skills:{label:'スキル',en:'SKILLS',prefix:'s'},missions:{label:'ディスパッチ作戦',en:'DISPATCH MISSIONS',prefix:'m'},items:{label:'アイテム',en:'ITEMS',prefix:'i'},flags:{label:'フラグ',en:'FLAGS',prefix:'f'},terrains:{label:'独自の地形',en:'TERRAINS',prefix:'t'},research:{label:'研究',en:'RESEARCH',prefix:'r'},hires:{label:'雇用',en:'HIRES',prefix:'h'},evolutions:{label:'開発・進化',en:'EVOLUTION',prefix:'ev'},fusions:{label:'設計・合成',en:'FUSION',prefix:'fu'},achievements:{label:'実績',en:'ACHIEVEMENTS',prefix:'ac'},notices:{label:'お知らせ',en:'NOTICES',prefix:'nt'}};
 const BUILTIN_TERRAINS=['標準','市街地','森林','砂漠','夜間','雪原','島嶼','月面','宇宙','水中'];
 const el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!=null)e.textContent=text;if(cls)e.className=cls;return e;};
 const clone=x=>JSON.parse(JSON.stringify(x));
 // Kinds added by extension scripts (PROMakerTD.extend.registerKind) and their field-type hooks.
 const EXTRA_KINDS=[],EXT={display:{},edit:{},issues:{},refs:{},mapRefs:[]};
 let data=empty(),kind='units',selectedId=null,openGroups=new Set();
-function empty(){return {format:FORMAT,version:1,packId:'td-pack',name:'新しいパック',units:[],weapons:[],skills:[],missions:[],items:[],flags:[],terrains:[],research:[],hires:[],evolutions:[],fusions:[],achievements:[],...Object.fromEntries(EXTRA_KINDS.map(k=>[k,[]]))};}
+function empty(){return {format:FORMAT,version:1,packId:'td-pack',name:'新しいパック',units:[],weapons:[],skills:[],missions:[],items:[],flags:[],terrains:[],research:[],hires:[],evolutions:[],fusions:[],achievements:[],notices:[],...Object.fromEntries(EXTRA_KINDS.map(k=>[k,[]]))};}
 
 /* ---------- field schema: only fields the current game uses ---------- */
 const STAT=(key,label,min=0,max=1000000)=>({key,label,type:'number',min,max,group:'能力'});
@@ -148,6 +148,9 @@ FIELDS.missions.splice(FIELDS.missions.findIndex(f=>f.key==='requires.flags')+1,
 FIELDS.hires.splice(FIELDS.hires.findIndex(f=>f.key==='requires.day')+1,0,CONDS_FIELD('conds','追加の雇える条件','雇える条件'));
 FIELDS.research.splice(FIELDS.research.findIndex(f=>f.key==='requires')+1,0,CONDS_FIELD('conds','追加の研究条件','研究に必要なもの'));
 FIELDS.achievements.splice(3,0,CONDS_FIELD('conds','達成条件','基本'));
+// Notices (お知らせ): shown in the base's briefing once their conditions are met (no conditions = from the start), then kept in the past notices.
+FIELDS.notices=[{key:'name',label:'題名',type:'text',max:40,group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},{key:'body',label:'本文',type:'text',multiline:true,max:1000,group:'基本'},CONDS_FIELD('conds','出す条件（なしなら最初から）','基本')];
+FIELDS.research.push({key:'doneText',label:'完了したときのお知らせ（空欄なら出さない）',type:'text',multiline:true,max:1000,group:'お知らせ'});
 FIELDS.items.splice(FIELDS.items.findIndex(f=>f.key==='shop.requiresResearch')+1,0,CONDS_FIELD('conds','ショップに並ぶ追加の条件','ショップ'));
 FIELDS.items.splice(FIELDS.items.findIndex(f=>f.key==='effects')+1,0,CONDS_FIELD('useConds','使える条件','基本'));
 FIELDS.units.push(CONDS_FIELD('joinConds','加入の条件（ドロップ・雇用など）','育成・運用'));
@@ -161,7 +164,7 @@ const DEFAULT={units:()=>({name:'新しいユニット',role:'',tags:[],deploy:{
  skills:()=>({name:'新しいスキル',trigger:'battle_start',effect:'atk_up_pct',value:10,chance:100,maxUses:1,duration:3}),
  flags:()=>({name:'新しいフラグ',desc:''}),
  evolutions:()=>({name:'新しい進化',from:data.units[0]?.id,to:data.units[1]?.id,conds:{mode:'all',list:[{type:'unit_level',value:10}]},carry:{level:true,equipment:true,skills:true}}),
- fusions:()=>({name:'新しい合成',materials:[],result:{type:'unit',unitId:data.units[0]?.id,count:1}}),achievements:()=>({name:'新しい実績',desc:'',reward:{credits:0}}),
+ fusions:()=>({name:'新しい合成',materials:[],result:{type:'unit',unitId:data.units[0]?.id,count:1}}),achievements:()=>({name:'新しい実績',desc:'',reward:{credits:0}}),notices:()=>({name:'新しいお知らせ',body:''}),
  research:()=>({name:'新しい研究',desc:'',cost:{credits:1000},requires:[],unlock:{}}),
  hires:()=>({name:'新しい雇用',unitId:data.units.find(u=>u.deploy?.player)?.id,cost:1000}),
  terrains:()=>({name:'新しい地形',desc:'',meleeHitPt:0,rangedHitPt:0,mobPct:0}),
