@@ -39,6 +39,10 @@ const bgUrl=(page,sel)=>page.$eval(sel,e=>(getComputedStyle(e).backgroundImage.m
    assert(await page.$('#fieldGrid [data-x="0"][data-y="0"] .unit-pic'),label+' unit picture');assert.equal(await page.textContent('#fieldGrid [data-x="4"][data-y="0"] .area-name'),'前線');
    const ov=await page.$eval('#fieldGrid [data-x="5"][data-y="1"] .area-ov',e=>getComputedStyle(e).backgroundColor);assert(/rgba\(74, 163, 255, 0\.3/.test(ov),label+' overlay '+ov);assert(await page.$('#fieldGrid [data-x="0"][data-y="5"].exit-zone'));
    await shot(page,label+'-map');
+   // Long lists in windows scroll inside the window; the bottom buttons stay visible (squad list with many squads).
+   await page.evaluate(()=>{const s=window.PROField._live();for(let i=0;i<40;i++)s.groups.push({...JSON.parse(JSON.stringify(s.groups[0])),id:'x'+i,name:'追加'+i,position:{x:i%8,y:4}});window.PROField.openList();});
+   {const r=await page.evaluate(()=>{const d=document.getElementById('fieldList'),c=document.getElementById('fieldListClose'),db=d.getBoundingClientRect(),cb=c.getBoundingClientRect(),sc=d.querySelector('.cmd-scroll');return {inside:cb.top>=db.top&&cb.bottom<=db.bottom+1,h:cb.height,scrolls:sc.scrollHeight>sc.clientHeight};});assert(r.inside&&r.h>=30,label+' close button visible '+JSON.stringify(r));assert(r.scrolls,label+' squad list scrolls');}
+   await page.evaluate(()=>document.getElementById('fieldList').close());
    // Unit window: the large picture.
    await page.evaluate(()=>{const u=window.PROUnitLab.owned().find(x=>x.id==='bt-a');window.PROField.showUnit(u);});assert((await bgUrl(page,'#fieldUnitBody .unit-big-pic')).startsWith('data:image/png'));await page.evaluate(()=>document.getElementById('fieldUnitWindow').close());
    await page.close();}
