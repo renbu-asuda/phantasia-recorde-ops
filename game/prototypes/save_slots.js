@@ -37,5 +37,5 @@ function openSlot(i){const s=read(i),isAuto=i==='auto',name=isAuto?'オートセ
  ...(isAuto?[]:[['削除',()=>confirm('削除しますか？',[name+'：'+describe(s),'元に戻せません。'],'削除する',()=>{put(slotKey(i),null);openSlot(i);}),!s,'delete']]),['戻る',open]]);}
 $('saveFile').onchange=()=>{const f=$('saveFile').files[0];$('saveFile').value='';if(!f)return;f.text().then(t=>{const r=importText(t);if(r)win('読み込めません',[r],[['戻る',open]]);});};
 $('openSave').onclick=open;
-window.PROSave=Object.freeze({autoSave,suspended,snapshot,saveSlot,read,apply,importText,valid,SLOTS});
+window.PROSave=Object.freeze({describe,autoSave,suspended,snapshot,saveSlot,read,apply,importText,valid,SLOTS});
 })();
