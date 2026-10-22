@@ -410,6 +410,21 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    G('g1').position={x:5,y:5};F.focusGroup('g1');assert($('fieldSwap').hidden,'no swap away from the dock');
    F.focusGroup('g2');assert(!$('fieldSwap').hidden,'carried units can swap');$('fieldSwap').click();const cb=$('fieldChoiceBody').querySelector('[data-swap="cargo-1>td-sw-c"]');assert(cb.textContent.includes('輸送艦の中'),cb.textContent);cb.click();assert.equal(G('g2').members[0].cargo[0].unit.id,'td-sw-c');assert.equal(s.funds.player,750);
    await F.endTurn();assert.equal(s.groups.find(g=>g.id==='es').members[0].unit.id,'td-sw-c','AI rule swap');assert.equal(s.funds.enemy,900);w.close();}
+  // Forms ③: パージ — before acting, still able to act, full HP; back to the original form when carried by a repairing
+  // carrier (turn start); AI rule act 'purge' at an HP %.
+  {const apt={ground:'B',air:'none',water:'none',underwater:'none',space:'none'},U=(id,name,hp,extra={})=>({id,name,size:'M',hp,atk:100,def:100,mob:100,acc:300,move:4,movementAptitude:apt,weaponIds:['td-w-1'],skillIds:[],...extra});
+   const units=[U('td-pg-a','重装型',3000,{skillIds:['td-s-pg'],purgeTo:'td-pg-b'}),U('td-pg-b','軽装型',1500,{size:'S'}),U('td-pg-car','修理艦',3000,{size:'L',skillIds:['td-s-dock']})];
+   const d6={...d2,units:[...d2.units,...units],skills:[...(d2.skills||[]),{id:'td-s-pg',name:'装甲パージ',tacticalOnly:true,tactical:{purge:{on:true}}},{id:'td-s-dock',name:'修理ドック',tacticalOnly:true,tactical:{carry:{count:2,maxSize:'L'},carryCare:{on:true,hp:10}}}],
+    tmissions:[...d2.tmissions,{...tm('tm-purge',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:12,height:6,grid:Array.from({length:6},()=>Array(12).fill('p'))},enemies:[{id:'ep',name:'パージ隊',position:{x:11,y:5},aiRules:[{conds:[],acts:[{type:'purge',hpPct:50},{type:'wait'}]}],members:[{unit:'td-pg-a'}]}]}]};
+   w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d6)});const F=w.PROField,L=w.PROUnitLab,$=id=>w.document.getElementById(id);
+   const ua=L.addOwned('td-pg-a'),uc=L.addOwned('td-pg-car'),sq=(id,u)=>w.PROTactical.initializeDomains({id,name:id+'隊',faction:'player',mode:'auto',members:[{uid:u,unit:L.owned().find(x=>x.uid===u)}]},'ground');
+   F.deploy({missionId:'tm-purge',groups:[sq('g1',ua),sq('g2',uc)]});const s=F._live();F.show();const G=id=>s.groups.find(g=>g.id===id);G('g1').position={x:0,y:0};G('g2').position={x:0,y:3};G('g1').members[0].currentHp=900;s.groups.find(g=>g.id==='ep').members[0].currentHp=1000;
+   F.focusGroup('g1');assert(!$('fieldPurge').hidden,'purge command');$('fieldPurge').click();$('fieldChoiceBody').querySelector('[data-purge="'+ua+'"]').click();
+   let m=G('g1').members[0];assert.equal(m.unit.id,'td-pg-b');assert.equal(m.currentHp,undefined,'full HP');assert.equal(m.unit.purgeStack.join(),'td-pg-a');assert(w.PROTactical.beforeAction(G('g1')),'can still act');assert(F.opLog().some(e=>e.s.includes('重装型がパージ：軽装型に')));
+   F.focusGroup('g1');assert($('fieldPurge').hidden,'no second purge without a purge form');
+   m.currentHp=750;G('g2').members[0].cargo=[{...JSON.parse(JSON.stringify(m)),action:{}}];s.groups=s.groups.filter(g=>g.id!=='g1');
+   await F.endTurn();const back=G('g2').members[0].cargo[0];assert.equal(back.unit.id,'td-pg-a','restored on the repairing carrier');assert.equal(back.unit.purgeStack,undefined);assert(F.opLog().some(e=>e.s.includes('修理艦の中で重装型に戻った')));
+   assert.equal(s.groups.find(g=>g.id==='ep').members[0].unit.id,'td-pg-b','AI purge at HP 50% or less');w.close();}
   // Preparation: a squad can be marked as reserve (up to the mission's limit); reserves are not placed at the start.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const P=w.PROPreparation,L=w.PROUnitLab,$=id=>w.document.getElementById(id);P.setMission('tm-prod');P.addUnit((SX('infantry')));$('prepAddGroup').click();
    const other=L.owned().find(u=>u.uid!==(SX('infantry'))&&u.size==='S'&&u.movementAptitude?.ground&&u.movementAptitude.ground!=='none').uid;P.addUnit(other);const rbs=[...w.document.querySelectorAll('#prepGroups [data-reserve]')];assert.equal(rbs.length,2);rbs[1].click();
