@@ -417,6 +417,8 @@ async function simulate(o){
   const out={trials,win:0,lose:0,draw:0,turns:[],allyDowns:0,missingHp:0,perUnit:{}};
   for(let t=0;t<trials;t++){
     const ctx=buildBattle(o,rng);
+    // Optional (T&D): the caller prepares each trial like its real battle (extra rules / hooks); published callers pass none.
+    if(typeof o.prepare==='function')o.prepare(ctx);
     const r=await runBattle(ctx,{maxTurns:o.maxTurns});out[r.outcome]++;out.turns.push(r.turns);
     for(const u of ctx.allies){if(!u.escort)out.missingHp+=Math.max(0,(u._persistentMaxHp||u.maxHp)*(1-Math.max(0,u.currentHp)/u.maxHp));const s=ctx.stats[u.combatId]||{damage:0};const p=out.perUnit[u.combatId]||(out.perUnit[u.combatId]={name:u.name,damage:0,downs:0});p.damage+=s.damage;if(!u.alive){p.downs++;out.allyDowns++;}}
   }
