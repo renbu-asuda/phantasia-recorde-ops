@@ -523,13 +523,12 @@ function loadBase(){const need=[['VAIS_UNIT_PACK','../outer_ops_units.js'],['VAI
 function outputPack(){const probs=[];for(const k of Object.keys(KINDS))for(const x of Array.isArray(data[k])?data[k]:[])for(const p of issues(k,x))probs.push((KINDS[k].label)+'「'+(x.name||x.id)+'」：'+p);
  const run=()=>{const text=JSON.stringify({...data,testState:undefined,format:FORMAT,version:1,pack:true,exportedAt:new Date().toISOString()},null,2),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=(data.packId||'td-pack')+'.pack.json';document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);message('パック出力',['「'+a.download+'」を保存しました。タクティカルの拠点 → 記録・設定 → パック管理 → パックファイルを読み込む で遊べます。']);};
  if(!probs.length){run();return;}message('問題があります（'+probs.length+'件）',[...probs.slice(0,12),...(probs.length>12?['ほか'+(probs.length-12)+'件']:[]),'このまま出力すると、遊ぶ側では使えないデータ（作戦など）が読み込まれません。'],[['このまま出力する',()=>{$('msgWin').close();run();}],['戻る',()=>$('msgWin').close()]]);}
-function exportPack(){const text=JSON.stringify({...data,testState:undefined,format:FORMAT,version:1,exportedAt:new Date().toISOString()},null,2),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=(data.packId||'td-pack')+'.td.json';document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},0);message('書き出し',['T&D形式（'+a.download+'）で保存しました。ゲームの「パック管理」で読み込めます。']);}
 
 /* ---------- wiring ---------- */
 for(const b of document.querySelectorAll('[data-open]'))b.onclick=()=>fade(()=>openKind(b.dataset.open));
 $('backMenu').onclick=()=>fade(showMenu);$('listNew').onclick=create;$('listSearch').oninput=renderList;$('editCopy').onclick=copyItem;$('editDelete').onclick=removeItem;
 $('menuImport').onclick=()=>$('importFile').click();$('importFile').onchange=async()=>{const f=$('importFile').files[0];$('importFile').value='';if(!f)return;try{applyImport(parseFile(await f.text()),'読み込み：'+f.name);}catch(e){message('読み込めませんでした',[e.message]);}};
-$('menuBase').onclick=loadBase;$('menuPack').onclick=()=>fade(()=>openKind('pack'));$('menuTest').onclick=()=>fade(()=>openKind('test'));$('menuOutput').onclick=outputPack;$('menuExport').onclick=exportPack;
+$('menuBase').onclick=loadBase;$('menuPack').onclick=()=>fade(()=>openKind('pack'));$('menuTest').onclick=()=>fade(()=>openKind('test'));$('menuOutput').onclick=outputPack;
 $('menuReset').onclick=()=>message('すべて消す',['作っているデータをすべて消して、新しく始めます。元に戻せません。'],[['消して始める',()=>{data=empty();selectedId=null;save();$('msgWin').close();showMenu();}],['やめる',()=>$('msgWin').close()]]);
 for(const d of document.querySelectorAll('dialog.cmd-window'))d.addEventListener('cancel',e=>e.preventDefault());
 
