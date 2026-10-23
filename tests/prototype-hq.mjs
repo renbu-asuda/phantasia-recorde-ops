@@ -384,7 +384,7 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    const uid=L.addOwned('td-tf-a'),sq=(id,u)=>w.PROTactical.initializeDomains({id,name:id+'隊',faction:'player',mode:'auto',members:[{uid:u,unit:L.owned().find(x=>x.uid===u)}]},'ground');
    F.deploy({missionId:'tm-form',groups:[sq('g1',uid)]});const s=F._live();F.show();const g1=()=>s.groups.find(g=>g.id==='g1');g1().members[0].currentHp=1000;
    F.focusGroup('g1');assert(!$('fieldTransform').hidden,'transform command shown');$('fieldTransform').click();
-   const fb1=$('fieldChoiceBody').querySelector('[data-form="'+uid+'>td-tf-b"]'),fc1=$('fieldChoiceBody').querySelector('[data-form="'+uid+'>td-tf-c"]');assert(fb1&&!fb1.disabled);assert(fc1.disabled&&fc1.textContent.includes('領域'),fc1.textContent);
+   const fb1=$('fieldChoiceBody').querySelector('[data-form="'+uid+'>td-tf-b"]'),fc1=$('fieldChoiceBody').querySelector('[data-form="'+uid+'>td-tf-c"]');assert(fb1&&!fb1.disabled);assert(fc1&&!fc1.disabled,'a flying-only form goes into the air: '+fc1.textContent);
    fb1.click();let m=g1().members[0];assert.equal(m.unit.id,'td-tf-b');assert.equal(m.unit.baseId,'td-tf-a');assert.equal(m.currentHp,500);assert(w.PROTactical.beforeAction(g1()),'no action used');assert(F.opLog().some(e=>e.s.includes('人型が高速形態に変形')));
    $('fieldChoiceBody').querySelector('[data-form="'+uid+'>td-tf-a"]').click();m=g1().members[0];assert.equal(m.unit.id,'td-tf-a');assert.equal(m.unit.baseId,undefined);assert.equal(m.currentHp,1000);
    g1().members[0].action={moved:true};F.focusGroup('g1');assert($('fieldTransform').hidden,'hidden when not usable (default: usable only)');

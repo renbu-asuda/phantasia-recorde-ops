@@ -16,7 +16,9 @@ let anywhere=false,infoMode=false;
 // MOVE in the selected mission's map scale ("6→12" when it changes).
 const prepMove=u=>{const v=window.PROTacticalData?.scaledMove?.(u,missionId)??u.move;return u.move==null?'—':v!==u.move?u.move+'→'+v:String(u.move);};
 const groupMoveText=g=>{const raw=T.groupMove(g),D=window.PROTacticalData;if(!D?.scaledMove)return String(raw);const live=g.members.filter(m=>!m.combatState||m.combatState.status!=='destroyed'),v=Math.min(...live.map(m=>D.scaledMove(m.unit,missionId)??m.unit.move));return v!==raw&&Number.isFinite(v)?raw+'→'+v+'（この作戦）':String(raw);};
-function compatibility(u,g){if(u.move===undefined||!u.movementAptitude)return 'MOVE・地形移動適性が未設定';if(anywhere)return '';try{const m={uid:u.id,unit:u};T.defaultDomain(m,scenario().surface);if(g?.mode!=='auto'&&g?.mode&&!T.supports(m,g.mode))return domains[g.mode]+'に対応していません';}catch(e){return 'この戦場の移動領域に対応していません';}return '';}
+// A unit outside the base domain can still go when it can stand on one of the starting squares (a boat on a sea start).
+const fitsStart=u=>(P.mission(missionId)?.playerStarts||[]).some(p=>{const c=P.tile(missionId,p.x,p.y).costs;return Object.keys(c).some(d=>u.movementAptitude[d]&&u.movementAptitude[d]!=='none');});
+function compatibility(u,g){if(u.move===undefined||!u.movementAptitude)return 'MOVE・地形移動適性が未設定';if(anywhere)return '';try{const m={uid:u.id,unit:u};T.defaultDomain(m,scenario().surface);if(g?.mode!=='auto'&&g?.mode&&!T.supports(m,g.mode))return domains[g.mode]+'に対応していません';}catch(e){if(!fitsStart(u))return 'この戦場の移動領域に対応していません';}return '';}
 function stats(g){return g.members.length?T.formation(g):{count:0,size:0,valid:false};}
 // Mission deploy rules (minimum level, banned tags, deploy_tags) apply only when a mission is chosen.
 function reason(u,g){const why=(window.PROUnitLab?.crewProblem(u.uid)||'')||(u.down?(u.down==='injured'?'重傷':'大破')+'のため出撃できません（修理・治療が必要）':'')||compatibility(u,g)||(!anywhere&&window.PROUnitLab?.deployProblem(P.mission(missionId),u,u.level||1))||'';if(why)return why;return T.joinReason(g.members.map(m=>m.unit),u);}

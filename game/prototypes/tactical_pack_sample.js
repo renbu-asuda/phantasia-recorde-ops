@@ -1,44 +1,62 @@
 /* Built-in pack: the tutorial pack 「第零機甲教導隊」 (PRO_TD_PACK, read like a pack file). A new commander joins the
    training corps and learns the game one feature at a time, guided by three characters (spec 26):
    教官 カザマ (orders and command basics), オペレーター リコ (map, battle and command help), 整備班長 ゴウ (the base).
-   Stage 1: the base data and T1〜T3. Base menus open as missions are cleared (hqUnlock). Not loaded by default: the game
+   Stage 1: the base data and T1〜T3. Stage 2: T4〜T6 (reinforcements, production, tension / carrier, ammo and EN,
+   resupply / domains, transformation, map scale). Base menus open as missions are cleared (hqUnlock). Not loaded by default: the game
    starts empty and this pack is chosen in パック管理 (or named as the dependency 'sample' by a T&D pack).
    IDs follow the ID rules: <packId>-<CODE>-<6 digits>. */
 (function(){'use strict';
 const id=(code,n)=>'sample-'+code+'-'+String(n).padStart(6,'0');
 // Units, weapons, items, missions, ... by a short name.
-const U={valkis:id('U',1),infantry:id('U',2),hound:id('U',3),garm:id('U',4),sleip:id('U',5),
- dummy:id('U',10),aggressor:id('U',11),rustInf:id('U',12),technical:id('U',13),bogle:id('U',14)};
-const W={rifle:id('W',1),blade:id('W',2),assault:id('W',3),autocannon:id('W',4),mainGun:id('W',5),sleipRifle:id('W',6),
- paint:id('W',10),drill:id('W',11),oldRifle:id('W',12),hmg:id('W',13),fist:id('W',14),scatter:id('W',15)};
-const I={repair:id('I',1),armor:id('I',2),record:id('I',3)};
-const M={t1:id('TM',1),t2:id('TM',2),t3:id('TM',3)};
+const U={valkis:id('U',1),infantry:id('U',2),hound:id('U',3),garm:id('U',4),sleip:id('U',5),jet:id('U',6),carrier:id('U',7),boat:id('U',8),
+ dummy:id('U',10),aggressor:id('U',11),rustInf:id('U',12),technical:id('U',13),bogle:id('U',14),cmdCar:id('U',15),kgBoat:id('U',16),heli:id('U',17),landing:id('U',18),
+ garm2:id('U',20),hound2:id('U',21)};
+const W={rifle:id('W',1),blade:id('W',2),assault:id('W',3),autocannon:id('W',4),mainGun:id('W',5),sleipRifle:id('W',6),missile:id('W',7),carrierAA:id('W',8),boatGun:id('W',9),
+ paint:id('W',10),drill:id('W',11),oldRifle:id('W',12),hmg:id('W',13),fist:id('W',14),scatter:id('W',15),cmdGun:id('W',16),kgGun:id('W',17),rocket:id('W',18),landingGun:id('W',19),
+ mainGun2:id('W',20),autocannon2:id('W',21),coax:id('W',22)};
+const S={transform:id('S',1),carrier:id('S',2),aim:id('S',10),charge:id('S',11),plate:id('S',12),dodge:id('S',13),spirit:id('S',14)};
+const T={factory:id('T',1)};
+const I={repair:id('I',1),armor:id('I',2),record:id('I',3),scope:id('I',4)};
+const M={t1:id('TM',1),t2:id('TM',2),t3:id('TM',3),t4:id('TM',4),t5:id('TM',5),t6:id('TM',6)};
 const V={fame:id('V',1)};
 const KAZAMA='カザマ',RIKO='リコ',GOU='ゴウ';
 const say=(speaker,text)=>({speaker,text});
 const talk=(...lines)=>({type:'talk',lines});
-const grid=rows=>({width:rows[0].length,height:rows.length,grid:rows.map(r=>[...r])});
+// Map rows: one letter per square (standard terrains; capital letters are this pack's terrains).
+const LEGEND={F:T.factory};
+const grid=rows=>({width:rows[0].length,height:rows.length,grid:rows.map(r=>[...r].map(k=>LEGEND[k]||k))});
+const tree=(...nodes)=>nodes.map(([skillId,cost,minLevel,requires=[]])=>({id:skillId.slice(-6),skillId,cost,minLevel,requires}));
 const ground=r=>({ground:r,air:'none',water:'none',underwater:'none',space:'none'});
 const squad=(sid,name,x,y,unit,n,ai,extra={})=>({id:sid,name,position:{x,y},ai,members:Array.from({length:n},()=>({unit})),...extra});
 
 window.PROTacticalSamplePack={
- format:'PRO_TD_PACK',version:1,packId:'sample',name:'第零機甲教導隊',author:'PHANTASIA RECORD OPS',packVersion:'1（T1〜T3）',
+ format:'PRO_TD_PACK',version:1,packId:'sample',name:'第零機甲教導隊',author:'PHANTASIA RECORD OPS',packVersion:'2（T1〜T6）',
  desc:'チュートリアルパック。新人指揮官として教導隊に配属され、演習から実戦へ。作戦を進めるごとに、ゲームの機能をひとつずつ体験できます。',
  // Base menus open as the tutorial goes on.
- hqUnlock:{shop:M.t1,production:M.t2,research:M.t3},
+ hqUnlock:{shop:M.t1,production:M.t2,research:M.t3,equip:M.t4,tree:M.t4,evolve:M.t6},
  notices:[{id:'sample-N-000001',name:'第零機甲教導隊へようこそ',body:'新人指揮官どの、着任おめでとうございます。オペレーターのリコです。\nまずは「ミッション選択」から「T1 初陣」へどうぞ。拠点の機能は、作戦を進めるごとに使えるようになります。'}],
  vars:[{id:V.fame,name:'評判',desc:'教導隊の評判。作戦の結果で上がり下がりする。',scope:'game',initial:0,min:0,max:99}],
  units:[
-  {id:U.valkis,name:'ヴァルキス',role:'主役機',size:'XL',move:5,movementAptitude:ground('A'),hp:4000,atk:300,def:150,mob:520,acc:560,weaponIds:[W.rifle,W.blade],skillIds:[],tags:['機動兵器'],crew:'optional',sortieCost:300,deploy:{player:true},noFire:true,
-   catalog:'教導隊に配備された試作の機動兵器。射撃と格闘をこなす万能機。'},
-  {id:U.infantry,name:'教導歩兵分隊',role:'歩兵',size:'S',move:4,movementAptitude:ground('A'),hp:3200,atk:250,def:80,mob:520,acc:520,weaponIds:[W.assault],skillIds:[],tags:['生身','歩兵'],capture:10,sortieCost:80,deploy:{player:true},
+  {id:U.valkis,name:'ヴァルキス',role:'主役機',size:'XL',move:5,movementAptitude:ground('A'),hp:4000,atk:300,def:150,mob:520,acc:560,en:200,weaponIds:[W.rifle,W.blade],skillIds:[S.transform],transformTo:[U.jet],tags:['機動兵器'],crew:'optional',sortieCost:300,deploy:{player:true},noFire:true,
+   skillTree:tree([S.aim,1,1],[S.charge,2,3,['000010']],[S.spirit,2,5]),catalog:'教導隊に配備された試作の機動兵器。射撃と格闘をこなす万能機。飛行形態に変形できる。'},
+  {id:U.jet,name:'ヴァルキス（飛行形態）',role:'主役機',size:'XL',move:8,movementAptitude:{ground:'none',air:'A',water:'none',underwater:'none',space:'none'},hp:4000,atk:300,def:120,mob:600,acc:540,en:200,weaponIds:[W.rifle,W.missile],skillIds:[S.transform],transformTo:[U.valkis],tags:['機動兵器','航空'],crew:'optional',deploy:{player:true},recruit:{locked:true},
+   catalog:'ヴァルキスの飛行形態。空を飛び、海の上も越えられる。'},
+  {id:U.infantry,name:'教導歩兵分隊',role:'歩兵',size:'S',move:4,movementAptitude:ground('A'),hp:3200,atk:250,def:80,mob:520,acc:520,weaponIds:[W.assault],skillIds:[],tags:['生身','歩兵'],capture:10,sortieCost:80,deploy:{player:true},skillTree:tree([S.aim,1,1],[S.plate,2,3]),
    catalog:'教導隊の歩兵。施設の占領が得意（占領力10）。'},
-  {id:U.hound,name:'ハウンド偵察車',role:'偵察',size:'M',move:7,movementAptitude:ground('A'),hp:3200,atk:230,def:100,mob:600,acc:560,weaponIds:[W.autocannon],skillIds:[],tags:['車両'],sortieCost:120,deploy:{player:true},
+  {id:U.hound,name:'ハウンド偵察車',role:'偵察',size:'M',move:7,movementAptitude:ground('A'),hp:3200,atk:230,def:100,mob:600,acc:560,weaponIds:[W.autocannon],skillIds:[],tags:['車両'],sortieCost:120,deploy:{player:true},skillTree:tree([S.aim,1,1],[S.dodge,2,3]),
    catalog:'足の速い偵察車。長距離機関砲で離れた敵を撃てる（射程2〜5）。'},
-  {id:U.garm,name:'ガルム戦車',role:'戦車',size:'L',move:4,movementAptitude:ground('B'),hp:5000,atk:300,def:300,mob:350,acc:500,weaponIds:[W.mainGun],skillIds:[],tags:['車両'],sortieCost:200,deploy:{player:true},recruit:{locked:true,missionId:M.t1},
+  {id:U.garm,name:'ガルム戦車',role:'戦車',size:'L',move:4,movementAptitude:ground('B'),hp:5000,atk:300,def:300,mob:350,acc:500,weaponIds:[W.mainGun,W.coax],skillIds:[],tags:['車両'],sortieCost:200,deploy:{player:true},recruit:{locked:true,missionId:M.t1},skillTree:tree([S.plate,1,1],[S.charge,2,3]),
    catalog:'重装甲の主力戦車。動きは遅いが、打たれ強い。T1をクリアすると加入する。'},
   {id:U.sleip,name:'スレイプ',role:'量産機',size:'L',move:5,movementAptitude:ground('B'),hp:4000,atk:280,def:200,mob:450,acc:520,weaponIds:[W.sleipRifle],skillIds:[],tags:['機動兵器'],crew:'optional',sortieCost:180,deploy:{player:true},recruit:{locked:true},
    catalog:'量産型の機動兵器。研究「量産機の配備計画」で生産できるようになる。'},
+  {id:U.carrier,name:'アルバトロス',role:'陸上母艦',size:'3XL',move:4,movementAptitude:ground('B'),hp:9000,atk:200,def:300,mob:200,acc:450,weaponIds:[W.carrierAA],skillIds:[S.carrier],tags:['艦艇'],supplier:30,capture:0,sortieCost:400,deploy:{player:true},noFire:true,recruit:{locked:true,missionId:M.t4},
+   catalog:'教導隊の陸上母艦。ユニットを4体まで載せて運び、載せている間は修理と補給をする。T4をクリアすると合流する。'},
+  {id:U.boat,name:'シーガル哨戒艇',role:'哨戒艇',size:'M',move:6,movementAptitude:{ground:'none',air:'none',water:'A',underwater:'none',space:'none'},hp:3000,atk:240,def:120,mob:500,acc:520,weaponIds:[W.boatGun],skillIds:[],tags:['艦艇'],capture:0,sortieCost:150,deploy:{player:true},recruit:{locked:true,missionId:M.t5},
+   catalog:'水の上を走る哨戒艇。陸には上がれない。T5をクリアすると加入する。'},
+  {id:U.garm2,name:'ガルムII',role:'戦車',size:'L',move:5,movementAptitude:ground('B'),hp:6000,atk:340,def:360,mob:380,acc:520,weaponIds:[W.mainGun2,W.coax],skillIds:[],tags:['車両'],sortieCost:260,deploy:{player:true},recruit:{locked:true},skillTree:tree([S.plate,1,1],[S.charge,2,3]),
+   catalog:'ガルム戦車の改良型。開発・進化で手に入る（Lv5以上・2,000 Cr）。'},
+  {id:U.hound2,name:'ハウンド改',role:'偵察',size:'M',move:8,movementAptitude:ground('A'),hp:3600,atk:260,def:120,mob:650,acc:600,weaponIds:[W.autocannon2],skillIds:[],tags:['車両'],sortieCost:160,deploy:{player:true},recruit:{locked:true},skillTree:tree([S.aim,1,1],[S.dodge,2,3]),
+   catalog:'ハウンド偵察車の改良型。射程が6に伸びた。開発・進化で手に入る（Lv5以上）。'},
   {id:U.dummy,name:'標的機',size:'M',move:3,movementAptitude:ground('B'),hp:1800,atk:150,def:0,mob:300,acc:400,weaponIds:[W.paint],skillIds:[],tags:['標的'],exp:20,deploy:{enemy:true},
    catalog:'演習用の標的機。ペイント弾で撃ち返してくる。'},
   {id:U.aggressor,name:'仮想敵機',size:'M',move:4,movementAptitude:ground('B'),hp:2400,atk:200,def:80,mob:430,acc:460,weaponIds:[W.drill],skillIds:[],tags:['機動兵器'],exp:30,deploy:{enemy:true},
@@ -48,32 +66,63 @@ window.PROTacticalSamplePack={
   {id:U.technical,name:'赤錆団テクニカル',size:'M',move:6,movementAptitude:ground('A'),hp:2600,atk:210,def:60,mob:480,acc:460,weaponIds:[W.hmg],skillIds:[],tags:['車両'],exp:30,deploy:{enemy:true},
    catalog:'荷台に重機関銃を積んだ改造トラック。'},
   {id:U.bogle,name:'ボーグル',role:'旧式機',size:'XL',move:4,movementAptitude:ground('B'),hp:6000,atk:320,def:200,mob:380,acc:480,weaponIds:[W.fist,W.scatter],skillIds:[],tags:['機動兵器'],exp:80,deploy:{enemy:true},
-   catalog:'赤錆団が持ち出した旧式の機動兵器。'}],
+   catalog:'赤錆団が持ち出した旧式の機動兵器。'},
+  {id:U.cmdCar,name:'指揮装甲車',role:'指揮車',size:'L',move:5,movementAptitude:ground('A'),hp:5000,atk:260,def:200,mob:380,acc:480,weaponIds:[W.cmdGun],skillIds:[],tags:['車両'],exp:80,deploy:{enemy:true},
+   catalog:'赤錆団の首領ガロが乗る指揮車。'},
+  {id:U.kgBoat,name:'黒鉄の哨戒艇',size:'M',move:6,movementAptitude:{ground:'none',air:'none',water:'A',underwater:'none',space:'none'},hp:2600,atk:220,def:80,mob:450,acc:470,weaponIds:[W.kgGun],skillIds:[],tags:['艦艇'],exp:35,deploy:{enemy:true},
+   catalog:'謎の組織「黒鉄連合」の哨戒艇。'},
+  {id:U.heli,name:'黒鉄の攻撃ヘリ',size:'M',move:6,movementAptitude:{ground:'none',air:'A',water:'none',underwater:'none',space:'none'},hp:2000,atk:200,def:40,mob:540,acc:470,weaponIds:[W.rocket],skillIds:[],tags:['航空'],exp:35,deploy:{enemy:true},
+   catalog:'黒鉄連合の攻撃ヘリ。'},
+  {id:U.landing,name:'黒鉄の揚陸艇',role:'揚陸艇',size:'XL',move:4,movementAptitude:{ground:'none',air:'none',water:'B',underwater:'none',space:'none'},hp:4600,atk:240,def:160,mob:250,acc:460,weaponIds:[W.landingGun],skillIds:[],tags:['艦艇'],exp:100,deploy:{enemy:true},
+   catalog:'黒鉄連合の揚陸艇。赤錆団に武器を運んでいた。'}],
  weapons:[
-  {id:W.rifle,name:'ビームライフル',attackType:'ranged',damageType:'beam',useUnitAtk:true,baseAtk:400,powerPct:100,hitsMin:1,hitsMax:2,hitPowerPct:60,accuracyPt:15,minRange:1,maxRange:3},
+  {id:W.rifle,name:'ビームライフル',attackType:'ranged',damageType:'beam',useUnitAtk:true,baseAtk:400,powerPct:100,hitsMin:1,hitsMax:2,hitPowerPct:60,accuracyPt:15,enCost:8,minRange:1,maxRange:3},
   {id:W.blade,name:'プラズマブレード',attackType:'melee',damageType:'beam',useUnitAtk:true,baseAtk:300,powerPct:160,hitsMin:2,hitsMax:3,hitPowerPct:45,accuracyPt:20,critPt:10,minRange:1,maxRange:1},
-  {id:W.assault,name:'アサルトライフル',attackType:'ranged',useUnitAtk:true,baseAtk:250,powerPct:100,hitsMin:1,hitsMax:4,hitPowerPct:25,accuracyPt:15,minRange:1,maxRange:2},
-  {id:W.autocannon,name:'長距離機関砲',attackType:'ranged',useUnitAtk:true,baseAtk:380,powerPct:90,hitsMin:2,hitsMax:4,hitPowerPct:30,accuracyPt:10,minRange:2,maxRange:5},
-  {id:W.mainGun,name:'主砲',attackType:'ranged',useUnitAtk:true,baseAtk:500,powerPct:120,hitsMin:1,hitsMax:1,hitPowerPct:100,accuracyPt:5,minDamage:80,minRange:1,maxRange:3},
-  {id:W.sleipRifle,name:'マシンライフル',attackType:'ranged',useUnitAtk:true,baseAtk:350,powerPct:100,hitsMin:2,hitsMax:4,hitPowerPct:30,accuracyPt:10,minRange:1,maxRange:2},
+  {id:W.assault,name:'アサルトライフル',attackType:'ranged',useUnitAtk:true,baseAtk:250,powerPct:100,hitsMin:1,hitsMax:4,hitPowerPct:25,accuracyPt:15,ammo:18,minRange:1,maxRange:2},
+  {id:W.autocannon,name:'長距離機関砲',attackType:'ranged',useUnitAtk:true,baseAtk:380,powerPct:90,hitsMin:2,hitsMax:4,hitPowerPct:30,accuracyPt:10,ammo:15,minRange:2,maxRange:5},
+  {id:W.mainGun,name:'主砲',attackType:'ranged',useUnitAtk:true,baseAtk:500,powerPct:120,hitsMin:1,hitsMax:1,hitPowerPct:100,accuracyPt:5,minDamage:80,ammo:12,minRange:1,maxRange:3},
+  {id:W.sleipRifle,name:'マシンライフル',attackType:'ranged',useUnitAtk:true,baseAtk:350,powerPct:100,hitsMin:2,hitsMax:4,hitPowerPct:30,accuracyPt:10,ammo:15,minRange:1,maxRange:2},
+  {id:W.coax,name:'同軸機銃',attackType:'ranged',useUnitAtk:true,baseAtk:200,powerPct:80,hitsMin:2,hitsMax:4,hitPowerPct:20,weight:0.5,minRange:1,maxRange:2},
+  {id:W.missile,name:'マイクロミサイル',attackType:'ranged',useUnitAtk:true,baseAtk:350,powerPct:110,hitsMin:2,hitsMax:4,hitPowerPct:30,accuracyPt:10,ammo:6,minRange:1,maxRange:3},
+  {id:W.carrierAA,name:'対空機銃',attackType:'ranged',useUnitAtk:true,baseAtk:250,powerPct:80,hitsMin:2,hitsMax:5,hitPowerPct:20,minRange:1,maxRange:2},
+  {id:W.boatGun,name:'連装機関砲',attackType:'ranged',useUnitAtk:true,baseAtk:330,powerPct:100,hitsMin:2,hitsMax:4,hitPowerPct:30,accuracyPt:10,ammo:15,minRange:1,maxRange:3},
+  {id:W.mainGun2,name:'改良主砲',attackType:'ranged',useUnitAtk:true,baseAtk:560,powerPct:120,hitsMin:1,hitsMax:1,hitPowerPct:100,accuracyPt:10,minDamage:80,ammo:15,minRange:1,maxRange:3},
+  {id:W.autocannon2,name:'長距離機関砲改',attackType:'ranged',useUnitAtk:true,baseAtk:420,powerPct:90,hitsMin:2,hitsMax:4,hitPowerPct:30,accuracyPt:15,ammo:18,minRange:2,maxRange:6},
   {id:W.paint,name:'ペイント弾',attackType:'ranged',useUnitAtk:true,baseAtk:200,powerPct:80,hitsMin:1,hitsMax:2,hitPowerPct:40,minDamage:10,minRange:1,maxRange:2},
   {id:W.drill,name:'演習用ライフル',attackType:'ranged',useUnitAtk:true,baseAtk:200,powerPct:90,hitsMin:1,hitsMax:4,hitPowerPct:25,accuracyPt:10,minRange:1,maxRange:2},
   {id:W.oldRifle,name:'旧式小銃',attackType:'ranged',useUnitAtk:true,baseAtk:220,powerPct:90,hitsMin:1,hitsMax:4,hitPowerPct:25,accuracyPt:5,minRange:1,maxRange:2},
   {id:W.hmg,name:'重機関銃',attackType:'ranged',useUnitAtk:true,baseAtk:240,powerPct:90,hitsMin:2,hitsMax:5,hitPowerPct:20,minRange:1,maxRange:2},
   {id:W.fist,name:'鉄拳',attackType:'melee',useUnitAtk:true,baseAtk:300,powerPct:170,hitsMin:1,hitsMax:2,hitPowerPct:60,accuracyPt:10,minRange:1,maxRange:1},
-  {id:W.scatter,name:'散弾砲',attackType:'ranged',useUnitAtk:true,baseAtk:350,powerPct:100,hitsMin:2,hitsMax:4,hitPowerPct:25,minRange:1,maxRange:2}],
- skills:[],
+  {id:W.scatter,name:'散弾砲',attackType:'ranged',useUnitAtk:true,baseAtk:350,powerPct:100,hitsMin:2,hitsMax:4,hitPowerPct:25,minRange:1,maxRange:2},
+  {id:W.cmdGun,name:'速射砲',attackType:'ranged',useUnitAtk:true,baseAtk:320,powerPct:100,hitsMin:2,hitsMax:3,hitPowerPct:35,minRange:1,maxRange:3},
+  {id:W.kgGun,name:'艦載機関砲',attackType:'ranged',useUnitAtk:true,baseAtk:280,powerPct:90,hitsMin:2,hitsMax:4,hitPowerPct:25,minRange:1,maxRange:3},
+  {id:W.rocket,name:'ロケット弾',attackType:'ranged',useUnitAtk:true,baseAtk:260,powerPct:100,hitsMin:1,hitsMax:3,hitPowerPct:35,minRange:1,maxRange:2},
+  {id:W.landingGun,name:'艦砲',attackType:'ranged',useUnitAtk:true,baseAtk:320,powerPct:110,hitsMin:1,hitsMax:2,hitPowerPct:45,minRange:1,maxRange:3}],
+ skills:[
+  {id:S.transform,name:'変形',tacticalOnly:true,tactical:{transform:{on:true,show:'usable'}}},
+  {id:S.carrier,name:'母艦',tacticalOnly:true,tactical:{carry:{count:4,maxSize:'XL'},carryCare:{on:true,hp:20,ammo:50,en:50}}},
+  {id:S.aim,name:'狙いを定める',trigger:'before_attack',effect:'hit_up_pt',value:10,chance:100,maxUses:0},
+  {id:S.charge,name:'突撃',trigger:'before_attack',effect:'damage_up_pct',value:15,chance:100,maxUses:0},
+  {id:S.plate,name:'装甲強化',trigger:'when_targeted',effect:'damage_reduce_pct',value:15,chance:100,maxUses:0},
+  {id:S.dodge,name:'見切り',trigger:'when_targeted',effect:'enemy_hit_down_pt',value:10,chance:100,maxUses:0},
+  {id:S.spirit,name:'闘志',trigger:'battle_start',effect:'atk_up_pct',value:10,duration:3,chance:100,maxUses:0}],
  items:[
   {id:I.repair,name:'修理キット',desc:'ユニット1体のHPを最大HPの30%回復する。',effects:[{type:'heal_hp_pct',value:30}],scope:'unit',price:300},
   {id:I.armor,name:'増加装甲',desc:'装備するとDEF+40。T3をクリアするとショップに並ぶ。',price:1200,equip:{stats:{def:40}},shop:{requiresMission:M.t3}},
-  {id:I.record,name:'演習記録',desc:'演習の戦闘記録。研究の材料になる。T2の報酬。',key:true}],
+  {id:I.record,name:'演習記録',desc:'演習の戦闘記録。研究の材料になる。T2の報酬。',key:true},
+  {id:I.scope,name:'照準装置',desc:'装備するとACC+60。T4をクリアするとショップに並ぶ。',price:1500,equip:{stats:{acc:60}},shop:{requiresMission:M.t4}}],
  hires:[
   {id:id('H',1),name:'教導歩兵分隊',unitId:U.infantry,cost:600,note:'占領が得意な歩兵。'},
   {id:id('H',2),name:'ハウンド偵察車',unitId:U.hound,cost:900,note:'足が速く、遠くから撃てる偵察車。'},
-  {id:id('H',3),name:'ガルム戦車',unitId:U.garm,cost:1500,requires:{missions:[M.t1]},note:'打たれ強い主力戦車。'}],
+  {id:id('H',3),name:'ガルム戦車',unitId:U.garm,cost:1500,requires:{missions:[M.t1]},note:'打たれ強い主力戦車。'},
+  {id:id('H',4),name:'シーガル哨戒艇',unitId:U.boat,cost:1200,requires:{missions:[M.t5]},note:'水の上を走る哨戒艇。'}],
  research:[
   {id:id('R',1),name:'量産機の配備計画',desc:'量産型の機動兵器「スレイプ」を生産できるようにする。',days:1,cost:{credits:1500,items:{[I.record]:1}},requires:[],unlock:{register:[U.sleip]}}],
- evolutions:[],fusions:[],achievements:[],flags:[],commands:[],terrains:[],missions:[],
+ evolutions:[
+  {id:id('E',1),name:'ガルムII への進化',from:U.garm,to:U.garm2,carry:{level:true},conds:{mode:'all',list:[{type:'unit_level',cmp:'ge',value:5},{type:'credits_use',value:2000}]}},
+  {id:id('E',2),name:'ハウンド改 への進化',from:U.hound,to:U.hound2,carry:{level:true},conds:{mode:'all',list:[{type:'unit_level',cmp:'ge',value:5}]}}],
+ terrains:[{id:T.factory,name:'工廠',tactical:{kind:'facility',costs:{ground:1,air:1},color:'#6a5a3a',facility:{durability:20,functions:{produce:{list:[{unitId:U.infantry,cost:300},{unitId:U.garm,cost:800}]},income:{amount:500},repair:{pct:20}}}}}],
+ fusions:[],achievements:[],flags:[],commands:[],missions:[],
  tmissions:[
   {id:M.t1,code:'T1',kind:'training',name:'初陣',desc:'演習場で、部隊の移動・攻撃・待機を確かめる。標的機は動かないが撃ち返してくる。',surface:'ground',color:'#29453e',
    map:grid(['pppppfpppp','ppfpppppfp','pppppppppp','pppfpppppp','pppppppfpp','ppfppppppp','pppppfpppp','pppppppppp']),
@@ -126,6 +175,67 @@ window.PROTacticalSamplePack={
     {id:'t3-north',name:'北の町',trigger:{type:'capture',x:5,y:0},actions:[talk(say(RIKO,'北の町を解放！ 占領した町からは、ターンの初めに資金が入ります。'))]},
     {id:'t3-boss',name:'ボーグル撃破',trigger:{type:'squad_down',groupId:'t3-boss'},actions:[talk(say(RIKO,'ボーグルの反応、消失！'),say(KAZAMA,'よし、町まで一気に押し込め。'))]},
     {id:'t3-win',name:'町の奪還',trigger:{type:'victory'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(KAZAMA,'町を取り戻した。住民も喜んでいるぞ。教導隊の評判も上がった（評判 {評判}）。'),
-     say(GOU,'研究も開けといたぜ。資金と素材を使って、日数をかけて新しい技術を手に入れるんだ。作戦に出るたびに1日進む。'),say(GOU,'演習記録があれば「量産機の配備計画」ができる。量産機スレイプを生産できるようになるぜ。'))]}]}]
+     say(GOU,'研究も開けといたぜ。資金と素材を使って、日数をかけて新しい技術を手に入れるんだ。作戦に出るたびに1日進む。'),say(GOU,'演習記録があれば「量産機の配備計画」ができる。量産機スレイプを生産できるようになるぜ。'))]}]},
+  {id:M.t4,code:'T4',kind:'combat',name:'増援を断て',desc:'赤錆団の本拠地を攻める。工廠での生産、作戦中のイベント（増援）、気力を学ぶ。',surface:'ground',color:'#5a3a2a',
+   requires:{missions:[M.t3]},unlockText:'赤錆団の本拠地への攻撃「T4 増援を断て」が発令されました。',
+   map:grid(['pppfpppppppmmm','ppppppfpppppmm','pfpppppppfpppp','ppppfpppppppfp','pppppppfpppppp','ppFppppppppfpp','pppppfpppppppp','pfppppppfppppp','pppppppppppfmm','ppppfpppppppmm']),
+   playerStarts:[{x:0,y:4},{x:0,y:5},{x:1,y:4},{x:1,y:6},{x:0,y:3}],
+   facilities:{'2,5':'player'},funds:{player:2000},
+   enemies:[squad('t4-e1','赤錆団 前衛',8,3,U.rustInf,3,{pattern:'assault',target:'lowest_hp'}),squad('t4-e2','赤錆団 機動隊',9,7,U.technical,2,{pattern:'assault',target:'lowest_hp'}),
+    {id:'t4-boss',name:'首領ガロ',position:{x:12,y:4},ai:{pattern:'hold',target:'lowest_hp'},members:[{unit:U.cmdCar},{unit:U.technical}]},
+    {id:'t4-r1',name:'赤錆団 増援（北）',position:{x:11,y:1},reinforce:true,ai:{pattern:'assault',target:'lowest_hp'},members:[{unit:U.rustInf},{unit:U.rustInf},{unit:U.technical}]},
+    {id:'t4-r2',name:'赤錆団 増援（南）',position:{x:13,y:7},reinforce:true,ai:{pattern:'assault',target:'lowest_hp'},members:[{unit:U.technical},{unit:U.technical}]}],
+   victory:{type:'boss',groupId:'t4-boss'},defeat:{type:'player_wipe'},victoryLabel:'首領ガロの部隊を撃破する',result:{credits:3000,exp:150,items:{[I.repair]:2}},
+   stars:[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:9}],
+   clearText:'装備・スキルツリーが使えるようになりました（ユニット → 装備／スキルツリー）。陸上母艦アルバトロスが合流しました。ショップに照準装置が並びました。',
+   events:[
+    {id:'t4-start',name:'本拠地攻撃',trigger:{type:'start'},actions:[talk(say(KAZAMA,'赤錆団の本拠地を叩く。首領ガロの部隊を落とせば終わりだ。'),
+     say(RIKO,'味方の工廠（3,6）では、ユニットを生産できます。工廠のマスを押して、もう一度押すとコマンドが開くので「生産」を選んでください。工廠のマスが空いているときだけ使えます。'),
+     say(RIKO,'生産には戦場資金を使います。いまは2,000。工廠や占領した町からの収入でも増えます。生産したユニットは、次のターンから動けます。'),say(KAZAMA,'敵も増援を呼ぶはずだ。長引かせるな。'))]},
+    {id:'t4-r1',name:'北の増援',trigger:{type:'turn',turns:2},actions:[{type:'spawn',groupId:'t4-r1'},talk(say(RIKO,'北東から敵の増援です！ 作戦中は、イベントで敵が増えたり条件が変わったりします。'),
+     say(RIKO,'それと、部隊詳細でユニットを見ると「気力」のゲージがあります。攻撃・回避・撃破で上がって、被弾で下がります。'),say(RIKO,'強気・超強気だと与えるダメージや命中が上がり、弱気だと下がります。0になると「混乱」して攻撃できません。同じ部隊の味方が敵を倒すと立ち直れますよ。'))]},
+    {id:'t4-r2',name:'南の増援',trigger:{type:'turn',turns:4},actions:[{type:'spawn',groupId:'t4-r2'},talk(say(KAZAMA,'南東からも来たか。頭を叩けば終わる。ガロを狙え。'))]},
+    {id:'t4-win',name:'本拠地制圧',trigger:{type:'victory'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(KAZAMA,'ガロの部隊は崩れた。赤錆団はもう立て直せまい。…だが、奴らの武器はどこから来た？'),
+     say(GOU,'装備とスキルツリーを開けといたぜ。ショップの増加装甲や照準装置を付けたり、レベルアップでたまったスキルポイントで技を覚えたりできる。'),say(GOU,'それと、陸上母艦アルバトロスの整備が終わった。次から連れていけるぜ。'))]}]},
+  {id:M.t5,code:'T5',kind:'combat',name:'母艦発進',desc:'陸上母艦アルバトロスと、東へ逃げた赤錆団の残党を追う。搭載・発進、弾薬とEN、補給を学ぶ。',surface:'ground',color:'#3a4a5a',
+   requires:{missions:[M.t4]},unlockText:'残党の追撃「T5 母艦発進」が発令されました。陸上母艦アルバトロスも出撃できます。',
+   map:grid(['ppppfppppppfpppmmm','pppppppfpppppppppm','pfppppppppfppppppp','pppppfppppppppfppp','ppppppppypppppppfp','pfpppppfppppfppppp','pppppppppppppppppp','ppppfppppppfpppppp']),
+   playerStarts:[{x:0,y:3},{x:0,y:4},{x:1,y:3},{x:1,y:4},{x:0,y:5}],
+   funds:{player:1000},
+   enemies:[squad('t5-e1','残党 見張り',9,2,U.rustInf,3,{pattern:'hold',target:'lowest_hp'}),squad('t5-e2','残党 機動隊',11,6,U.technical,2,{pattern:'assault',target:'lowest_hp'}),
+    {id:'t5-e3',name:'残党 ボーグル隊',position:{x:15,y:3},ai:{pattern:'ambush',target:'lowest_hp'},members:[{unit:U.bogle},{unit:U.rustInf}]},squad('t5-e4','残党 後衛',16,6,U.technical,2,{pattern:'hold',target:'lowest_hp'})],
+   victory:{type:'enemy_wipe'},defeat:{type:'player_wipe'},result:{credits:3500,exp:170,items:{[I.repair]:2}},
+   stars:[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:10}],
+   clearText:'シーガル哨戒艇が加入しました。生産・雇用にシーガル哨戒艇が並びました。',
+   events:[
+    {id:'t5-start',name:'母艦',trigger:{type:'start'},actions:[talk(say(GOU,'こいつが陸上母艦アルバトロスだ。サイズXLまでのユニットを4体載せて運べる。'),
+     say(RIKO,'母艦の近くの部隊は、コマンド「母艦に搭載」で乗り込めます。降ろすときは、母艦の部隊のコマンド「発進」。発進しても母艦の行動は使いません。'),
+     say(RIKO,'載っている間は、ターンの初めにHPと弾薬・ENが回復します。足の遅い部隊を運ぶのにも使えますよ。'),say(KAZAMA,'残党は東へ逃げた。追撃するぞ。'))]},
+    {id:'t5-ammo',name:'弾薬とEN',trigger:{type:'turn',turns:2},actions:[talk(say(RIKO,'武装には弾数やENを使うものがあります。ヴァルキスのビームライフルはEN、戦車の主砲や偵察車の機関砲は弾薬です。'),
+     say(RIKO,'使い切るとその武装は使えません。残りは部隊詳細で確かめられます。作戦が終わるまで自然には戻りません。'))]},
+    {id:'t5-supply',name:'補給',trigger:{type:'turn',turns:3},actions:[talk(say(RIKO,'補給のしかたは3つ。補給基地（9,5）を占領して止まる、母艦に載る、アルバトロスのような補給能力のある部隊の近くでターンを迎える、です。'),
+     say(RIKO,'どうしても足りないときは、マップのコマンド「補給要請」で戦場資金を払って補給できます。'))]},
+    {id:'t5-bogle',name:'ボーグル',trigger:{type:'squad_down',groupId:'t5-e3'},actions:[talk(say(KAZAMA,'またボーグルか。…赤錆団にしては装備が良すぎる。'))]},
+    {id:'t5-win',name:'追撃完了',trigger:{type:'victory'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(RIKO,'残党の通信を傍受しました。「黒鉄連合」…武器の取引相手みたいです。'),
+     say(KAZAMA,'黒鉄連合…聞いたことのない名だ。港を調べる必要があるな。'),say(GOU,'港なら船がいる。シーガル哨戒艇を回しておくぜ。水の上を走れるやつだ。'))]}]},
+  {id:M.t6,code:'T6',kind:'combat',name:'空と海',desc:'黒鉄連合の揚陸艇を追って海へ。領域（陸・空・水上）、ヴァルキスの変形、マップの縮尺を学ぶ。',surface:'ground',scale:'vehicle',color:'#2a4a6a',
+   requires:{missions:[M.t5]},unlockText:'港の沖に謎の船。「T6 空と海」が発令されました。',
+   map:grid(['ppppwddddddd','pfppwddddddd','ppppwwdddddd','pppwwdddpddd','ppppwddddddd','pfppwwdddddd','ppppwddddddd','ppfpwddddddd','ppppwddddddd']),
+   playerStarts:[{x:1,y:3},{x:1,y:4},{x:0,y:4},{x:0,y:5},{x:4,y:4}],
+   enemies:[squad('t6-h1','黒鉄 ヘリ隊A',7,2,U.heli,2,{pattern:'assault',target:'lowest_hp'}),squad('t6-h2','黒鉄 ヘリ隊B',8,6,U.heli,1,{pattern:'assault',target:'lowest_hp'}),
+    squad('t6-b1','黒鉄 哨戒艇',6,4,U.kgBoat,1,{pattern:'assault',target:'lowest_hp'}),
+    {id:'t6-boss',name:'黒鉄の揚陸艇',position:{x:10,y:4},ai:{pattern:'hold',target:'lowest_hp'},members:[{unit:U.landing}]}],
+   victory:{type:'boss',groupId:'t6-boss'},defeat:{type:'player_wipe'},victoryLabel:'黒鉄の揚陸艇を沈める',result:{credits:4000,exp:200,items:{[I.repair]:2}},
+   objectives:[{id:'t6-ob1',name:'空を取れ',success:{type:'all',conds:[{type:'squad_down',groupId:'t6-h1'},{type:'squad_down',groupId:'t6-h2'}]},label:'ヘリ隊を2つとも撃破する',reward:{credits:800}}],
+   stars:[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:10}],
+   clearText:'開発・進化が使えるようになりました（ユニット → 開発・進化）。',
+   events:[
+    {id:'t6-start',name:'沖の船',trigger:{type:'start'},actions:[talk(say(KAZAMA,'黒鉄連合の揚陸艇を見つけた。赤錆団に武器を運んでいた船だ。沈めるぞ。'),
+     say(RIKO,'このマップの縮尺は「車両」。1マスが広いので、MOVEと射程が半分になります（出撃準備では「5→3」のように出ます）。'),
+     say(RIKO,'ユニットには領域があります。陸・空・水上…入れるマスは領域しだい。地上のユニットは海に入れません。'),
+     say(KAZAMA,'ヴァルキスは行動前にコマンド「変形」で飛行形態になれる。海の上も飛べるぞ。シーガルは水の上を走れる。'))]},
+    {id:'t6-air',name:'空',trigger:{type:'turn',turns:2},actions:[talk(say(RIKO,'空を飛ぶ部隊は地形を気にせず進めます。陸と空の両方に入れる部隊は、部隊を選んだときに出る領域のボタンで切り替えられます。'))]},
+    {id:'t6-win',name:'揚陸艇撃沈',trigger:{type:'victory'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(KAZAMA,'揚陸艇を沈めた。だが黒鉄連合の本隊は、もっと大きいはずだ。'),
+     say(GOU,'開発・進化を開けといたぜ。Lv5になったガルムやハウンドは、改良型に進化できる。'),say(RIKO,'次は、もっと大きな作戦になりそうです。'))]}]}]
 };
 })();
