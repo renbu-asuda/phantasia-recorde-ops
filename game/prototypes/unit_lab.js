@@ -26,7 +26,9 @@ const slotsOf=o=>Math.min(SLOT_MAX,Math.max(0,(D.unit(o.id).equipSlots??SLOT_DEF
 // gets the pilot's stat bonus (growing with the pilot's level), the pilot's skills, and its aptitude % on ATK / MOB /
 // ACC when the unit has one of the aptitude tags. A riding pilot can't sortie alone; crew 'required' needs a pilot.
 const isPilot=u=>!!u?.pilotProfile,crew=u=>C.crewOf(u);
-const pilotSkills=p=>(p.pilotProfile?.skills||[]).map(tryS).filter(Boolean);
+// Pilot skills keep their map part (味方支援, 気力 ...); a map-only skill has no battle effect, only that part.
+const pilotSkill=x=>x?.tacticalOnly?{id:x.id,name:x.name||x.id,tacticalOnly:true,tactical:C.clone(x.tactical||{})}:(s=>s&&x.tactical?{...s,tactical:C.clone(x.tactical)}:s)(tryS(x));
+const pilotSkills=p=>(p.pilotProfile?.skills||[]).map(pilotSkill).filter(Boolean);
 function applyPilot(u,p,plv){if(!p)return u;const b=C.pilotBonus(p.pilotProfile,plv),o={...u};for(const k of STATS)if(o[k]!=null&&b[k])o[k]+=b[k];
  const apt=p.pilotProfile.aptitude;if(apt?.pct&&(apt.tags||[]).some(t=>(o.tags||[]).includes(t)))for(const k of ['atk','mob','acc'])if(o[k]!=null)o[k]=Math.round(o[k]*(1+apt.pct/100));
  return {...o,skills:[...(o.skills||[]),...pilotSkills(p)]};}
@@ -43,7 +45,9 @@ const name=id=>seen().has(id)?D.unit(id).name:'？？？';
 const CMP={ge:'以上',le:'以下',eq:'ちょうど',lt:'未満'};
 // Short text for the condition types the samples use; other types fall back to their id.
 function condText(c){const n=v=>v+(CMP[c.cmp||'ge']);let t;switch(c.type){case 'credits_use':t='資金'+c.value+'を消費';break;case 'credits_have':t='資金'+n(c.value);break;case 'unit_level':t='Lv'+n(c.value);break;
- case 'unit_owned':t=name(c.unitId)+'を'+n(c.count??1)+'体所持';break;case 'item_has':t='アイテム'+c.itemId+'を'+n(c.count??1)+'個';break;case 'item_use':t='アイテム'+c.itemId+'×'+(c.count||1)+'を消費';break;default:t=c.type;}return (c.not?'【否定】':'')+t;}
+ case 'unit_owned':t=name(c.unitId)+'を'+n(c.count??1)+'体所持';break;case 'item_has':t='アイテム'+c.itemId+'を'+n(c.count??1)+'個';break;case 'item_use':t='アイテム'+c.itemId+'×'+(c.count||1)+'を消費';break;
+ case 'mission_clear':t='作戦「'+missionName(c.missionId)+'」をクリア';break;case 'mission_stars':t='作戦「'+missionName(c.missionId)+'」の★'+n(c.value);break;case 'wins_total':t='勝利'+n(c.value)+'回';break;case 'day':t=n(c.value)+'日目';break;
+ case 'research_done':t='研究「'+(rById(c.researchId)?.name||c.researchId)+'」が完了';break;case 'flag':t=(c.on===false?'「'+c.flagId+'」が立っていない':'「'+c.flagId+'」が立っている');break;case 'var':{const v=(D.vars?.()||[]).find(x=>x.id===c.varId);t=(v?.name||c.varId)+'が'+n(c.value);break;}default:t=c.type;}return (c.not?'【否定】':'')+t;}
 const condsText=cs=>cs?.list?.length?cs.list.map(condText).join(cs.mode==='any'?' または ':' かつ '):'条件なし';
 // Production / hire list: registering also counts as an encounter.
 function register(id){if(!registered.includes(id))registered.push(id);seen().mark([id],'registered');save();}
@@ -245,7 +249,9 @@ function deployProblem(m,u,level=1){if(m?.requires?.minLevel&&level<m.requires.m
 const missionHidden=m=>!!m.hidden&&!!missionLock(m);
 let missionName=id=>D.mission(id)?.name||id;const setMissionNames=f=>{missionName=f;};
 // Base menus a pack opens step by step (pack hqUnlock): '' when open, else why it is closed.
-function hqLock(key){const id=D.hqUnlock?.()[key];return !id||cleared.includes(id)?'':'作戦「'+missionName(id)+'」をクリアすると使えます';}
+// The setting is a tactical mission id (cleared opens it) or a condition set (holds opens it; nothing is spent).
+function hqLock(key){const v=D.hqUnlock?.()[key];if(!v)return '';if(typeof v==='string')return cleared.includes(v)?'':'作戦「'+missionName(v)+'」をクリアすると使えます';
+ if(!v.list?.length||C.evalConds(v,state()).ok)return '';return '条件：'+condsText(v);}
 // Star checks: clear, no_loss (no deployed unit fell), turns_le, hp_ge (remaining HP % of the deployed units).
 function evalStars(m,{win,turns,lost,hpPct}){return C.missionStars(m).map(s=>win&&(s.type==='clear'||(s.type==='no_loss'&&!lost)||(s.type==='turns_le'&&turns<=s.value)||(s.type==='hp_ge'&&hpPct>=s.value)));}
 const starText=s=>s.type==='clear'?'クリア':s.type==='no_loss'?'撃破されずにクリア':s.type==='turns_le'?s.value+'ターン以内':s.type==='hp_ge'?'残りHP'+s.value+'%以上':s.type;
