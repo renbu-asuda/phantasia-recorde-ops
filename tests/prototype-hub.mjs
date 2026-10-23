@@ -27,7 +27,7 @@ add((SX('fighter')));assert.equal(snap().groups[1].members.length,2);const one=d
 // Filters do not change assignments.
 const search=d.querySelector('#prepSearch');search.value='未設定';search.dispatchEvent(new w.Event('input'));assert.equal(d.querySelectorAll('#prepUnitList .ug-tile').length,1);search.value='';search.dispatchEvent(new w.Event('input'));
 // Mission change preserves squads but blocks incompatible deployment.
-route('#missions');d.querySelector('[aria-label="軌道上の遭遇"]').click();route('#prepare');assert(d.querySelector('#prepConfirm').disabled);assert(d.querySelector('#prepSummary').textContent.includes('領域非対応'));
+route('#missions');d.querySelector('[aria-label="軌道上の遭遇"]').click();route('#prepare');assert(d.querySelector('#prepConfirm').disabled);assert(d.querySelector('#prepSummary').textContent.includes('移動領域に対応していません'));
 for(const member of [...snap().groups.flatMap(g=>g.members)])button(d.querySelector('[data-uid="'+member.uid+'"]'),'外す').click();add((SX('spacecraft')));assert(!d.querySelector('#prepConfirm').disabled);d.querySelector('#prepConfirm').click();assert.equal(w.location.hash,'#map');route('#map');assert(!d.querySelector('#mapView').hidden);assert.equal(d.querySelectorAll('.field-tile').length,108);assert.equal(w.PROField.snapshot().surface,'space');// Nothing is selected after deploy; tests select the first squad like a player tapping it once.
 assert.equal(w.PROField.state().selected,null);assert.equal(d.querySelectorAll('.field-tile.reachable').length,0);
 const F={...w.PROField,deploy:s=>{w.PROField.deploy(s);w.PROField.focusGroup(s.groups[0].id);},snapshot:()=>{const s=w.PROField.snapshot();s.groups=s.groups.filter(g=>g.faction==='player');return s;}};
