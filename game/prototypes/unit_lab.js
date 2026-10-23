@@ -248,12 +248,12 @@ const usedOf=(t,id)=>{const o=t.uid?owned.find(x=>x.uid===t.uid):null;if(o)retur
 function noteUse(t,id){const o=t.uid?owned.find(x=>x.uid===t.uid):null;if(o){o.used=o.used||{};o.used[id]=(o.used[id]||0)+1;}else if(String(t.key||'').startsWith('d:')){const k=t.key.slice(2),d=dispatchLevel(k);dlv[k]={...d,used:{...(d.used||{}),[id]:(d.used?.[id]||0)+1}};}}
 function fieldBlock(it,t){if(!it)return '不明なアイテムです';if(it.key)return 'キーアイテムは使えません';if(free(it.id)<1)return '使える数がありません';if(it.requires){try{const r=C.checkRequirements(it.requires,t.unit);if(!r.ok)return r.reason;}catch(e){}}
  const n=usedOf(t,it.id);if(it.limitPerUnit&&n>=it.limitPerUnit)return 'このユニットにはもう使えません（'+it.limitPerUnit+'回まで）';
- if(it.useConds?.list?.length&&!previewConds(it.useConds,state(t.unit)).ok)return '条件：'+condsText(it.useConds);return '';}
+ if(it.useConds?.list?.length&&!previewConds(it.useConds,{...state(t.unit),...(t.ctx||{})}).ok)return '条件：'+condsText(it.useConds);return '';}
 // One attempt (party items: all targets share the chance draws). Pays the item and the condition costs; returns the
 // uids it works on, or {why}.
 // opts.deferVars(ops): the battlefield queues the item's variable changes with the mission's own (applied in order at the end).
 function fieldUse(id,targets,opts={}){const it=D.item(id);const ok=targets.filter(t=>!fieldBlock(it,t));if(!ok.length)return {why:targets.length?fieldBlock(it,targets[0]):'対象がいません'};
- const draws=[],check=t=>{let at=0;return rollConds(it.useConds,state(t.unit),{rng:()=>{const i=at++;return draws[i]??(draws[i]=Math.random());}});},res=ok.map(t=>({t,r:check(t)})).filter(x=>x.r.ok);if(!res.length)return {why:COND_FAILED};
+ const draws=[],check=t=>{let at=0;return rollConds(it.useConds,state(t.unit),{...(t.ctx||{}),rng:()=>{const i=at++;return draws[i]??(draws[i]=Math.random());}});},res=ok.map(t=>({t,r:check(t)})).filter(x=>x.r.ok);if(!res.length)return {why:COND_FAILED};
  if(!pay([{itemId:id,count:1},...(res[0].r.costs||[])]))return {why:SHORT};for(const {t} of res)noteUse(t,id);if((it.varOps||[]).length){if(opts.deferVars)opts.deferVars(C.clone(it.varOps));else Object.assign(vars,applyVarOps(it.varOps));}save();return {uids:res.map(x=>x.t.uid||x.t.key)};}
 function useBlock(it,o){if(it.key)return 'キーアイテムは使えません';for(const e of it.effects||[]){if(e.type==='recruit_unit'&&!joinOk(e.unitId))return '加入の条件：'+condsText(joinConds(e.unitId));if(e.type==='add_weapon'&&!tryW(e.weapon))return '追加する武装が見つかりません';if(e.type==='add_skill'&&!tryS(e.skill))return '習得するスキルが見つかりません';
   // Learning the same skill / weapon twice is refused before anything is spent.

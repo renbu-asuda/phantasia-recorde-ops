@@ -46,5 +46,13 @@ try{
   {const real=w.localStorage,fake={getItem:k=>real.getItem(k),removeItem:k=>real.removeItem(k),setItem:(k,v)=>{if(k==='PRO_TD_MAKER_DRAFT')throw new Error('QuotaExceededError');real.setItem(k,v);},key:i=>real.key(i),get length(){return real.length;}};
    M.openKind('tmissions','t-m');await tick();Object.defineProperty(w,'localStorage',{value:fake,configurable:true});openF('trial','試し');try{button($('inputActions'),'試しプレイを始める').click();}catch(e){}Object.defineProperty(w,'localStorage',{value:real,configurable:true});
    assert.equal(w.localStorage.getItem('PRO_TACTICAL_TESTPLAY'),null,'no test play (#331)');assert.match($('msgBody').textContent,/下書きを保存できません/);}}
+
+ // #365 / #366 / #367: tactical mission checks.
+ {const sea=(id,x={})=>({id,name:id,hp:1000,atk:1,def:1,mob:1,acc:1,weaponIds:[],skillIds:[],size:'M',move:3,movementAptitude:{ground:'none',air:'none',water:'A',underwater:'none',space:'none'},...x});
+  const d3={...draft,vars:[{id:'t-v',name:'v',initial:0}],units:[...draft.units,{id:'t-big',name:'BIG',size:'3XL',hp:1000,atk:1,def:1,mob:1,acc:1,weaponIds:[],skillIds:[],deploy:{enemy:true}},{id:'t-kid',name:'KID',base:'t-big'},sea('t-sea',{deploy:{enemy:true}})]};
+  const w=open({PRO_TD_MAKER_DRAFT:JSON.stringify(d3)});await tick();const K=w.PROMakerTactical,M=w.PROMakerTD,base=M.find('tmissions','t-m');
+  const c1=JSON.parse(JSON.stringify(base));c1.events=[{id:'vo',name:'vars-only',trigger:{type:'start'},actions:[{type:'choice',options:[{label:'進む',vars:[{varId:'t-v',op:'add',value:1}]}]}]}];assert(!K.checks(c1).some(t=>/選択肢/.test(t)),'vars-only choice is fine (#365): '+K.checks(c1));
+  const c2=JSON.parse(JSON.stringify(base));c2.enemies=[{id:'eg',name:'敵',position:{x:7,y:5},members:[{unit:'t-kid'},{unit:'t-kid'}]}];assert(K.checks(c2).some(t=>/総サイズ16/.test(t)),'inherited size (#366): '+K.checks(c2));
+  const c3=JSON.parse(JSON.stringify(base));c3.enemies=[{id:'eg',name:'敵',position:{x:7,y:5},members:[{unit:'t-sea'}]}];assert(K.checks(c3).some(t=>/移動適性/.test(t)),'a water unit on plains is reported (#367)');}
  console.log('PASS: maker batch 5 (#329–#361)');
 }finally{for(const w of wins)try{w.close();}catch(e){}}
