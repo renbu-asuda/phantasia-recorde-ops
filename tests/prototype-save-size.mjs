@@ -7,7 +7,7 @@ function open(store={}){const w=new Window({url:'http://localhost/'+file,setting
  for(const dl of w.document.querySelectorAll('dialog')){dl.showModal=()=>dl.setAttribute('open','');dl.close=()=>{dl.removeAttribute('open');dl.dispatchEvent(new w.Event('close'));};}
  {const C=w.HTMLCanvasElement?.prototype;if(C){C.getContext=()=>({fillRect(){},set fillStyle(v){}});C.toDataURL=()=>'data:image/png;base64,UElY';}}
  for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);w.eval(src?fs.readFileSync(path.resolve(path.dirname(file),src[1]),'utf8'):m[2]);}return w;}
-const dump=w=>Object.fromEntries(Object.keys(w.localStorage).map(k=>[k,w.localStorage.getItem(k)]));
+const dump=w=>{const s=w.localStorage,o={};for(let i=0;i<s.length;i++){const k=s.key(i);o[k]=s.getItem(k);}return o;};
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const T1='sample-TM-000001';
 
@@ -29,7 +29,27 @@ const T1='sample-TM-000001';
  Object.defineProperty(w,'localStorage',{configurable:true,get:()=>fake});
  L.spend(-10);await wait(10);assert(d.getElementById('labWindow').open,'warning shown');assert.equal(d.getElementById('labWinKind').textContent,'セーブできませんでした');
  d.getElementById('labWindow').close();L.spend(-10);await wait(10);assert(!d.getElementById('labWindow').open,'only once');
- d.querySelector('#openSave').click();assert(d.getElementById('labWinBody').textContent.includes('保存しているデータ：約'),'usage shown');
+ d.querySelector('#openSave').click();assert(d.getElementById('labWinBody').textContent.includes('保存しているデータ：約'),'usage shown, the file / slot snapshot from memory (#188), a load that does not fit changes nothing (#189)');
  d.querySelector('#labWinActions [data-save="slot0"]').click();d.querySelector('#labWinActions [data-save="save"]').click();
  assert(d.getElementById('labWinTitle').textContent.includes('セーブできませんでした'),d.getElementById('labWinTitle').textContent);full=false;}
-console.log('PASS: save size — logs for the newest battles only (and on load), worst case within storage, a full storage is reported (progress, slots), usage shown');
+// A storage that only refuses what does not fit (PRO_ keys up to limit characters), or refuses the given keys.
+function quota(w,{limit=Infinity,refuse=[]}={}){const real=w.localStorage,size=()=>{let n=0;for(let i=0;i<real.length;i++){const k=real.key(i);if(k.startsWith('PRO_'))n+=k.length+(real.getItem(k)||'').length;}return n;};
+ const fake={get length(){return real.length;},key:i=>real.key(i),getItem:k=>real.getItem(k),removeItem:k=>real.removeItem(k),clear:()=>real.clear(),setItem:(k,v)=>{const old=real.getItem(k);if(refuse.includes(k)||size()-(old==null?0:k.length+old.length)+k.length+String(v).length>fake.limit)throw new w.DOMException('full','QuotaExceededError');return real.setItem(k,v);},limit,size};
+ Object.defineProperty(w,'localStorage',{configurable:true,get:()=>fake});return fake;}
+// #188: with the progress no longer saved, the file / slot snapshot still has the latest progress (from memory).
+{const w=open();const L=w.PROUnitLab,S=w.PROSave;L.flush();const q=quota(w);q.limit=q.size()+10;const units=L.owned().length;
+ L.spend(-123);L.addOwned(L.owned()[0].id);await wait(10);const stored=JSON.parse(w.localStorage.getItem('PRO_TACTICAL_HQ'));assert.equal(stored.owned.length,units,'the progress did not fit');
+ const snap=S.snapshot();assert.equal(snap.hq.credits,L.hqData().credits,'credits from memory');assert.equal(snap.hq.owned.length,units+1,'units from memory');assert.equal(snap.summary.units,units+1);
+ assert.deepEqual(Object.keys(snap.seen).sort().join(),w.PROUnitsSeen.all().sort().join(),'encounters from memory');}
+// #189: a load that does not fit changes nothing (progress, encounters, source, suspend); one that fits after the
+// suspend save goes, or fits anyway, discards the suspend save only once everything is written.
+{const big=(w,n)=>{const s=w.PROSave.snapshot();s.hq={...s.hq,credits:77777,pad:'x'.repeat(n)};return s;};
+ const SUS='PRO_TACTICAL_SUSPEND',sus='{"state":"'+'s'.repeat(3000)+'"}';
+ {const w=open({[SUS]:sus});const S=w.PROSave;w.PROUnitLab.flush();const before=dump(w),q=quota(w);q.limit=q.size()+1000;
+  const r=S.apply(big(w,8000),{reload:false});assert.match(r,/ロードできませんでした/);assert.deepEqual(dump(w),before,'nothing changed (suspend kept)');}
+ for(const key of ['PRO_TACTICAL_HQ','PRO_TACTICAL_ENCOUNTER','PRO_TACTICAL_LOAD']){const w=open({[SUS]:sus});const S=w.PROSave;w.PROUnitLab.flush();const s=big(w,10),before=dump(w);quota(w,{refuse:[key]});
+  assert.match(S.apply(s,{reload:false}),/ロードできませんでした/,key);assert.deepEqual(dump(w),before,'all restored when '+key+' fails');}
+ {const w=open({[SUS]:sus});const S=w.PROSave;w.PROUnitLab.flush();const q=quota(w);q.limit=q.size()+1000;
+  assert.equal(S.apply(big(w,2500),{reload:false}),'','fits once the suspend save goes');assert.equal(w.localStorage.getItem(SUS),null);assert.equal(JSON.parse(w.localStorage.getItem('PRO_TACTICAL_HQ')).credits,77777);}
+ {const w=open({[SUS]:sus});const S=w.PROSave;w.PROUnitLab.flush();assert.equal(S.apply(big(w,10),{reload:false}),'');assert.equal(w.localStorage.getItem(SUS),null,'a normal load discards the suspend save');assert.equal(JSON.parse(w.localStorage.getItem('PRO_TACTICAL_HQ')).credits,77777);}}
+console.log('PASS: save size — logs for the newest battles only (and on load), worst case within storage, a full storage is reported (progress, slots), usage shown, the file / slot snapshot from memory (#188), a load that does not fit changes nothing (#189)');
