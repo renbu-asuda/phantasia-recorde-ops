@@ -130,9 +130,12 @@ function weaponTypeLabel(w){return `${attackTypeLabel(w.attackType)}・${damageT
 
 // ---- weapons and targets ----
 // Tactical ammo / EN (prototype): only weapons with ammo or enCost (never set by the published game) are limited here.
-function resourceReady(u,w){if(w.ammo>0&&u.ammo&&(u.ammo[w.name]??w.ammo)<=0)return false;if(w.enCost>0&&u.en!=null&&u.en<w.enCost)return false;return true;}
-function spendResource(u,w){if(w.ammo>0&&u.ammo)u.ammo[w.name]=Math.max(0,(u.ammo[w.name]??w.ammo)-1);if(w.enCost>0&&u.en!=null)u.en=Math.max(0,u.en-w.enCost);}
-function weaponReady(ctx,u,w){if(!resourceReady(u,w))return false;if(ctx.hooks.weaponOk&&!ctx.hooks.weaponOk(u,w))return false;const st=u.weaponState?.[w.name];if(!st)return true;if(w.usesPerBattle&&st.used>=w.usesPerBattle)return false;if(w.cooldown&&ctx.turn<st.readyTurn)return false;return true;}
+// Ammo and per-battle use are kept per weapon: by its key when it has one (T&D data: the weapon's ID, so two
+// weapons with the same name stay apart), else by name (published data, unchanged).
+const wkey=w=>w.key||w.name;
+function resourceReady(u,w){if(w.ammo>0&&u.ammo&&(u.ammo[wkey(w)]??w.ammo)<=0)return false;if(w.enCost>0&&u.en!=null&&u.en<w.enCost)return false;return true;}
+function spendResource(u,w){if(w.ammo>0&&u.ammo)u.ammo[wkey(w)]=Math.max(0,(u.ammo[wkey(w)]??w.ammo)-1);if(w.enCost>0&&u.en!=null)u.en=Math.max(0,u.en-w.enCost);}
+function weaponReady(ctx,u,w){if(!resourceReady(u,w))return false;if(ctx.hooks.weaponOk&&!ctx.hooks.weaponOk(u,w))return false;const st=u.weaponState?.[wkey(w)];if(!st)return true;if(w.usesPerBattle&&st.used>=w.usesPerBattle)return false;if(w.cooldown&&ctx.turn<st.readyTurn)return false;return true;}
 function weaponInRange(w,distance){const min=w.minRange??1,max=w.maxRange??1;return Number.isInteger(min)&&Number.isInteger(max)&&min>=1&&max>=min&&distance>=min&&distance<=max;}
 function chooseWeapon(ctx,attacker){
   if(ctx.localDistance!==undefined){const source=attacker.weapons?.length?attacker.weapons:[BASIC_WEAPON],ws=source.filter(w=>weaponInRange(w,ctx.localDistance)&&weaponReady(ctx,attacker,w));if(!ws.length)return null;let r=ctx.rng()*ws.reduce((n,w)=>n+Math.max(.01,num(w.weight,1)),0);for(const w of ws){r-=Math.max(.01,num(w.weight,1));if(r<=0)return w;}return ws[ws.length-1];}
@@ -140,7 +143,7 @@ function chooseWeapon(ctx,attacker){
   const total=ws.reduce((sum,w)=>sum+Math.max(.01,num(w.weight,1)),0);let r=ctx.rng()*total;
   for(const w of ws){r-=Math.max(.01,num(w.weight,1));if(r<=0)return w;}return ws[ws.length-1];
 }
-function markWeaponUsed(ctx,u,w){spendResource(u,w);if(!w.usesPerBattle&&!w.cooldown)return;const st=u.weaponState[w.name]||(u.weaponState[w.name]={used:0,readyTurn:0});st.used++;if(w.cooldown)st.readyTurn=ctx.turn+w.cooldown+1;}
+function markWeaponUsed(ctx,u,w){spendResource(u,w);if(!w.usesPerBattle&&!w.cooldown)return;const st=u.weaponState[wkey(w)]||(u.weaponState[wkey(w)]={used:0,readyTurn:0});st.used++;if(w.cooldown)st.readyTurn=ctx.turn+w.cooldown+1;}
 function chooseTargets(ctx,attacker,opponents,count,weapon){
   let pool=opponents.filter(alive);if(!pool.length)return [];
   // Melee cannot reach the back row while anyone stands in front.
@@ -206,6 +209,8 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
   await H.actionStart(attacker,weapon,targets,opts);
   let actionResist=0,actionTag=0,actionHits=0,actionDmg=0,killCount=0,actionCrits=0,lastKilled=null,lastCritTarget=null;
   const attackerStat=statFor(ctx,attacker);if(!opts.counter){attackerStat.actions++;markWeaponUsed(ctx,attacker,weapon);}
+  // Optional (T&D): a counter fired with a weapon spends its ammo / EN / uses too. Absent → unchanged.
+  else if(ctx.counterSpends)markWeaponUsed(ctx,attacker,weapon);
   let attackMods=opts.counter?emptyMods():triggerSkills(ctx,attacker,'before_attack',{weapon,targets,allies:ctx.allies,enemies:ctx.enemies,opponent:targets[0]});
   if(!opts.counter&&weapon.effects?.length)attackMods=mergeMods(attackMods,weaponEffects(ctx,attacker,weapon,'before',{weapon,targets,opponent:targets[0]}));
   const terrainHit=(weapon.attackType==='melee'?ctx.terrain.meleeHitPt:ctx.terrain.rangedHitPt)||0;

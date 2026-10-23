@@ -6,7 +6,7 @@
     "test": "node tests/syntax.cjs && node tests/features.cjs && node tests/notice.cjs && node tests/tactical-prep.cjs && node tests/tactical-foundations.cjs && node tests/tactical-range.cjs",
     "test:dom": "node tests/dom-smoke.mjs && node tests/ui-116.mjs && node tests/maker-ui-1161.mjs && node tests/compact-ui.mjs",
     "test:browser": "node tests/browser.cjs",
-    "test:prototype": "node tests/prototype-hub.mjs && node tests/prototype-hq.mjs && node tests/maker-td.mjs && node tests/tutorial-pack.mjs && node tests/prototype-fixes.mjs && node tests/prototype-audit-data.mjs && node tests/prototype-audit-conditions.mjs && node tests/prototype-audit-battle.mjs && node tests/prototype-save-size.mjs && node tests/prototype-map-weapon.mjs && node tests/prototype-audit-batch.mjs && node tests/prototype-audit-batch2.mjs && node tests/maker-td-refs.mjs",
+    "test:prototype": "node tests/prototype-hub.mjs && node tests/prototype-hq.mjs && node tests/maker-td.mjs && node tests/tutorial-pack.mjs && node tests/prototype-fixes.mjs && node tests/prototype-audit-data.mjs && node tests/prototype-audit-conditions.mjs && node tests/prototype-audit-battle.mjs && node tests/prototype-save-size.mjs && node tests/prototype-map-weapon.mjs && node tests/prototype-audit-batch.mjs && node tests/prototype-audit-batch2.mjs && node tests/maker-td-refs.mjs && node tests/prototype-audit-batch3.mjs && node tests/maker-td-batch3.mjs",
     "test:browser:td": "node tests/browser-td.cjs"
   },
   "devDependencies": {

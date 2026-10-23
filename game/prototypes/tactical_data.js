@@ -22,7 +22,7 @@ const read=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
 const FAC_FN=['income','supply','repair','defense','hq','reward','produce','gate','exit','resupply','swap','storage'];
 function normFacility(f){if(!f)return null;if(typeof f==='string')return {durability:20,functions:{[f]:{}}};const fn={};for(const k of FAC_FN)if(f.functions?.[k])fn[k]={...f.functions[k]};return Object.keys(fn).length?{durability:Number(f.durability)>0?Number(f.durability):20,functions:fn}:null;}
 // Stage 9: Tactical ammo (weapon 'ammo', per mission) and EN ('enCost' on weapons / skills) survive core normalization.
-const keepRes=(o,src)=>o&&{...o,...(Number(src.ammo)>0?{ammo:Number(src.ammo)}:{}),...(Number(src.enCost)>0?{enCost:Number(src.enCost)}:{}),...(src.tactical?{tactical:C.clone(src.tactical)}:{})};
+const keepRes=(o,src)=>o&&{...o,...(src.key||src.id?{key:String(src.key||src.id)}:{}),...(Number(src.ammo)>0?{ammo:Number(src.ammo)}:{}),...(Number(src.enCost)>0?{enCost:Number(src.enCost)}:{}),...(src.tactical?{tactical:C.clone(src.tactical)}:{})};
 // A map-only skill (tacticalOnly) has no local-battle effect; it is kept for its tactical part.
 // The same T&D normalization for weapons / skills reached through equipment, the skill tree or items (keeps ammo, EN,
 // map weapons and map-only skills).
@@ -63,7 +63,7 @@ function fromMaker(d){const find=(k,id)=>(d[k]||[]).find(x=>x.id===id),ok=(f,x)=
  // faction: enemies list 'enemy' | 'third' (third force, hostile to everyone); allies list 'player' guest | 'ally' (AI ally).
  const squads=list=>(list||[]).filter(sq=>sq.position&&sq.members?.length).map(sq=>({id:sq.id,name:sq.name,position:{...sq.position},reinforce:!!sq.reinforce,...(['third','ally'].includes(sq.faction)?{faction:sq.faction}:{}),...((sq.aiRules||[]).length?{aiRules:C.clone(sq.aiRules)}:{}),...(sq.smart?{smart:{...sq.smart}}:{}),...(sq.retreatAt!=null?{retreatAt:sq.retreatAt}:{}),...(sq.returnAt!=null?{returnAt:sq.returnAt}:{}),...(sq.stored?{stored:true}:{}),...(sq.noCapture?{noCapture:true}:{}),...(['yes','no'].includes(sq.captureJoin)?{captureJoin:sq.captureJoin}:{}),...(Number(sq.releaseRange)>0?{releaseRange:Number(sq.releaseRange)}:{}),ai:{...sq.ai,pattern:AI_OK.includes(sq.ai?.pattern)?sq.ai.pattern:'assault',target:sq.ai?.target||'lowest_hp'},members:sq.members.map(e=>({unit:e.unit,...(e.name?{name:e.name}:{}),...pilotSpec(e.pilot)}))}));
  // Pilot of a placed / produced / hired unit: {unit: pilot unit id, lv}.
- const pilotSpec=p=>p?.unit?{pilot:{unit:String(p.unit),lv:Math.max(1,Math.min(99,Math.round(Number(p.lv)||1)))}}:{};
+ const pilotSpec=p=>p?.unit?{pilot:{unit:String(p.unit),lv:Math.max(1,Math.min(C.LEVEL_MAX||50,Math.round(Number(p.lv)||1)))}}:{};
  const tmissions=(d.tmissions||[]).map(m=>{try{const g=m.map?.grid,w=m.map?.width,h=m.map?.height;if(!Array.isArray(g)||g.length!==h||g.some(r=>r.length!==w)||w<6||h<6||w>30||h>30)throw Error('map');
   for(const sq of [...(m.enemies||[]),...(m.allies||[])])for(const e of sq.members||[])if(!ids.has(e.unit)||(e.pilot?.unit&&!ids.has(e.pilot.unit)))throw Error('unit '+e.unit);for(const r of g)for(const k of r)if(!builtin.terrains[k]&&!terrains[k])throw Error('terrain '+k);const v=m.victory||{type:'enemy_wipe'};
   const goal=condText(m,v,'victory');
@@ -123,7 +123,7 @@ function allies(missionId){const m=missions.get(missionId);return (m.allies||[])
 // pilot skills are added, as when a player boards a pilot. spec = {unit, lv}; no spec, an unknown pilot or a unit
 // that can't carry one leaves the unit as it is.
 const P_STATS=['hp','atk','def','mob','acc'];
-function withPilot(u,spec){if(!spec?.unit||C.crewOf(u)==='none')return u;const p=units.get(spec.unit);if(!p?.pilotProfile)return u;const lv=spec.lv||1,b=C.pilotBonus(p.pilotProfile,lv);
+function withPilot(u,spec){if(!spec?.unit||C.crewOf(u)==='none')return u;const p=units.get(spec.unit);if(!p?.pilotProfile)return u;const lv=Math.max(1,Math.min(C.LEVEL_MAX||50,Math.round(Number(spec.lv)||1))),b=C.pilotBonus(p.pilotProfile,lv);// levels stop at the game's maximum
  for(const k of P_STATS)if(u[k]!=null&&b[k])u[k]+=b[k];const apt=p.pilotProfile.aptitude;if(apt?.pct&&(apt.tags||[]).some(t=>(u.tags||[]).includes(t)))for(const k of ['atk','mob','acc'])if(u[k]!=null)u[k]=Math.round(u[k]*(1+apt.pct/100));
  u.skills=[...(u.skills||[]),...(p.pilotProfile.skills||[]).map(x=>skillOf(x,(f,v)=>{try{return f(v);}catch(e){return null;}})).filter(Boolean)];u.pilot={unitId:p.id,name:p.name,lv};return u;}
 // Form groups (stage 10): units linked by key ('transformTo' = 変形) form one group in both directions, so one link
