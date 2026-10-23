@@ -605,7 +605,7 @@ for(const d of document.querySelectorAll('dialog.cmd-window'))d.addEventListener
 
 load();showMenu();
 // Extension API for kinds defined in separate scripts (e.g. maker_td_tactical.js).
-const extend=Object.freeze({varOpsWindow:(...a)=>varOpsWindow(...a),varOpsText:v=>varOpsText(v),el,win,closeWin,commit,numberPrompt,message,clone,find,condsEditor,data:()=>data,save,
+const extend=Object.freeze({resolveBase:u=>resolveBase(u),varOpsWindow:(...a)=>varOpsWindow(...a),varOpsText:v=>varOpsText(v),el,win,closeWin,commit,numberPrompt,message,clone,find,condsEditor,data:()=>data,save,
  // Field types defined by extension scripts (display / edit) without a kind of their own.
  registerType(type,{display,edit}){if(display)EXT.display[type]=display;if(edit)EXT.edit[type]=edit;},
  registerKind(k,meta,make,fields,hooks={}){KINDS[k]=meta;FIELDS[k]=fields;DEFAULT[k]=make;EXTRA_KINDS.push(k);if(!Array.isArray(data[k]))data[k]=[];Object.assign(EXT.display,hooks.display||{});Object.assign(EXT.edit,hooks.edit||{});if(hooks.issues)EXT.issues[k]=hooks.issues;if(hooks.refs)EXT.refs[k]=hooks.refs;if(hooks.mapRefs){EXT.mapRefs.push(hooks.mapRefs);replayAliases(hooks.mapRefs);}migrateIds();save();if(!$('menuView').hidden)showMenu();}});

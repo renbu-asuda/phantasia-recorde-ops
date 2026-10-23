@@ -7,6 +7,8 @@
 const X=window.PROMakerTD.extend,C=window.PROCore;
 const {el,win,closeWin,commit,numberPrompt,find,data,clone,message,condsEditor}=X;
 const MAP_MIN=6,MAP_MAX=30,SIZES=C.UNIT_SIZES;
+// A unit as the game reads it (its base unit's values inherited), and the movement costs of a map square.
+const unitR=id=>{const u=find('units',id);return u?X.resolveBase(u):null;},costsAt=(m,x,y)=>{const k=m.map?.grid?.[y]?.[x];return BUILTIN[k]?.costs||data().terrains.find(t=>t.id===k)?.tactical?.costs||{};};
 // Standard terrains (system, one-letter keys) — not sample data.
 const BUILTIN=window.PROTacticalTerrains||{};
 // Terrain palette: built-in square types (one-letter keys) + custom terrains that have Tactical movement costs.
@@ -145,7 +147,7 @@ let n=1;const taken=new Set([...S.areas.map(a=>a.id),...(JSON.stringify(m).match
 
 /* ---------- enemy squads ---------- */
 function enemiesWindow(m,side='enemies'){const ally=side==='allies',list=clone(m[side]||[]),PRE=ally?'ally-':'enemy-',LABEL=ally?'味方第':'敵第';const save=()=>{commit(o=>{o[side]=list;});closeWin();};
- const size=g=>g.members.reduce((n,e)=>n+(SIZES[find('units',e.unit)?.size]||1),0);
+ const size=g=>g.members.reduce((n,e)=>n+(SIZES[unitR(e.unit)?.size]||1),0);
  const top=()=>win(ally?'味方部隊（ゲスト・味方AI）':'敵部隊（敵・第三勢力）','1部隊に最大8体・総サイズ8。位置は「マップ」で置きます。増援の部隊はイベントの「増援を出す」で現れます（位置が埋まっていれば近くの空きマス）。'+(ally?'「操作」で、プレイヤーが動かすゲスト（水色。自分の部隊と合流・移管で部隊を組める。作戦が終わると元に戻り、経験値・撃破の扱いなし）か、味方フェイズのあとに自動で動く味方AI（緑）を選びます。':'「勢力」で敵（赤）か第三勢力（黄。味方とも敵とも戦い、敵フェイズのあとに動く）を選びます。'),body=>{const l=el('div',null,'cmd-list');list.forEach((g,i)=>{const b=el('button',(i+1)+'. '+g.name+' ／ '+g.members.length+'体・サイズ'+size(g)+(g.faction==='third'?' ／ 第三勢力':g.faction==='ally'?' ／ 味方AI':ally?' ／ ゲスト':'')+(ally&&g.faction!=='ally'?'':' ／ '+AI[g.ai?.pattern||'assault'])+(g.reinforce?' ／ 増援':'')+(g.position?' ／ ('+(g.position.x+1)+','+(g.position.y+1)+')':' ／ 位置未設定'));b.type='button';b.dataset.squad=i;b.onclick=()=>one(i);l.append(b);});if(!list.length)l.append(el('p','部隊はありません。','cmd-hint'));body.append(l);},
   [['＋ 部隊を追加',()=>{if(list.length>=16)return;const ids=new Set(list.map(g=>g.id));let k=1;while(ids.has(PRE+k))k++;list.push({id:PRE+k,name:LABEL+k+'部隊',members:[],...(ally?{}:{ai:{pattern:'assault',target:'lowest_hp'}})});one(list.length-1);}],['決定',save],['戻る',closeWin]]);
  const one=i=>{const g=list[i];win(g.name,'',body=>{const l=el('div',null,'cmd-list');const row=(label,val,fn,key)=>{const b=el('button',null,'unit-row setting-row td-row');b.type='button';b.dataset.efield=key;b.append(el('span',label),el('b',val));b.onclick=fn;l.append(b);};
@@ -366,15 +368,17 @@ function deepChecks(m){const out=[];if(!Array.isArray(m.map?.grid)||m.map.grid.l
  // Victory that can't be won.
  if(v.type==='boss'){const g=(m.enemies||[]).find(x=>x.id===v.groupId);if(g?.reinforce&&!spawned.has(g.id))out.push('勝利条件：撃破する部隊が出てこないので勝てません');}
  if(v.type==='flag'&&v.flag&&!flagsSet.has(v.flag))out.push('勝利条件：フラグ「'+v.flag+'」がどこでも立たないので勝てません');
- const f=m.defeat||{};if(v.type==='defend'&&f.type==='turn_limit'&&v.turns>=f.turns)out.push('勝利条件：守りきるターン数が敗北のターン制限以上なので勝てません');
+ const f=m.defeat||{};if(v.type==='defend'&&f.type==='turn_limit'&&v.turns>f.turns)out.push('勝利条件：守りきるターン数が敗北のターン制限より長いので勝てません');/* the same turn: the win is checked first */
  if(v.type==='objective_done'){const o=(m.objectives||[]).find(x=>x.id===v.objectiveId);if(o?.appear==='event'&&!acts.some(a=>a.type==='objective'&&a.id===o.id&&a.result==='start'))out.push('勝利条件：作戦内ミッションが発生しないので勝てません');}
  return out;}
 function checks(m){const out=[],w=m.map?.width,h=m.map?.height;if(!(w>=MAP_MIN&&w<=MAP_MAX&&h>=MAP_MIN&&h<=MAP_MAX))out.push('マップの広さは'+MAP_MIN+'〜'+MAP_MAX+'マスです');
  if(!Array.isArray(m.map?.grid)||m.map.grid.length!==h||m.map.grid.some(r=>!Array.isArray(r)||r.length!==w))out.push('マップの大きさとマスの数が合いません');else{const bad=new Set();for(const r of m.map.grid)for(const k of r)if(!terrainOf(k))bad.add(k);if(bad.size)out.push('使えない地形：'+[...bad].join('・'));}
  const inside=p=>p&&p.x>=0&&p.y>=0&&p.x<w&&p.y<h,key=p=>p.x+','+p.y;if(!(m.playerStarts||[]).length)out.push('味方の初期位置がありません');if((m.playerStarts||[]).some(p=>!inside(p)))out.push('マップの外に味方の初期位置があります');{const v=m.map?.view;if(v){if(!(inside(v)&&inside({x:v.x+v.w-1,y:v.y+v.h-1})))out.push('開始時の表示範囲がマップの外です');else if((m.playerStarts||[]).some(p=>!(p.x>=v.x&&p.y>=v.y&&p.x<v.x+v.w&&p.y<v.y+v.h)))out.push('開始時の表示範囲の外に味方の初期位置があります');}}
- const taken=new Set((m.playerStarts||[]).map(key));for(const g of squadsOf(m)){if(!g.members.length)out.push(g.name+'：ユニットがいません');if(g.members.length>8)out.push(g.name+'：8体までです');const sz=g.members.reduce((n,e)=>n+(SIZES[find('units',e.unit)?.size]||1),0);if(sz>8)out.push(g.name+'：総サイズ'+sz+'（8まで）');
+ const taken=new Set((m.playerStarts||[]).map(key));for(const g of squadsOf(m)){if(!g.members.length)out.push(g.name+'：ユニットがいません');if(g.members.length>8)out.push(g.name+'：8体までです');const sz=g.members.reduce((n,e)=>n+(SIZES[unitR(e.unit)?.size]||1),0);if(sz>8)out.push(g.name+'：総サイズ'+sz+'（8まで）');
   for(const e of g.members)if(!find('units',e.unit))out.push(g.name+'：ユニット「'+e.unit+'」が見つかりません');else{const pi=pilotIssue(g.name+'・'+(e.name||find('units',e.unit).name),e.unit,e.pilot);if(pi)out.push(pi);}if(!inside(g.position))out.push(g.name+'：位置が未設定かマップの外です');else if(g.stored){const fa=facilityAt(m,g.position.x,g.position.y),own=(m.facilities||{})[key(g.position)]||'neutral';if(!facFns(fa).includes('storage'))out.push(g.name+'：格納して始める位置が、格納のある施設ではありません');else if(own!==(g.faction==='third'?'third':g.faction==='ally'?'ally':(m.allies||[]).includes(g)?'player':'enemy'))out.push(g.name+'：格納する施設の持ち主が部隊の勢力と違います（マップで施設の持ち主を設定）');}
-  else if(!g.reinforce){if(taken.has(key(g.position)))out.push(g.name+'：ほかの部隊・初期位置と重なっています');taken.add(key(g.position));}}
+  else if(!g.reinforce){if(taken.has(key(g.position)))out.push(g.name+'：ほかの部隊・初期位置と重なっています');taken.add(key(g.position));
+   // Every member needs a domain it can use on its square (a fixed unit with MOVE 0 is left alone).
+   if(inside(g.position)){const c=costsAt(m,g.position.x,g.position.y);for(const e of g.members){const u=unitR(e.unit);if(!u||Number(u.move)===0)continue;const apt=u.movementAptitude||{ground:'B'};/* unset = the game's default (ground) */if(!Object.keys(c).some(d=>apt[d]&&apt[d]!=='none'))out.push(g.name+'・'+(e.name||u.name)+'：置いたマスに対応する移動適性がありません');}}}}
  for(const e of m.production||[]){const pi=pilotIssue('作戦の生産リスト・'+(find('units',e.unitId)?.name||e.unitId),e.unitId,e.pilot);if(pi)out.push(pi);}
  const v=m.victory||{};if(v.type==='boss'&&!(m.enemies||[]).some(g=>g.id===v.groupId))out.push('勝利条件：撃破する敵部隊を選んでください');if(v.type==='reach'&&!inside(v))out.push('勝利条件：到達するマスがマップの外です');if(v.type==='defend'&&!(v.turns>=1))out.push('勝利条件：防衛するターン数を入れてください');
  if(v.type==='flag'&&!v.flag)out.push('勝利条件：フラグ名を入れてください');if(['capture','any','all','unit_defeated','capture_all','units_out'].includes(v.type)||(v.type==='reach'&&(v.unitId||v.unitIds))){const e=condIssue(m,v,'勝利条件');if(e)out.push(e);}if(m.defeat?.type==='facility_lost'){const e=condIssue(m,m.defeat,'敗北条件');if(e)out.push(e);}
@@ -384,7 +388,7 @@ function checks(m){const out=[],w=m.map?.width,h=m.map?.height;if(!(w>=MAP_MIN&&
  if(['squad_down','enemy_reach','flag','any','all'].includes(f.type)){const e=condIssue(m,f,'敗北条件');if(e)out.push(e);}
  const ids=new Set(squadsOf(m).map(g=>g.id));if(ids.size!==squadsOf(m).length)out.push('部隊のIDが重なっています');
  for(const e of m.events||[]){const w='イベント「'+e.name+'」';const t=condIssue(m,e.trigger,w+'のきっかけ');if(t)out.push(t);if(!(e.actions||[]).length)out.push(w+'：起こすことがありません');
-  for(const a of e.actions||[]){if(a.type==='talk'&&!(a.lines||[]).some(l=>l.text))out.push(w+'：会話のセリフがありません');if(a.type==='choice'&&(!(a.options||[]).length||a.options.some(o=>!o.flag)))out.push(w+'：選択肢と立てるフラグを入れてください');if(a.type==='flag'&&!a.flag)out.push(w+'：フラグ名を入れてください');
+  for(const a of e.actions||[]){if(a.type==='talk'&&!(a.lines||[]).some(l=>l.text))out.push(w+'：会話のセリフがありません');if(a.type==='choice'&&(!(a.options||[]).length||a.options.some(o=>!o.flag&&!(o.vars||[]).length)))out.push(w+'：選択肢と、立てるフラグか変える変数を入れてください');/* a choice may only change variables */if(a.type==='flag'&&!a.flag)out.push(w+'：フラグ名を入れてください');
    if(a.type==='spawn'&&!squadsOf(m).some(g=>g.id===a.groupId&&g.reinforce))out.push(w+'：増援に出す部隊（「増援」にした部隊）を選んでください');if(a.type==='withdraw'&&!ids.has(a.groupId))out.push(w+'：撤退する部隊を選んでください');if(a.type==='tension'&&!ids.has(a.groupId))out.push(w+'：気力を変える部隊を選んでください');if(a.type==='var'&&!find('vars',a.varId))out.push(w+'：変える変数を選んでください');if(a.type==='side'&&!ids.has(a.groupId))out.push(w+'：陣営を変える部隊を選んでください');
    if(a.type==='area_show'&&!areaName(m,a.target))out.push(w+'：表示を変えるエリアを選んでください');if(a.type==='exit_area'&&!inside(a))out.push(w+'：撤退エリアがマップの外です');if(a.type==='map_expand'&&!inside(a))out.push(w+'：広げる範囲がマップの外です');if(a.type==='map_expand'&&!m.map?.view)out.push(w+'：「開始時の表示範囲」が未設定なので、マップを広げる意味がありません');if(a.type==='terrain'&&(!terrainOf(a.key)||!inside(a)))out.push(w+'：地形の変更が正しくありません');if(a.type==='victory'||a.type==='defeat'){const c=condIssue(m,a.cond,w+'の'+(a.type==='victory'?'勝利':'敗北')+'条件');if(c)out.push(c);}if(a.type==='objective'&&!(m.objectives||[]).some(o=>o.id===a.id))out.push(w+'：作戦内ミッションを選んでください');if(a.type==='resupply'&&a.scope==='group'&&!ids.has(a.groupId))out.push(w+'：補給する部隊を選んでください');if(a.type==='game_flag'&&!find('flags',a.flagId))out.push(w+'：ゲームのフラグを選んでください');if(a.type==='ai'&&!(m.enemies||[]).some(g=>g.id===a.groupId))out.push(w+'：AIを変える敵部隊を選んでください');}}
  for(const g of squadsOf(m))out.push(...aiRuleIssues(m,g));
