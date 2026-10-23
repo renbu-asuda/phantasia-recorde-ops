@@ -62,7 +62,8 @@ $('prepAddGroup').onclick=()=>{const id='group-'+sequence;groups.push({id,name:'
 $('prepConfirm').onclick=()=>{redraw();if($('prepConfirm').disabled)return;const snap=window.PROPreparation.snapshot(),L=window.PROUnitLab,cost=sortieCost();
  if(L?.payForSortie){const why=L.payForSortie(P.mission(missionId),cost,snap.groups.flatMap(g=>g.members.filter(m=>m.supply).map(m=>m.supply)));if(why){tell(why);return;}}
  // Supply items (paid above) boost their member for this mission.
- for(const g of snap.groups)for(const m of g.members){if(m.supply&&L)m.unit=L.applySupply(m.unit,m.supply);delete m.supply;}for(const g of groups)for(const m of g.members)delete m.supply;window.PROField.deploy(snap);location.hash='#map';};
+ // The member keeps which supply it used (boost) so a form change in the mission applies it again.
+ for(const g of snap.groups)for(const m of g.members){if(m.supply&&L){m.unit=L.applySupply(m.unit,m.supply);m.boost=m.supply;}delete m.supply;}for(const g of groups)for(const m of g.members)delete m.supply;window.PROField.deploy(snap);location.hash='#map';};
 $('prepPresets').onclick=choosePreset;
 window.PROPreparation={setMission(id,{formationOnly=false}={}){// Formation from the unit menu has no mission; a selected Dispatch mission must not leave the list stale.
 if(!scenarios[id]){if(!formationOnly)return;id=missionId;}const was=anywhere;anywhere=formationOnly;if(missionId!==id||was!==anywhere){missionId=id;for(const g of groups){g.mode='auto';setDomains(g);}}tell('');redraw();},snapshot:()=>C.clone({missionId,active,groups}),addUnit};redraw();
