@@ -218,11 +218,12 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
     const hitTerrain=ctx.sideTerrain?((weapon.attackType==='melee'?ctx.sideTerrain[target.side]?.meleeHitPt:ctx.sideTerrain[target.side]?.rangedHitPt)||0):terrainHit;
     // Optional (T&D prototype): tension (気力) modifiers {dmg, hit, crit} of this attacker against this target.
     const tm=H.tensionMods?.(attacker,target)||{dmg:1,hit:0,crit:0};
-    const baseHit=clamp(baseHitRate(eff(ctx,attacker,'acc'),eff(ctx,target,'mob'),weapon.accuracyPt+hitTerrain)+attackMods.hitAdd+defenseMods.incomingHitAdd+tm.hit,.05,.95);
+    const baseHit=tm.sure?1:clamp(baseHitRate(eff(ctx,attacker,'acc'),eff(ctx,target,'mob'),weapon.accuracyPt+hitTerrain)+attackMods.hitAdd+defenseMods.incomingHitAdd+tm.hit,.05,.95);
     const pierce=clamp(num(weapon.defPiercePct,0)+attackMods.defPierce,0,100);
     let targetHits=0,targetDmg=0,targetCrits=0,absorbed=0;
     for(let shot=0;shot<attempts;shot++){
       if(!target.alive||!attacker.alive)break;
+      if(H.dodgeOnce?.(target,attacker))continue;
       if(!chance(ctx,baseHit))continue;
       const critRate=clamp(.05+weapon.critPt/100+attackMods.critAdd+tm.crit,.01,.50),crit=chance(ctx,critRate);
       const perHitMin=Math.max(0,Math.round(weapon.minDamage));
