@@ -154,7 +154,8 @@ function titleStart(){const F=window.PROField,sus=F?.readSuspend?.();if(sus){con
  titleCommands();}
 function discard(){titleMenu('中断データを破棄します。元に戻せません。',[['破棄する',()=>{window.PROField.clearSuspend();titleCommands();},'run'],['戻る',titleStart,'back']]);}
 function titleCommands(){titleMenu('',[['はじめから',newGame,'new'],['つづきから',continueGame,'continue'],['設定',()=>window.PROField.openSettings(),'settings']]);}
-function newGame(){titleMenu('まっさらの状態から始めます。読み込んでいるパックはすべて外れ、オートセーブは上書きされます（手動のセーブスロットは残ります）。',[['はじめる',()=>{ss.set(TITLE_SEEN,'1');ss.set(NEW_GAME,'1');window.PROTacticalData.setLoad({sample:false,maker:false,packs:[]});location.hash='#base';location.reload();},'run'],['戻る',titleCommands,'back']]);}
+function newGame(){titleMenu('まっさらの状態から始めます。読み込んでいるパックはすべて外れ、オートセーブは上書きされます（手動のセーブスロットは残ります）。',[['はじめる',()=>{// The empty choice must be saved before the reload; otherwise nothing changes and it says so.
+ if(!window.PROTacticalData.setLoad({sample:false,maker:false,packs:[]})){titleMenu('パックの選択を保存できませんでした（ブラウザの保存領域がいっぱいの可能性があります）。読み込み直さず、いまの設定のままです。',[['戻る',titleCommands,'back']]);return;}ss.set(TITLE_SEEN,'1');ss.set(NEW_GAME,'1');location.hash='#base';location.reload();},'run'],['戻る',titleCommands,'back']]);}
 function continueGame(){const S=window.PROSave,load=s=>{if(!s)return;ss.set(TITLE_SEEN,'1');const err=S.apply(s);if(err){ss.set(TITLE_SEEN,null);titleMenu(err,[['戻る',continueGame,'back']]);}};
  titleMenu('つづきから：読み込むセーブを選んでください。',[['オート：'+S.describe(S.read('auto')),()=>load(S.read('auto')),'auto'],...Array.from({length:S.SLOTS},(_,i)=>['スロット'+(i+1)+'：'+S.describe(S.read(i)),()=>load(S.read(i)),'slot'+i]),['ファイルから読み込む',()=>{ss.set(TITLE_SEEN,'1');$('saveFile').click();},'file'],['戻る',titleCommands,'back']]);
  for(const b of $('titleMenu').querySelectorAll('button'))if(b.textContent.endsWith('：空き'))b.disabled=true;}
