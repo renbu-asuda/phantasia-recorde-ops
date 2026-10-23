@@ -198,7 +198,7 @@ function showResult(){if(!state?.outcome||state.resultShown)return;if(state.talk
  // EXP for every deployed unit (published rules: halved on defeat and for fallen units, plus defeat EXP).
  const rows=(state.deployed||[]).map(x=>({...x,kills:state.killExp?.[x.uid]||0,amount:C.battleExp(rw.exp,{win,alive:alive.has(x.uid),kills:state.killExp?.[x.uid]||0})}));
  const gained=Object.fromEntries((window.PROUnitLab?.gainExp(rows.map(x=>({key:x.uid,amount:x.amount})))||[]).map(x=>[x.key,x]));// A finished mission advances the in-game day (research progresses).
- for(const t of window.PROUnitLab?.advanceDay()||[])add('研究完了',t);for(const x of rows){const g=gained[x.uid];add(x.name+(alive.has(x.uid)?'':'（撃破された）'),'+'+x.amount+' EXP'+(x.kills?'（撃破 +'+x.kills+'）':'')+(g?' ｜ Lv'+g.lv+(g.ups?'（'+g.ups+'上昇・SP+'+g.ups+'）':''):''));}d.showModal();}
+ for(const t of window.PROUnitLab?.advanceDay()||[])add('研究完了',t);for(const x of rows){const g=gained[x.uid];add(x.name+(alive.has(x.uid)?'':'（撃破された）'),'+'+x.amount+' EXP'+(x.kills?'（撃破 +'+x.kills+'）':'')+(g?' ｜ Lv'+g.lv+(g.ups?'（'+g.ups+'上昇・SP+'+g.ups+'）':''):''));}window.PROUnitLab?.settled?.();d.showModal();}
 /* In-mission items — only on a facility square of type 'supply' (補給施設). HP recovery (heal_hp_flat / pct / full) for living members, revive (revive_hp_pct) for members of
    this group destroyed in this mission. One item per use; using one ends the group's action. Items come from storage. */
 const FIELD_FX=['heal_hp_flat','heal_hp_pct','heal_hp_full','revive_hp_pct'],fxText=t=>Object.keys(t.effects||{}).length&&window.PROCore?.terrainEffectText?.(t.effects)?'（'+window.PROCore.terrainEffectText(t.effects)+'）':'';

@@ -208,7 +208,7 @@ w=open({});{const L=w.PROUnitLab,S=w.PROSave,d=w.document,btn=k=>d.querySelector
 w.close();
 // Autosave (written at mission end, load only) and suspend priority (loading a slot discards the suspend save).
 w=open({});{const L=w.PROUnitLab,S=w.PROSave,d=w.document,btn=k=>d.querySelector('#labWinActions [data-save="'+k+'"]');
- assert.equal(S.read('auto'),null);L.finishMission(w.PROTacticalData.mission((SX('training-01'))),{outcome:'win',turns:4,reward:800});L.recordBattle(w.PROTacticalData.mission((SX('training-01'))),'tactical',null,{outcome:'win',turns:4});assert(S.read('auto'));assert.equal(S.read('auto').summary.wins,1);
+ assert.equal(S.read('auto'),null);L.finishMission(w.PROTacticalData.mission((SX('training-01'))),{outcome:'win',turns:4,reward:800});L.recordBattle(w.PROTacticalData.mission((SX('training-01'))),'tactical',null,{outcome:'win',turns:4});assert.equal(S.read('auto'),null,'no autosave before the mission is settled');L.advanceDay();L.settled();assert(S.read('auto'));assert.equal(S.read('auto').hq.day,L.day(),'the autosave has the settled day');assert.equal(S.read('auto').summary.wins,1);
  d.querySelector('#openSave').click();btn('slotauto').click();assert(!btn('save'));assert(!btn('delete'));assert(btn('load'));
  w.localStorage.setItem('PRO_TACTICAL_SUSPEND','{"x":1}');d.querySelector('#openSave').click();assert(d.querySelector('#labWinBody').textContent.includes('中断中の作戦'));btn('slotauto').click();btn('load').click();assert(d.querySelector('#labWinBody').textContent.includes('破棄されます'));
  assert.equal(S.apply(S.read('auto'),{reload:false}),'');assert.equal(w.localStorage.getItem('PRO_TACTICAL_SUSPEND'),null);}
