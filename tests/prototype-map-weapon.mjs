@@ -53,6 +53,17 @@ function setup(weapon){const w=open(weapon);const L=w.PROUnitLab,F=w.PROField;co
  for(let i=0;i<400;i++){if(d.querySelector('#fieldBattle').hasAttribute('open')&&!d.querySelector('#fieldBattleClose').disabled){d.querySelector('#fieldBattleSkip')?.click();}await new Promise(r=>setTimeout(r,10));if(/撃破/.test(d.querySelector('#fieldBattleSummary').textContent))break;}
  d.querySelector('#fieldBattleClose').click();await p;assert(!G('t8-e1')||hpSum(G('t8-e1'))<e1,'hit through the battle screen');assert(/マップ兵器/.test(d.querySelector('#fieldBattleSummary').textContent));}
 
+// #190: stunned (行動不能 from a local battle) — firing does nothing but use up one stunned action, like a normal attack;
+// the next turn it fires. The AI does not fire while stunned.
+{const {w,F,d,G}=setup();const st=()=>({buffs:[],stun:1,burn:null,taunt:null,shield:0});G('g0').members[0].combatState={status:st()};const e=hpSum(G('t8-e1'))+hpSum(G('t8-e2'));
+ F.pick(2,4);F.pick(2,4);d.getElementById('fieldMapw').click();const btn=[...d.querySelectorAll('#fieldChoiceBody button')].find(x=>x.dataset.mapw);assert(!btn.disabled&&/スタン中/.test(btn.textContent),'stun shown');btn.click();F.pick(6,4);
+ await F.fireMapw({watch:false});assert.equal(hpSum(G('t8-e1'))+hpSum(G('t8-e2')),e,'no damage while stunned');assert.equal(G('g0').members[0].ammo?.['MAP砲']??2,2,'no ammo spent');
+ assert.equal(G('g0').members[0].combatState.status.stun,0,'one stunned action used');assert(!w.PROTactical.canAct(G('g0')),'the action ends');assert(F.opLog().some(l=>/スタンで行動できなかった/.test(l.s)));
+ const s=F._live();s.groups=s.groups.map(g=>g.faction==='player'?{...g,members:g.members.map(m=>({...m,action:{}}))}:g);// next turn
+ F.pick(2,4);F.pick(2,4);d.getElementById('fieldMapw').click();[...d.querySelectorAll('#fieldChoiceBody button')].find(x=>x.dataset.mapw).click();F.pick(6,4);await F.fireMapw({watch:false});assert(hpSum(G('t8-e1')??{members:[]})+hpSum(G('t8-e2')??{members:[]})<e,'fires once the stun is over');}
+{const {F,s,G}=setup();const wp=JSON.parse(JSON.stringify(G('g0').members[0].unit.weapons.find(x=>x.name==='MAP砲')));const e=G('t8-e3');e.members[0].unit.weapons.push(wp);e.members.forEach(m=>{m.combatState={status:{buffs:[],stun:1,burn:null,taunt:null,shield:0}};});
+ s.groups.find(g=>g.id==='g0').position={x:9,y:4};s.groups.find(g=>g.id==='g1').position={x:9,y:5};assert.equal(F.aiMapw(G('t8-e3')),null,'a stunned AI unit does not fire its map weapon');}
+
 // Local battles and PRO・D leave the map weapon out.
 {const {w,F,G}=setup();const s=F._live();s.groups.find(g=>g.id==='t8-e1').position={x:3,y:4};F.pick(2,4);await F.attackTarget('t8-e1');
  assert(![...w.document.querySelectorAll('#fieldBattleLog p, #fieldBattleLog div')].some(p=>/MAP砲/.test(p.textContent)),'not used in a local battle');assert.equal(G('g0').members[0].ammo?.['MAP砲']??2,2,'ammo kept');
@@ -63,4 +74,4 @@ function setup(weapon){const w=open(weapon);const L=w.PROUnitLab,F=w.PROField;co
  s.groups.find(g=>g.id==='g0').position={x:9,y:4};s.groups.find(g=>g.id==='g1').position={x:9,y:5};const a=hpSum(G('g0'))+hpSum(G('g1'));
  const pick=F.aiMapw(G('t8-e3'));assert(pick&&pick.squads===2,'AI picks the aim with both squads');await F.endTurn();
  assert(F.opLog().some(l=>/マップ兵器/.test(JSON.stringify(l))),'AI fired');assert((G('g0')?hpSum(G('g0')):0)+(G('g1')?hpSum(G('g1')):0)<a,'player squads hit');}
-console.log('PASS: map weapons — shapes, aim and fire before moving, enemies only, no counter, ammo once, not in local battles / PRO・D, AI use');
+console.log('PASS: map weapons — shapes, aim and fire before moving, enemies only, no counter, ammo once, not in local battles / PRO・D, AI use, stun (#190)');

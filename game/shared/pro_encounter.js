@@ -12,6 +12,8 @@ function create({key,resolve=id=>id,storage=root.localStorage}={}){let seen={};t
   // mark(ids, how): how is ally | enemy | joined | registered. Returns the catalog ids that were new.
   mark(ids,how){if(!HOW.includes(how))throw Error('unknown encounter: '+how);const fresh=[];for(const id of ids||[]){if(!id)continue;const c=resolve(id);if(!seen[c]){seen[c]={};fresh.push(c);}seen[c][how]=true;}save();return fresh;},
   all:()=>Object.keys(seen),
+  // A copy of the whole record (T&D prototype: save files are made from memory).
+  data:()=>JSON.parse(JSON.stringify(seen)),
   reset(){seen={};save();}});}
 root.PROEncounter=Object.freeze({create,HOW});
 })(typeof window!=='undefined'?window:globalThis);
