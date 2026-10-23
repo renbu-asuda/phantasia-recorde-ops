@@ -12,7 +12,9 @@ const DEFAULTS={defaultMax:200,normalPct:30,strongPct:70,gain:{attack:5,hit:-5,e
  effects:{confused:{dmg:0,hit:0,evade:0,crit:0},weak:{dmg:-20,hit:-10,evade:-10,crit:0},normal:{dmg:0,hit:0,evade:0,crit:0},strong:{dmg:10,hit:5,evade:5,crit:0},super:{dmg:20,hit:10,evade:10,crit:10}}};
 const n=(v,d)=>v===''||v==null||!Number.isFinite(Number(v))?d:Number(v);
 // Pack settings (first loaded pack that sets them) over the defaults.
-function settings(){const p=window.PROTacticalData?.tensionSettings?.()||{},g={...DEFAULTS.gain},e={};for(const k of Object.keys(g))g[k]=n(p.gain?.[k],g[k]);
+// useSettings(fn): another source for them (the maker's test battle reads the draft's settings).
+let source=()=>window.PROTacticalData?.tensionSettings?.()||{};const useSettings=fn=>{if(typeof fn==='function')source=fn;};
+function settings(){const p=source()||{},g={...DEFAULTS.gain},e={};for(const k of Object.keys(g))g[k]=n(p.gain?.[k],g[k]);
  for(const st of STATES){e[st]={};for(const k of ['dmg','hit','evade','crit'])e[st][k]=n(p.effects?.[st]?.[k],DEFAULTS.effects[st][k]);}
  return {defaultMax:Math.min(MAX_CAP,Math.max(1,n(p.defaultMax,DEFAULTS.defaultMax))),normalPct:n(p.normalPct,DEFAULTS.normalPct),strongPct:n(p.strongPct,DEFAULTS.strongPct),gain:g,effects:e};}
 // Settings of one unit: holder = the pilot aboard (else the unit), skills = the unit's skills (pilot and gear included).
@@ -42,5 +44,5 @@ function gaugeHtml(v,c){if(!c)return '';const st=stateOf(v,c);return `<div class
 function gaugeEl(v,c){const d=document.createElement('div');d.innerHTML=gaugeHtml(v,c);return d.firstElementChild;}
 // Updates a gauge made by gaugeHtml / gaugeEl in place.
 function updateGauge(g,v,c){if(!g||!c)return;const st=stateOf(v,c);g.className='tension-gauge t-'+st;g.dataset.tension=v;g.querySelector('.t-label b').textContent=LABEL[st];g.querySelector('.t-num').textContent=v+'/'+c.max;g.querySelector('.t-fill').style.width=pct(v,c)+'%';}
-window.PROTension=Object.freeze({STATES,LABEL,DEFAULTS,MAX_CAP,settings,config,stateOf,meets,text,hooks,gaugeHtml,gaugeEl,updateGauge});
+window.PROTension=Object.freeze({useSettings,STATES,LABEL,DEFAULTS,MAX_CAP,settings,config,stateOf,meets,text,hooks,gaugeHtml,gaugeEl,updateGauge});
 })();
