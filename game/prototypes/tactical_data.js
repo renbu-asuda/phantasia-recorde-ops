@@ -42,7 +42,7 @@ const HQ_KEYS=['shop','production','research','equip','tree','evolve','fusion','
 // T&D unit → Tactical unit: weapon / skill IDs become objects (invalid ones are dropped, as in the maker's test battle).
 function fromMaker(d){const find=(k,id)=>(d[k]||[]).find(x=>x.id===id),ok=(f,x)=>{try{return f(x);}catch(e){return null;}};
  // Inherit before adding defaults or resolving references: omitted values inherit, explicit 0 / [] override.
- const resolved=new Map(),resolveMaker=(u,seen=new Set())=>{if(resolved.has(u.id))return resolved.get(u.id);if(!u.base)return u;if(seen.has(u.id))throw Error(u.id+': bad base unit');seen.add(u.id);const parent=find('units',u.base)||builtin.units.find(x=>x.id===u.base);if(!parent)throw Error(u.id+': bad base unit');const b=resolveMaker(parent,seen),{id:_i,base:_b,separate:_s,...inherit}=b,o={...inherit,...u};resolved.set(u.id,o);return o;};
+ const resolved=new Map(),resolveMaker=(u,seen=new Set())=>{if(resolved.has(u.id))return resolved.get(u.id);if(!u.base)return u;if(seen.has(u.id))throw Error(u.id+': bad base unit');seen.add(u.id);const parent=builtin.units.find(x=>x.id===u.base)||find('units',u.base);if(!parent)throw Error(u.id+': bad base unit');const b=resolveMaker(parent,seen),{id:_i,base:_b,separate:_s,...inherit}=b,o={...inherit,...u};resolved.set(u.id,o);return o;};
  const taken=new Set(builtin.units.map(u=>u.id)),units=(d.units||[]).filter(u=>u.id&&!taken.has(u.id)).map(src=>{const u=resolveMaker(src),{weaponIds,skillIds,deploy,...rest}=u;const weapons=(weaponIds===undefined?u.weapons||[]:weaponIds.map(id=>find('weapons',id)).filter(Boolean)).map(w=>keepRes(ok(C.weapon,w),w)).filter(Boolean);
   // Skill tree nodes may reference pack skills by skillId.
   // Pilot profile skills may be pack skill IDs.

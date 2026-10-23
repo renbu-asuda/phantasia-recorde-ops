@@ -425,7 +425,7 @@ function serialize(marker,p){return '/* PRO data pack */\nwindow.'+marker+' = '+
 // research:[id], hires:{id:n}, evolved:[id], fused:[id], reserved:{items:{id:n},units:{id:n}}, now:Date,
 // weekBase:{day,weekday}, rng:()=>0..1, pick:n}. Reserved materials (held by running research) can't be used.
 // Real weekday is the local date (switches at midnight). The game weekday starts from the real weekday when the game
-// starts (weekBase) and then advances on its own with the in-game day (missions end); a restart re-bases it.
+// starts (weekBase) and then advances on its own with the in-game day (missions end). Callers can save the origin across restarts.
 // mode 'any' with costs: every satisfied entry that costs something is an option; pick chooses (default the first).
 // An entry whose target ID is unselected never holds, even when negated (the makers report it as an error).
 const COND_NEED={var:'varId',unit_owned:'unitId',unit_deployed:'unitId',item_has:'itemId',item_use:'itemId',flag:'flagId',mission_clear:'missionId',mission_stars:'missionId',research_done:'researchId',hired:'hireId',evolved:'evolutionId',fused:'fusionId'};
