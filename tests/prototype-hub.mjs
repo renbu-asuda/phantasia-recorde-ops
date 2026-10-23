@@ -3,7 +3,7 @@ const SID=JSON.parse(fs.readFileSync('tests/sample-ids.json','utf8')),SX=x=>SID[
 const file='game/prototypes/tactical_hub.html',html=fs.readFileSync(file,'utf8');
 const w=new Window({url:'http://localhost/'+file,settings:{enableJavaScriptEvaluation:true,disableJavaScriptFileLoading:true,disableCSSFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});const errors=[];w.localStorage.setItem('PRO_TACTICAL_SOURCE','sample');w.addEventListener('error',e=>errors.push(e.message));w.scrollTo=()=>{};w.document.write(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
 for(const dialog of w.document.querySelectorAll('dialog')){dialog.showModal=()=>dialog.setAttribute('open','');dialog.close=()=>{dialog.removeAttribute('open');dialog.dispatchEvent(new w.Event('close'));};}
-for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);const code=src?fs.readFileSync(path.resolve(path.dirname(file),src[1]),'utf8'):m[2];new vm.Script(code);w.eval(code);}
+for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);const code=src?fs.readFileSync(src[1]==='tactical_pack_sample.js'?'tests/fixtures/legacy_sample_pack.js':path.resolve(path.dirname(file),src[1]),'utf8'):m[2];new vm.Script(code);w.eval(code);}
 const d=w.document,button=(root,name)=>[...root.querySelectorAll('button')].find(b=>b.textContent.includes(name)),route=hash=>{w.location.hash=hash;w.dispatchEvent(new w.Event('hashchange'));},snap=()=>w.PROPreparation.snapshot();
 // Screen fades are tested separately; everything else runs with them off.
 w.PROField.setSetting('screenFade',false);
