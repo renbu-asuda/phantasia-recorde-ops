@@ -4,16 +4,20 @@ import fs from 'node:fs';import path from 'node:path';import assert from 'node:a
 const file='game/prototypes/tactical_hub.html',html=fs.readFileSync(file,'utf8');
 const MAPW={id:'zz-mapw',name:'MAP砲',attackType:'ranged',damageType:'physical',useUnitAtk:true,baseAtk:600,powerPct:100,hitsMin:1,hitsMax:1,hitPowerPct:100,accuracyPt:100,ammo:2,minRange:2,maxRange:4,tactical:{map:{on:true,shape:'point',size:1}}};
 // The tutorial pack's Valkis gets the map weapon (and keeps its rifle and blade).
-function open(weapon=MAPW){const w=new Window({url:'http://localhost/'+file,settings:{enableJavaScriptEvaluation:true,disableJavaScriptFileLoading:true,disableCSSFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});w.scrollTo=()=>{};
+function open(weapon=MAPW,{support=false}={}){const w=new Window({url:'http://localhost/'+file,settings:{enableJavaScriptEvaluation:true,disableJavaScriptFileLoading:true,disableCSSFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});w.scrollTo=()=>{};
  w.localStorage.setItem('PRO_TACTICAL_LOAD',JSON.stringify({sample:true,maker:false,packs:[]}));w.document.write(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));w.sessionStorage.setItem('PRO_TACTICAL_TITLE_SEEN','1');
  for(const dl of w.document.querySelectorAll('dialog')){dl.showModal=()=>dl.setAttribute('open','');dl.show=()=>dl.setAttribute('open','');dl.close=()=>{dl.removeAttribute('open');dl.dispatchEvent(new w.Event('close'));};}
  {const C=w.HTMLCanvasElement?.prototype;if(C){C.getContext=()=>({fillRect(){},set fillStyle(v){}});C.toDataURL=()=>'data:image/png;base64,UElY';}}
  for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);w.eval(src?fs.readFileSync(path.resolve(path.dirname(file),src[1]),'utf8'):m[2]);
-  if(src&&src[1]==='tactical_pack_sample.js'){const p=w.PROTacticalSamplePack;p.weapons.push(JSON.parse(JSON.stringify(weapon)));p.units.find(u=>u.name==='ヴァルキス').weaponIds.push(weapon.id);}}return w;}
+  if(src&&src[1]==='tactical_pack_sample.js'){const p=w.PROTacticalSamplePack;p.weapons.push(JSON.parse(JSON.stringify(weapon)));p.units.find(u=>u.name==='ヴァルキス').weaponIds.push(weapon.id);
+   // 味方支援 for #192: range 2, ATK +20%, weapon range +2 (held by infantry U2).
+   if(support){p.skills.push({id:'zz-sup',name:'テスト支援',tacticalOnly:true,tactical:{support:{on:true,range:2,atk:20,rangeAdd:2}}});p.units.find(u=>u.id===U(2)).skillIds.push('zz-sup');}}
+  // Every local / map battle context is kept in window.__ctx.
+  if(src&&src[1]==='../shared/pro_battle.js')w.eval("window.__ctx=[];{const orig=window.PROBattle.createContext;window.PROBattle=Object.freeze({...window.PROBattle,createContext:o=>{const c=orig(o);window.__ctx.push(c);return c;}});}");}return w;}
 const id=(code,n)=>'sample-'+code+'-'+String(n).padStart(6,'0'),U=n=>id('U',n),TM=n=>id('TM',n);
 const tick=()=>new Promise(r=>setTimeout(r,0));
 const hpSum=g=>g.members.reduce((n,m)=>n+(m.currentHp??m.unit.hp),0);
-function setup(weapon){const w=open(weapon);const L=w.PROUnitLab,F=w.PROField;const v=L.owned().find(x=>x.id===U(1)),inf=L.owned().find(x=>x.id===U(2));
+function setup(weapon,opt){const w=open(weapon,opt);const L=w.PROUnitLab,F=w.PROField;const v=L.owned().find(x=>x.id===U(1)),inf=L.owned().find(x=>x.id===U(2));
  F.deploy({missionId:TM(8),groups:[{id:'g0',name:'A',faction:'player',mode:'auto',members:[{uid:v.uid,unit:v}]},{id:'g1',name:'B',faction:'player',mode:'auto',members:[{uid:inf.uid,unit:inf}]}]});
  const s=F._live();s.talkQueue=[];const at=(gid,x,y)=>{s.groups.find(g=>g.id===gid).position={x,y};};at('g0',2,4);at('g1',5,4);at('t8-e1',6,4);at('t8-e2',6,5);at('t8-e3',12,4);F.setSetting('playerBattle','skip');F.setSetting('enemyBattle','skip');return {w,F,s,d:w.document,G:gid=>F._live().groups.find(g=>g.id===gid)};}
 
@@ -64,6 +68,15 @@ function setup(weapon){const w=open(weapon);const L=w.PROUnitLab,F=w.PROField;co
 {const {F,s,G}=setup();const wp=JSON.parse(JSON.stringify(G('g0').members[0].unit.weapons.find(x=>x.name==='MAP砲')));const e=G('t8-e3');e.members[0].unit.weapons.push(wp);e.members.forEach(m=>{m.combatState={status:{buffs:[],stun:1,burn:null,taunt:null,shield:0}};});
  s.groups.find(g=>g.id==='g0').position={x:9,y:4};s.groups.find(g=>g.id==='g1').position={x:9,y:5};assert.equal(F.aiMapw(G('t8-e3')),null,'a stunned AI unit does not fire its map weapon');}
 
+// #192: each local battle builds the units from the current support (ATK, weapon range, sup), not from the last battle.
+for(const firstIn of [true,false]){const {w,F,s,G}=setup(MAPW,{support:true});const far={x:12,y:0},near={x:3,y:3};
+ for(const id of ['t8-e1'])G(id).members.forEach(m=>{m.unit={...m.unit,hp:999999,def:99999};delete m.currentHp;});s.groups.find(g=>g.id==='t8-e1').position={x:2,y:5};
+ const fight=async inSupport=>{const st=F._live();st.groups.find(g=>g.id==='g1').position=inSupport?near:far;st.groups=st.groups.map(g=>g.faction==='player'?{...g,members:g.members.map(m=>({...m,action:{}}))}:g);F.focusGroup?.('g0');F.pick(2,4);
+  const n=w.__ctx.length;await F.attackTarget('t8-e1');const ctx=w.__ctx[n],v=ctx.allies.find(u=>u.name==='ヴァルキス');return {atk:v.atk,range:v.weapons.find(x=>x.name==='ビームライフル').maxRange,sup:v.sup?.atk||0};};
+ const a=await fight(firstIn),b=await fight(!firstIn),inn=firstIn?a:b,out=firstIn?b:a;
+ assert.equal(inn.sup,20,'supported battle');assert.equal(out.sup,0,'no support left over / missing ('+(firstIn?'leaving':'entering')+')');assert(inn.atk>out.atk,'ATK follows the support');assert.equal(inn.range,out.range+2,'range follows the support');
+ assert.deepEqual(Object.keys(G('g0').members[0].combatState).filter(k=>!['status','extraActions','extraTurn','weaponState','skillUses'].includes(k)),[],'only battle state is kept');}
+
 // Local battles and PRO・D leave the map weapon out.
 {const {w,F,G}=setup();const s=F._live();s.groups.find(g=>g.id==='t8-e1').position={x:3,y:4};F.pick(2,4);await F.attackTarget('t8-e1');
  assert(![...w.document.querySelectorAll('#fieldBattleLog p, #fieldBattleLog div')].some(p=>/MAP砲/.test(p.textContent)),'not used in a local battle');assert.equal(G('g0').members[0].ammo?.['MAP砲']??2,2,'ammo kept');
@@ -74,4 +87,4 @@ function setup(weapon){const w=open(weapon);const L=w.PROUnitLab,F=w.PROField;co
  s.groups.find(g=>g.id==='g0').position={x:9,y:4};s.groups.find(g=>g.id==='g1').position={x:9,y:5};const a=hpSum(G('g0'))+hpSum(G('g1'));
  const pick=F.aiMapw(G('t8-e3'));assert(pick&&pick.squads===2,'AI picks the aim with both squads');await F.endTurn();
  assert(F.opLog().some(l=>/マップ兵器/.test(JSON.stringify(l))),'AI fired');assert((G('g0')?hpSum(G('g0')):0)+(G('g1')?hpSum(G('g1')):0)<a,'player squads hit');}
-console.log('PASS: map weapons — shapes, aim and fire before moving, enemies only, no counter, ammo once, not in local battles / PRO・D, AI use, stun (#190)');
+console.log('PASS: map weapons — shapes, aim and fire before moving, enemies only, no counter, ammo once, not in local battles / PRO・D, AI use, stun (#190), support rebuilt each local battle (#192)');
