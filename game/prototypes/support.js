@@ -32,6 +32,8 @@ function battle(ctx,{skillsOf=u=>u.skills||[],enMax=()=>0}={}){const S=window.PR
  apply();S.wrap(ctx.hooks);const ts=ctx.hooks.turnStart;ctx.hooks.turnStart=async t=>{apply();if(t>1)for(const u of [...ctx.allies,...ctx.enemies]){const s=u.sup;if(!s||!u.alive)continue;if(s.healHp>0)u.currentHp=Math.min(u.maxHp,u.currentHp+Math.round(u.maxHp*s.healHp/100));const em=enMax(u);if(s.healEn>0&&em>0&&u.en!=null)u.en=Math.min(em,u.en+Math.ceil(em*s.healEn/100));if(s.healAmmo>0&&u.ammo)for(const w of u.weapons||[])if(w.ammo>0)u.ammo[w.key||w.name]=Math.min(w.ammo,(u.ammo[w.key||w.name]??w.ammo)+Math.ceil(w.ammo*s.healAmmo/100));if(s.tensionTurn&&u.tcfg)u.tension=Math.max(0,Math.min(u.tcfg.max,u.tension+s.tensionTurn));}return ts(t);};
  const sp=ctx.hooks.spawned;ctx.hooks.spawned=made=>{apply();return sp(made);};
  // A supporter destroyed or replaced (脱出) mid-turn: its support ends at once.
- const dd=ctx.hooks.died;ctx.hooks.died=u=>{apply();dd?.(u);};}
+ const dd=ctx.hooks.died;ctx.hooks.died=u=>{apply();dd?.(u);};
+ // A 段階変化 sets new base values (even one equal to the supported value).
+ const ph=ctx.hooks.phased;ctx.hooks.phased=(u,p)=>{for(const k of Object.keys(p.stats||{}))if(u._st&&k in u._st){u._st[k]=u[k];if(u._set)delete u._set[k];}apply();ph?.(u,p);};}
 window.PROSupport=Object.freeze({KEYS,LABEL,empty,partsOf,add,any,text,boost,mods,wrap,tensionConfig,battle});
 })();
