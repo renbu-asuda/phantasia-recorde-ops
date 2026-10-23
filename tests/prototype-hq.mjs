@@ -1,5 +1,5 @@
 import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';import {Window} from 'happy-dom';
-// Built-in sample pack IDs (old name → current ID).
+// Former built-in sample pack (tests/fixtures/legacy_sample_pack.js, loaded in place of the tutorial pack) IDs (old name → current ID).
 const SID=JSON.parse(fs.readFileSync('tests/sample-ids.json','utf8')),SX=x=>SID[x]||x;
 // Test save (owned units, credits) and the T&D maker draft as a data source, each checked across a page reload.
 const file='game/prototypes/tactical_hub.html',html=fs.readFileSync(file,'utf8');
@@ -7,7 +7,7 @@ function open(store,query='',ua=''){const w=new Window({url:'http://localhost/'+
  // Tests run on the built-in sample pack unless a source is given (the game itself starts empty).
  if(!('PRO_TACTICAL_SOURCE' in store)&&!('PRO_TACTICAL_LOAD' in store))w.localStorage.setItem('PRO_TACTICAL_SOURCE','sample');for(const [k,v] of Object.entries(store))w.localStorage.setItem(k,v);w.document.write(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
  if(!store.PRO_TACTICAL_TEST_TITLE)w.sessionStorage.setItem('PRO_TACTICAL_TITLE_SEEN','1');if(store.PRO_TACTICAL_TEST_NEWGAME)w.sessionStorage.setItem('PRO_TACTICAL_NEW_GAME','1');for(const dl of w.document.querySelectorAll('dialog')){dl.showModal=()=>dl.setAttribute('open','');dl.close=()=>{dl.removeAttribute('open');dl.dispatchEvent(new w.Event('close'));};}
- {const C=w.HTMLCanvasElement?.prototype;if(C){C.getContext=()=>({fillRect(){},set fillStyle(v){}});C.toDataURL=()=>'data:image/png;base64,UElY';}}for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);w.eval(src?fs.readFileSync(path.resolve(path.dirname(file),src[1]),'utf8'):m[2]);}
+ {const C=w.HTMLCanvasElement?.prototype;if(C){C.getContext=()=>({fillRect(){},set fillStyle(v){}});C.toDataURL=()=>'data:image/png;base64,UElY';}}for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);w.eval(src?fs.readFileSync(src[1]==='tactical_pack_sample.js'?'tests/fixtures/legacy_sample_pack.js':path.resolve(path.dirname(file),src[1]),'utf8'):m[2]);}
  // These tests were written for a start of 24,800 Cr (the game now starts at 10,000): a fresh save gets the difference.
  if(w.PROUnitLab&&!store.PRO_TACTICAL_HQ)w.PROUnitLab.spend(-14800);return w;}
 const dump=w=>Object.fromEntries(Object.keys(w.localStorage).map(k=>[k,w.localStorage.getItem(k)]));
