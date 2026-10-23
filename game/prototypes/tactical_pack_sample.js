@@ -3,7 +3,8 @@
    教官 カザマ (orders and command basics), オペレーター リコ (map, battle and command help), 整備班長 ゴウ (the base).
    Stage 1: the base data and T1〜T3. Stage 2: T4〜T6 (reinforcements, production, tension / carrier, ammo and EN,
    resupply / domains, transformation, map scale). Stage 3: T7〜T9 (ally support, battle commands, pilots / storage, swap,
-   facility capture / capture by surrounding, purge, escape). Base menus open as missions are cleared (hqUnlock). Not loaded by default: the game
+   facility capture / capture by surrounding, purge, escape). Stage 4: T10 (everything, betrayal, an ending by 評判),
+   the dispatch missions D1 / D2 and the achievements. Base menus open as missions are cleared (hqUnlock). Not loaded by default: the game
    starts empty and this pack is chosen in パック管理 (or named as the dependency 'sample' by a T&D pack).
    IDs follow the ID rules: <packId>-<CODE>-<6 digits>. */
 (function(){'use strict';
@@ -12,16 +13,16 @@ const id=(code,n)=>'sample-'+code+'-'+String(n).padStart(6,'0');
 const U={valkis:id('U',1),infantry:id('U',2),hound:id('U',3),garm:id('U',4),sleip:id('U',5),jet:id('U',6),carrier:id('U',7),boat:id('U',8),
  dummy:id('U',10),aggressor:id('U',11),rustInf:id('U',12),technical:id('U',13),bogle:id('U',14),cmdCar:id('U',15),kgBoat:id('U',16),heli:id('U',17),landing:id('U',18),
  radar:id('U',9),garm2:id('U',20),hound2:id('U',21),valkisArt:id('U',22),titan:id('U',23),titanLight:id('U',24),titanCore:id('U',25),mobileInf:id('U',26),
- kazama:id('U',30),riko:id('U',31),ganz:id('U',40),wolf:id('U',41),berserk:id('U',42),kgInf:id('U',43)};
+ kazama:id('U',30),riko:id('U',31),ganz:id('U',40),wolf:id('U',41),berserk:id('U',42),kgInf:id('U',43),hyena:id('U',44),tyrant:id('U',45)};
 const W={rifle:id('W',1),blade:id('W',2),assault:id('W',3),autocannon:id('W',4),mainGun:id('W',5),sleipRifle:id('W',6),missile:id('W',7),carrierAA:id('W',8),boatGun:id('W',9),
  paint:id('W',10),drill:id('W',11),oldRifle:id('W',12),hmg:id('W',13),fist:id('W',14),scatter:id('W',15),cmdGun:id('W',16),kgGun:id('W',17),rocket:id('W',18),landingGun:id('W',19),
  mainGun2:id('W',20),autocannon2:id('W',21),coax:id('W',22),artillery:id('W',23),titanCannon:id('W',24),titanFist:id('W',25),coreGun:id('W',26),pistol:id('W',28),
- ganzRifle:id('W',30),saber:id('W',31),berserkGun:id('W',32),kgRifle:id('W',33)};
+ ganzRifle:id('W',30),saber:id('W',31),berserkGun:id('W',32),kgRifle:id('W',33),hyenaGun:id('W',34),tyrantCannon:id('W',35),tyrantBlade:id('W',36)};
 const S={transform:id('S',1),carrier:id('S',2),swap:id('S',3),purge:id('S',4),escape:id('S',5),command:id('S',6),radar:id('S',7),aim:id('S',10),charge:id('S',11),plate:id('S',12),dodge:id('S',13),spirit:id('S',14)};
 const T={factory:id('T',1),hangar:id('T',2)};
 const CM={sure:id('CM',1),flash:id('CM',2),cheer:id('CM',3),again:id('CM',4)};
-const I={repair:id('I',1),armor:id('I',2),record:id('I',3),scope:id('I',4)};
-const M={t1:id('TM',1),t2:id('TM',2),t3:id('TM',3),t4:id('TM',4),t5:id('TM',5),t6:id('TM',6),t7:id('TM',7),t8:id('TM',8),t9:id('TM',9)};
+const I={repair:id('I',1),armor:id('I',2),record:id('I',3),scope:id('I',4),medal:id('I',5)};
+const M={t1:id('TM',1),t2:id('TM',2),t3:id('TM',3),t4:id('TM',4),t5:id('TM',5),t6:id('TM',6),t7:id('TM',7),t8:id('TM',8),t9:id('TM',9),t10:id('TM',10),d1:id('DM',1),d2:id('DM',2)};
 const V={fame:id('V',1)};
 const KAZAMA='カザマ',RIKO='リコ',GOU='ゴウ';
 const say=(speaker,text)=>({speaker,text});
@@ -36,7 +37,7 @@ const cleared=m=>({mode:'all',list:[{type:'mission_clear',missionId:m}]});
 const squad=(sid,name,x,y,unit,n,ai,extra={})=>({id:sid,name,position:{x,y},ai,members:Array.from({length:n},()=>({unit})),...extra});
 
 window.PROTacticalSamplePack={
- format:'PRO_TD_PACK',version:1,packId:'sample',name:'第零機甲教導隊',author:'PHANTASIA RECORD OPS',packVersion:'3（T1〜T9）',
+ format:'PRO_TD_PACK',version:1,packId:'sample',name:'第零機甲教導隊',author:'PHANTASIA RECORD OPS',packVersion:'4（T1〜T10・D1・D2）',
  desc:'チュートリアルパック。新人指揮官として教導隊に配属され、演習から実戦へ。作戦を進めるごとに、ゲームの機能をひとつずつ体験できます。',
  // Base menus open as the tutorial goes on.
  hqUnlock:{shop:cleared(M.t1),production:cleared(M.t2),research:cleared(M.t3),equip:cleared(M.t4),tree:cleared(M.t4),evolve:cleared(M.t6),fusion:cleared(M.t8),captives:cleared(M.t9)},
@@ -107,7 +108,11 @@ window.PROTacticalSamplePack={
   {id:U.berserk,name:'黒鉄ベルセルク',role:'指揮官機',size:'XL',move:4,movementAptitude:ground('B'),hp:7000,atk:320,def:240,mob:420,acc:500,weaponIds:[W.saber,W.berserkGun],skillIds:[],tags:['機動兵器'],noCapture:true,exp:150,deploy:{enemy:true},
    catalog:'黒鉄連合の指揮官機。捕獲できない。'},
   {id:U.kgInf,name:'黒鉄の歩兵',size:'S',move:4,movementAptitude:ground('A'),hp:2600,atk:230,def:40,mob:480,acc:470,weaponIds:[W.kgRifle],skillIds:[],tags:['生身','歩兵'],exp:30,deploy:{enemy:true},
-   catalog:'黒鉄連合の歩兵。'}],
+   catalog:'黒鉄連合の歩兵。'},
+  {id:U.hyena,name:'ハイエナ',role:'傭兵機',size:'L',move:5,movementAptitude:ground('A'),hp:3800,atk:270,def:160,mob:460,acc:490,weaponIds:[W.hyenaGun],skillIds:[],tags:['機動兵器'],exp:55,deploy:{enemy:true},
+   catalog:'傭兵団ハイエナの機体。金しだいでどちらにもつく。'},
+  {id:U.tyrant,name:'タイラント',role:'将軍機',size:'XL',move:4,movementAptitude:ground('B'),hp:7500,atk:330,def:250,mob:400,acc:510,weaponIds:[W.tyrantCannon,W.tyrantBlade],skillIds:[],tags:['機動兵器'],noCapture:true,exp:250,deploy:{enemy:true},
+   catalog:'黒鉄連合を率いるグレイヴ将軍の乗機。捕獲できない。'}],
  weapons:[
   {id:W.rifle,name:'ビームライフル',attackType:'ranged',damageType:'beam',useUnitAtk:true,baseAtk:400,powerPct:100,hitsMin:1,hitsMax:2,hitPowerPct:60,accuracyPt:15,enCost:8,minRange:1,maxRange:3},
   {id:W.blade,name:'プラズマブレード',attackType:'melee',damageType:'beam',useUnitAtk:true,baseAtk:300,powerPct:160,hitsMin:2,hitsMax:3,hitPowerPct:45,accuracyPt:20,critPt:10,minRange:1,maxRange:1},
@@ -139,6 +144,9 @@ window.PROTacticalSamplePack={
   {id:W.saber,name:'ヒートサーベル',attackType:'melee',useUnitAtk:true,baseAtk:350,powerPct:170,hitsMin:1,hitsMax:2,hitPowerPct:60,accuracyPt:15,minRange:1,maxRange:1},
   {id:W.berserkGun,name:'ガトリング',attackType:'ranged',useUnitAtk:true,baseAtk:320,powerPct:100,hitsMin:3,hitsMax:6,hitPowerPct:18,minRange:1,maxRange:2},
   {id:W.kgRifle,name:'黒鉄式小銃',attackType:'ranged',useUnitAtk:true,baseAtk:240,powerPct:90,hitsMin:1,hitsMax:4,hitPowerPct:25,accuracyPt:5,minRange:1,maxRange:2},
+  {id:W.hyenaGun,name:'ハイエナライフル',attackType:'ranged',useUnitAtk:true,baseAtk:300,powerPct:100,hitsMin:2,hitsMax:4,hitPowerPct:28,accuracyPt:10,minRange:1,maxRange:2},
+  {id:W.tyrantCannon,name:'双連装キャノン',attackType:'ranged',useUnitAtk:true,baseAtk:380,powerPct:110,hitsMin:1,hitsMax:2,hitPowerPct:55,minRange:1,maxRange:3},
+  {id:W.tyrantBlade,name:'大斬刀',attackType:'melee',useUnitAtk:true,baseAtk:400,powerPct:180,hitsMin:1,hitsMax:2,hitPowerPct:60,accuracyPt:15,critPt:10,minRange:1,maxRange:1},
   {id:W.landingGun,name:'艦砲',attackType:'ranged',useUnitAtk:true,baseAtk:320,powerPct:110,hitsMin:1,hitsMax:2,hitPowerPct:45,minRange:1,maxRange:3}],
  skills:[
   {id:S.transform,name:'変形',tacticalOnly:true,tactical:{transform:{on:true,show:'usable'}}},
@@ -157,6 +165,7 @@ window.PROTacticalSamplePack={
   {id:I.repair,name:'修理キット',desc:'ユニット1体のHPを最大HPの30%回復する。',effects:[{type:'heal_hp_pct',value:30}],scope:'unit',price:300},
   {id:I.armor,name:'増加装甲',desc:'装備するとDEF+40。T3をクリアするとショップに並ぶ。',price:1200,equip:{stats:{def:40}},shop:{requiresMission:M.t3}},
   {id:I.record,name:'演習記録',desc:'演習の戦闘記録。研究の材料になる。T2の報酬。',key:true},
+  {id:I.medal,name:'教導隊勲章',desc:'拠点で使うと、教導隊の評判が1上がる（T9の目標の報酬）。',varOps:[{varId:V.fame,op:'add',value:1}],scope:'unit'},
   {id:I.scope,name:'照準装置',desc:'装備するとACC+60。T4をクリアするとショップに並ぶ。',price:1500,equip:{stats:{acc:60}},shop:{requiresMission:M.t4}}],
  hires:[
   {id:id('H',1),name:'教導歩兵分隊',unitId:U.infantry,cost:600,note:'占領が得意な歩兵。'},
@@ -176,7 +185,27 @@ window.PROTacticalSamplePack={
   {id:CM.flash,name:'ひらめき',desc:'次の局地戦1回、敵の攻撃を1回避ける。',costType:'tension',cost:10,target:'self',duration:'battle',fx:{dodge:true}},
   {id:CM.cheer,name:'激励',desc:'同じ部隊の全員の気力+30（混乱からも立ち直る）。',costType:'funds',cost:300,target:'squadAll',duration:'now',fx:{tension:30}},
   {id:CM.again,name:'再動',desc:'同じ部隊の味方1体がもう一度行動できる。',costType:'sp',cost:2,target:'squadOne',duration:'now',fx:{again:true}}],
- achievements:[],flags:[],missions:[],
+ achievements:[
+  {id:id('A',1),name:'初陣',desc:'T1 初陣をクリアする',conds:{mode:'all',list:[{type:'mission_clear',missionId:M.t1}]},reward:{credits:500}},
+  {id:id('A',2),name:'研究者',desc:'研究「量産機の配備計画」を完了する',conds:{mode:'all',list:[{type:'research_done',researchId:id('R',1)}]},reward:{items:{[I.repair]:2}}},
+  {id:id('A',3),name:'派遣の心得',desc:'ディスパッチ作戦 D1 をクリアする',conds:{mode:'all',list:[{type:'mission_clear',missionId:M.d1}]},reward:{credits:1000}},
+  {id:id('A',4),name:'エースを迎えて',desc:'ヴォルフを仲間にする',conds:{mode:'all',list:[{type:'unit_owned',unitId:U.wolf,cmp:'ge',count:1}]},reward:{items:{[I.scope]:1}}},
+  {id:id('A',5),name:'名声',desc:'教導隊の評判を9以上にする',conds:{mode:'all',list:[{type:'var',varId:V.fame,cmp:'ge',value:9}]},reward:{credits:3000}},
+  {id:id('A',6),name:'教導隊修了',desc:'T10 総力戦をクリアする',conds:{mode:'all',list:[{type:'mission_clear',missionId:M.t10}]},reward:{credits:5000}},
+  {id:id('A',7),name:'完璧な指揮',desc:'T1〜T10 をすべて★3でクリアする',hidden:true,conds:{mode:'all',list:[M.t1,M.t2,M.t3,M.t4,M.t5,M.t6,M.t7,M.t8,M.t9,M.t10].map(m=>({type:'mission_stars',missionId:m,cmp:'ge',value:3}))},reward:{credits:10000}}],
+ flags:[],
+ // PRO・D (ディスパッチ) missions: automatic battles without a map.
+ missions:[
+  {id:M.d1,name:'D1 補給線の護衛',diff:'D',desc:'補給部隊を狙う赤錆団の残党を、ディスパッチで追い払う。マップを使わない自動の派遣戦。',enemies:[U.rustInf,U.rustInf,U.technical],maxDeploy:4,reward:1500,exp:80,terrain:'標準',
+   requires:{missions:[M.t3]},unlockText:'ディスパッチ作戦「D1 補給線の護衛」が届きました。',clearText:'ディスパッチは、拠点から自動で戦う派遣戦です。手が空いたら活用しましょう。',
+   resultVars:{win:[{varId:V.fame,op:'add',value:1}]},
+   story:{before:[say(RIKO,'ディスパッチは、マップを使わない自動の派遣戦です。出撃メンバーを選ぶと、あとは自動で戦います。'),say(RIKO,'「おまかせ編成」で強いメンバーを選べますし、推定勝率も出ます。勝率を見て編成を決めてくださいね。'),say(KAZAMA,'ディスパッチのレベルは、タクティカルとは別に育つ。両方を回して部隊を鍛えろ。')],
+    after:[say(KAZAMA,'補給線は守られた。ディスパッチも、うまく使えば頼もしい戦力だ。')]}},
+  {id:M.d2,name:'D2 黒鉄の偵察隊',diff:'C',desc:'黒鉄連合の偵察隊をディスパッチで迎え撃つ。味方支援と気力は、ディスパッチでも働く。',enemies:[U.ganz,U.ganz,U.kgInf,U.kgInf],maxDeploy:5,reward:3000,exp:140,terrain:'標準',
+   requires:{missions:[M.t7]},unlockText:'ディスパッチ作戦「D2 黒鉄の偵察隊」が届きました。',
+   resultVars:{win:[{varId:V.fame,op:'add',value:1}]},
+   story:{before:[say(RIKO,'ディスパッチでも味方支援は働きます。マップがないので、範囲に関係なく、出撃した味方全員に効きますよ。'),say(RIKO,'気力は作戦ごとに半分から。パイロットは拠点で搭乗させておけば、乗ったまま出撃します。'),say(KAZAMA,'私とアイズを入れておけば、全体の動きが良くなるはずだ。')],
+    after:[say(KAZAMA,'偵察隊は片付いた。黒鉄連合の動きが読めてきたな。')]}}],
  tmissions:[
   {id:M.t1,code:'T1',kind:'training',name:'初陣',desc:'演習場で、部隊の移動・攻撃・待機を確かめる。標的機は動かないが撃ち返してくる。',surface:'ground',color:'#29453e',
    map:grid(['pppppfpppp','ppfpppppfp','pppppppppp','pppfpppppp','pppppppfpp','ppfppppppp','pppppfpppp','pppppppppp']),
@@ -339,7 +368,7 @@ window.PROTacticalSamplePack={
     squad('t9-e2','黒鉄 歩兵隊',9,7,U.kgInf,2,{pattern:'assault',target:'lowest_hp'}),squad('t9-e3','黒鉄 ガンツ隊',10,1,U.ganz,2,{pattern:'assault',target:'lowest_hp'}),
     {id:'t9-boss',name:'黒鉄 指揮官',position:{x:12,y:5},ai:{pattern:'hold',target:'lowest_hp'},members:[{unit:U.berserk},{unit:U.ganz}]}],
    victory:{type:'boss',groupId:'t9-boss'},defeat:{type:'player_wipe'},victoryLabel:'指揮官機ベルセルクの部隊を撃破する',result:{credits:5500,exp:260,items:{[I.repair]:2}},
-   objectives:[{id:'t9-ob1',name:'エースを確保',success:{type:'squad_down',groupId:'t9-ace'},label:'ヴォルフ隊を囲んで鹵獲する（撃破でも達成）',reward:{credits:1000}}],
+   objectives:[{id:'t9-ob1',name:'エースを確保',success:{type:'squad_down',groupId:'t9-ace'},label:'ヴォルフ隊を囲んで鹵獲する（撃破でも達成）',reward:{credits:1000,items:{[I.medal]:1}}}],
    stars:[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:12}],
    clearText:'鹵獲一覧が使えるようになりました（ユニット → 鹵獲一覧）。',
    events:[
@@ -351,6 +380,37 @@ window.PROTacticalSamplePack={
      say(KAZAMA,'指揮官機ベルセルクは捕獲できない。倒すしかない。'))]},
     {id:'t9-ace',name:'エース確保',trigger:{type:'squad_down',groupId:'t9-ace'},actions:[talk(say(RIKO,'ヴォルフ隊、マップから消えました！'),say(KAZAMA,'残るは指揮官機だ。'))]},
     {id:'t9-win',name:'指揮官撃破',trigger:{type:'victory'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(GOU,'鹵獲一覧を開けといた。鹵獲したユニットを仲間にするか、手放すか選べるぜ。'),
-     say(KAZAMA,'…黒鉄連合の本拠地の場所がわかった。次で終わらせる。'))]}]}]
+     say(KAZAMA,'…黒鉄連合の本拠地の場所がわかった。次で終わらせる。'),say(RIKO,'勲章をもらったら、拠点の倉庫から使ってくださいね。教導隊の評判が上がります。'))]}]},
+  {id:M.t10,code:'T10',kind:'combat',name:'総力戦',desc:'黒鉄連合の本拠地を叩く最終作戦。これまでのすべてを使う。評判しだいで結末が変わる。',surface:'ground',color:'#5a2a2a',
+   requires:{missions:[M.t9]},unlockText:'最終作戦「T10 総力戦」が発令されました。',
+   map:grid(['pppfpppprppfpmmm','ppppppfprppppppm','pfpppppprpppHppp','ppppfpppbppppppp','pppppppprppfpppp','ppppfpppbppppppp','ppFppppprpppppqp','pppppfpprppfpppp','pfppppppbppppppp','ppppppfprpppfppp','ppppcppprpppppmm','ppfppppprpppppmm']),
+   playerStarts:[{x:0,y:4},{x:0,y:5},{x:0,y:6},{x:0,y:7},{x:1,y:4},{x:1,y:5},{x:1,y:7},{x:0,y:8}],
+   facilities:{'2,6':'player','14,6':'enemy','12,2':'enemy'},funds:{player:3000},
+   allies:[{id:'t10-merc',name:'傭兵団ハイエナ',faction:'ally',position:{x:3,y:9},ai:{pattern:'assault',target:'lowest_hp'},members:[{unit:U.hyena},{unit:U.hyena}]}],
+   enemies:[squad('t10-e1','黒鉄 前衛隊',10,4,U.ganz,2,{pattern:'assault',target:'lowest_hp'}),squad('t10-e2','黒鉄 歩兵隊',10,8,U.kgInf,3,{pattern:'assault',target:'lowest_hp'}),
+    {id:'t10-s1',name:'格納庫の守備隊',position:{x:12,y:2},stored:true,ai:{pattern:'assault',target:'lowest_hp'},members:[{unit:U.ganz},{unit:U.ganz}]},
+    {id:'t10-boss',name:'グレイヴ将軍',position:{x:14,y:6},ai:{pattern:'hold',target:'lowest_hp'},members:[{unit:U.tyrant},{unit:U.ganz}]},
+    {id:'t10-r1',name:'黒鉄 ヘリ隊',position:{x:15,y:3},reinforce:true,ai:{pattern:'assault',target:'lowest_hp'},members:[{unit:U.heli},{unit:U.heli}]}],
+   victory:{type:'boss',groupId:'t10-boss'},defeat:{type:'player_wipe'},victoryLabel:'グレイヴ将軍の部隊を撃破する',result:{credits:8000,exp:320,items:{[I.repair]:3}},
+   objectives:[{id:'t10-ob1',name:'町を守れ',success:{type:'turn',turns:8},fail:{type:'capture',x:4,y:10,by:'enemy'},label:'8ターン目まで南西の町（5,11）を敵に取られない',reward:{credits:1500}},
+    {id:'t10-ob2',name:'格納庫も奪え',success:{type:'capture',x:12,y:2},label:'北の格納庫（13,3）を占領する',reward:{credits:1500}}],
+   stars:[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:14}],
+   clearText:'第零機甲教導隊のチュートリアルはこれで終わりです。おつかれさまでした！',
+   events:[
+    {id:'t10-start',name:'最終作戦',trigger:{type:'start'},actions:[talk(say(KAZAMA,'黒鉄連合の本拠地だ。グレイヴ将軍を落とせば、すべて終わる。'),
+     say(RIKO,'今回は傭兵団ハイエナが味方についてくれます。友軍は自分で動く部隊です（友軍のフェイズで行動します）。'),
+     say(GOU,'工廠で生産も、格納庫の奪取も、作戦コマンドも、ぜんぶ使っていいぞ。出し惜しみなしだ。'),
+     say(RIKO,'教導隊の評判はいま {評判}。作戦が終わったときの評判で、このあとが変わるかもしれません。'))]},
+    {id:'t10-betray',name:'裏切り',trigger:{type:'turn',turns:3},actions:[{type:'side',groupId:'t10-merc',to:'enemy'},talk(say('ハイエナ','悪いな、黒鉄のほうが払いがいいんでね！'),
+     say(RIKO,'ハイエナが寝返りました！ イベントで部隊の陣営が変わることもあります。いまは敵です！'),say(KAZAMA,'…傭兵とはそういうものだ。落ち着いて迎え撃て。'))]},
+    {id:'t10-r1',name:'増援',trigger:{type:'turn',turns:4},actions:[{type:'spawn',groupId:'t10-r1'},talk(say(RIKO,'北東からヘリ隊！ ヴァルキスの飛行形態か、射程の長い部隊で対応を！'))]},
+    {id:'t10-town',name:'町を守った',trigger:{type:'objective_done',objectiveId:'t10-ob1'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(RIKO,'町は守られました！ 評判も上がりますよ。'))]},
+    {id:'t10-win',name:'勝利',trigger:{type:'victory'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(KAZAMA,'グレイヴ将軍の機体が沈んだ…黒鉄連合は終わりだ。'))]},
+    {id:'t10-end-hi',name:'結末：英雄',trigger:{type:'all',conds:[{type:'victory'},{type:'var',varId:V.fame,cmp:'ge',value:10}]},actions:[talk(say(RIKO,'評判は {評判}！ 町中の人が、教導隊を英雄だって言ってます！'),
+     say(KAZAMA,'上層部から通達だ。第零機甲教導隊は、正式な独立部隊になる。…指揮官、これからも頼むぞ。'),say(GOU,'へっ、機体の整備はまかせとけ。'))]},
+    {id:'t10-end-mid',name:'結末：信頼',trigger:{type:'all',conds:[{type:'victory'},{type:'var',varId:V.fame,cmp:'ge',value:7},{type:'var',varId:V.fame,cmp:'lt',value:10}]},actions:[talk(say(RIKO,'評判は {評判}。みんな、教導隊を頼りにしてくれてます。'),
+     say(KAZAMA,'教導隊は続く。次の新人を鍛えるのは、君の番かもしれないな。'))]},
+    {id:'t10-end-lo',name:'結末：静かな勝利',trigger:{type:'all',conds:[{type:'victory'},{type:'var',varId:V.fame,cmp:'lt',value:7}]},actions:[talk(say(RIKO,'評判は {評判}…勝ったのに、あまり知られていないみたいです。'),
+     say(KAZAMA,'名声のために戦ったわけではない。だが、次はもっと人々に寄り添う戦いをしよう。'))]}]}]
 };
 })();
