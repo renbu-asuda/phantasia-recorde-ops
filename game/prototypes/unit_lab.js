@@ -43,7 +43,7 @@ const isPilot=u=>!!u?.pilotProfile,crew=u=>C.crewOf(u);
 // Pilot skills keep their map part (味方支援, 気力 ...); a map-only skill has no battle effect, only that part.
 const pilotSkill=x=>x?.tacticalOnly?{id:x.id,name:x.name||x.id,tacticalOnly:true,tactical:C.clone(x.tactical||{})}:(s=>s&&x.tactical?{...s,tactical:C.clone(x.tactical)}:s)(tryS(x));
 const pilotSkills=p=>(p.pilotProfile?.skills||[]).map(pilotSkill).filter(Boolean);
-function applyPilot(u,p,plv){if(!isPilot(p))return u;const b=C.pilotBonus(p.pilotProfile,plv),o={...u};for(const k of STATS)if(o[k]!=null&&b[k])o[k]+=b[k];
+function applyPilot(u,p,plv){if(!isPilot(p))return u;const b=C.pilotBonus(p.pilotProfile,Math.max(1,Math.min(C.LEVEL_MAX||50,Math.round(Number(plv)||1)))),o={...u};for(const k of STATS)if(o[k]!=null&&b[k])o[k]+=b[k];
  const apt=p.pilotProfile.aptitude;if(apt?.pct&&(apt.tags||[]).some(t=>(o.tags||[]).includes(t)))for(const k of ['atk','mob','acc'])if(o[k]!=null)o[k]=Math.round(o[k]*(1+apt.pct/100));
  return {...o,skills:[...(o.skills||[]),...pilotSkills(p)]};}
 const ridingIn=uid=>Object.keys(boards).find(k=>boards[k]===uid)||null;
@@ -466,7 +466,7 @@ const formUnit=(uid,formId)=>{const o=owned.find(x=>x.uid===uid);return o?unitOf
 const hireList=()=>entries().map(e=>({...C.clone(e),...(e.pilot?.unit?{pilot:{...e.pilot}}:{pilot:undefined})}));
 // A new unit joins at Lv1; with a pilot spec {unit, lv} (hire entry, placed or produced unit) the pilot joins too, already aboard.
 function join(id,pilot){const uid=id+'#'+serial++;owned.push({uid,id,lv:1,exp:0,sp:0});let p=null;try{p=pilot?.unit&&crew(D.unit(id))!=='none'&&D.unit(pilot.unit);}catch(e){p=null;}
- if(isPilot(p)){const pu=pilot.unit+'#'+serial++;owned.push({uid:pu,id:pilot.unit,lv:Math.max(1,Number(pilot.lv)||1),exp:0,sp:0});boards[uid]=pu;seen().mark([pilot.unit],'joined');}seen().mark([id],'joined');return uid;}
+ if(isPilot(p)){const pu=pilot.unit+'#'+serial++;owned.push({uid:pu,id:pilot.unit,lv:Math.max(1,Math.min(C.LEVEL_MAX||50,Math.round(Number(pilot.lv)||1))),exp:0,sp:0});boards[uid]=pu;seen().mark([pilot.unit],'joined');}seen().mark([id],'joined');return uid;}
 function addOwned(id,pilot){const uid=join(id,pilot);save();return uid;}
 // Skill points in total (spent on the tree or not): the 作戦コマンド SP of an owned unit.
 const spTotal=uid=>{const o=owned.find(x=>x.uid===uid);if(!o)return 0;let tree=[];try{tree=D.unit(o.id).skillTree||[];}catch(e){}return (o.sp||0)+(o.tree||[]).reduce((n,id)=>n+(o.paid?.[id]??tree.find(t=>t.id===id)?.cost??1),0);};

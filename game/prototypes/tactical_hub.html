@@ -36,12 +36,19 @@ let selected=missions[0]?.id||null,filter='all',lastFocus;
 // Test play from the T&D maker (?trial=<mission id>): select it and skip its unlock check.
 const trialId=new URLSearchParams(location.search).get('trial');if(trialId&&missions.some(m=>m.id===trialId)){selected=trialId;window.PROTrialMission=trialId;}
 // Test play started from the maker's 試しプレイ window: a banner returns to the maker and puts every PRO_TACTICAL_* key back as it was.
-{let tp=null;try{tp=JSON.parse(localStorage.getItem('PRO_TACTICAL_TESTPLAY')||'null');}catch(e){}if(tp&&tp.missionId!==trialId)tp=null;
- window.PROTestplay={active:()=>!!tp,info:()=>tp&&{missionId:tp.missionId,party:tp.party,units:[...(tp.units||[])]},back(){try{const keep=tp?.snapshot||{},all=[];for(let i=0;i<localStorage.length;i++)all.push(localStorage.key(i));for(const k of all)if(k.startsWith('PRO_TACTICAL_')&&!(k in keep))localStorage.removeItem(k);for(const [k,v] of Object.entries(keep))localStorage.setItem(k,v);}catch(e){}tp=null;location.href='maker_td.html';}};
+{let tp=null;try{tp=JSON.parse(localStorage.getItem('PRO_TACTICAL_TESTPLAY')||'null');}catch(e){}
+ // A test play left without 「メーカーへ戻る」 (tab closed, normal URL, another trial URL): its snapshot is put back first
+ // and the page reloads with the original progress, so the test play's progress never becomes the real one.
+ const restoreTp=snap=>{const keep=snap||{},all=[];for(let i=0;i<localStorage.length;i++)all.push(localStorage.key(i));for(const k of all)if(k.startsWith('PRO_TACTICAL_')&&!(k in keep))localStorage.removeItem(k);for(const [k,v] of Object.entries(keep))localStorage.setItem(k,v);};
+ let restored=false;if(tp&&tp.missionId!==trialId){if(tp.snapshot){try{restoreTp(tp.snapshot);sessionStorage.setItem('PRO_TACTICAL_TP_RESTORED','1');restored=true;location.reload();}catch(e){}}tp=null;}
+ // After that reload: say what happened (not on the page that is being reloaded).
+ if(!restored&&sessionStorage.getItem('PRO_TACTICAL_TP_RESTORED')){sessionStorage.removeItem('PRO_TACTICAL_TP_RESTORED');window.addEventListener('load',()=>{const d=document.getElementById('notice');if(!d)return;document.getElementById('noticeTitle').textContent='試しプレイを終了しました';document.getElementById('noticeText').textContent='試しプレイの途中で閉じられていたため、試しプレイを始める前の進行に戻しました。';if(!d.open)d.showModal();});}
+ window.PROTestplay={active:()=>!!tp,info:()=>tp&&{missionId:tp.missionId,party:tp.party,units:[...(tp.units||[])]},back(){try{restoreTp(tp?.snapshot);}catch(e){}tp=null;location.href='maker_td.html';}};
  if(tp){const b=document.createElement('button');b.type='button';b.id='testplayBack';b.className='testplay-back';b.textContent='試しプレイ中 ｜ メーカーへ戻る';b.onclick=()=>window.PROTestplay.back();document.body.append(b);
   if(tp.party==='maker')window.addEventListener('load',()=>{const P=window.PROTacticalData,T=window.PROTactical,m=P.mission(tp.missionId),ids=(tp.units||[]).filter(id=>{try{return !!P.unit(id);}catch(e){return false;}});if(!m||!ids.length)return;
-   const groups=[];for(let i=0;i<ids.length;i+=4)groups.push(T.initializeDomains({id:'tp-'+i,name:'試し第'+(groups.length+1)+'部隊',faction:'player',mode:'auto',members:ids.slice(i,i+4).map((id,j)=>({uid:'tp-'+(i+j),unit:P.unit(id)}))},m.surface||'ground'));
-   window.PROField.deploy({missionId:tp.missionId,groups});if(location.hash!=='#map')location.hash='#map';});}}
+   // Squads within the limits (8 units, total size 8): a unit goes into the current squad while it fits, else a new one.
+   const parts=[];let cur=null;ids.forEach((id,i)=>{const mem={uid:'tp-'+i,unit:P.unit(id)};if(cur&&T.formation({...cur,members:[...cur.members,mem]}).valid)cur.members.push(mem);else{cur={id:'tp-'+i,name:'試し第'+(parts.length+1)+'部隊',faction:'player',mode:'auto',members:[mem]};parts.push(cur);}});
+   try{const groups=parts.map(g=>T.initializeDomains(g,m.surface||'ground'));window.PROField.deploy({missionId:tp.missionId,groups});}catch(e){const d=document.getElementById('notice');if(d){document.getElementById('noticeTitle').textContent='試しプレイを始められません';document.getElementById('noticeText').textContent='試し部隊を出撃させられませんでした：'+e.message;if(!d.open)d.showModal();}return;}if(location.hash!=='#map')location.hash='#map';});}}
 function select(id){selected=id;render();}
 // Full mission data for lock / record checks (the list entries are display summaries).
 const fullMission=m=>m.kind==='dispatch'?window.PRODispatchData.mission(m.id):window.PROTacticalData.mission(m.id);

@@ -40,7 +40,7 @@ function setup(weapon,opt){const w=open(weapon,opt);const L=w.PROUnitLab,F=w.PRO
  assert.deepEqual(F.mapwHits(G('g0'),G('g0').members[0].unit.weapons.find(x=>x.name==='MAP砲'),{x:6,y:4}).map(g=>g.id).sort().join(),'t8-e1,t8-e2','enemies only (the player squad B is in the area)');
  await F.fireMapw({watch:false});
  assert(!G('t8-e1')||hpSum(G('t8-e1'))<e1,'e1 hit');assert(!G('t8-e2')||hpSum(G('t8-e2'))<e2,'e2 hit');assert.equal(hpSum(G('t8-e3')),e3,'e3 outside');assert.equal(hpSum(G('g1')),b,'own squad not hit');
- assert.equal(hpSum(G('g0')),a,'no counter');assert.equal(G('g0').members[0].ammo['MAP砲'],1,'ammo spent once');assert(!w.PROTactical.canAct(G('g0')),'action ended');
+ assert.equal(hpSum(G('g0')),a,'no counter');assert.equal(G('g0').members[0].ammo['zz-mapw'],1,'ammo spent once');assert(!w.PROTactical.canAct(G('g0')),'action ended');
  assert(F.opLog().some(l=>/マップ兵器「MAP砲」/.test(l.s)),'logged');}
 
 // After moving: not usable. With no target in the area: no fire.
@@ -61,7 +61,7 @@ function setup(weapon,opt){const w=open(weapon,opt);const L=w.PROUnitLab,F=w.PRO
 // the next turn it fires. The AI does not fire while stunned.
 {const {w,F,d,G}=setup();const st=()=>({buffs:[],stun:1,burn:null,taunt:null,shield:0});G('g0').members[0].combatState={status:st()};const e=hpSum(G('t8-e1'))+hpSum(G('t8-e2'));
  F.pick(2,4);F.pick(2,4);d.getElementById('fieldMapw').click();const btn=[...d.querySelectorAll('#fieldChoiceBody button')].find(x=>x.dataset.mapw);assert(!btn.disabled&&/スタン中/.test(btn.textContent),'stun shown');btn.click();F.pick(6,4);
- await F.fireMapw({watch:false});assert.equal(hpSum(G('t8-e1'))+hpSum(G('t8-e2')),e,'no damage while stunned');assert.equal(G('g0').members[0].ammo?.['MAP砲']??2,2,'no ammo spent');
+ await F.fireMapw({watch:false});assert.equal(hpSum(G('t8-e1'))+hpSum(G('t8-e2')),e,'no damage while stunned');assert.equal(G('g0').members[0].ammo?.['zz-mapw']??2,2,'no ammo spent');
  assert.equal(G('g0').members[0].combatState.status.stun,0,'one stunned action used');assert(!w.PROTactical.canAct(G('g0')),'the action ends');assert(F.opLog().some(l=>/スタンで行動できなかった/.test(l.s)));
  const s=F._live();s.groups=s.groups.map(g=>g.faction==='player'?{...g,members:g.members.map(m=>({...m,action:{}}))}:g);// next turn
  F.pick(2,4);F.pick(2,4);d.getElementById('fieldMapw').click();[...d.querySelectorAll('#fieldChoiceBody button')].find(x=>x.dataset.mapw).click();F.pick(6,4);await F.fireMapw({watch:false});assert(hpSum(G('t8-e1')??{members:[]})+hpSum(G('t8-e2')??{members:[]})<e,'fires once the stun is over');}
@@ -79,7 +79,7 @@ for(const firstIn of [true,false]){const {w,F,s,G}=setup(MAPW,{support:true});co
 
 // Local battles and PRO・D leave the map weapon out.
 {const {w,F,G}=setup();const s=F._live();s.groups.find(g=>g.id==='t8-e1').position={x:3,y:4};F.pick(2,4);await F.attackTarget('t8-e1');
- assert(![...w.document.querySelectorAll('#fieldBattleLog p, #fieldBattleLog div')].some(p=>/MAP砲/.test(p.textContent)),'not used in a local battle');assert.equal(G('g0').members[0].ammo?.['MAP砲']??2,2,'ammo kept');
+ assert(![...w.document.querySelectorAll('#fieldBattleLog p, #fieldBattleLog div')].some(p=>/MAP砲/.test(p.textContent)),'not used in a local battle');assert.equal(G('g0').members[0].ammo?.['zz-mapw']??2,2,'ammo kept');
  w.PRODispatchData.players();const def=w.PRODispatchData.defs[U(1)];assert(def&&def.weapons.length&&!def.weapons.some(x=>x.name==='MAP砲'),'PRO・D leaves it out');}
 
 // AI: an enemy fires its map weapon before moving when it hits 2+ squads.

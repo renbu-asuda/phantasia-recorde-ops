@@ -12,7 +12,9 @@ const imageText=x=>{if(!x)return 'なし';const {w,h}=PX.dims(x);return w+'×'+h
 const thumb=(x,px=40)=>{const t=el('span',null,'pix-thumb');t.style.width=t.style.height=px+'px';PX.paint(t,x);return t;};
 
 // Drawing window. Edits a copy; 決定 stores it.
-function editor(x){let S={...(x.w?{w:x.w,h:x.h}:{size:x.size}),palette:[...x.palette],px:x.px},tool='dot',color=x.palette.length?'0':'.',rectStart=null;const undo=[],redo=[],snap=()=>JSON.stringify(S),push=()=>{undo.push(snap());if(undo.length>100)undo.shift();redo.length=0;};
+function editor(x){let S={...(x.w?{w:x.w,h:x.h}:{size:x.size}),palette:[...x.palette],px:x.px},tool='dot',color=x.palette.length?'0':'.',rectStart=null;const undo=[],redo=[],snap=()=>JSON.stringify(S),
+  // After undo / redo the chosen colour must still be in the palette (else back to the first colour, or clear).
+  fixColor=()=>{if(color!=='.'&&PX.DIGITS.indexOf(color)>=S.palette.length)color=S.palette.length?PX.DIGITS[0]:'.';},push=()=>{undo.push(snap());if(undo.length>100)undo.shift();redo.length=0;};
  const W=()=>PX.dims(S).w,H=()=>PX.dims(S).h;
  const setDot=(a,b,ch)=>{const i=b*W()+a;S.px=S.px.slice(0,i)+ch+S.px.slice(i+1);};
  const get=(a,b)=>S.px[b*W()+a];
@@ -28,7 +30,7 @@ function editor(x){let S={...(x.w?{w:x.w,h:x.h}:{size:x.size}),palette:[...x.pal
  const draw=()=>win((x.name||'画像')+'（'+W()+'×'+H()+'）','道具と色を選んでドットを押します。四角は始点と終点の2回押し。スポイトは押したドットの色を拾います。',body=>{
   const row=(cls)=>{const r=el('div',null,cls||'td-nums');body.append(r);return r;};
   const tools=row('tmap-modes');for(const [k,label] of [['dot','1ドット'],['rect','四角'],['fill','塗りつぶし'],['pick','スポイト']]){const b=btn((tool===k?'✓ ':'')+label,()=>{tool=k;rectStart=null;draw();});b.dataset.ptool=k;tools.append(b);}
-  const ops=row();for(const [k,label,fn,dis] of [['undo','元に戻す',()=>{redo.push(snap());S=JSON.parse(undo.pop());draw();},!undo.length],['redo','やり直し',()=>{undo.push(snap());S=JSON.parse(redo.pop());draw();},!redo.length],
+  const ops=row();for(const [k,label,fn,dis] of [['undo','元に戻す',()=>{redo.push(snap());S=JSON.parse(undo.pop());fixColor();draw();},!undo.length],['redo','やり直し',()=>{undo.push(snap());S=JSON.parse(redo.pop());fixColor();draw();},!redo.length],
    ['fliph','左右反転',()=>transform((i,j,w)=>[w-1-i,j])],['flipv','上下反転',()=>transform((i,j,w,h)=>[i,h-1-j])],['up','↑ずらす',()=>transform((i,j)=>[i,j-1])],['down','↓ずらす',()=>transform((i,j)=>[i,j+1])],['left','←ずらす',()=>transform((i,j)=>[i-1,j])],['right','→ずらす',()=>transform((i,j)=>[i+1,j])],
    ['size','大きさ '+(S.w?'96×32':S.size),()=>pick('大きさ（小さくすると右と下が切れます）',{...Object.fromEntries(PX.SIZES.map(n=>[String(n),n+'×'+n+'（ユニット・地形）'])),banner:'96×32（ミッション選択の地形イメージ）'},S.w?'banner':String(S.size),k=>{push();const {palette,px}=PX.resize({...S},k==='banner'?'banner':Number(k));S=k==='banner'?{w:96,h:32,palette,px}:{size:Number(k),palette,px};draw();},draw)]]){const b=btn(label,fn);b.dataset.ptool=k;b.disabled=!!dis;ops.append(b);}
   const pal=row('tmap-palette');const sw=(ch,label,bg)=>{const b=btn((color===ch?'✓ ':'')+label,()=>{color=ch;if(tool==='pick')tool='dot';draw();},'tmap-swatch pix-swatch');b.dataset.color=ch;if(bg)b.style.background=bg;pal.append(b);};
