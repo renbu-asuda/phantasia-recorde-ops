@@ -75,7 +75,7 @@ async function start({watch}={}){const m=mission();if(!m||!chosen.length||window
  // Supply items (paid at the start) boost their unit for this battle.
   const ctx=B.buildBattle({flags:L?.flags()||{},allies:chosen.map(id=>{const pl=L?.dispatchPilot(id),lv0=C.levelStats(DD.defs[id],lvOf(id)),base=pl?L.applyPilot(lv0,pl.def,pl.lv):lv0,u={...base,skills:[...(base.skills||[]),...(L?.dispatchTreeSkills(id)||[])]};return used[id]?L.applySupply(u,used[id]):u;}),rows:chosen.map(id=>rowOf(DD.defs[id])),mission:m,enemyDefs:DD.defs,unitDefs:DD.defs},B.mulberry32(Date.now()%1000000));
  // Event condition sets (T&D) are checked against the save; event flags are kept after the battle.
- ctx.hooks.eventOk=e=>!e.conds?.list?.length||!L||L.evalConds(e.conds);
+ ctx.hooks.eventOk=e=>!e.conds?.list?.length||!L||L.evalConds(e.conds,{flags:ctx.flags,deployed:chosen}).ok;
  $('fieldBattleSpeed').value=window.PROField?.settings?.().dispatchSpeed||'1';const c=DD.conditions(m),names=Object.fromEntries(Object.entries(DD.defs).map(([k,d])=>[k,d.name]));
  const label={win:'MISSION COMPLETE',lose:'MISSION FAILED',draw:'DRAW / 300TURN'};
  // The battle window opens behind a fade; the fight itself runs after the fade-in.
