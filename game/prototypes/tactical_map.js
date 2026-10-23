@@ -187,7 +187,8 @@ function showResult(){if(!state?.outcome||state.resultShown)return;if(state.talk
  {const pct=Number(P.mission(state.missionId)?.funds?.returnPct)||0,back=win?Math.floor((state.funds?.player||0)*pct/100):0;if(back){window.PROUnitLab?.spend(-back);add('戦場資金の持ち帰り','+'+back.toLocaleString()+' CR（残り'+(state.funds.player).toLocaleString()+'の'+pct+'%）');}}
  for(const o of obs.filter(o=>o.status!=='hidden'))add('作戦内ミッション：'+o.name,o.status==='done'?(win?'達成'+(o.reward?.credits?' +'+o.reward.credits.toLocaleString()+' Cr':'')+(o.reward?.exp?' +'+o.reward.exp+' EXP':''):'達成（作戦失敗のため報酬なし）'):o.status==='failed'?'失敗':'未達成');
  const alive=new Set([...[...state.groups,...allStored()].filter(g=>g.faction==='player').flatMap(g=>allMembers(g).map(m=>m.uid)),...(state.retreated||[]).map(r=>r.uid)]),dep=state.deployed||[],hpNow=state.groups.filter(g=>g.faction==='player').flatMap(g=>T.living(g)).reduce((n,m)=>n+Math.max(0,m.currentHp??stat(m,'hp')),0),hpMax=dep.reduce((n,x)=>n+(x.hp||0),0);
- if(win&&window.PROUnitLab)for(const g of [...state.groups,...allStored()].filter(g=>g.faction==='player'&&g.captured&&(g.seized?!P.mission(state.missionId)?.captureTemp:P.mission(state.missionId)?.capturedJoin)))for(const m of T.living(g)){const p=m.unit.pilot;window.PROUnitLab.addOwned(baseOf(m.unit),p?.unitId?{unit:p.unitId,lv:p.lv}:null);add('加入（鹵獲）',P.unit(baseOf(m.unit)).name);}
+ if(win&&window.PROUnitLab&&(state.seized||[]).length){window.PROUnitLab.addCaptives(state.seized.map(x=>({...x,from:P.mission(state.missionId)?.name||''})));for(const x of state.seized)add('鹵獲一覧へ',x.name);}
+ if(win&&window.PROUnitLab)for(const g of [...state.groups,...allStored()].filter(g=>g.faction==='player'&&g.captured&&P.mission(state.missionId)?.capturedJoin))for(const m of T.living(g)){const p=m.unit.pilot;window.PROUnitLab.addOwned(baseOf(m.unit),p?.unitId?{unit:p.unitId,lv:p.lv}:null);add('加入（鹵獲）',P.unit(baseOf(m.unit)).name);}
  if(win)for(const pr of state.produced||[])if(pr.keep&&alive.has(pr.uid)&&window.PROUnitLab){window.PROUnitLab.addOwned(pr.unitId,pr.pilot);add('加入（戦場で生産）',P.unit(pr.unitId).name);}
  // Destroyed deployed units: lost, or wrecked / injured for key units (test save).
  window.PROUnitLab?.changeVars(state.varOps);state.varOps=[];window.PROUnitLab?.mergeFlags({...(state.gameFlags||{}),...(win?{}:P.mission(state.missionId)?.resultFlagsLose||{})});const losses=window.PROUnitLab?.handleLosses(dep.filter(x=>!alive.has(x.uid)).map(x=>x.uid),[...alive])||[];
@@ -360,7 +361,8 @@ function openTransform(){const g=current();if(!g||!transformShown(g))return;choi
    squad or one of its units is marked noCapture. One roll for the whole squad: (100 − squad HP %) + its 気力 state
    (pack settings capture.state) + the capture bonus of the surrounding squads' skills (tactical.capture.bonus) − the
    resist of its own (tactical.capture.resist), 0..100. Success or not, the seizing squad ends its action. Seized squads
-   become player guests (captured); after a win they join unless the mission keeps them for the mission only. ---------- */
+   leave the map; their units go to the base's 鹵獲一覧 after a win (the player decides there) when the squad's setting
+   (captureJoin yes / no) or else the mission's (default yes) says so. ---------- */
 const CAP_STATE={confused:30,weak:10,normal:0,strong:-10,super:-30};
 const capSkill=(u,k)=>(u.skills||[]).reduce((n,s)=>n+(Number(s.tactical?.capture?.[k])||0),0);
 const NEIGH=[[1,0],[-1,0],[0,1],[0,-1]];
@@ -372,10 +374,11 @@ function captureChance(e){const ring=surroundedBy(e)||[],ms=T.living(e),hp=ms.re
  return Math.max(0,Math.min(100,Math.round(100-(max?hp/max*100:100)+stateMod+bonus-resist)));}
 const seizeTargets=g=>g?.faction==='player'&&T.canAct(g)?state.groups.filter(e=>capturable(e)&&surroundedBy(e).some(a=>a.id===g.id)):[];
 function seize(g,e){const p=captureChance(e),ok=Math.random()*100<p;state.groups=state.groups.map(a=>a.id===g.id?T.endAction(a):a);
- if(ok){state.groups=state.groups.map(a=>{if(a.id!==e.id)return a;const o=copy(a);o.faction='player';o.guest=true;o.captured=true;o.seized=true;o.mode='auto';delete o.ai;delete o.aiRules;delete o.smart;for(const m of T.living(o))m.action={ended:true};return o;});log('event',g.name+'が'+e.name+'を鹵獲（成功率'+p+'%）');note(e.name+'を鹵獲しました（ゲストとして使えます）。');}
+ if(ok){const join=(e.captureJoin||P.mission(state.missionId)?.captureJoin||'yes')==='yes';state.groups=state.groups.filter(a=>a.id!==e.id);(state.withdrawn=state.withdrawn||[]).push(e.id);if(join)for(const m of T.living(e)){const pl=m.unit.pilot;(state.seized=state.seized||[]).push({unitId:baseOf(m.unit),name:P.unit(baseOf(m.unit)).name,...(pl?.unitId?{pilot:{unit:pl.unitId,lv:pl.lv||1}}:{})});}
+  log('event',g.name+'が'+e.name+'を鹵獲（成功率'+p+'%）'+(join?'':'・仲間にはならない'));note(e.name+'を鹵獲しました。'+(join?'作戦に勝つと拠点の「鹵獲一覧」に加わります。':''));}
  else log('event',g.name+'の鹵獲は失敗（'+e.name+'・成功率'+p+'%）');return ok;}
-function openSeize(){const g=current(),list=seizeTargets(g);if(!list.length)return;choice(g.name+'：鹵獲',root=>{root.className='cmd-list';root.append(el('p','囲んだ敵部隊を部隊ごと手に入れます。成功しても失敗しても、この部隊は行動終了です。','cmd-hint'));
- for(const e of list){const b=button(e.name+'（'+T.living(e).map(m=>m.unit.name).join('・')+'）成功率 '+captureChance(e)+'%',()=>{const ok=seize(current(),e);$('fieldChoice').close();tell(ok?e.name+'を鹵獲しました。':'鹵獲に失敗しました。');draw();checkEnd();});b.dataset.seize=e.id;root.append(b);}
+function openSeize(){const g=current(),list=seizeTargets(g);if(!list.length)return;choice(g.name+'：鹵獲',root=>{root.className='cmd-list';root.append(el('p','囲んだ敵部隊を部隊ごと鹵獲します（マップから消え、作戦に勝つと拠点の「鹵獲一覧」へ）。成功しても失敗しても、この部隊は行動終了です。','cmd-hint'));
+ for(const e of list){const join=(e.captureJoin||P.mission(state.missionId)?.captureJoin||'yes')==='yes',b=button(e.name+'（'+T.living(e).map(m=>m.unit.name).join('・')+'）成功率 '+captureChance(e)+'%'+(join?'':'・仲間にならない'),()=>{const ok=seize(current(),e);$('fieldChoice').close();tell(ok?e.name+'を鹵獲しました。':'鹵獲に失敗しました。');draw();checkEnd();});b.dataset.seize=e.id;root.append(b);}
  root.append(button('戻る',()=>{$('fieldChoice').close();openCommand();}));});}
 /* ---------- Stage 10 part 5: facility storage (格納). A facility with the 'storage' function {count, size, tags} holds
    whole squads up to count units / total size in all (a big storage holds several squads). Stored squads are off the
