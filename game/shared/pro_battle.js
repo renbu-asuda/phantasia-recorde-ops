@@ -183,6 +183,9 @@ function weaponEffects(ctx,u,weapon,timing,info={}){
 function mergeMods(a,b){return {...a,damageMult:a.damageMult*b.damageMult,hitAdd:a.hitAdd+b.hitAdd,critAdd:a.critAdd+b.critAdd,defPierce:a.defPierce+b.defPierce,tagBonus:[...a.tagBonus,...b.tagBonus]};}
 
 // ---- resolution ----
+// Defeat EXP of the unit as it was destroyed (an escape replaces it in place afterwards). Extra field; readers that
+// don't use it are unchanged.
+function killExpOf(u){try{return C.defeatExp(u);}catch(e){return undefined;}}
 function handleDeath(ctx,u,killer){
   if(!u.alive||u._resolvingDeath)return false;u._resolvingDeath=true;
   try{triggerSkills(ctx,u,'on_death',{opponent:killer});}finally{delete u._resolvingDeath;}
@@ -190,9 +193,9 @@ function handleDeath(ctx,u,killer){
   // Optional (T&D prototype only): a destroyed unit may come back as another unit in place (脱出). Absent → unchanged.
   const rep=ctx.hooks.replaceOnDeath?.(u,killer);
   if(killer)ctx.hooks.tensionEvent?.('kill',killer,u);
-  if(rep?.def){ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,replaced:true});if(killer)statFor(ctx,killer).kills++;replaceCombatant(u,rep.def,rep.extra);if(rep.text)ctx.hooks.log(`<span class="skill">${esc(rep.text)}</span>`);ctx.hooks.render();return true;}
+  if(rep?.def){ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,replaced:true,exp:killExpOf(u)});if(killer)statFor(ctx,killer).kills++;replaceCombatant(u,rep.def,rep.extra);if(rep.text)ctx.hooks.log(`<span class="skill">${esc(rep.text)}</span>`);ctx.hooks.render();return true;}
   u.currentHp=0;u.alive=false;
-  ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn});
+  ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,exp:killExpOf(u)});
   if(killer)statFor(ctx,killer).kills++;
   for(const x of sideOf(ctx,u))if(x.alive)triggerSkills(ctx,x,'ally_down',{opponent:killer});
   return true;

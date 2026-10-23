@@ -231,10 +231,12 @@ function mapRefs(k,fn){const list=a=>a&&a.map(fn).filter(Boolean);if(k==='comman
 // Every condition set inside an owner (top-level, drops, events, choices …), found by walking the object.
 // A condition's missionId may be a dispatch or a tactical mission.
 const refKind=(f,id)=>f==='missionId'?mkind(id):COND_REF[f];
-function condSets(o,out=[]){if(!o||typeof o!=='object')return out;if(Array.isArray(o)){for(const x of o)condSets(x,out);return out;}if(o.conds?.list)out.push(o);for(const [k,v] of Object.entries(o))if(k!=='conds'&&v&&typeof v==='object')condSets(v,out);return out;}
+// Every condition set in an object, whatever it is called (conds, useConds, joinConds…): holders with .conds / .drop().
+const SET_KEY=k=>/[cC]onds$/.test(k);
+function condSets(o,out=[]){if(!o||typeof o!=='object')return out;if(Array.isArray(o)){for(const x of o)condSets(x,out);return out;}for(const [k,v] of Object.entries(o)){if(SET_KEY(k)&&Array.isArray(v?.list)){out.push({get conds(){return o[k];},drop(){delete o[k];}});condSets(v.list,out);}else if(v&&typeof v==='object')condSets(v,out);}return out;}
 const condRefs=o=>condSets(o).flatMap(h=>h.conds.list.flatMap(c=>Object.keys(COND_REF).filter(f=>c[f]).map(f=>[refKind(f,c[f]),c[f]])));
 function mapCondRefs(k,fn){const keep=c=>{for(const [f,rk] of Object.entries(COND_REF))if((rk===k||f==='missionId'&&k==='tmissions')&&c[f]){const n=fn(c[f]);if(!n)return false;c[f]=n;}return true;};
- for(const ok of Object.keys(KINDS))for(const o of data[ok])for(const h of condSets(o)){h.conds.list=h.conds.list.filter(keep);if(!h.conds.list.length)delete h.conds;}
+ for(const ok of Object.keys(KINDS))for(const o of data[ok])for(const h of condSets(o)){h.conds.list=h.conds.list.filter(keep);if(!h.conds.list.length)h.drop();}
  // Pack settings: the base menu unlock sets.
  for(const [mk,cs] of Object.entries(data.hqUnlock||{})){if(!cs?.list)continue;cs.list=cs.list.filter(keep);if(!cs.list.length)delete data.hqUnlock[mk];}}
 // Variable references anywhere in an owner (changes, event actions, mission conditions): objects with varId.

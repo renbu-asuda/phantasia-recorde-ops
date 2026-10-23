@@ -17,7 +17,8 @@ function settings(){const p=window.PROTacticalData?.tensionSettings?.()||{},g={.
  return {defaultMax:Math.min(MAX_CAP,Math.max(1,n(p.defaultMax,DEFAULTS.defaultMax))),normalPct:n(p.normalPct,DEFAULTS.normalPct),strongPct:n(p.strongPct,DEFAULTS.strongPct),gain:g,effects:e};}
 // Settings of one unit: holder = the pilot aboard (else the unit), skills = the unit's skills (pilot and gear included).
 function config(holder,skills){const S=settings(),t=holder?.tension||{},add={max:0,normalMin:0,strongMin:0,initial:0,attack:0,hit:0,evade:0,kill:0,allyKill:0};
- for(const s of skills||[]){const x=s?.tactical?.tension;if(!x)continue;for(const k of Object.keys(add))add[k]+=n(x[k],0);}
+ // A skill's 気力 part counts unless it was switched off (on:false); older data without 'on' still counts.
+ for(const s of skills||[]){const x=s?.tactical?.tension;if(!x||x.on===false)continue;for(const k of Object.keys(add))add[k]+=n(x[k],0);}
  const max=Math.min(MAX_CAP,Math.max(1,Math.round(n(t.max,S.defaultMax)+add.max))),clampB=v=>Math.min(max,Math.max(1,Math.round(v)));
  const normalMin=clampB(n(t.normalMin,max*S.normalPct/100)+add.normalMin),strongMin=Math.max(normalMin,clampB(n(t.strongMin,max*S.strongPct/100)+add.strongMin));
  const gain={};for(const k of Object.keys(S.gain))gain[k]=S.gain[k]+add[k];
