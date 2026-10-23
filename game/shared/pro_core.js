@@ -448,11 +448,12 @@ function evalConds(cs,st={}){const list=cs?.list||[];if(!list.length)return {ok:
   case 'weekday':return (c.days||[]).includes(c.clock==='game'?gameWeekday(st.day,st.weekBase):(st.now||new Date()).getDay());case 'chance':return rng()*100<c.value;default:return false;}};
  const results=[],costs=[],options=[];let ok=cs.mode==='any'?false:true;
  for(const c of list){const ref=COND_NEED[c.type];let r=ref&&!c[ref]?false:one(c);if(c.not&&!(ref&&!c[ref]))r=!r;results.push(r);
-  const cost=!r?null:c.type==='item_use'?{itemId:c.itemId,count:c.count||1}:c.type==='credits_use'?{credits:c.value}:null;
+  // A negated spending condition holds because it can't be paid: nothing to spend.
+  const cost=!r||c.not?null:c.type==='item_use'?{itemId:c.itemId,count:c.count||1}:c.type==='credits_use'?{credits:c.value}:null;
   if(cs.mode==='any'){if(r)ok=true;if(cost)options.push({index:results.length-1,costs:[cost]});}
   else{if(!r)ok=false;if(cost){if(cost.itemId)spent.items[cost.itemId]=(spent.items[cost.itemId]||0)+cost.count;else spent.credits+=cost.credits;costs.push(cost);}}}
  // 'any': a satisfied entry without a cost means nothing has to be paid; otherwise the player picks one option.
- const free=cs.mode==='any'&&results.some((r,i)=>r&&!['item_use','credits_use'].includes(list[i].type));
+ const free=cs.mode==='any'&&results.some((r,i)=>r&&(list[i].not||!['item_use','credits_use'].includes(list[i].type)));
  if(cs.mode==='any'&&!free&&options.length)costs.push(...(options[Math.min(Math.max(0,st.pick|0),options.length-1)]||options[0]).costs);
  return {ok,costs:ok?costs:[],results,options:cs.mode==='any'&&!free?options:[]};}
 // Levels: same rules as the published game (MAX 50, next level needs 100×Lv EXP, growth per level from

@@ -16,7 +16,7 @@ function editor(x){let S={...(x.w?{w:x.w,h:x.h}:{size:x.size}),palette:[...x.pal
   // After undo / redo the chosen colour must still be in the palette (else back to the first colour, or clear).
   fixColor=()=>{if(color!=='.'&&PX.DIGITS.indexOf(color)>=S.palette.length)color=S.palette.length?PX.DIGITS[0]:'.';},push=()=>{undo.push(snap());if(undo.length>100)undo.shift();redo.length=0;};
  const W=()=>PX.dims(S).w,H=()=>PX.dims(S).h;
- const setDot=(a,b,ch)=>{const i=b*W()+a;S.px=S.px.slice(0,i)+ch+S.px.slice(i+1);};
+ const setDot=(a,b,ch)=>{if(a<0||b<0||a>=W()||b>=H())return;/* never outside the picture */const i=b*W()+a;S.px=S.px.slice(0,i)+ch+S.px.slice(i+1);};
  const get=(a,b)=>S.px[b*W()+a];
  const fill=(a,b)=>{const from=get(a,b);if(from===color)return;const arr=S.px.split(''),q=[[a,b]];while(q.length){const [i,j]=q.pop();if(i<0||j<0||i>=W()||j>=H()||arr[j*W()+i]!==from)continue;arr[j*W()+i]=color;q.push([i+1,j],[i-1,j],[i,j+1],[i,j-1]);}S.px=arr.join('');};
  const transform=f=>{push();const w=W(),h=H(),arr=S.px.split(''),out=new Array(w*h).fill('.');for(let j=0;j<h;j++)for(let i=0;i<w;i++){const [a,b]=f(i,j,w,h);if(a>=0&&b>=0&&a<w&&b<h)out[b*w+a]=arr[j*w+i];}S.px=out.join('');draw();};
@@ -30,9 +30,9 @@ function editor(x){let S={...(x.w?{w:x.w,h:x.h}:{size:x.size}),palette:[...x.pal
  const draw=()=>win((x.name||'画像')+'（'+W()+'×'+H()+'）','道具と色を選んでドットを押します。四角は始点と終点の2回押し。スポイトは押したドットの色を拾います。',body=>{
   const row=(cls)=>{const r=el('div',null,cls||'td-nums');body.append(r);return r;};
   const tools=row('tmap-modes');for(const [k,label] of [['dot','1ドット'],['rect','四角'],['fill','塗りつぶし'],['pick','スポイト']]){const b=btn((tool===k?'✓ ':'')+label,()=>{tool=k;rectStart=null;draw();});b.dataset.ptool=k;tools.append(b);}
-  const ops=row();for(const [k,label,fn,dis] of [['undo','元に戻す',()=>{redo.push(snap());S=JSON.parse(undo.pop());fixColor();draw();},!undo.length],['redo','やり直し',()=>{undo.push(snap());S=JSON.parse(redo.pop());fixColor();draw();},!redo.length],
+  const ops=row();for(const [k,label,fn,dis] of [['undo','元に戻す',()=>{redo.push(snap());S=JSON.parse(undo.pop());rectStart=null;fixColor();draw();},!undo.length],['redo','やり直し',()=>{undo.push(snap());S=JSON.parse(redo.pop());rectStart=null;fixColor();draw();},!redo.length],
    ['fliph','左右反転',()=>transform((i,j,w)=>[w-1-i,j])],['flipv','上下反転',()=>transform((i,j,w,h)=>[i,h-1-j])],['up','↑ずらす',()=>transform((i,j)=>[i,j-1])],['down','↓ずらす',()=>transform((i,j)=>[i,j+1])],['left','←ずらす',()=>transform((i,j)=>[i-1,j])],['right','→ずらす',()=>transform((i,j)=>[i+1,j])],
-   ['size','大きさ '+(S.w?'96×32':S.size),()=>pick('大きさ（小さくすると右と下が切れます）',{...Object.fromEntries(PX.SIZES.map(n=>[String(n),n+'×'+n+'（ユニット・地形）'])),banner:'96×32（ミッション選択の地形イメージ）'},S.w?'banner':String(S.size),k=>{push();const {palette,px}=PX.resize({...S},k==='banner'?'banner':Number(k));S=k==='banner'?{w:96,h:32,palette,px}:{size:Number(k),palette,px};draw();},draw)]]){const b=btn(label,fn);b.dataset.ptool=k;b.disabled=!!dis;ops.append(b);}
+   ['size','大きさ '+(S.w?'96×32':S.size),()=>pick('大きさ（小さくすると右と下が切れます）',{...Object.fromEntries(PX.SIZES.map(n=>[String(n),n+'×'+n+'（ユニット・地形）'])),banner:'96×32（ミッション選択の地形イメージ）'},S.w?'banner':String(S.size),k=>{push();rectStart=null;/* a pending 四角 start belongs to the old size */const {palette,px}=PX.resize({...S},k==='banner'?'banner':Number(k));S=k==='banner'?{w:96,h:32,palette,px}:{size:Number(k),palette,px};draw();},draw)]]){const b=btn(label,fn);b.dataset.ptool=k;b.disabled=!!dis;ops.append(b);}
   const pal=row('tmap-palette');const sw=(ch,label,bg)=>{const b=btn((color===ch?'✓ ':'')+label,()=>{color=ch;if(tool==='pick')tool='dot';draw();},'tmap-swatch pix-swatch');b.dataset.color=ch;if(bg)b.style.background=bg;pal.append(b);};
   sw('.','透明');S.palette.forEach((c,i)=>sw(PX.DIGITS[i],String(i+1),c));
   if(S.palette.length<PX.MAX_COLORS){const b=btn('＋ 色を足す',()=>colorPrompt('#808080',c=>{push();S.palette=[...S.palette,c];color=PX.DIGITS[S.palette.length-1];draw();}));b.dataset.ptool='addcolor';pal.append(b);}
