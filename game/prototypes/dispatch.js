@@ -22,6 +22,13 @@ function render(){const m=mission();if(!m)return;const c=DD.conditions(m);$('dis
   if(on){const rb=el('button','隊列：'+(rowOf(u)==='back'?'後衛':'前衛')+'（切替）','secondary');rb.type='button';rb.dataset.row=u.id;rb.onclick=()=>{rows[u.id]=rowOf(u)==='back'?'front':'back';render();};card.append(rb);}
   const b=el('button',on?'✓ 出撃メンバー（外す）':crew?'出撃不可':why?why:'＋ 出撃メンバーに加える',on?'secondary':'primary');b.type='button';b.dataset.pick=u.id;b.disabled=!on&&!!why;b.onclick=()=>{chosen=on?chosen.filter(x=>x!==u.id):[...chosen,u.id];if(on)delete supply[u.id];render();};card.append(b);list.append(card);}
  {const f=T.squadUsage(lineup());$('dispatchSummary').textContent='出撃 '+f.count+' / '+m.maxDeploy+'体（体数上限'+T.SQUAD.count+'） ｜ 総サイズ '+f.size+' / '+T.SQUAD.size+(chosen.length?'':' ｜ 最低1体を選んでください');}$('dispatchStart').disabled=!chosen.length;estimate();}
+// The allies of a battle, the same for the battle and the estimate: saved level, the pilot aboard, learned skill tree
+// skills and the supply item (sup: unit id → item id; the estimate uses the items picked without spending them).
+function allyDefs(ids,sup={}){const L=window.PROUnitLab;return ids.map(id=>{const pl=L?.dispatchPilot(id),lv0=C.levelStats(DD.defs[id],lvOf(id)),base=pl?L.applyPilot(lv0,pl.def,pl.lv):lv0,u={...base,skills:[...(base.skills||[]),...(L?.dispatchTreeSkills(id)||[])]};return sup[id]&&L?L.applySupply(u,sup[id]):u;});}
+// PRO・D rules on top of the caller's hooks, for the battle and each estimate trial: automatic パージ, 脱出, 気力 and 味方支援.
+function prepareBattle(ctx){const ts=ctx.hooks.turnStart;ctx.hooks.turnStart=async t=>{autoPurge(ctx);return ts(t);};ctx.hooks.replaceOnDeath=dispatchEscape;
+ if(window.PROTension){Object.assign(ctx.hooks,window.PROTension.hooks(ctx));for(const u of [...ctx.allies,...ctx.enemies])initTension(u);const sp=ctx.hooks.spawned;ctx.hooks.spawned=made=>{for(const u of made)initTension(u);return sp(made);};}
+ if(window.PROSupport)initSupport(ctx);return ctx;}
 // Power for auto selection (simple stat sum at the saved level).
 const power=u=>{const x=C.levelStats(u,lvOf(u.id));return (x.hp||0)/10+(x.atk||0)+(x.def||0)+((x.mob||0)+(x.acc||0))/4;};
 // おまかせ編成: strongest usable units within the sortie limit, size and deploy rules (crew-required units skipped).
@@ -29,7 +36,9 @@ function autoPick(){const m=mission(),ids=[];if(!m)return ids;for(const u of pla
 function auto(){chosen=autoPick();rows={};supply={};render();}
 // Win estimate with the published simulator (20 trials, fixed seed) for the current lineup, or the auto lineup.
 async function estimate(){const m=mission(),seq=++estimateSeq,out=$('dispatchEstimate');if(!m||!out)return;let ids=chosen,autoUsed=false;if(!ids.length){ids=autoPick();autoUsed=true;}
- if(!ids.length){out.textContent='';return;}out.textContent='推定勝率を計算中…';try{const r=await B.simulate({allies:ids.map(id=>({...C.levelStats(DD.defs[id],lvOf(id)),row:rowOf(DD.defs[id])})),enemies:m.enemies,mission:m,enemyDefs:DD.defs,unitDefs:DD.defs,trials:20,seed:7});if(seq!==estimateSeq)return;const p=Math.round(r.winRate*100);out.textContent='推定勝率 '+p+'%（'+(p>=80?'余裕':p>=50?'互角':p>=20?'苦戦':'危険')+(autoUsed?'・おまかせ編成で計算':'')+'）';}catch(e){if(seq===estimateSeq)out.textContent='';}}
+ if(!ids.length){out.textContent='';return;}out.textContent='推定勝率を計算中…';try{const L=window.PROUnitLab;const r=await B.simulate({flags:L?.flags()||{},allies:allyDefs(ids,autoUsed?{}:supply),rows:ids.map(id=>rowOf(DD.defs[id])),enemies:m.enemies,mission:m,enemyDefs:DD.defs,unitDefs:DD.defs,trials:20,seed:7,
+  // Each trial runs under the battle's rules; event conditions are checked without spending or changing anything.
+  prepare:ctx=>{ctx.hooks.eventOk=e=>!e.conds?.list?.length||!L||L.evalConds(e.conds,{flags:ctx.flags,deployed:ids,rng:ctx.rng}).ok;prepareBattle(ctx);}});if(seq!==estimateSeq)return;const p=Math.round(r.winRate*100);out.textContent='推定勝率 '+p+'%（'+(p>=80?'余裕':p>=50?'互角':p>=20?'苦戦':'危険')+(autoUsed?'・おまかせ編成で計算':'')+'）';}catch(e){if(seq===estimateSeq)out.textContent='';}}
 // Supply: one next-sortie item per unit, consumed when the sortie starts.
 function pickSupply(u){const L=window.PROUnitLab,list=L.supplyItems().filter(it=>it.id===supply[u.id]||!Object.values(supply).filter(x=>x===it.id).length||L.free(it.id)>Object.values(supply).filter(x=>x===it.id).length);
  const d=$('labWindow');$('labWinKind').textContent='補給';$('labWinTitle').textContent=u.name+' の補給アイテム';$('labWinBody').replaceChildren(el('p','次の出撃だけ効くアイテムを1つ持たせます。出撃時に消費します。','catalog-line'));
@@ -73,13 +82,13 @@ async function start({watch}={}){const m=mission();if(!m||!chosen.length||window
  if(m.story?.choices?.length&&window.PROUnitLab){const ch=await window.PROUnitLab.pickChoice(m.name+' / 選択',m.story.choices);if(ch?.lines?.length)await story(m.name+' / 選択',ch.lines);}
  if(watch===undefined)watch=await askWatch(m);
  // Supply items (paid at the start) boost their unit for this battle.
-  const ctx=B.buildBattle({flags:L?.flags()||{},allies:chosen.map(id=>{const pl=L?.dispatchPilot(id),lv0=C.levelStats(DD.defs[id],lvOf(id)),base=pl?L.applyPilot(lv0,pl.def,pl.lv):lv0,u={...base,skills:[...(base.skills||[]),...(L?.dispatchTreeSkills(id)||[])]};return used[id]?L.applySupply(u,used[id]):u;}),rows:chosen.map(id=>rowOf(DD.defs[id])),mission:m,enemyDefs:DD.defs,unitDefs:DD.defs},B.mulberry32(Date.now()%1000000));
+  const ctx=B.buildBattle({flags:L?.flags()||{},allies:allyDefs(chosen,used),rows:chosen.map(id=>rowOf(DD.defs[id])),mission:m,enemyDefs:DD.defs,unitDefs:DD.defs},B.mulberry32(Date.now()%1000000));
  // Event condition sets (T&D) are checked against the save; event flags are kept after the battle.
  const eventDraws=new Map();ctx.hooks.eventOk=e=>{if(!e.conds?.list?.length||!L)return true;const key=e.id+':'+ctx.turn;let draws=eventDraws.get(key);if(!draws){draws=[];eventDraws.set(key,draws);}let at=0;return L.evalConds(e.conds,{flags:ctx.flags,deployed:chosen,rng:()=>{const i=at++;return draws[i]??(draws[i]=Math.random());}}).ok;};
  $('fieldBattleSpeed').value=window.PROField?.settings?.().dispatchSpeed||'1';const c=DD.conditions(m),names=Object.fromEntries(Object.entries(DD.defs).map(([k,d])=>[k,d.name]));
  const label={win:'MISSION COMPLETE',lose:'MISSION FAILED',draw:'DRAW / 300TURN'};
  // The battle window opens behind a fade; the fight itself runs after the fade-in.
- let battle;await (window.PROTransition?window.PROTransition.run(()=>{battle=window.PROBattleScreen.play({title:m.name+' / RANK '+(m.diff||'C')+' / PRO・D',allies:ctx.allies,enemies:ctx.enemies,watch,closeLabel:'結果へ',speedSetting:'dispatchSpeed',sideLabels:{ally:'派遣部隊',enemy:'敵部隊'},info:()=>[c.win,hud(B.objectiveStatus(ctx))].filter(Boolean).join(' ｜ '),intro:['OPERATION START: '+m.name,c.win,c.lose,c.draw,'地形: '+(m.terrain||'標準'),...ruleTexts(m,names).map(t=>'RULE: '+t),...(m.waves||[]).map((w,i)=>'WAVE: '+C.waveText(w,i,names))].filter(Boolean),summary:r=>label[r.outcome]+' / '+r.turns+'TURN',run:hooks=>{Object.assign(ctx.hooks,hooks);const ts=ctx.hooks.turnStart;ctx.hooks.turnStart=async t=>{autoPurge(ctx);return ts(t);};ctx.hooks.replaceOnDeath=dispatchEscape;if(window.PROTension){Object.assign(ctx.hooks,window.PROTension.hooks(ctx));for(const u of [...ctx.allies,...ctx.enemies])initTension(u);const sp=ctx.hooks.spawned;ctx.hooks.spawned=made=>{for(const u of made)initTension(u);return sp(made);};}if(window.PROSupport)initSupport(ctx);return B.runBattle(ctx);}});}):null);const result=await battle;
+ let battle;await (window.PROTransition?window.PROTransition.run(()=>{battle=window.PROBattleScreen.play({title:m.name+' / RANK '+(m.diff||'C')+' / PRO・D',allies:ctx.allies,enemies:ctx.enemies,watch,closeLabel:'結果へ',speedSetting:'dispatchSpeed',sideLabels:{ally:'派遣部隊',enemy:'敵部隊'},info:()=>[c.win,hud(B.objectiveStatus(ctx))].filter(Boolean).join(' ｜ '),intro:['OPERATION START: '+m.name,c.win,c.lose,c.draw,'地形: '+(m.terrain||'標準'),...ruleTexts(m,names).map(t=>'RULE: '+t),...(m.waves||[]).map((w,i)=>'WAVE: '+C.waveText(w,i,names))].filter(Boolean),summary:r=>label[r.outcome]+' / '+r.turns+'TURN',run:hooks=>{Object.assign(ctx.hooks,hooks);prepareBattle(ctx);return B.runBattle(ctx);}});}):null);const result=await battle;
  await closed();L?.mergeFlags(ctx.flags);if(result.outcome==='win')await story(m.name+' / 作戦後',m.story?.after);showResult(m,ctx,result,grantExp(m,ctx,result));return result;}
 // EXP with the published rules: mission EXP (halved unless won, halved again if the unit fell) + defeat EXP of its kills.
 function grantExp(m,ctx,r){const kills={};for(const k of ctx.killLog||[])if(k.killerSide==='ally'&&k.victimSide==='enemy'){const a=ctx.allies.find(x=>x.combatId===k.killer);if(a)kills[a.id]=(kills[a.id]||0)+C.defeatExp(ctx.enemies.find(x=>x.combatId===k.victim));}
@@ -99,5 +108,5 @@ function showResult(m,ctx,r,exp=[]){const win=r.outcome==='win',draw=r.outcome==
  window.PROUnitLab?.settled?.();$('fieldResultMap').hidden=true;$('fieldResult').showModal();$('fieldResult').addEventListener('close',()=>{$('fieldResultMap').hidden=false;},{once:true});}
 $('dispatchStart').onclick=()=>start();
 $('dispatchAuto').onclick=auto;$('dispatchPresets').onclick=presets;
-window.PRODispatch=Object.freeze({show,start,auto,estimate,supply:()=>({...supply}),choose:ids=>{chosen=[...ids];render();},chosen:()=>[...chosen],rows:()=>({...rows})});
+window.PRODispatch=Object.freeze({show,start,auto,estimate,allyDefs,prepareBattle,supply:()=>({...supply}),choose:ids=>{chosen=[...ids];render();},chosen:()=>[...chosen],rows:()=>({...rows})});
 })();
