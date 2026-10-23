@@ -391,12 +391,13 @@ async function checkpoint(ctx){
   }
   const wave=1+(ctx.plan?.waves||[]).filter(w=>w.spawned).length;
   for(const e of ctx.mission?.events||[]){if(ctx.seenEvents.has(e.id))continue;
-    // Optional extra condition set (T&D): the caller decides through hooks.eventOk; published data has none.
-    if(e.conds&&ctx.hooks.eventOk&&!ctx.hooks.eventOk(e))continue;
     if(e.requiredUnitId&&!ctx.allies.some(u=>(u.baseId||u.base||u.key||u.id)===e.requiredUnitId||u.id===e.requiredUnitId))continue;
     const boss=ctx.plan?.boss;
     const ok=e.when==='turn'?ctx.turn>=e.value:e.when==='wave'?wave>=e.value:e.when==='boss_hp'?!!boss&&boss.currentHp/boss.maxHp*100<=e.value:e.when==='unit_down'?[...ctx.allies,...ctx.enemies].some(u=>!u.alive&&(u.key===e.unitId||u.baseId===e.unitId||u.id===e.unitId)):false;
-    if(!ok)continue;ctx.seenEvents.add(e.id);Object.assign(ctx.flags,e.flags||{});
+    if(!ok)continue;
+    // Check T&D conditions only after the event's trigger is ready (no premature chance draws).
+    if(e.conds&&ctx.hooks.eventOk&&!ctx.hooks.eventOk(e))continue;
+    ctx.seenEvents.add(e.id);Object.assign(ctx.flags,e.flags||{});
     if(e.terrain){ctx.terrain=C.terrainMods({terrain:e.terrain});ctx.hooks.log(esc('地形変更: '+e.terrain),'sys');}
     recordFrame(ctx,'event','作戦イベント: '+e.id);await say('作戦イベント',e.lines);ctx.hooks.render();
   }
