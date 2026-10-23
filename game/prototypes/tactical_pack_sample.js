@@ -2,7 +2,8 @@
    training corps and learns the game one feature at a time, guided by three characters (spec 26):
    教官 カザマ (orders and command basics), オペレーター リコ (map, battle and command help), 整備班長 ゴウ (the base).
    Stage 1: the base data and T1〜T3. Stage 2: T4〜T6 (reinforcements, production, tension / carrier, ammo and EN,
-   resupply / domains, transformation, map scale). Base menus open as missions are cleared (hqUnlock). Not loaded by default: the game
+   resupply / domains, transformation, map scale). Stage 3: T7〜T9 (ally support, battle commands, pilots / storage, swap,
+   facility capture / capture by surrounding, purge, escape). Base menus open as missions are cleared (hqUnlock). Not loaded by default: the game
    starts empty and this pack is chosen in パック管理 (or named as the dependency 'sample' by a T&D pack).
    IDs follow the ID rules: <packId>-<CODE>-<6 digits>. */
 (function(){'use strict';
@@ -10,35 +11,40 @@ const id=(code,n)=>'sample-'+code+'-'+String(n).padStart(6,'0');
 // Units, weapons, items, missions, ... by a short name.
 const U={valkis:id('U',1),infantry:id('U',2),hound:id('U',3),garm:id('U',4),sleip:id('U',5),jet:id('U',6),carrier:id('U',7),boat:id('U',8),
  dummy:id('U',10),aggressor:id('U',11),rustInf:id('U',12),technical:id('U',13),bogle:id('U',14),cmdCar:id('U',15),kgBoat:id('U',16),heli:id('U',17),landing:id('U',18),
- garm2:id('U',20),hound2:id('U',21)};
+ radar:id('U',9),garm2:id('U',20),hound2:id('U',21),valkisArt:id('U',22),titan:id('U',23),titanLight:id('U',24),titanCore:id('U',25),mobileInf:id('U',26),
+ kazama:id('U',30),riko:id('U',31),ganz:id('U',40),wolf:id('U',41),berserk:id('U',42),kgInf:id('U',43)};
 const W={rifle:id('W',1),blade:id('W',2),assault:id('W',3),autocannon:id('W',4),mainGun:id('W',5),sleipRifle:id('W',6),missile:id('W',7),carrierAA:id('W',8),boatGun:id('W',9),
  paint:id('W',10),drill:id('W',11),oldRifle:id('W',12),hmg:id('W',13),fist:id('W',14),scatter:id('W',15),cmdGun:id('W',16),kgGun:id('W',17),rocket:id('W',18),landingGun:id('W',19),
- mainGun2:id('W',20),autocannon2:id('W',21),coax:id('W',22)};
-const S={transform:id('S',1),carrier:id('S',2),aim:id('S',10),charge:id('S',11),plate:id('S',12),dodge:id('S',13),spirit:id('S',14)};
-const T={factory:id('T',1)};
+ mainGun2:id('W',20),autocannon2:id('W',21),coax:id('W',22),artillery:id('W',23),titanCannon:id('W',24),titanFist:id('W',25),coreGun:id('W',26),pistol:id('W',28),
+ ganzRifle:id('W',30),saber:id('W',31),berserkGun:id('W',32),kgRifle:id('W',33)};
+const S={transform:id('S',1),carrier:id('S',2),swap:id('S',3),purge:id('S',4),escape:id('S',5),command:id('S',6),radar:id('S',7),aim:id('S',10),charge:id('S',11),plate:id('S',12),dodge:id('S',13),spirit:id('S',14)};
+const T={factory:id('T',1),hangar:id('T',2)};
+const CM={sure:id('CM',1),flash:id('CM',2),cheer:id('CM',3),again:id('CM',4)};
 const I={repair:id('I',1),armor:id('I',2),record:id('I',3),scope:id('I',4)};
-const M={t1:id('TM',1),t2:id('TM',2),t3:id('TM',3),t4:id('TM',4),t5:id('TM',5),t6:id('TM',6)};
+const M={t1:id('TM',1),t2:id('TM',2),t3:id('TM',3),t4:id('TM',4),t5:id('TM',5),t6:id('TM',6),t7:id('TM',7),t8:id('TM',8),t9:id('TM',9)};
 const V={fame:id('V',1)};
 const KAZAMA='カザマ',RIKO='リコ',GOU='ゴウ';
 const say=(speaker,text)=>({speaker,text});
 const talk=(...lines)=>({type:'talk',lines});
 // Map rows: one letter per square (standard terrains; capital letters are this pack's terrains).
-const LEGEND={F:T.factory};
+const LEGEND={F:T.factory,H:T.hangar};
 const grid=rows=>({width:rows[0].length,height:rows.length,grid:rows.map(r=>[...r].map(k=>LEGEND[k]||k))});
 const tree=(...nodes)=>nodes.map(([skillId,cost,minLevel,requires=[]])=>({id:skillId.slice(-6),skillId,cost,minLevel,requires}));
 const ground=r=>({ground:r,air:'none',water:'none',underwater:'none',space:'none'});
+// Condition set: that mission cleared.
+const cleared=m=>({mode:'all',list:[{type:'mission_clear',missionId:m}]});
 const squad=(sid,name,x,y,unit,n,ai,extra={})=>({id:sid,name,position:{x,y},ai,members:Array.from({length:n},()=>({unit})),...extra});
 
 window.PROTacticalSamplePack={
- format:'PRO_TD_PACK',version:1,packId:'sample',name:'第零機甲教導隊',author:'PHANTASIA RECORD OPS',packVersion:'2（T1〜T6）',
+ format:'PRO_TD_PACK',version:1,packId:'sample',name:'第零機甲教導隊',author:'PHANTASIA RECORD OPS',packVersion:'3（T1〜T9）',
  desc:'チュートリアルパック。新人指揮官として教導隊に配属され、演習から実戦へ。作戦を進めるごとに、ゲームの機能をひとつずつ体験できます。',
  // Base menus open as the tutorial goes on.
- hqUnlock:{shop:M.t1,production:M.t2,research:M.t3,equip:M.t4,tree:M.t4,evolve:M.t6},
+ hqUnlock:{shop:cleared(M.t1),production:cleared(M.t2),research:cleared(M.t3),equip:cleared(M.t4),tree:cleared(M.t4),evolve:cleared(M.t6),fusion:cleared(M.t8),captives:cleared(M.t9)},
  notices:[{id:'sample-N-000001',name:'第零機甲教導隊へようこそ',body:'新人指揮官どの、着任おめでとうございます。オペレーターのリコです。\nまずは「ミッション選択」から「T1 初陣」へどうぞ。拠点の機能は、作戦を進めるごとに使えるようになります。'}],
  vars:[{id:V.fame,name:'評判',desc:'教導隊の評判。作戦の結果で上がり下がりする。',scope:'game',initial:0,min:0,max:99}],
  units:[
-  {id:U.valkis,name:'ヴァルキス',role:'主役機',size:'XL',move:5,movementAptitude:ground('A'),hp:4000,atk:300,def:150,mob:520,acc:560,en:200,weaponIds:[W.rifle,W.blade],skillIds:[S.transform],transformTo:[U.jet],tags:['機動兵器'],crew:'optional',sortieCost:300,deploy:{player:true},noFire:true,
-   skillTree:tree([S.aim,1,1],[S.charge,2,3,['000010']],[S.spirit,2,5]),catalog:'教導隊に配備された試作の機動兵器。射撃と格闘をこなす万能機。飛行形態に変形できる。'},
+  {id:U.valkis,name:'ヴァルキス',role:'主役機',size:'XL',move:5,movementAptitude:ground('A'),hp:4000,atk:300,def:150,mob:520,acc:560,en:200,weaponIds:[W.rifle,W.blade],skillIds:[S.transform,S.swap],transformTo:[U.jet],swapTo:[U.valkisArt],tags:['機動兵器'],crew:'optional',sortieCost:300,deploy:{player:true},noFire:true,
+   skillTree:tree([S.aim,1,1],[S.charge,2,3,['000010']],[S.spirit,2,5]),catalog:'教導隊に配備された試作の機動兵器。射撃と格闘をこなす万能機。飛行形態に変形でき、格納庫や母艦では砲撃装備に換装できる。'},
   {id:U.jet,name:'ヴァルキス（飛行形態）',role:'主役機',size:'XL',move:8,movementAptitude:{ground:'none',air:'A',water:'none',underwater:'none',space:'none'},hp:4000,atk:300,def:120,mob:600,acc:540,en:200,weaponIds:[W.rifle,W.missile],skillIds:[S.transform],transformTo:[U.valkis],tags:['機動兵器','航空'],crew:'optional',deploy:{player:true},recruit:{locked:true},
    catalog:'ヴァルキスの飛行形態。空を飛び、海の上も越えられる。'},
   {id:U.infantry,name:'教導歩兵分隊',role:'歩兵',size:'S',move:4,movementAptitude:ground('A'),hp:3200,atk:250,def:80,mob:520,acc:520,weaponIds:[W.assault],skillIds:[],tags:['生身','歩兵'],capture:10,sortieCost:80,deploy:{player:true},skillTree:tree([S.aim,1,1],[S.plate,2,3]),
@@ -57,6 +63,24 @@ window.PROTacticalSamplePack={
    catalog:'ガルム戦車の改良型。開発・進化で手に入る（Lv5以上・2,000 Cr）。'},
   {id:U.hound2,name:'ハウンド改',role:'偵察',size:'M',move:8,movementAptitude:ground('A'),hp:3600,atk:260,def:120,mob:650,acc:600,weaponIds:[W.autocannon2],skillIds:[],tags:['車両'],sortieCost:160,deploy:{player:true},recruit:{locked:true},skillTree:tree([S.aim,1,1],[S.dodge,2,3]),
    catalog:'ハウンド偵察車の改良型。射程が6に伸びた。開発・進化で手に入る（Lv5以上）。'},
+  {id:U.radar,name:'アイズ',role:'レーダー車',size:'M',move:6,movementAptitude:ground('A'),hp:2800,atk:180,def:100,mob:450,acc:520,weaponIds:[W.coax],skillIds:[S.radar],tags:['車両'],sortieCost:140,deploy:{player:true},recruit:{locked:true,missionId:M.t6},
+   catalog:'レーダー車。3マス以内の味方の命中を上げる（味方支援）。T6をクリアすると加入する。'},
+  {id:U.valkisArt,name:'ヴァルキス（砲撃装備）',role:'主役機',size:'XL',move:4,movementAptitude:ground('A'),hp:4400,atk:300,def:180,mob:450,acc:580,en:200,weaponIds:[W.artillery,W.rifle],skillIds:[S.swap],swapTo:[U.valkis],tags:['機動兵器'],crew:'optional',deploy:{player:true},recruit:{locked:true},
+   catalog:'ヴァルキスの砲撃装備。射程2〜6の長距離砲を持つ。格納庫か母艦の上で換装する。'},
+  {id:U.titan,name:'タイタン',role:'重装機',size:'XL',move:3,movementAptitude:ground('B'),hp:7000,atk:320,def:320,mob:250,acc:480,weaponIds:[W.titanCannon],skillIds:[S.purge,S.escape],purgeTo:U.titanLight,escapeTo:U.titanCore,tags:['機動兵器'],crew:'optional',sortieCost:350,deploy:{player:true},recruit:{locked:true,missionId:M.t8},
+   catalog:'重装甲の機動兵器。行動前に装甲をパージして身軽になれる。撃破されてもコアで脱出する。T8をクリアすると加入する。'},
+  {id:U.titanLight,name:'タイタン（パージ後）',role:'重装機',size:'XL',move:6,movementAptitude:ground('A'),hp:4500,atk:320,def:160,mob:480,acc:500,weaponIds:[W.titanFist,W.titanCannon],skillIds:[S.escape],escapeTo:U.titanCore,tags:['機動兵器'],crew:'optional',deploy:{player:true},recruit:{locked:true},
+   catalog:'装甲を捨てたタイタン。速くて格闘が強い。回復できる母艦に載ると元に戻る。'},
+  {id:U.titanCore,name:'タイタン・コア',role:'脱出機',size:'M',move:5,movementAptitude:ground('A'),hp:1200,atk:150,def:60,mob:500,acc:480,weaponIds:[W.coreGun],skillIds:[],tags:['機動兵器'],deploy:{player:true},recruit:{locked:true},
+   catalog:'タイタンの脱出用コア。作戦が終わればタイタンに戻る。'},
+  {id:U.mobileInf,name:'機動歩兵分隊',role:'歩兵',size:'S',move:6,movementAptitude:ground('A'),hp:3600,atk:280,def:100,mob:560,acc:540,weaponIds:[W.assault],skillIds:[],tags:['生身','歩兵'],capture:10,sortieCost:120,deploy:{player:true},recruit:{locked:true},skillTree:tree([S.aim,1,1],[S.dodge,2,3]),
+   catalog:'歩兵と偵察車を合成して生まれた機動歩兵。足が速い。設計・合成で手に入る。'},
+  {id:U.kazama,name:'カザマ',role:'パイロット',size:'S',move:4,movementAptitude:ground('A'),hp:1800,atk:180,def:60,mob:520,acc:540,weaponIds:[W.pistol],skillIds:[S.command],tags:['生身','パイロット'],noFire:true,sortieCost:100,deploy:{player:true},recruit:{locked:true,missionId:M.t6},
+   pilotProfile:{stats:{atk:30,mob:40,acc:60},skillIds:[S.command],aptitude:{tags:['機動兵器'],pct:10},growthPct:2},tension:{max:220},
+   catalog:'教導隊の隊長。乗った機体の3マス以内の味方の命中・回避を上げる（味方支援「指揮」）。'},
+  {id:U.riko,name:'リコ',role:'パイロット',size:'S',move:4,movementAptitude:ground('A'),hp:1500,atk:150,def:40,mob:560,acc:520,weaponIds:[W.pistol],skillIds:[],tags:['生身','パイロット'],noFire:true,sortieCost:100,deploy:{player:true},recruit:{locked:true,missionId:M.t6},
+   pilotProfile:{stats:{mob:60,acc:40},skillIds:[],aptitude:{tags:['車両'],pct:10},growthPct:2},commands:[{id:CM.sure,lv:1},{id:CM.flash,lv:1},{id:CM.cheer,lv:1},{id:CM.again,lv:3}],
+   catalog:'教導隊のオペレーター。パイロットとして乗ると作戦コマンド（必中・ひらめき・激励・再動）が使える。'},
   {id:U.dummy,name:'標的機',size:'M',move:3,movementAptitude:ground('B'),hp:1800,atk:150,def:0,mob:300,acc:400,weaponIds:[W.paint],skillIds:[],tags:['標的'],exp:20,deploy:{enemy:true},
    catalog:'演習用の標的機。ペイント弾で撃ち返してくる。'},
   {id:U.aggressor,name:'仮想敵機',size:'M',move:4,movementAptitude:ground('B'),hp:2400,atk:200,def:80,mob:430,acc:460,weaponIds:[W.drill],skillIds:[],tags:['機動兵器'],exp:30,deploy:{enemy:true},
@@ -74,7 +98,16 @@ window.PROTacticalSamplePack={
   {id:U.heli,name:'黒鉄の攻撃ヘリ',size:'M',move:6,movementAptitude:{ground:'none',air:'A',water:'none',underwater:'none',space:'none'},hp:2000,atk:200,def:40,mob:540,acc:470,weaponIds:[W.rocket],skillIds:[],tags:['航空'],exp:35,deploy:{enemy:true},
    catalog:'黒鉄連合の攻撃ヘリ。'},
   {id:U.landing,name:'黒鉄の揚陸艇',role:'揚陸艇',size:'XL',move:4,movementAptitude:{ground:'none',air:'none',water:'B',underwater:'none',space:'none'},hp:4600,atk:240,def:160,mob:250,acc:460,weaponIds:[W.landingGun],skillIds:[],tags:['艦艇'],exp:100,deploy:{enemy:true},
-   catalog:'黒鉄連合の揚陸艇。赤錆団に武器を運んでいた。'}],
+   catalog:'黒鉄連合の揚陸艇。赤錆団に武器を運んでいた。'},
+  {id:U.ganz,name:'黒鉄ガンツ',role:'量産機',size:'L',move:5,movementAptitude:ground('B'),hp:3600,atk:260,def:150,mob:420,acc:480,weaponIds:[W.ganzRifle],skillIds:[],tags:['機動兵器'],crew:'optional',exp:50,deploy:{enemy:true,player:true},recruit:{locked:true},
+   catalog:'黒鉄連合の量産機。鹵獲すれば自分たちでも使える。'},
+  {id:U.wolf,name:'ヴォルフ',role:'パイロット',size:'S',move:4,movementAptitude:ground('A'),hp:1600,atk:200,def:60,mob:560,acc:560,weaponIds:[W.pistol],skillIds:[],tags:['生身','パイロット'],exp:40,deploy:{enemy:true,player:true},recruit:{locked:true},
+   pilotProfile:{stats:{atk:50,mob:60,acc:80},skillIds:[S.aim],aptitude:{tags:['機動兵器'],pct:15},growthPct:3},
+   catalog:'黒鉄連合のエースパイロット。乗っている機体ごと鹵獲すれば、仲間にできる。'},
+  {id:U.berserk,name:'黒鉄ベルセルク',role:'指揮官機',size:'XL',move:4,movementAptitude:ground('B'),hp:7000,atk:320,def:240,mob:420,acc:500,weaponIds:[W.saber,W.berserkGun],skillIds:[],tags:['機動兵器'],noCapture:true,exp:150,deploy:{enemy:true},
+   catalog:'黒鉄連合の指揮官機。捕獲できない。'},
+  {id:U.kgInf,name:'黒鉄の歩兵',size:'S',move:4,movementAptitude:ground('A'),hp:2600,atk:230,def:40,mob:480,acc:470,weaponIds:[W.kgRifle],skillIds:[],tags:['生身','歩兵'],exp:30,deploy:{enemy:true},
+   catalog:'黒鉄連合の歩兵。'}],
  weapons:[
   {id:W.rifle,name:'ビームライフル',attackType:'ranged',damageType:'beam',useUnitAtk:true,baseAtk:400,powerPct:100,hitsMin:1,hitsMax:2,hitPowerPct:60,accuracyPt:15,enCost:8,minRange:1,maxRange:3},
   {id:W.blade,name:'プラズマブレード',attackType:'melee',damageType:'beam',useUnitAtk:true,baseAtk:300,powerPct:160,hitsMin:2,hitsMax:3,hitPowerPct:45,accuracyPt:20,critPt:10,minRange:1,maxRange:1},
@@ -83,6 +116,11 @@ window.PROTacticalSamplePack={
   {id:W.mainGun,name:'主砲',attackType:'ranged',useUnitAtk:true,baseAtk:500,powerPct:120,hitsMin:1,hitsMax:1,hitPowerPct:100,accuracyPt:5,minDamage:80,ammo:12,minRange:1,maxRange:3},
   {id:W.sleipRifle,name:'マシンライフル',attackType:'ranged',useUnitAtk:true,baseAtk:350,powerPct:100,hitsMin:2,hitsMax:4,hitPowerPct:30,accuracyPt:10,ammo:15,minRange:1,maxRange:2},
   {id:W.coax,name:'同軸機銃',attackType:'ranged',useUnitAtk:true,baseAtk:200,powerPct:80,hitsMin:2,hitsMax:4,hitPowerPct:20,weight:0.5,minRange:1,maxRange:2},
+  {id:W.artillery,name:'長距離砲',attackType:'ranged',useUnitAtk:true,baseAtk:480,powerPct:110,hitsMin:1,hitsMax:2,hitPowerPct:55,accuracyPt:5,ammo:10,minRange:2,maxRange:6},
+  {id:W.titanCannon,name:'重キャノン',attackType:'ranged',useUnitAtk:true,baseAtk:500,powerPct:110,hitsMin:1,hitsMax:2,hitPowerPct:55,ammo:12,minRange:1,maxRange:3},
+  {id:W.titanFist,name:'パイルバンカー',attackType:'melee',useUnitAtk:true,baseAtk:400,powerPct:180,hitsMin:1,hitsMax:2,hitPowerPct:60,accuracyPt:10,critPt:10,minRange:1,maxRange:1},
+  {id:W.coreGun,name:'自衛機銃',attackType:'ranged',useUnitAtk:true,baseAtk:150,powerPct:80,hitsMin:2,hitsMax:4,hitPowerPct:20,minRange:1,maxRange:2},
+  {id:W.pistol,name:'拳銃',attackType:'ranged',useUnitAtk:true,baseAtk:150,powerPct:90,hitsMin:1,hitsMax:2,hitPowerPct:50,accuracyPt:10,minRange:1,maxRange:1},
   {id:W.missile,name:'マイクロミサイル',attackType:'ranged',useUnitAtk:true,baseAtk:350,powerPct:110,hitsMin:2,hitsMax:4,hitPowerPct:30,accuracyPt:10,ammo:6,minRange:1,maxRange:3},
   {id:W.carrierAA,name:'対空機銃',attackType:'ranged',useUnitAtk:true,baseAtk:250,powerPct:80,hitsMin:2,hitsMax:5,hitPowerPct:20,minRange:1,maxRange:2},
   {id:W.boatGun,name:'連装機関砲',attackType:'ranged',useUnitAtk:true,baseAtk:330,powerPct:100,hitsMin:2,hitsMax:4,hitPowerPct:30,accuracyPt:10,ammo:15,minRange:1,maxRange:3},
@@ -97,10 +135,19 @@ window.PROTacticalSamplePack={
   {id:W.cmdGun,name:'速射砲',attackType:'ranged',useUnitAtk:true,baseAtk:320,powerPct:100,hitsMin:2,hitsMax:3,hitPowerPct:35,minRange:1,maxRange:3},
   {id:W.kgGun,name:'艦載機関砲',attackType:'ranged',useUnitAtk:true,baseAtk:280,powerPct:90,hitsMin:2,hitsMax:4,hitPowerPct:25,minRange:1,maxRange:3},
   {id:W.rocket,name:'ロケット弾',attackType:'ranged',useUnitAtk:true,baseAtk:260,powerPct:100,hitsMin:1,hitsMax:3,hitPowerPct:35,minRange:1,maxRange:2},
+  {id:W.ganzRifle,name:'ガンツライフル',attackType:'ranged',useUnitAtk:true,baseAtk:300,powerPct:100,hitsMin:2,hitsMax:4,hitPowerPct:28,accuracyPt:10,minRange:1,maxRange:2},
+  {id:W.saber,name:'ヒートサーベル',attackType:'melee',useUnitAtk:true,baseAtk:350,powerPct:170,hitsMin:1,hitsMax:2,hitPowerPct:60,accuracyPt:15,minRange:1,maxRange:1},
+  {id:W.berserkGun,name:'ガトリング',attackType:'ranged',useUnitAtk:true,baseAtk:320,powerPct:100,hitsMin:3,hitsMax:6,hitPowerPct:18,minRange:1,maxRange:2},
+  {id:W.kgRifle,name:'黒鉄式小銃',attackType:'ranged',useUnitAtk:true,baseAtk:240,powerPct:90,hitsMin:1,hitsMax:4,hitPowerPct:25,accuracyPt:5,minRange:1,maxRange:2},
   {id:W.landingGun,name:'艦砲',attackType:'ranged',useUnitAtk:true,baseAtk:320,powerPct:110,hitsMin:1,hitsMax:2,hitPowerPct:45,minRange:1,maxRange:3}],
  skills:[
   {id:S.transform,name:'変形',tacticalOnly:true,tactical:{transform:{on:true,show:'usable'}}},
   {id:S.carrier,name:'母艦',tacticalOnly:true,tactical:{carry:{count:4,maxSize:'XL'},carryCare:{on:true,hp:20,ammo:50,en:50}}},
+  {id:S.swap,name:'換装',tacticalOnly:true,tactical:{swap:{on:true,show:'usable'}}},
+  {id:S.purge,name:'パージ',tacticalOnly:true,tactical:{purge:{on:true,show:'usable'}}},
+  {id:S.escape,name:'脱出',tacticalOnly:true,tactical:{escape:{on:true,mode:'unit'}}},
+  {id:S.command,name:'指揮',tacticalOnly:true,tactical:{support:{on:true,range:3,hit:10,evade:10,tensionTurn:5}}},
+  {id:S.radar,name:'レーダー',tacticalOnly:true,tactical:{support:{on:true,range:3,hit:15}}},
   {id:S.aim,name:'狙いを定める',trigger:'before_attack',effect:'hit_up_pt',value:10,chance:100,maxUses:0},
   {id:S.charge,name:'突撃',trigger:'before_attack',effect:'damage_up_pct',value:15,chance:100,maxUses:0},
   {id:S.plate,name:'装甲強化',trigger:'when_targeted',effect:'damage_reduce_pct',value:15,chance:100,maxUses:0},
@@ -121,8 +168,15 @@ window.PROTacticalSamplePack={
  evolutions:[
   {id:id('E',1),name:'ガルムII への進化',from:U.garm,to:U.garm2,carry:{level:true},conds:{mode:'all',list:[{type:'unit_level',cmp:'ge',value:5},{type:'credits_use',value:2000}]}},
   {id:id('E',2),name:'ハウンド改 への進化',from:U.hound,to:U.hound2,carry:{level:true},conds:{mode:'all',list:[{type:'unit_level',cmp:'ge',value:5}]}}],
- terrains:[{id:T.factory,name:'工廠',tactical:{kind:'facility',costs:{ground:1,air:1},color:'#6a5a3a',facility:{durability:20,functions:{produce:{list:[{unitId:U.infantry,cost:300},{unitId:U.garm,cost:800}]},income:{amount:500},repair:{pct:20}}}}}],
- fusions:[],achievements:[],flags:[],commands:[],missions:[],
+ terrains:[{id:T.factory,name:'工廠',tactical:{kind:'facility',costs:{ground:1,air:1},color:'#6a5a3a',facility:{durability:20,functions:{produce:{list:[{unitId:U.infantry,cost:300},{unitId:U.garm,cost:800}]},income:{amount:500},repair:{pct:20}}}}},
+  {id:T.hangar,name:'格納庫',tactical:{kind:'facility',costs:{ground:1,air:1},color:'#4a4a5a',facility:{durability:25,functions:{storage:{count:8,size:8,releaseRange:3},swap:{cost:0},repair:{pct:20}}}}}],
+ fusions:[{id:id('FU',1),name:'機動歩兵の設計',materials:[{unitId:U.infantry},{unitId:U.hound}],result:{type:'unit',unitId:U.mobileInf,count:1,register:true}}],
+ commands:[
+  {id:CM.sure,name:'必中',desc:'次の局地戦1回、攻撃が必ず当たる。',costType:'tension',cost:20,target:'self',duration:'battle',fx:{sureHit:true}},
+  {id:CM.flash,name:'ひらめき',desc:'次の局地戦1回、敵の攻撃を1回避ける。',costType:'tension',cost:10,target:'self',duration:'battle',fx:{dodge:true}},
+  {id:CM.cheer,name:'激励',desc:'同じ部隊の全員の気力+30（混乱からも立ち直る）。',costType:'funds',cost:300,target:'squadAll',duration:'now',fx:{tension:30}},
+  {id:CM.again,name:'再動',desc:'同じ部隊の味方1体がもう一度行動できる。',costType:'sp',cost:2,target:'squadOne',duration:'now',fx:{again:true}}],
+ achievements:[],flags:[],missions:[],
  tmissions:[
   {id:M.t1,code:'T1',kind:'training',name:'初陣',desc:'演習場で、部隊の移動・攻撃・待機を確かめる。標的機は動かないが撃ち返してくる。',surface:'ground',color:'#29453e',
    map:grid(['pppppfpppp','ppfpppppfp','pppppppppp','pppfpppppp','pppppppfpp','ppfppppppp','pppppfpppp','pppppppppp']),
@@ -228,7 +282,7 @@ window.PROTacticalSamplePack={
    victory:{type:'boss',groupId:'t6-boss'},defeat:{type:'player_wipe'},victoryLabel:'黒鉄の揚陸艇を沈める',result:{credits:4000,exp:200,items:{[I.repair]:2}},
    objectives:[{id:'t6-ob1',name:'空を取れ',success:{type:'all',conds:[{type:'squad_down',groupId:'t6-h1'},{type:'squad_down',groupId:'t6-h2'}]},label:'ヘリ隊を2つとも撃破する',reward:{credits:800}}],
    stars:[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:10}],
-   clearText:'開発・進化が使えるようになりました（ユニット → 開発・進化）。',
+   clearText:'開発・進化が使えるようになりました（ユニット → 開発・進化）。カザマとリコがパイロットとして、レーダー車アイズが加入しました。',
    events:[
     {id:'t6-start',name:'沖の船',trigger:{type:'start'},actions:[talk(say(KAZAMA,'黒鉄連合の揚陸艇を見つけた。赤錆団に武器を運んでいた船だ。沈めるぞ。'),
      say(RIKO,'このマップの縮尺は「車両」。1マスが広いので、MOVEと射程が半分になります（出撃準備では「5→3」のように出ます）。'),
@@ -236,6 +290,67 @@ window.PROTacticalSamplePack={
      say(KAZAMA,'ヴァルキスは行動前にコマンド「変形」で飛行形態になれる。海の上も飛べるぞ。シーガルは水の上を走れる。'))]},
     {id:'t6-air',name:'空',trigger:{type:'turn',turns:2},actions:[talk(say(RIKO,'空を飛ぶ部隊は地形を気にせず進めます。陸と空の両方に入れる部隊は、部隊を選んだときに出る領域のボタンで切り替えられます。'))]},
     {id:'t6-win',name:'揚陸艇撃沈',trigger:{type:'victory'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(KAZAMA,'揚陸艇を沈めた。だが黒鉄連合の本隊は、もっと大きいはずだ。'),
-     say(GOU,'開発・進化を開けといたぜ。Lv5になったガルムやハウンドは、改良型に進化できる。'),say(RIKO,'次は、もっと大きな作戦になりそうです。'))]}]}]
+     say(GOU,'開発・進化を開けといたぜ。Lv5になったガルムやハウンドは、改良型に進化できる。'),say(KAZAMA,'次からは私とリコも機体に乗る。レーダー車のアイズも連れていくぞ。'))]}]},
+  {id:M.t7,code:'T7',kind:'combat',name:'支援部隊',desc:'黒鉄連合の陸戦隊を迎え撃つ。パイロットの搭乗、味方支援、作戦コマンドを学ぶ。',surface:'ground',color:'#3a3a5a',
+   requires:{missions:[M.t6]},unlockText:'黒鉄連合の陸戦隊が上陸。「T7 支援部隊」が発令されました。',
+   map:grid(['pppfppppppfppp','ppppppfppppppm','pfpppppppfpppm','ppppfppppppppp','pppppppfpppppp','ppfppppppppfpp','pppppfpppppppp','pfppppppfppppp','pppppppppppfpp','ppppfppppppppp']),
+   playerStarts:[{x:0,y:3},{x:0,y:4},{x:0,y:5},{x:1,y:3},{x:1,y:4},{x:1,y:5}],funds:{player:1000},
+   enemies:[squad('t7-e1','黒鉄 ガンツ隊',8,3,U.ganz,2,{pattern:'assault',target:'lowest_hp'}),squad('t7-e2','黒鉄 歩兵隊',9,6,U.kgInf,3,{pattern:'assault',target:'lowest_hp'}),
+    {id:'t7-e3',name:'黒鉄 前線指揮所',position:{x:12,y:4},ai:{pattern:'hold',target:'lowest_hp'},members:[{unit:U.ganz},{unit:U.kgInf}]},
+    {id:'t7-r1',name:'黒鉄 増援',position:{x:13,y:8},reinforce:true,ai:{pattern:'assault',target:'lowest_hp'},members:[{unit:U.ganz},{unit:U.ganz}]}],
+   victory:{type:'enemy_wipe'},defeat:{type:'player_wipe'},result:{credits:4500,exp:220,items:{[I.repair]:2}},
+   stars:[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:10}],
+   clearText:'黒鉄連合の格納庫の場所がわかりました。',
+   events:[
+    {id:'t7-start',name:'上陸',trigger:{type:'start'},actions:[talk(say(KAZAMA,'ここからは私も前に出る。パイロットとして機体に乗れば、私の「指揮」が近くの味方に効く。'),
+     say(RIKO,'わたしも乗ります！ パイロットは、拠点の「ユニット → 搭乗」で機体に乗せておけます。'),
+     say(RIKO,'「味方支援」：カザマ隊長やレーダー車アイズから3マス以内の味方は、命中や回避が上がります。部隊を選ぶと、支援の範囲が金色の点線で出ます。重なれば合計です。'),
+     say(RIKO,'「作戦コマンド」：部隊のコマンド「作戦コマンド」で、乗っているパイロットのコマンドが使えます。行動は使いません。'),
+     say(RIKO,'わたしのコマンドは、必中・ひらめき（気力を使う）、激励（戦場資金を使う）、再動（SP＝スキルポイントの合計を使う・Lv3から）です。'))]},
+    {id:'t7-r1',name:'増援',trigger:{type:'turn',turns:3},actions:[{type:'spawn',groupId:'t7-r1'},talk(say(RIKO,'南東から敵の増援！ 「激励」で部隊の気力を上げて迎え撃ちましょう。'))]},
+    {id:'t7-win',name:'撃退',trigger:{type:'victory'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(KAZAMA,'陸戦隊は退いた。支援があると、部隊の動きがまるで違うな。'),
+     say(GOU,'捕まえた兵の話だと、黒鉄連合は北の山に格納庫を持ってるらしい。'),say(KAZAMA,'次はそこを奪う。'))]}]},
+  {id:M.t8,code:'T8',kind:'combat',name:'格納庫奪取',desc:'黒鉄連合の格納庫を奪う。施設への格納、換装、施設ごとの鹵獲を学ぶ。',surface:'ground',color:'#4a4a3a',
+   requires:{missions:[M.t7]},unlockText:'北の山の格納庫を奪う「T8 格納庫奪取」が発令されました。',
+   map:grid(['ppppfpppppmmmm','pfppppppfppmmm','ppppppfppppppm','pppfppppppfppp','pppppppppppHpp','ppfpppfppppppp','pppppppppfpppp','pfpppfpppppppm','pppppppppppmmm','ppppfpppppmmmm']),
+   playerStarts:[{x:0,y:3},{x:0,y:4},{x:0,y:5},{x:1,y:3},{x:1,y:4},{x:1,y:5}],
+   facilities:{'11,4':'enemy'},
+   enemies:[squad('t8-e1','黒鉄 警備隊',8,2,U.ganz,2,{pattern:'assault',target:'lowest_hp'}),squad('t8-e2','黒鉄 伏兵',8,6,U.kgInf,2,{pattern:'ambush',target:'lowest_hp'}),
+    {id:'t8-e3',name:'黒鉄 門番',position:{x:12,y:4},ai:{pattern:'hold',target:'lowest_hp'},members:[{unit:U.ganz},{unit:U.kgInf}]},
+    {id:'t8-s1',name:'格納庫のガンツ隊',position:{x:11,y:4},stored:true,ai:{pattern:'assault',target:'lowest_hp'},members:[{unit:U.ganz},{unit:U.ganz}]},
+    {id:'t8-s2',name:'格納庫の歩兵隊',position:{x:11,y:4},stored:true,ai:{pattern:'assault',target:'lowest_hp'},members:[{unit:U.kgInf},{unit:U.kgInf}]}],
+   victory:{type:'capture',x:11,y:4},defeat:{type:'player_wipe'},victoryLabel:'格納庫（12,5）を占領する',result:{credits:5000,exp:240,items:{[I.repair]:2}},
+   stars:[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:10}],
+   clearText:'設計・合成が使えるようになりました（ユニット → 設計・合成）。重装機タイタンが加入しました。',
+   events:[
+    {id:'t8-start',name:'格納庫',trigger:{type:'start'},actions:[talk(say(KAZAMA,'あれが黒鉄連合の格納庫だ。中にも敵が隠れているぞ。'),
+     say(RIKO,'格納庫の施設には、部隊をしまっておけます。中の敵は、こちらが3マス以内に近づくと出てきます。'),
+     say(RIKO,'格納庫を占領すると、中に残っている敵の部隊ごと手に入ります！ 勝てば、拠点の「鹵獲一覧」に入りますよ。'),
+     say(GOU,'格納庫や母艦の上なら「換装」もできるぞ。ヴァルキスに砲撃装備を付ければ、射程2〜6の長距離砲が撃てる。'))]},
+    {id:'t8-store',name:'格納',trigger:{type:'turn',turns:2},actions:[talk(say(RIKO,'味方の格納庫なら、こちらの部隊もしまえます。施設の上でコマンド「格納」。中では修理されて、敵にも狙われません。'),
+     say(RIKO,'しまった部隊は、施設のマスから「出撃」で外へ出せます。'))]},
+    {id:'t8-win',name:'格納庫制圧',trigger:{type:'victory'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(KAZAMA,'格納庫を押さえた。中の機体も無傷だ。'),
+     say(GOU,'設計・合成を開けといたぜ。2体のユニットを掛け合わせて、新しいユニットを作れる。歩兵と偵察車で機動歩兵だ。'),say(GOU,'重装機タイタンの整備も終わった。次の作戦で使ってみな。'))]}]},
+  {id:M.t9,code:'T9',kind:'combat',name:'包囲せよ',desc:'黒鉄連合のエース、ヴォルフの部隊を囲んで鹵獲する。囲んで鹵獲、敵のパイロット、パージ、脱出を学ぶ。',surface:'ground',color:'#5a3a4a',
+   requires:{missions:[M.t8]},unlockText:'黒鉄連合のエース部隊が出現。「T9 包囲せよ」が発令されました。',
+   map:grid(['pppppppppfpppp','ppfppppppppppp','pppppfpppppfpp','pppppppppppppp','pppfpppppppppp','pppppppppppfpp','ppfppppfpppppp','pppppppppppppp','pfpppppppfpppp','pppppppppppppp']),
+   playerStarts:[{x:0,y:2},{x:0,y:3},{x:0,y:4},{x:0,y:5},{x:0,y:6},{x:1,y:3},{x:1,y:5}],
+   enemies:[{id:'t9-ace',name:'ヴォルフ隊',position:{x:7,y:4},ai:{pattern:'hold',target:'lowest_hp'},members:[{unit:U.ganz,pilot:{unit:U.wolf,lv:5}}]},
+    squad('t9-e2','黒鉄 歩兵隊',9,7,U.kgInf,2,{pattern:'assault',target:'lowest_hp'}),squad('t9-e3','黒鉄 ガンツ隊',10,1,U.ganz,2,{pattern:'assault',target:'lowest_hp'}),
+    {id:'t9-boss',name:'黒鉄 指揮官',position:{x:12,y:5},ai:{pattern:'hold',target:'lowest_hp'},members:[{unit:U.berserk},{unit:U.ganz}]}],
+   victory:{type:'boss',groupId:'t9-boss'},defeat:{type:'player_wipe'},victoryLabel:'指揮官機ベルセルクの部隊を撃破する',result:{credits:5500,exp:260,items:{[I.repair]:2}},
+   objectives:[{id:'t9-ob1',name:'エースを確保',success:{type:'squad_down',groupId:'t9-ace'},label:'ヴォルフ隊を囲んで鹵獲する（撃破でも達成）',reward:{credits:1000}}],
+   stars:[{type:'clear'},{type:'no_loss'},{type:'turns_le',value:12}],
+   clearText:'鹵獲一覧が使えるようになりました（ユニット → 鹵獲一覧）。',
+   events:[
+    {id:'t9-start',name:'エース',trigger:{type:'start'},actions:[talk(say(KAZAMA,'黒鉄連合のエース、ヴォルフが出てきた。腕は確かだ…仲間にできれば心強い。'),
+     say(RIKO,'敵の部隊の上下左右4マスを、味方の部隊で囲むと、囲んだ部隊のコマンドに「鹵獲」が出ます。マップの端や入れないマスは囲いに数えません。'),
+     say(RIKO,'成功率は、相手のHPが減っているほど高くなります。失敗しても、囲んでいるほかの部隊でもう一度試せます（使った部隊は行動終了）。'),
+     say(RIKO,'鹵獲した部隊はマップから消えて、勝てば鹵獲一覧へ。乗っているパイロットも一緒です。'),
+     say(GOU,'タイタンは行動前に「パージ」で重い装甲を捨てて身軽になれる。撃破されてもコアで「脱出」して、1作戦に1回は戦い続けられるぞ。'),
+     say(KAZAMA,'指揮官機ベルセルクは捕獲できない。倒すしかない。'))]},
+    {id:'t9-ace',name:'エース確保',trigger:{type:'squad_down',groupId:'t9-ace'},actions:[talk(say(RIKO,'ヴォルフ隊、マップから消えました！'),say(KAZAMA,'残るは指揮官機だ。'))]},
+    {id:'t9-win',name:'指揮官撃破',trigger:{type:'victory'},actions:[{type:'var',varId:V.fame,op:'add',value:1},talk(say(GOU,'鹵獲一覧を開けといた。鹵獲したユニットを仲間にするか、手放すか選べるぜ。'),
+     say(KAZAMA,'…黒鉄連合の本拠地の場所がわかった。次で終わらせる。'))]}]}]
 };
 })();
