@@ -18,7 +18,8 @@ function saveSlot(i){return put(slotKey(i),JSON.stringify(snapshot()));}
 // How much this game keeps in the browser (characters of its PRO_ keys; browsers allow about 5 million per site).
 function usage(){let n=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('PRO_'))n+=k.length+(localStorage.getItem(k)||'').length;}}catch(e){}return n;}
 const usageText=()=>{const n=usage();return '保存しているデータ：約'+(n<10000?(n/10000).toFixed(2):Math.round(n/10000))+'万文字（ブラウザの上限の目安：約500万文字）'+(n>3500000?' ⚠ 残りが少なくなっています':'');};
-const autoSave=()=>saveSlot('auto');
+// A failed autosave leaves a small mark: the auto slot is then shown as older than the progress.
+const STALE='PRO_TACTICAL_SLOT_AUTO_STALE',autoSave=()=>{const ok=saveSlot('auto');try{if(ok)localStorage.removeItem(STALE);else localStorage.setItem(STALE,'1');}catch(e){}return ok;};
 const suspended=()=>!!get(SUSPEND);
 // apply(save): write progress back (switching the data source if needed) and reload. Returns a reason when refused.
 function apply(s,{reload=true}={}){if(!valid(s))return 'セーブデータの形式が違います';
@@ -45,7 +46,7 @@ function win(title,lines,acts){$('labWinKind').textContent='セーブ・ロー�
  $('labWinActions').replaceChildren(...acts.map(([label,fn,off,key])=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;b.disabled=!!off;if(key)b.dataset.save=key;return b;}));const d=$('labWindow');if(!d.open)d.showModal();}
 const close=()=>$('labWindow').close();
 function confirm(title,lines,label,run){win(title,lines,[[label,run,false,'ok'],['戻る',open]]);}
-function open(){const auto=read('auto'),rows=[['オート：'+describe(auto),()=>openSlot('auto'),false,'slotauto']];for(let i=0;i<SLOTS;i++){const s=read(i);rows.push(['スロット'+(i+1)+'：'+describe(s),()=>openSlot(i),false,'slot'+i]);}
+function open(){const auto=read('auto'),rows=[['オート：'+describe(auto)+(get(STALE)?' ⚠ 最後の自動保存に失敗（直前の進行を含みません）':''),()=>openSlot('auto'),false,'slotauto']];for(let i=0;i<SLOTS;i++){const s=read(i);rows.push(['スロット'+(i+1)+'：'+describe(s),()=>openSlot(i),false,'slot'+i]);}
  win('セーブ・ロード',[...(suspended()?['⚠ 中断中の作戦があります。拠点に戻ると再開か破棄を先に選びます（中断セーブが優先）。']:[]),'いまの進行：'+describe(snapshot(),false),'スロットを選んで、セーブ・ロード・削除ができます。ファイルへの書き出し・読み込みもできます。',usageText()],[...rows,['ファイルに書き出す',()=>{exportFile();},false,'export'],['ファイルから読み込む',()=>$('saveFile').click(),false,'import'],['閉じる',close]]);}
 // A slot save that does not fit says so (the slot keeps what it had).
 function slotSaved(i){if(saveSlot(i)){openSlot(i);return;}win('セーブできませんでした',['スロット'+(i+1)+'に保存できませんでした（ブラウザの保存領域がいっぱいの可能性があります）。','使っていないスロットを削除するか、ファイルに書き出してから、もう一度お試しください。',usageText()],[['戻る',()=>openSlot(i)]]);}

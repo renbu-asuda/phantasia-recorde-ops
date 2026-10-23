@@ -149,7 +149,14 @@ const joinConds=id=>{try{const c=D.unit(id)?.joinConds;return c?.list?.length?c:
 function fieldHireBlock(e,pending=0){const st=status(e);if(!st.open)return st.why||'まだ雇えません';if(e.limit!=null&&(hired[e.id]||0)+pending>=e.limit)return '雇える上限（'+e.limit+'）に達しています';return '';}
 // Producing that hire: its conditions and the unit's joining conditions are rolled once and their costs paid from the
 // base (the battlefield funds pay the price itself). Returns why it failed, or ''.
-function fieldHirePay(e){if(!e)return '見つかりません';const r=rollConds(e.conds,state()),j=joinRoll(e.unitId);if(!r.ok||!j.ok)return COND_FAILED;const costs=[...(r.costs||[]),...(j.costs||[])];if(costs.length&&!pay(costs))return SHORT;return '';}
+function fieldHirePay(e){if(!e)return '見つかりません';const jr=hireRoll(e,[]);if(!jr.ok)return COND_FAILED;const costs=jr.costs;if(costs.length&&!pay(costs))return SHORT;return '';}
+// A hire's conditions and the unit's joining conditions rolled together (each chance drawn once): the first pair of
+// 'any' choices that can be paid with base (the price) is used.
+function hireRoll(e,base=[]){const draw=()=>{const d=[];let at=0;return {reset:()=>{at=0;},rng:()=>{const i=at++;return d[i]??(d[i]=Math.random());}};},a=draw(),b=draw(),jc=joinConds(e.unitId);
+ const run=pick=>{a.reset();return C.evalConds(e.conds,{...state(),rng:a.rng,...(pick!=null?{pick}:{})});},jrun=pick=>{b.reset();return jc?C.evalConds(jc,{...state(joinUnit(e.unitId)),rng:b.rng,...(pick!=null?{pick}:{})}):{ok:true,costs:[],options:[]};};
+ const r=run(),j=jrun();if(!r.ok||!j.ok)return {ok:false,costs:[]};const ra=Math.max(1,(r.options||[]).length),ja=Math.max(1,(j.options||[]).length);
+ for(let x=0;x<ra;x++)for(let y=0;y<ja;y++){const p=ra>1?run(x):r,q=ja>1?jrun(y):j;if(canPay([...base,...p.costs,...q.costs]))return {ok:true,costs:[...p.costs,...q.costs]};}
+ return {ok:true,costs:[...r.costs,...j.costs]};}
 const noteHire=id=>{hired[id]=(hired[id]||0)+1;save();};
 function status(e){const req=hireUnlocks.includes(e.id)?{}:e.requires||{},missing=(req.missions||[]).filter(m=>!cleared.includes(m)),needR=(req.research||[]).filter(x=>!done.includes(x)),needDay=Number(req.day)>day?Number(req.day):0,needI=(req.items||[]).filter(x=>!((items[x]||0)>0)),r=previewConds(e.conds,state(),[{credits:e.cost}]),full=e.limit!=null&&(hired[e.id]||0)>=e.limit,afford=credits>=e.cost+r.costs.reduce((n,c)=>n+(c.credits||0),0);
  const why=missing.length?'作戦「'+missing.map(m=>D.mission(m)?.name||m).join('・')+'」のクリアが必要':needR.length?'研究「'+needR.map(x=>D.research().find(r=>r.id===x)?.name||x).join('・')+'」が必要':needDay?needDay+'日目から雇えます':!joinOk(e.unitId)?'加入の条件：'+condsText(joinConds(e.unitId)):needI.length?'キーアイテム「'+needI.map(x=>D.itemName(x)).join('・')+'」が必要':!r.ok?'条件：'+condsText(e.conds):full?'雇える上限（'+e.limit+'）に達しています':!afford?'資金が足りません':'';return {ok:!why,why,r,open:!missing.length&&!needR.length&&!needDay&&!needI.length&&joinOk(e.unitId)&&r.ok};}
@@ -173,7 +180,7 @@ function renderProduction(){const list=entries().filter(e=>!e.hidden||status(e).
  if(!list.length)$('productionGrid').append(Object.assign(document.createElement('p'),{className:'cmd-hint',textContent:'生産・雇用できるユニットはまだありません。'}));}
 function openProduction(e){const u=D.unit(e.unitId),st=status(e),have=counts()[e.unitId]||0;
  win(verb(u),u.name,[(e.registered?'生産・雇用リスト（開発・設計で登録）':verb(u))+' ｜ 費用 '+e.cost.toLocaleString()+' Cr','所持 '+have+'体'+(e.limit!=null?' ｜ 雇用 '+(hired[e.id]||0)+' / '+e.limit:''),...(e.requires?.missions?.length?['必要：作戦「'+e.requires.missions.map(m=>D.mission(m)?.name||m).join('・')+'」のクリア']:[]),...(e.conds?.list?.length?['条件：'+condsText(e.conds)]:[]),...(pilotOf(e)?['パイロット：'+pilotOf(e)+'（費用に込み・乗った状態で加わります）']:crew(u)==='required'?['この機体はパイロットが必要です（加わったあと「搭乗」で乗せてください）']:[]),st.ok?'Lv1で加わります。':'できません：'+st.why],
- [[verb(u)+'する',()=>{if(!status(e).ok)return;const r=rollConds(e.conds,state(),{},[{credits:e.cost}]),j=joinRoll(e.unitId);if(!r.ok||!j.ok){win(verb(u),u.name,[COND_FAILED],[['閉じる',close]]);return;}if(!pay([{credits:e.cost},...r.costs,...j.costs])){win(verb(u),u.name,[SHORT],[['閉じる',close]]);return;}join(e.unitId,e.pilot);hired[e.id]=(hired[e.id]||0)+1;save();prodPick=null;renderProduction();win('完了',u.name,[u.name+' が加わりました。（資金 残り '+credits.toLocaleString()+' Cr）'],[['閉じる',close]]);},!st.ok,'run'],['ユニット情報',()=>window.PROField?.showUnit({...u,id:e.unitId})],['閉じる',close]]);}
+ [[verb(u)+'する',()=>{if(!status(e).ok)return;const jr=hireRoll(e,[{credits:e.cost}]);if(!jr.ok){win(verb(u),u.name,[COND_FAILED],[['閉じる',close]]);return;}if(!pay([{credits:e.cost},...jr.costs])){win(verb(u),u.name,[SHORT],[['閉じる',close]]);return;}join(e.unitId,e.pilot);hired[e.id]=(hired[e.id]||0)+1;save();prodPick=null;renderProduction();win('完了',u.name,[u.name+' が加わりました。（資金 残り '+credits.toLocaleString()+' Cr）'],[['閉じる',close]]);},!st.ok,'run'],['ユニット情報',()=>window.PROField?.showUnit({...u,id:e.unitId})],['閉じる',close]]);}
 /* ---------- research ---------- */
 // One research at a time. Start: pay credits, reserve cost.items (they stay owned but can't be used elsewhere).
 // The in-game day advances when a mission ends; on the finishing day the reserved items are consumed and the
@@ -182,12 +189,14 @@ const rById=id=>D.research().find(r=>r.id===id),itemText=o=>Object.entries(o||{}
 // Usable count: owned minus research reservations minus equipped copies.
 const equipped=id=>owned.reduce((n,o)=>n+(o.equip||[]).slice(0,slotsOf(o)).filter(x=>x===id).length,0);
 const free=id=>(items[id]||0)-(active?.reserve?.[id]||0)-equipped(id);
+// The fixed research cost counts when an 'any' condition picks what to spend.
+const researchBase=r=>[{credits:r.cost?.credits||0},...Object.entries(r.cost?.items||{}).map(([itemId,count])=>({itemId,count}))];
 function researchPlan(r,c){const costs=[{credits:r.cost?.credits||0},...c.costs,...Object.entries(r.cost?.items||{}).map(([itemId,count])=>({itemId,count}))],split=C.researchCosts(costs),reserve={};for(const x of split.complete)reserve[x.itemId]=(reserve[x.itemId]||0)+x.count;return {paid:split.start.reduce((n,x)=>n+x.credits,0),reserve};}
 function researchStatus(r){if(done.includes(r.id))return {state:'done',why:'完了済み'};if(active?.id===r.id)return {state:'active',why:'研究中（あと'+Math.max(0,active.until-day)+'日）'};
- const needR=(r.requires||[]).filter(x=>!done.includes(x)),c=previewConds(r.conds,state()),plan=researchPlan(r,c),lack=Object.entries(plan.reserve).filter(([id,n])=>free(id)<n);
+ const needR=(r.requires||[]).filter(x=>!done.includes(x)),c=previewConds(r.conds,state(),researchBase(r)),plan=researchPlan(r,c),lack=Object.entries(plan.reserve).filter(([id,n])=>free(id)<n);
  const why=active?'ほかの研究を進行中':needR.length?'先に「'+needR.map(x=>rById(x)?.name||x).join('・')+'」が必要':!c.ok?'条件：'+condsText(r.conds):credits<plan.paid?'資金が足りません':lack.length?'素材が足りません（'+lack.map(([id,n])=>D.itemName(id)+' '+free(id)+'/'+n).join('・')+'）':'';
  return {state:why?'blocked':'ready',why,open:!needR.length&&c.ok,plan};}
-function startResearch(id){const r=rById(id);if(!r||researchStatus(r).state!=='ready')return false;const c=rollConds(r.conds,state());if(!c.ok)return false;const plan=researchPlan(r,c);if(credits<plan.paid||Object.entries(plan.reserve).some(([k,n])=>free(k)<n)||!pay([{credits:plan.paid}]))return false;active={id,start:day,until:day+Math.max(1,r.days||1),paid:plan.paid,reserve:plan.reserve};save();return true;}
+function startResearch(id){const r=rById(id);if(!r||researchStatus(r).state!=='ready')return false;const c=rollConds(r.conds,state(),{},researchBase(r));if(!c.ok)return false;const plan=researchPlan(r,c);if(credits<plan.paid||Object.entries(plan.reserve).some(([k,n])=>free(k)<n)||!pay([{credits:plan.paid}]))return false;active={id,start:day,until:day+Math.max(1,r.days||1),paid:plan.paid,reserve:plan.reserve};save();return true;}
 function cancelResearch(){if(!active)return false;credits+=active.paid||0;active=null;showCredits();save();return true;}
 function completeResearch(){const r=rById(active.id);addBrief('research:'+active.id,'研究「'+(r?.name||active.id)+'」完了',r?.doneText);for(const [id,n] of Object.entries(active.reserve||{}))items[id]=Math.max(0,(items[id]||0)-n);
  const u=r?.unlock||{},got=[];for(const id of u.units||[]){try{D.unit(id);}catch(e){continue;}owned.push({uid:id+'#'+serial++,id,lv:1,exp:0,sp:0});seen().mark([id],'joined');got.push(D.unit(id).name+'が加入');}
@@ -456,7 +465,8 @@ const rewardText=a=>[a.reward?.credits?a.reward.credits.toLocaleString()+' Cr':'
 // Battle records: totals and the last 20 battles (mission, outcome, turns, stars, credits and the battle log).
 function recordBattle(m,kind,rep,{outcome,turns,log=[]}){stats.battles++;stats[outcome]=(stats[outcome]||0)+1;history.unshift({day,id:m.id,name:m.name,kind,outcome,turns,stars:(rep?.stars||[]).filter(Boolean).length,credits:rep?.credits||0,log:log.slice(-1500)});history=trimHistory(history.slice(0,20));save();}
 // After a mission is fully settled (rewards, losses, EXP, day and research): save, then the one autosave of the mission.
-function settled(){save();window.PROSave?.autoSave();}
+// The progress is saved first; a failed autosave is told (the auto slot keeps the older state).
+function settled(){save();if(window.PROSave&&!window.PROSave.autoSave()){notices.push('オートセーブに失敗しました（保存領域がいっぱいの可能性があります）。進行はこのブラウザに保存済みですが、オートのスロットは前の内容のままです。');save(false);return false;}return true;}
 const OUT={win:'勝利',lose:'敗北',draw:'引き分け'};
 function openAchievements(){const list=ach().filter(a=>!a.hidden||achieved[a.id]);const n=ach().filter(a=>achieved[a.id]).length;
  win('実績','実績 '+n+' / '+ach().length,list.map(a=>(achieved[a.id]?'★ ':'☆ ')+a.name+' — '+(a.desc||'')+' ｜ 報酬：'+rewardText(a)+(achieved[a.id]?'（'+achieved[a.id]+'日目に達成）':'')).concat(ach().length>list.length?['？？？（隠し実績 '+(ach().length-list.length)+'件）']:[]),[['閉じる',close]]);}

@@ -202,7 +202,7 @@ function handleDeath(ctx,u,killer){
   // Optional (T&D prototype only): a destroyed unit may come back as another unit in place (脱出). Absent → unchanged.
   const rep=ctx.hooks.replaceOnDeath?.(u,killer);
   if(killer)ctx.hooks.tensionEvent?.('kill',killer,u);
-  if(rep?.def){ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,replaced:true,exp:killExpOf(u)});if(killer)statFor(ctx,killer).kills++;replaceCombatant(u,rep.def,rep.extra);if(rep.text)ctx.hooks.log(`<span class="skill">${esc(rep.text)}</span>`);
+  if(rep?.def){ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,replaced:true,exp:killExpOf(u)});if(killer)statFor(ctx,killer).kills++;const wasEscort=u.escort;replaceCombatant(u,rep.def,rep.extra);if(ctx.tdRules&&wasEscort)u.escort=true;/* T&D: still the one to protect */if(rep.text)ctx.hooks.log(`<span class="skill">${esc(rep.text)}</span>`);
     // T&D (ctx.tdRules): the machine is lost when only its pilot gets out, so its squadmates' ally_down fires.
     if(ctx.tdRules&&rep.extra?.escapedFrom)for(const x of sideOf(ctx,u))if(x!==u&&x.alive)triggerSkills(ctx,x,'ally_down',{opponent:killer});
     ctx.hooks.died?.(u);ctx.hooks.render();return true;}
@@ -258,10 +258,11 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
       let dmg=Math.max(0,Math.round(raw));
       if(target.status?.shield>0){const ab=Math.min(target.status.shield,dmg);target.status.shield-=ab;dmg-=ab;absorbed+=ab;}
       target.currentHp-=dmg;targetHits++;targetDmg+=dmg;actionHits++;actionDmg+=dmg;attackerStat.hits++;attackerStat.damage+=dmg;statFor(ctx,target).damageTaken+=dmg;
-      if(target.currentHp<=0&&target.alive){const was=ctx.tdRules?{...target,tags:[...(target.tags||[])],alive:false,currentHp:0}:null;/* T&D: on_kill sees the unit as it was destroyed, not what it became (脱出) */if(handleDeath(ctx,target,attacker)){killCount++;lastKilled=was||target;break;}}
+      if(target.currentHp<=0&&target.alive){const was=ctx.tdRules?{...target,tags:[...(target.tags||[])],alive:false,currentHp:0}:null;/* T&D: on_kill sees the unit as it was destroyed, not what it became (脱出) */if(handleDeath(ctx,target,attacker)){killCount++;lastKilled=was||target;if(ctx.tdRules&&target.alive)target._replacedNow=true;/* T&D: a new unit (脱出) took no hit */break;}}
     }
-    if(targetHits>0)H.tensionEvent?.('hit',target,attacker);else if(target.alive)H.tensionEvent?.('evade',target,attacker);
-    if(targetHits>0){H.popDamage(target,targetDmg,targetCrits>0,targetHits,weapon);if(target.alive)triggerSkills(ctx,target,'after_damaged',{attacker,weapon,damage:targetDmg,opponent:attacker,counter:opts.counter});}
+    const fresh=target._replacedNow;delete target._replacedNow;
+    if(targetHits>0){if(!fresh)H.tensionEvent?.('hit',target,attacker);}else if(target.alive)H.tensionEvent?.('evade',target,attacker);
+    if(targetHits>0){H.popDamage(target,targetDmg,targetCrits>0,targetHits,weapon);if(target.alive&&!fresh)triggerSkills(ctx,target,'after_damaged',{attacker,weapon,damage:targetDmg,opponent:attacker,counter:opts.counter});}
     else if(target.alive)triggerSkills(ctx,target,'on_evade',{attacker,weapon,opponent:attacker,counter:opts.counter});
     targetResults.push({target,hits:targetHits,damage:targetDmg,crits:targetCrits,attempts,down:!target.alive,absorbed});
     H.render();await H.wait(.35);
@@ -366,7 +367,8 @@ async function runBattle(ctx,opts={}){
     if(!fighters().length)return 'lose';
     if(ctx.allies.some(u=>u.escort&&!u.alive))return 'lose';
     if(plan.type==='boss'&&plan.boss&&!plan.boss.alive)return 'win';
-    if(plan.type!=='boss'&&!ctx.enemies.some(alive)&&plan.waves.every(w=>w.spawned))return 'win';
+    // T&D (ctx.tdRules): reinforcements of the mission rules still to come keep the battle going.
+    if(plan.type!=='boss'&&!ctx.enemies.some(alive)&&plan.waves.every(w=>w.spawned)&&!(ctx.tdRules&&reinforce.some(r=>r.turn>turn)))return 'win';
     return null;
   };
   triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'battle_start');await processPending(ctx);
@@ -413,6 +415,7 @@ async function phaseCheck(ctx){
     for(const [k,v] of Object.entries(p.stats||{})){u[k]=v;if(k==='hp')u.maxHp=Math.max(1,v);}
     u.currentHp=clamp(p.hpMode==='value'?p.hpValue:p.hpMode==='keep'?oldHp:oldHp/oldMax*u.maxHp,1,u.maxHp);
     if(p.weapons!==undefined){u.weapons=C.clone(p.weapons);u.weaponState={};}if(p.skills!==undefined)u.skills=C.clone(p.skills);if(p.ai)u.ai=C.clone(p.ai);
+    ctx.hooks.phased?.(u,p);/* optional (T&D): told of the new values (support recalculation) */
     ctx.hooks.log(esc(u.name+' / 段階変化: '+p.name),'sys');recordFrame(ctx,'phase',u.name+' → '+p.name);await say(p.name,p.lines);ctx.hooks.render();
   }
 }

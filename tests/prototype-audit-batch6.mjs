@@ -1,0 +1,49 @@
+import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';import {Window} from 'happy-dom';
+// Regression tests for #373–#392 (tactical hub side) on native T&D packs (maker draft as the data source).
+const file='game/prototypes/tactical_hub.html',html=fs.readFileSync(file,'utf8'),windows=[];
+const dump=w=>{const s=w.localStorage,o={};for(let i=0;i<s.length;i++){const k=s.key(i);o[k]=s.getItem(k);}return o;};
+function open(pack,store={},query=''){const w=new Window({url:'http://localhost/'+file+query,settings:{enableJavaScriptEvaluation:true,disableJavaScriptFileLoading:true,disableCSSFileLoading:true,suppressInsecureJavaScriptEnvironmentWarning:true}});windows.push(w);w.scrollTo=()=>{};
+ if(pack){w.localStorage.setItem('PRO_TACTICAL_SOURCE','maker');w.localStorage.setItem('PRO_TD_MAKER_DRAFT',JSON.stringify(pack));}for(const [k,v] of Object.entries(store))w.localStorage.setItem(k,v);w.sessionStorage.setItem('PRO_TACTICAL_TITLE_SEEN','1');w.document.write(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,''));
+ for(const dl of w.document.querySelectorAll('dialog')){dl.showModal=()=>dl.setAttribute('open','');dl.show=()=>dl.setAttribute('open','');dl.close=()=>{dl.removeAttribute('open');dl.dispatchEvent(new w.Event('close'));};}
+ const cp=w.HTMLCanvasElement.prototype;cp.getContext=()=>({fillRect(){},set fillStyle(v){}});cp.toDataURL=()=>'data:image/png;base64,UElY';
+ for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)){const src=/src=["']([^"']+)["']/.exec(m[1]);w.eval(src?fs.readFileSync(path.resolve(path.dirname(file),src[1]),'utf8'):m[2]);}return w;}
+const grid=(w,h)=>Array.from({length:h},()=>Array(w).fill('p'));
+const unit=(id,x={})=>({id,name:id,size:'M',move:5,movementAptitude:{ground:'B',air:'none',water:'none',underwater:'none',space:'none'},hp:4000,atk:300,def:100,mob:200,acc:400,weaponIds:[],skillIds:[],deploy:{player:true},...x});
+const tm=(x={})=>({id:'m',name:'M',kind:'combat',map:{width:8,height:6,grid:grid(8,6)},playerStarts:[{x:0,y:0},{x:1,y:0},{x:0,y:1},{x:1,y:1}],enemies:[{id:'eg',name:'敵',position:{x:7,y:5},members:[{unit:'e'}]}],victory:{type:'enemy_wipe'},defeat:{type:'player_wipe'},result:{credits:100,exp:10},...x});
+const pack=x=>({format:'PRO_TD_PACK',version:1,packId:'t',name:'T',units:[unit('a'),unit('b'),unit('e',{deploy:{enemy:true}})],weapons:[],skills:[],items:[],terrains:[],flags:[],missions:[],tmissions:[tm()],research:[],hires:[],evolutions:[],fusions:[],achievements:[],...x});
+// Deploys owned units (by unit id), one squad each.
+function deploy(w,ids,mid='m'){const L=w.PROUnitLab,F=w.PROField,used=new Set();const groups=ids.map((id,i)=>{const o=L.owned().find(u=>u.id===id&&!used.has(u.uid));used.add(o.uid);return {id:'g'+i,name:'G'+i,faction:'player',mode:'auto',members:[{uid:o.uid,unit:o}]};});F.deploy({missionId:mid,groups});const s=F._live();s.talkQueue=[];return s;}
+const G=(w,id)=>w.PROField._live().groups.find(g=>g.id===id);
+try{
+ const apt=(x={})=>({ground:'none',air:'none',water:'none',underwater:'none',space:'none',...x});
+ const gun=(id,x={})=>({id,name:id,attackType:'ranged',damageType:'physical',useUnitAtk:true,baseAtk:100,powerPct:100,hitsMin:1,hitsMax:1,hitPowerPct:100,minRange:1,maxRange:1,...x});
+ // #373: a research 'any' condition counts the fixed research cost.
+ {const w=open(pack({items:[{id:'i',name:'I',price:0}],startItems:{i:2},research:[{id:'r',name:'R',days:1,cost:{credits:7000,items:{i:1}},conds:{mode:'any',list:[{type:'credits_use',value:6000},{type:'item_use',itemId:'i',count:1}]}}]}));const L=w.PROUnitLab;L.spend(L.credits()-10000);assert.equal(L.startResearch('r'),true,'started with the item branch (#373)');assert.equal(L.credits(),3000);}
+ // #374: hire and joining conditions are chosen together.
+ {const w=open(pack({items:[{id:'i',name:'I',price:0}],startItems:{i:1},units:[unit('a'),unit('b',{joinConds:{mode:'all',list:[{type:'credits_use',value:6000}]}}),unit('e',{deploy:{enemy:true}})],hires:[{id:'h',unitId:'b',cost:0,conds:{mode:'any',list:[{type:'credits_use',value:6000},{type:'item_use',itemId:'i',count:1}]}}]}));const L=w.PROUnitLab;L.spend(L.credits()-10000);const e=L.hireList().find(x=>x.unitId==='b');assert.equal(L.fieldHirePay(e),'','paid (#374)');assert.equal(L.credits(),4000);assert.equal(L.items().i||0,0);}
+ // #375: a flyer produced into storage on a water facility can come out (air).
+ {const wf={id:'wf',name:'水上基地',tactical:{kind:'water',costs:{water:1,air:1},facility:{durability:10,functions:{storage:{},produce:{}}}}};
+  const w=open(pack({terrains:[wf],units:[unit('a'),unit('fly',{movementAptitude:apt({ground:'A',air:'A'})}),unit('e',{deploy:{enemy:true}})],tmissions:[tm({map:{width:8,height:6,grid:grid(8,6).map((r,y)=>r.map((k,x)=>x===3&&y===3?'wf':k))},facilities:{'3,3':'player'},funds:{player:1000}})]}));const F=w.PROField,s=deploy(w,['a']);F._t.produce(3,3,{kind:'unit',unitId:'fly',cost:0},{type:'new'});const st=(s.stored?.['3,3']||[])[0];assert(st,'stored');assert.equal(st.members[0].domain,'air','air on a water facility (#375)');}
+ // #376: AI production picks a candidate that can be placed.
+ {const gf={id:'gf',name:'工場',tactical:{kind:'ground',costs:{ground:1,air:1},facility:{durability:10,functions:{produce:{list:[{unitId:'boat'},{unitId:'e'}]}}}}};
+  const w=open(pack({terrains:[gf],units:[unit('a'),unit('boat',{atk:99999,movementAptitude:apt({water:'A'}),deploy:{enemy:true}}),unit('e',{deploy:{enemy:true}})],tmissions:[tm({map:{width:8,height:6,grid:grid(8,6).map((r,y)=>r.map((k,x)=>x===5&&y===2?'gf':k))},facilities:{'5,2':'enemy'},funds:{enemy:1000000000},aiProduce:{enemy:{mode:'strongest'}}})]}));const F=w.PROField,s=deploy(w,['a']);const out=F.aiProduce('enemy');assert.equal(out.length,1,'the placeable one (#376)');}
+ // #389: squad IDs stay unique (the counter is in the mission state).
+ {const w=open(pack());const F=w.PROField,s=deploy(w,['a']);s.groups.push({...JSON.parse(JSON.stringify(G(w,'g0'))),id:'detached-1'});s.prodSerial=1;assert.equal(F._t.freshId('detached'),'detached-2','no reuse (#389)');}
+ // #391: cargo destroyed with its carrier can be revived.
+ {const w=open(pack());const F=w.PROField,L=w.PROUnitLab,s=deploy(w,['a','b']);const ob=L.owned().find(u=>u.id==='b');F.ejectAll([{c:{uid:ob.uid,unit:ob},groupId:'g0',mates:G(w,'g0').members.map(m=>m.uid),pos:{x:0,y:0},faction:'player',from:'母艦',eject:false}]);assert(F._t.fallenOf(G(w,'g0')).some(f=>f.member.uid===ob.uid),'fallen with the carrier (#391)');}
+ // #385: a failed autosave is told and marked.
+ {const w=open(pack());const L=w.PROUnitLab,real=w.localStorage,fake={getItem:k=>real.getItem(k),removeItem:k=>real.removeItem(k),setItem:(k,v)=>{if(k==='PRO_TACTICAL_SLOT_AUTO')throw new Error('QuotaExceededError');real.setItem(k,v);},key:i=>real.key(i),get length(){return real.length;}};
+  Object.defineProperty(w,'localStorage',{value:fake,configurable:true});const ok=L.settled();Object.defineProperty(w,'localStorage',{value:real,configurable:true});assert.equal(ok,false);assert(L.hqData().notices.some(t=>/オートセーブに失敗/.test(t)),'told (#385)');assert.equal(real.getItem('PRO_TACTICAL_SLOT_AUTO_STALE'),'1','marked');}
+ // Shared engine (ctx.tdRules) and PRO・D.
+ {const w=open(pack());const B=w.PROBattle,X=w.PRODispatch;const mk=(o,side,id)=>B.combatant({name:id,hp:4000,atk:500,def:0,mob:1,acc:999,weapons:[],skills:[],tags:[],...o},side,id);
+  const W={name:'g',attackType:'ranged',damageType:'physical',powerPct:100,accuracyPt:0,critPt:0,hitsMin:1,hitsMax:1,hitPowerPct:100,minDamage:1,targetCount:1,weight:1};
+  // #382: the unit that got out (脱出) didn't take the hit.
+  {const a=mk({weapons:[W]},'ally','a'),e=mk({hp:1},'enemy','e');const ctx=B.createContext({allies:[a],enemies:[e],rng:()=>0});ctx.tdRules=true;ctx.hooks.replaceOnDeath=()=>({def:{name:'pod',hp:4000,atk:1,def:0,mob:1,acc:1,weapons:[],tags:[],skills:[{id:'react',name:'R',trigger:'after_damaged',effect:'shield',value:999,target:'self',chance:100}]},extra:{escaped:true}});await B.resolveWeapon(ctx,a,W,[e]);assert.equal(e.name,'pod');assert.equal(e.status.shield||0,0,'no reaction (#382)');}
+  // #384: the escort stays the escort after 脱出.
+  {const a=mk({},'ally','a'),es=mk({},'ally','es'),e=mk({},'enemy','e');es.escort=true;const ctx=B.createContext({allies:[a,es],enemies:[e]});ctx.tdRules=true;ctx.hooks.replaceOnDeath=u=>u===es?{def:{name:'pod',hp:10,atk:1,def:0,mob:1,acc:1,weapons:[],skills:[],tags:[]},extra:{escaped:true}}:null;es.currentHp=0;B.handleDeath(ctx,es,e);assert.equal(es.escort,true,'escort kept (#384)');}
+  // #383: a phase value equal to the supported one is still the new base.
+  {const sup={id:'sup',name:'支援',tacticalOnly:true,tactical:{support:{on:true,atk:100}}},a=mk({phases:[{id:'p',name:'P',cond:{type:'turn_ge',value:1},stats:{atk:1000}}]},'ally','a'),b=mk({skills:[sup]},'ally','b'),e=mk({},'enemy','e');const ctx=X.prepareBattle(B.createContext({allies:[a,b],enemies:[e]}));ctx.seenEvents=new Set();ctx.flags={};ctx.turn=1;await ctx.hooks.turnStart(1);assert.equal(a.atk,1000);await B.checkpoint(ctx);ctx.turn=2;await ctx.hooks.turnStart(2);assert.equal(a.atk,2000,'new base 1000 + 100% (#383)');}
+  // #381: reinforcements of the mission rules are waited for.
+  {const A={id:'a',name:'A',hp:99999,atk:99999,def:0,mob:999,acc:9999,tags:[],skills:[],weapons:[W]},E={id:'e',name:'E',hp:1,atk:0,def:0,mob:0,acc:0,tags:[],skills:[],weapons:[]};const ctx=X.prepareBattle(B.buildBattle({allies:[A],mission:{id:'m',enemies:['e'],rules:[{type:'reinforce',turn:3,enemies:['e']}]},enemyDefs:{e:E},unitDefs:{e:E}},()=>0));const r=await B.runBattle(ctx);assert.equal(r.outcome,'win');assert(r.turns>=3,'waited for turn 3 (#381): '+r.turns);assert.equal(ctx.enemies.length,2);}}
+ console.log('PASS: prototype audit batch 6 (#373–#392 hub side)');
+}finally{for(const w of windows)try{w.close();}catch(e){}}
