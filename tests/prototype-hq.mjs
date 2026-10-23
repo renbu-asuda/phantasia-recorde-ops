@@ -451,7 +451,7 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
   // count for win / lose, are repaired on their side's turn, AI release when a foe is near, capture takes the squads inside.
   {const hangar={id:'td-t-hangar',name:'格納庫',tactical:{kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{storage:{count:16,size:16},repair:{pct:50},produce:{list:[{unitId:'td-u-b',cost:100}]}}}}};
    const grid=Array.from({length:6},(_,y)=>Array.from({length:10},(_,x)=>(x===1&&y===0)||(x===8&&y===5)||(x===5&&y===0)?'td-t-hangar':'p'));
-   const d8={...d2,terrains:[...d2.terrains,hangar],tmissions:[...d2.tmissions,{...tm('tm-store',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:10,height:6,grid},facilities:{'1,0':'player','8,5':'enemy','5,0':'enemy'},funds:{player:1000},capturedJoin:true,
+   const d8={...d2,terrains:[...d2.terrains,hangar],tmissions:[...d2.tmissions,{...tm('tm-store',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:10,height:6,grid},facilities:{'1,0':'player','8,5':'enemy','5,0':'enemy'},funds:{player:1000},
     enemies:[{id:'es1',name:'格納隊',stored:true,position:{x:8,y:5},members:[{unit:'td-u-b'}]},{id:'es2',name:'待機隊',stored:true,position:{x:5,y:0},aiRules:[{conds:[],acts:[{type:'wait'}]}],members:[{unit:'td-u-b'}]}]}]};
    w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d8)});const F=w.PROField,L=w.PROUnitLab,$=id=>w.document.getElementById(id);
    const u1=L.addOwned('td-u-a'),u2=L.addOwned('td-u-a'),sq=(id,u)=>w.PROTactical.initializeDomains({id,name:id+'隊',faction:'player',mode:'auto',members:[{uid:u,unit:L.owned().find(x=>x.uid===u)}]},'ground');
@@ -466,8 +466,8 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    assert(G('es1')&&G('es1').position.x===8,'AI released the stored squad when a foe came near');assert(s.stored['5,0'][0].id==='es2','a waiting rule keeps it inside');
    const g1s=s.stored['1,0'].find(g=>g.id==='g1');assert(g1s.members[0].currentHp>100,'repaired inside');
    F.pick(1,0);F.pick(1,0);$('fieldStorage').click();$('fieldChoiceBody').querySelector('[data-release=g1]').click();assert(G('g1')&&w.PROTactical.canAct(G('g1')),'released squad can act');
-   s.groups=s.groups.filter(g=>g.id!=='es1');G('g2').position={x:5,y:0};F.fac(5,0).st.dur=1;F.focusGroup('g2');F.capture();assert.equal(F.fac(5,0).owner,'player');const cap=s.stored['5,0'][0];assert(cap.faction==='player'&&cap.guest&&cap.captured,'captured with the facility');
-   assert.equal(F.checkOutcome(),'victory');s.talkQueue=[];const n0=L.owned().length;F.showResult();assert.equal(L.owned().length,n0+1,'captured unit joins (capturedJoin)');w.close();}
+   s.groups=s.groups.filter(g=>g.id!=='es1');G('g2').position={x:5,y:0};F.fac(5,0).st.dur=1;F.focusGroup('g2');F.capture();assert.equal(F.fac(5,0).owner,'player');assert(!(s.stored['5,0']||[]).length,'the squads inside leave the map');assert.equal(s.seized.length,1);
+   assert.equal(F.checkOutcome(),'victory');s.talkQueue=[];const n0=L.owned().length;F.showResult();assert.equal(L.owned().length,n0,'not owned yet');assert.equal(L.captives().length,1,'facility capture goes to the 鹵獲一覧');w.close();}
   // Release range: the squad's setting (here 1) replaces the default 4.
   {const hangar={id:'td-t-hangar',name:'格納庫',tactical:{kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{storage:{count:8,size:8,releaseRange:6}}}}};
    const d10={...d2,terrains:[...d2.terrains,hangar],tmissions:[...d2.tmissions,{...tm('tm-range',{type:'enemy_wipe'},{type:'player_wipe'}),map:{width:10,height:6,grid:Array.from({length:6},(_,y)=>Array.from({length:10},(_,x)=>x===8&&y===5?'td-t-hangar':'p'))},facilities:{'8,5':'enemy'},enemies:[{id:'es1',name:'格納隊',stored:true,releaseRange:1,position:{x:8,y:5},members:[{unit:'td-u-b'}]}]}]};
