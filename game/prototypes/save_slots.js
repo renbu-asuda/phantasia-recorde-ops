@@ -26,6 +26,9 @@ function apply(s,{reload=true}={}){if(!valid(s))return 'セーブデータの形
  // Made with a maker draft: the draft here must be the same pack (pack ID), or its units would be dropped.
  if((s.load?.maker||s.source==='maker')&&s.makerPack!=null&&window.PROTacticalData?.makerPackId?.()!==s.makerPack)return 'このセーブはメーカーの別の下書き（パックID：'+s.makerPack+'）で作られたため、いまの下書きでは読み込めません';
  if(s.source==='pack'&&!s.load&&!window.PROTacticalData?.hasPack?.())return 'パックファイルが読み込まれていないため、パックのデータで作ったセーブは読み込めません';
+ // An old single-pack save (no load set): restored with the one stored pack as the current load set (PRO_TACTICAL_LOAD);
+ // with several stored packs it can't tell which one it was made with.
+ if(s.source==='pack'&&!s.load){const ids=(window.PROTacticalData?.packs?.()||[]).map(p=>String(p.packId));if(ids.length!==1)return 'パックが複数登録されているため、このセーブ（旧形式）がどのパックで作られたか判別できません（使ったパックだけを残してから読み込んでください）';s={...s,load:{sample:false,maker:false,packs:ids}};}
  // Saves made with several sources restore the same combination (every pack must still be stored here).
  if(s.load){const have=(window.PROTacticalData?.packs?.()||[]).map(p=>p.packId),miss=(s.load.packs||[]).filter(id=>!have.includes(id));if(miss.length)return 'このセーブに使われたパック（'+miss.join('・')+'）が読み込まれていないため読み込めません';if(s.load.maker&&!window.PROTacticalData?.hasMakerDraft?.())return 'メーカーの下書きがないため、このセーブは読み込めません';}
  // Every write must succeed; otherwise everything (the suspend save included) goes back as it was and nothing reloads.

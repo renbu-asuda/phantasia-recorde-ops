@@ -114,8 +114,8 @@ w=open({});{const L=w.PROUnitLab,D=w.PROTacticalData,DD=w.PRODispatchData,d=w.do
  const r3=L.finishMission(D.mission((SX('combat-01'))),{outcome:'lose',turns:3,reward:2400});assert.equal(r3.credits,288);assert.equal(L.record((SX('combat-01'))).clears,0);
  // PRO・D: recruit-locked unit appears after its mission is cleared; drops and stars go to the save.
  const locked=Object.values(DD.defs).find(u=>u.recruit?.locked&&u.recruit.missionId);if(locked){const m=DD.mission(locked.recruit.missionId);const r=L.finishMission(m,{outcome:'win',turns:5,reward:m.reward,recruitPool:Object.values(DD.defs),itemName:DD.itemName});assert(r.recruits.includes(locked.name));assert(L.recruited().includes(locked.id));}
- // Deploy rules: minimum level.
- assert.equal(L.deployProblem({requires:{minLevel:3}},{tags:[]},2),'Lv3以上が必要');assert.equal(L.deployProblem({requires:{minLevel:3}},{tags:[]},3),'');saved=dump(w);}
+ // Deploy rules: the minimum level is the squad's highest level (#280), not each unit's.
+ assert.equal(L.deployProblem({requires:{minLevel:3}},{tags:[]},2),'');assert.match(L.levelProblem({requires:{minLevel:3}},[2,1]),/Lv3以上/);assert.equal(L.levelProblem({requires:{minLevel:3}},[3,1]),'');saved=dump(w);}
 w.close();w=open(saved);assert.equal(w.PROUnitLab.record((SX('training-01'))).clears,2);w.close();
 // Sortie support: PRO・D auto lineup, win estimate, presets, supply; story choices with display conditions; Tactical presets and supply.
 w=open({});{const L=w.PROUnitLab,DD=w.PRODispatchData,X=w.PRODispatch,d=w.document;const mid=DD.listing()[0].id;X.show(mid);
@@ -757,7 +757,7 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    w=open({PRO_TACTICAL_TEST_TITLE:'1',PRO_TACTICAL_LOAD:JSON.stringify({sample:true,maker:true,packs:[]}),PRO_TD_MAKER_DRAFT:JSON.stringify(d2),PRO_TACTICAL_TESTPLAY:JSON.stringify({missionId:'tm-reach',party:'save',units:[],snapshot:{}})},'?trial=tm-reach');assert(w.document.querySelector('#titleScreen').hidden,'test play skips the title');w.close();}
   // Map scale: MOVE and weapon ranges are converted by unit ratio ÷ map ratio (rounded, at least 1); mixed squads use the slowest.
   {w=open({PRO_TACTICAL_SOURCE:'maker',PRO_TD_MAKER_DRAFT:JSON.stringify(d2)});const F=w.PROField,L=w.PROUnitLab,T=w.PROTactical,D=w.PROTacticalData,inf=L.owned().find(x=>x.uid===SX('infantry')),tank=D.unit('td-u-tank');
-   assert.equal(JSON.stringify(D.scales().map(x=>x.ratio)),'[1,2,4,8,16]');assert.equal(D.scaleOf('space').name,'宇宙戦略');assert.equal(D.scaleOf(undefined).id,'infantry');
+   assert.equal(JSON.stringify(D.scales().map(x=>x.ratio)),'[1,2,4,8,16]');assert.match(D.scales().at(-1).id,/:space$/,'pack scales are named per pack (#286)');assert.equal(D.scaleOf(D.scales().at(-1).id).name,'宇宙戦略');assert.equal(D.scaleOf(undefined).id,'infantry');
    assert.equal(D.scaledMove(tank,'tm-inf'),12);assert.equal(D.scaledMove(tank,'tm-air'),3);assert.equal(D.scaledMove({move:5},'tm-air'),1,'1.25 rounds to 1');assert.equal(D.scaledMove({move:1},'tm-air'),1,'at least 1');
    const go=(id,members)=>{F.deploy({missionId:id,groups:[T.initializeDomains({id:'g1',name:'第1部隊',faction:'player',mode:'auto',members},'ground')]});const s=F._live();s.talkQueue=[];F.focusGroup('g1');return s;};
    let s=go('tm-inf',[{uid:'t1',unit:{...tank}}]);let u=s.groups.find(g=>g.id==='g1').members[0].unit;assert.equal(u.move,12);assert.equal(u.weapons[0].maxRange,6,'range ×2');assert.equal(T.groupMove(s.groups.find(g=>g.id==='g1')),12);

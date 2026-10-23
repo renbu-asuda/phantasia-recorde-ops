@@ -6,7 +6,9 @@ const MAX_SLOTS=8;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const num=(v,f)=>{const n=Number(v);return Number.isFinite(n)?n:f;};
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
-function baseHitRate(acc,mob,accuracyPt=0){return clamp((70+(acc-mob)/10+accuracyPt)/100,.05,.95);}
+function baseHitRate(acc,mob,accuracyPt=0){return clamp(rawHitRate(acc,mob,accuracyPt),.05,.95);}
+// Before the 5〜95% limits. Optional (T&D: ctx.hitClampLate): modifiers are added to this and limited once at the end.
+function rawHitRate(acc,mob,accuracyPt=0){return (70+(acc-mob)/10+accuracyPt)/100;}
 const BASIC_WEAPON=Object.freeze({name:'通常攻撃',attackType:'melee',damageType:'physical',note:'使用可能な武装がない時の攻撃',powerPct:60,accuracyPt:10,critPt:0,targetCount:1,weight:1,minDamage:20,hitsMin:1,hitsMax:1,hitPowerPct:100});
 const BUFF_STAT={atk_up_pct:['atk',1],def_up_pct:['def',1],mob_up_pct:['mob',1],acc_up_pct:['acc',1],atk_down_pct:['atk',-1],def_down_pct:['def',-1],mob_down_pct:['mob',-1],acc_down_pct:['acc',-1]};
 const NOOP_HOOKS={log(){},logSkill(){},render(){},actionStart:async()=>{},actionEnd:async()=>{},popDamage(){},wait:async()=>{},gate:async()=>{},turnStart:async()=>{},spawned(){}};
@@ -95,7 +97,10 @@ function triggerSkills(ctx,u,trigger,info={}){
   if(!u.alive)return result;
   for(const group of u.skills||[]){
     if(!u.alive)break;
-    if(group.trigger!==trigger||!skillReady(ctx,u,group,info)||(ctx.hooks.skillOk&&!ctx.hooks.skillOk(u,group)))continue;
+    if(group.trigger!==trigger)continue;
+    // Optional (T&D map weapons: ctx.noCounter): no counter, so a counter-only skill is neither fired nor paid for.
+    if(ctx.noCounter&&(group.effects||[group]).every(p=>p.effect==='counter'))continue;
+    if(!skillReady(ctx,u,group,info)||(ctx.hooks.skillOk&&!ctx.hooks.skillOk(u,group)))continue;
     consumeSkill(u,group);let groupApplied=false;
     for(const [ei,part] of (group.effects||[group]).entries()){
     if(!u.alive)break;const sk={...group,...part,id:group.effects?group.id+':'+ei:group.id};
@@ -113,7 +118,7 @@ function triggerSkills(ctx,u,trigger,info={}){
     }else if(sk.effect==='guts'){
       if(trigger==='on_death'&&u.currentHp<=0){u.currentHp=Math.max(1,Math.min(u.maxHp,Math.round(sk.value||1)));detail=`根性で踏みとどまった（HP ${u.currentHp}）`;applied=true;}
     }else if(sk.effect==='counter'){
-      const target=info.opponent;if(target&&target.alive&&target.side!==u.side&&!info.counter){ctx.pending.push({unit:u,target,scale:Math.max(0,sk.value)/100});detail=`反撃 ${sk.value}%`;applied=true;}
+      const target=info.opponent;if(target&&target.alive&&target.side!==u.side&&!info.counter&&!ctx.noCounter){ctx.pending.push({unit:u,target,scale:Math.max(0,sk.value)/100});detail=`反撃 ${sk.value}%`;applied=true;}
     }else{detail=applyEvent(ctx,u,sk,info);applied=!!detail;}
     if(applied){groupApplied=true;ctx.hooks.logSkill(u,group,detail);}
     }
@@ -196,10 +201,12 @@ function handleDeath(ctx,u,killer){
   // Optional (T&D prototype only): a destroyed unit may come back as another unit in place (脱出). Absent → unchanged.
   const rep=ctx.hooks.replaceOnDeath?.(u,killer);
   if(killer)ctx.hooks.tensionEvent?.('kill',killer,u);
-  if(rep?.def){ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,replaced:true,exp:killExpOf(u)});if(killer)statFor(ctx,killer).kills++;replaceCombatant(u,rep.def,rep.extra);if(rep.text)ctx.hooks.log(`<span class="skill">${esc(rep.text)}</span>`);ctx.hooks.render();return true;}
+  if(rep?.def){ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,replaced:true,exp:killExpOf(u)});if(killer)statFor(ctx,killer).kills++;replaceCombatant(u,rep.def,rep.extra);if(rep.text)ctx.hooks.log(`<span class="skill">${esc(rep.text)}</span>`);ctx.hooks.died?.(u);ctx.hooks.render();return true;}
   u.currentHp=0;u.alive=false;
   ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,exp:killExpOf(u)});
   if(killer)statFor(ctx,killer).kills++;
+  // Optional (T&D prototype only): told of each death (PRO・D support recalculation). Absent → unchanged.
+  ctx.hooks.died?.(u);
   for(const x of sideOf(ctx,u))if(x.alive)triggerSkills(ctx,x,'ally_down',{opponent:killer});
   return true;
 }
@@ -228,7 +235,7 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
     const hitTerrain=ownTerrain!=null?ownTerrain:ctx.sideTerrain?((weapon.attackType==='melee'?ctx.sideTerrain[target.side]?.meleeHitPt:ctx.sideTerrain[target.side]?.rangedHitPt)||0):terrainHit;
     // Optional (T&D prototype): tension (気力) modifiers {dmg, hit, crit} of this attacker against this target.
     const tm=H.tensionMods?.(attacker,target)||{dmg:1,hit:0,crit:0};
-    const baseHit=tm.sure?1:clamp(baseHitRate(eff(ctx,attacker,'acc'),eff(ctx,target,'mob'),weapon.accuracyPt+hitTerrain)+attackMods.hitAdd+defenseMods.incomingHitAdd+tm.hit,.05,.95);
+    const baseHit=tm.sure?1:clamp((ctx.hitClampLate?rawHitRate:baseHitRate)(eff(ctx,attacker,'acc'),eff(ctx,target,'mob'),weapon.accuracyPt+hitTerrain)+attackMods.hitAdd+defenseMods.incomingHitAdd+tm.hit,.05,.95);
     const pierce=clamp(num(weapon.defPiercePct,0)+attackMods.defPierce,0,100);
     let targetHits=0,targetDmg=0,targetCrits=0,absorbed=0;
     for(let shot=0;shot<attempts;shot++){
@@ -328,15 +335,17 @@ async function runLocalBattle(ctx,{maxTurns=3,distance=1}={}){
  ctx.localDistance=distance;
  const finished=()=>!ctx.allies.some(alive)||!ctx.enemies.some(alive);
  const H=ctx.hooks;
- triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'battle_start');await processPending(ctx);
+ // Optional (T&D: ctx.localPhases): 段階変化 are checked as in runBattle. Absent → unchanged.
+ const ph=async()=>{if(ctx.localPhases)await phaseCheck(ctx);};
+ triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'battle_start');await processPending(ctx);await ph();
  let turns=0;
  for(let t=1;t<=maxTurns&&!finished();t++){
-  ctx.turn=t;turns=t;await H.turnStart(t);burnTick(ctx);if(finished())break;
-  triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_start');await processPending(ctx);if(finished())break;
+  ctx.turn=t;turns=t;await H.turnStart(t);await ph();burnTick(ctx);if(finished())break;
+  triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_start');await processPending(ctx);await ph();if(finished())break;
   const order=[...ctx.allies,...ctx.enemies].filter(alive).map(u=>({u,init:eff(ctx,u,'mob')+rand(ctx,0,100)})).sort((a,b)=>b.init-a.init).map(x=>x.u);
-  for(const u of order){if(finished()||ctx.aborted)break;if(u.alive)await attack(ctx,u);}
+  for(const u of order){if(finished()||ctx.aborted)break;if(u.alive){await attack(ctx,u);await ph();}}
   if(ctx.aborted||finished())break;
-  triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_end');await processPending(ctx);
+  triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_end');await processPending(ctx);await ph();
   // Persistent Tactical effects expire at faction end, not each local combat turn.
   H.render();
  }
@@ -374,7 +383,8 @@ async function runBattle(ctx,opts={}){
     }
     if(ctx.aborted)break;
     triggerRoundSkills(ctx,[...ctx.allies,...ctx.enemies],'turn_end');await processPending(ctx);await checkpoint(ctx);tickStatuses(ctx);
-    outcome=outcome||evaluate();
+    // Optional (T&D: ctx.endRecheck): a side wiped out by TURN-end effects after the last kill still loses.
+    outcome=(ctx.endRecheck&&outcome&&evaluate()==='lose'?'lose':outcome)||evaluate();
     if(!outcome){checkWaves(ctx,plan,'end');await checkpoint(ctx);outcome=evaluate();}
     if(!outcome&&plan.type==='defense'&&turn>=(plan.ob.turns||10)&&fighters().length)outcome='win';
     H.render();turn++;if(!outcome)await H.wait(.4);
@@ -389,8 +399,10 @@ function recordFrame(ctx,type,text){
   if(!ctx.recording)return;if(ctx.timeline.length>=4000){ctx.timelineTruncated=true;return;}
   ctx.timeline.push({type,text:String(text).slice(0,1000),turn:ctx.turn,units:[...ctx.allies,...ctx.enemies].map(u=>({id:u.combatId,name:u.name,side:u.side,hp:Math.max(0,Math.round(u.currentHp)),maxHp:u.maxHp,alive:u.alive,row:u.row}))});
 }
-async function checkpoint(ctx){
-  const say=async(title,lines)=>{for(const l of lines||[])ctx.hooks.log(esc((l.speaker?l.speaker+': ':'')+l.text),'sys');if(ctx.hooks.story&&lines?.length)await ctx.hooks.story(title,lines);};
+const sayLines=async(ctx,title,lines)=>{for(const l of lines||[])ctx.hooks.log(esc((l.speaker?l.speaker+': ':'')+l.text),'sys');if(ctx.hooks.story&&lines?.length)await ctx.hooks.story(title,lines);};
+// 段階変化 (phases): each living unit's first ready phase. Also run in local battles when ctx.localPhases is set (T&D).
+async function phaseCheck(ctx){
+  const say=(title,lines)=>sayLines(ctx,title,lines);
   for(const u of [...ctx.allies,...ctx.enemies]){if(!u.alive)continue;u.phaseUses||={};
     const p=(u.phases||[]).find(p=>!u.phaseUses[p.id]&&condOk(ctx,u,{cond:p.cond},{}));if(!p)continue;
     u.phaseUses[p.id]=true;const oldMax=u.maxHp,oldHp=u.currentHp;u._persistentMaxHp??=oldMax;
@@ -399,6 +411,10 @@ async function checkpoint(ctx){
     if(p.weapons!==undefined){u.weapons=C.clone(p.weapons);u.weaponState={};}if(p.skills!==undefined)u.skills=C.clone(p.skills);if(p.ai)u.ai=C.clone(p.ai);
     ctx.hooks.log(esc(u.name+' / 段階変化: '+p.name),'sys');recordFrame(ctx,'phase',u.name+' → '+p.name);await say(p.name,p.lines);ctx.hooks.render();
   }
+}
+async function checkpoint(ctx){
+  const say=(title,lines)=>sayLines(ctx,title,lines);
+  await phaseCheck(ctx);
   const wave=1+(ctx.plan?.waves||[]).filter(w=>w.spawned).length;
   for(const e of ctx.mission?.events||[]){if(ctx.seenEvents.has(e.id))continue;
     if(e.requiredUnitId&&!ctx.allies.some(u=>(u.baseId||u.base||u.key||u.id)===e.requiredUnitId||u.id===e.requiredUnitId))continue;
@@ -434,15 +450,17 @@ async function simulate(o){
   }
   const turns=out.turns;return {trials,win:out.win,lose:out.lose,draw:out.draw,winRate:out.win/trials,meanTurns:turns.reduce((a,b)=>a+b,0)/trials,minTurns:Math.min(...turns),maxTurns:Math.max(...turns),meanMissingHp:out.missingHp/trials,allyDownsMean:out.allyDowns/trials,perUnit:Object.values(out.perUnit).map(p=>({name:p.name,meanDamage:p.damage/trials,downRate:p.downs/trials}))};
 }
-function damagePreview(att,weapon,def,mission){
+// opts.exact (optional, T&D): the minimum damage is applied before the damage multipliers and the hit rate is
+// limited once, as in resolveWeapon with ctx.hitClampLate. Absent → unchanged.
+function damagePreview(att,weapon,def,mission,opts={}){
   const ctx=createContext({allies:[prepare({...att,side:'ally',currentHp:att.hp,maxHp:att.hp,alive:true})],enemies:[prepare({...def,side:'enemy',currentHp:def.hp,maxHp:def.hp,alive:true})],mission});
   const a=ctx.allies[0],d=ctx.enemies[0],terrainHit=(weapon.attackType==='melee'?ctx.terrain.meleeHitPt:ctx.terrain.rangedHitPt)||0;
   // Weapon effects used before the attack are counted when they always fire (100%, no condition).
   const sure=(weapon.effects||[]).filter(e=>e.timing==='before'&&(e.chance??100)>=100&&!e.cond);
   const m=sure.length?weaponEffects(ctx,a,{...weapon,effects:sure},'before',{weapon,targets:[d],opponent:d}):emptyMods();let tagMult=1;for(const b of m.tagBonus)if(tagsOf(d).includes(b.tag))tagMult*=Math.max(0,1+b.pct/100);
-  const hit=clamp(baseHitRate(eff(ctx,a,'acc'),eff(ctx,d,'mob'),weapon.accuracyPt+terrainHit)+m.hitAdd,.05,.95),crit=clamp(.05+weapon.critPt/100+m.critAdd,.01,.5);
+  const hit=clamp((opts.exact?rawHitRate:baseHitRate)(eff(ctx,a,'acc'),eff(ctx,d,'mob'),weapon.accuracyPt+terrainHit)+m.hitAdd,.05,.95),crit=clamp(.05+weapon.critPt/100+m.critAdd,.01,.5);
   const defv=eff(ctx,d,'def')*(1-clamp(num(weapon.defPiercePct,0)+m.defPierce,0,100)/100),core=(C.weaponAttack(weapon,eff(ctx,a,'atk'))-defv)*(weapon.hitPowerPct/100)*m.damageMult*tagMult;
-  const per=[.9,1,1.1].map(f=>Math.max(weapon.minDamage,core*f));const avgHit=per[1]*(1+.5*crit);
+  const mult=m.damageMult*tagMult,per=opts.exact?[.9,1,1.1].map(f=>Math.max(weapon.minDamage,(mult?core/mult:0)*f)*mult):[.9,1,1.1].map(f=>Math.max(weapon.minDamage,core*f));const avgHit=per[1]*(1+.5*crit);
   const avgHits=(weapon.hitsMin+weapon.hitsMax)/2*hit,expected=avgHit*avgHits;
   return {hitRate:hit,critRate:crit,perHitMin:Math.round(per[0]),perHitAvg:Math.round(per[1]),perHitMax:Math.round(per[2]),critHit:Math.round(per[1]*1.5),avgHits,expected:Math.round(expected),actionsToKill:expected>0?Math.ceil(d.hp/expected):Infinity,terrainHit};
 }
@@ -455,7 +473,7 @@ function unitPower(a){const ws=(a.weapons&&a.weapons.length)?a.weapons:[BASIC_WE
 let STD_POWER=0;
 function powerRatio(a){if(!STD_POWER)STD_POWER=unitPower(STANDARD_UNIT);return Math.sqrt(unitPower(a)/STD_POWER);}
 function starCount(r){return r<.75?1:r<.95?2:r<1.3?3:r<2.5?4:5;}
-root.PROBattle=Object.freeze({version:'1.6.0',checkpoint,condOk,recordFrame,DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,weaponInRange,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,replaceCombatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runLocalBattle,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
+root.PROBattle=Object.freeze({version:'1.6.0',checkpoint,phaseCheck,rawHitRate,condOk,recordFrame,DRAW_TURNS,buildBattle,objectiveStatus,battlePlan,STANDARD_UNIT,unitPower,powerRatio,starCount,weaponEffects,weaponInRange,MAX_SLOTS,BASIC_WEAPON,baseHitRate,mulberry32,esc,prepare,combatant,replaceCombatant,createContext,eff,statFor,triggerSkills,triggerRoundSkills,resolveWeapon,chooseWeapon,chooseTargets,attack,processPending,handleDeath,runLocalBattle,runBattle,spawnEnemies,simulate,damagePreview,weaponTypeLabel,damageTypeLabel,attackTypeLabel,resistTypeLabel,weaponMatchesResist});
 })(window);
 
 
