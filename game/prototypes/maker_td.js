@@ -81,7 +81,7 @@ FIELDS.missions=[
 FIELDS.items=[
   {key:'name',label:'アイテム名',type:'text',group:'基本'},{key:'id',label:'ID',type:'id',group:'基本'},{key:'desc',label:'説明',type:'text',group:'基本'},
   {key:'effects',label:'使ったときの効果',type:'effects',group:'基本'},{key:'price',label:'価格（Cr・空欄=売らない）',type:'number',min:0,group:'基本'},
-  {key:'scope',label:'使う相手',type:'select',choices:{unit:'1体に使う',party:'部隊全体に使う'},group:'基本'},{key:'limitPerUnit',label:'1体あたりの使用回数（空欄=無制限）',type:'number',min:0,max:999,group:'基本'},{key:'resupply',label:'作戦中：弾薬・ENを回復する%（補給施設の上で使う）',type:'number',min:0,max:100,group:'基本'},{key:'key',label:'キーアイテム（使わない・売れない）',type:'toggle',group:'基本'},
+  {key:'scope',label:'使う相手',type:'select',choices:{unit:'1体に使う',party:'部隊全体に使う'},group:'基本'},{key:'limitPerUnit',label:'1体あたりの使用回数（空欄=無制限）',type:'number',min:0,max:999,group:'基本'},{key:'varOps',label:'拠点で使ったときに変える変数',type:'varops',group:'基本'},{key:'resupply',label:'作戦中：弾薬・ENを回復する%（補給施設の上で使う）',type:'number',min:0,max:100,group:'基本'},{key:'key',label:'キーアイテム（使わない・売れない）',type:'toggle',group:'基本'},
   {key:'requires.allTags',label:'使える条件：必須タグ',type:'tags',group:'使える条件'},{key:'requires.anyTags',label:'使える条件：いずれかのタグ',type:'tags',group:'使える条件'},{key:'requires.noneTags',label:'使える条件：除外タグ',type:'tags',group:'使える条件'},
   {key:'equip',label:'装備品にする',type:'equipToggle',group:'装備'},
   ...['hp','atk','def','mob','acc'].map(k=>({key:'equip.stats.'+k,label:'装備補正：'+C.stats[k],type:'number',min:-1000000,group:'装備',show:i=>!!i.equip})),
@@ -200,7 +200,8 @@ const find=(k,id)=>data[k].find(x=>x.id===id);
 const missionUnitIds=m=>[...(m.enemies||[]),...(m.waves||[]).flatMap(w=>w.enemies||[]),...(m.objective?.escortUnitId?[m.objective.escortUnitId]:[])];
 /* Every ID link in the pack, in one place. mapRefs(kind, fn) rewrites links to `kind` (fn returns the new ID,
    or null to drop the link); refsOf(ownerKind, owner) lists [kind,id] pairs it points to. */
-function mapRefs(k,fn){const list=a=>a&&a.map(fn).filter(Boolean);for(const f of EXT.mapRefs)f(k,fn);mapCondRefs(k,fn);if(k==='vars')mapVarRefs(fn);
+function mapRefs(k,fn){const list=a=>a&&a.map(fn).filter(Boolean);if(k==='commands'){for(const u of data.units)if(u.commands){u.commands=u.commands.filter(c=>{const n=fn(c.id);if(n)c.id=n;return !!n;});if(!u.commands.length)delete u.commands;}for(const x of data.skills)if(x.tactical?.commandIds)x.tactical.commandIds=list(x.tactical.commandIds);}
+ for(const f of EXT.mapRefs)f(k,fn);mapCondRefs(k,fn);if(k==='vars')mapVarRefs(fn);
  if(k==='units'){for(const u of data.units)if(u.base){const n=fn(u.base);if(n)u.base=n;else{delete u.base;delete u.separate;}}for(const e of data.evolutions)for(const f of ['from','to'])if(e[f]){const n=fn(e[f]);if(n)e[f]=n;else delete e[f];}for(const fu of data.fusions){if(fu.materials)fu.materials=fu.materials.filter(m=>{const n=fn(m.unitId);if(n)m.unitId=n;return !!n;});if(fu.result?.unitId){const n=fn(fu.result.unitId);if(n)fu.result.unitId=n;else delete fu.result.unitId;}}}
  // Skill tree nodes reference pack skills by skillId; a deleted skill removes its node (and links to it).
  if(k==='skills')for(const u of data.units)if(u.pilotProfile?.skillIds)u.pilotProfile.skillIds=list(u.pilotProfile.skillIds);
@@ -216,8 +217,7 @@ function mapRefs(k,fn){const list=a=>a&&a.map(fn).filter(Boolean);for(const f of
  if(k==='items')for(const m of data.missions)if(m.requires?.items)m.requires.items=list(m.requires.items);
  const rekey=o=>{if(!o)return o;const out={};for(const [id,n] of Object.entries(o)){const x=fn(id);if(x)out[x]=n;}return out;};
  if(k==='research'){for(const x of data.research)if(x.requires)x.requires=list(x.requires);for(const h of data.hires)if(h.requires?.research)h.requires.research=list(h.requires.research);for(const it of data.items)if(it.shop?.requiresResearch){const n=fn(it.shop.requiresResearch);if(n)it.shop.requiresResearch=n;else{delete it.shop.requiresResearch;if(!Object.keys(it.shop).length)delete it.shop;}}}
- if(k==='units'){for(const x of data.research)if(x.unlock?.units)x.unlock.units=list(x.unlock.units);for(const x of data.research)if(x.unlock?.register)x.unlock.register=list(x.unlock.register);for(const h of data.hires)if(h.unitId){const n=fn(h.unitId);if(n)h.unitId=n;else delete h.unitId;}for(const u of data.units)for(const fk of ['transformTo','swapTo'])if(u[fk]){u[fk]=list(u[fk]);if(!u[fk].length)delete u[fk];}if(k==='commands'){for(const u of data.units)if(u.commands){u.commands=u.commands.filter(c=>{const n=fn(c.id);if(n)c.id=n;return !!n;});if(!u.commands.length)delete u.commands;}for(const x of data.skills)if(x.tactical?.commandIds)x.tactical.commandIds=list(x.tactical.commandIds);}
- for(const u of data.units)for(const fk of ['purgeTo','escapeTo'])if(u[fk]){const n=fn(u[fk]);if(n)u[fk]=n;else delete u[fk];}}
+ if(k==='units'){for(const x of data.research)if(x.unlock?.units)x.unlock.units=list(x.unlock.units);for(const x of data.research)if(x.unlock?.register)x.unlock.register=list(x.unlock.register);for(const h of data.hires)if(h.unitId){const n=fn(h.unitId);if(n)h.unitId=n;else delete h.unitId;}for(const u of data.units)for(const fk of ['transformTo','swapTo'])if(u[fk]){u[fk]=list(u[fk]);if(!u[fk].length)delete u[fk];} for(const u of data.units)for(const fk of ['purgeTo','escapeTo'])if(u[fk]){const n=fn(u[fk]);if(n)u[fk]=n;else delete u[fk];}}
  if(k==='missions')for(const h of data.hires)if(h.requires?.missions)h.requires.missions=list(h.requires.missions);
  if(k==='items'){for(const x of data.research){if(x.unlock?.items)x.unlock.items=list(x.unlock.items);if(x.cost?.items)x.cost.items=rekey(x.cost.items);if(x.unlock?.grantItems)x.unlock.grantItems=rekey(x.unlock.grantItems);}for(const h of data.hires)if(h.requires?.items)h.requires.items=list(h.requires.items);}
  if(k==='items')for(const a of data.achievements)if(a.reward?.items){for(const id of Object.keys(a.reward.items)){const n=fn(id);if(n!==id){const v=a.reward.items[id];delete a.reward.items[id];if(n)a.reward.items[n]=v;}}}
@@ -532,7 +532,7 @@ for(const d of document.querySelectorAll('dialog.cmd-window'))d.addEventListener
 
 load();showMenu();
 // Extension API for kinds defined in separate scripts (e.g. maker_td_tactical.js).
-const extend=Object.freeze({el,win,closeWin,commit,numberPrompt,message,clone,find,condsEditor,data:()=>data,save,
+const extend=Object.freeze({varOpsWindow:(...a)=>varOpsWindow(...a),varOpsText:v=>varOpsText(v),el,win,closeWin,commit,numberPrompt,message,clone,find,condsEditor,data:()=>data,save,
  // Field types defined by extension scripts (display / edit) without a kind of their own.
  registerType(type,{display,edit}){if(display)EXT.display[type]=display;if(edit)EXT.edit[type]=edit;},
  registerKind(k,meta,make,fields,hooks={}){KINDS[k]=meta;FIELDS[k]=fields;DEFAULT[k]=make;EXTRA_KINDS.push(k);if(!Array.isArray(data[k]))data[k]=[];Object.assign(EXT.display,hooks.display||{});Object.assign(EXT.edit,hooks.edit||{});if(hooks.issues)EXT.issues[k]=hooks.issues;if(hooks.refs)EXT.refs[k]=hooks.refs;if(hooks.mapRefs){EXT.mapRefs.push(hooks.mapRefs);replayAliases(hooks.mapRefs);}migrateIds();save();if(!$('menuView').hidden)showMenu();}});
