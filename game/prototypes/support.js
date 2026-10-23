@@ -24,5 +24,14 @@ function mods(a,t){const sa=a?.sup,st=t?.sup;return {dmg:(1+n(sa?.dmg)/100)*Math
 function wrap(hooks){const prev=hooks.tensionMods;hooks.tensionMods=(a,t)=>{const x=prev?prev(a,t):{dmg:1,hit:0,crit:0},y=mods(a,t);return {dmg:x.dmg*y.dmg,hit:x.hit+y.hit,crit:x.crit+y.crit};};return hooks;}
 // 気力: the support's gain bonus on every rise.
 function tensionConfig(c,s){if(!c||!n(s?.tensionGain))return c;const gain={};for(const [k,v] of Object.entries(c.gain))gain[k]=v>0?v+s.tensionGain:v;return {...c,gain};}
-window.PROSupport=Object.freeze({KEYS,LABEL,empty,partsOf,add,any,text,boost,mods,wrap,tensionConfig});
+// A battle without a map (PRO・D, the maker's test battle): every living holder supports its whole side (not itself).
+// Recomputed at each turn start and on each death (a fallen holder stops at once); stats from the unit's own values
+// (u._st, updated by 段階変化); HP / EN / ammo and 気力 at the turn start.
+function battle(ctx,{skillsOf=u=>u.skills||[],enMax=()=>0}={}){const S=window.PROSupport,partsOf=u=>S.partsOf(skillsOf(u));
+ const apply=()=>{for(const list of [ctx.allies,ctx.enemies])for(const u of list){if(!u.alive)continue;const t=S.empty();for(const o of list)if(o!==u&&o.alive)for(const p of partsOf(o))S.add(t,p);u._st=u._st||{atk:u.atk,def:u.def,mob:u.mob,acc:u.acc};u._set=u._set||{};for(const k of ['atk','def','mob','acc']){/* changed since the last apply (段階変化) → the new base */if(k in u._set&&u[k]!==u._set[k])u._st[k]=u[k];if(u._st[k]!=null)u[k]=u._set[k]=Math.max(0,Math.round(u._st[k]*(1+t[k]/100)));}if(S.any(t))u.sup=t;else delete u.sup;if(u.tcfg){u._tc=u._tc||u.tcfg;u.tcfg=S.tensionConfig(u._tc,t);}}};
+ apply();S.wrap(ctx.hooks);const ts=ctx.hooks.turnStart;ctx.hooks.turnStart=async t=>{apply();if(t>1)for(const u of [...ctx.allies,...ctx.enemies]){const s=u.sup;if(!s||!u.alive)continue;if(s.healHp>0)u.currentHp=Math.min(u.maxHp,u.currentHp+Math.round(u.maxHp*s.healHp/100));const em=enMax(u);if(s.healEn>0&&em>0&&u.en!=null)u.en=Math.min(em,u.en+Math.ceil(em*s.healEn/100));if(s.healAmmo>0&&u.ammo)for(const w of u.weapons||[])if(w.ammo>0)u.ammo[w.key||w.name]=Math.min(w.ammo,(u.ammo[w.key||w.name]??w.ammo)+Math.ceil(w.ammo*s.healAmmo/100));if(s.tensionTurn&&u.tcfg)u.tension=Math.max(0,Math.min(u.tcfg.max,u.tension+s.tensionTurn));}return ts(t);};
+ const sp=ctx.hooks.spawned;ctx.hooks.spawned=made=>{apply();return sp(made);};
+ // A supporter destroyed or replaced (脱出) mid-turn: its support ends at once.
+ const dd=ctx.hooks.died;ctx.hooks.died=u=>{apply();dd?.(u);};}
+window.PROSupport=Object.freeze({KEYS,LABEL,empty,partsOf,add,any,text,boost,mods,wrap,tensionConfig,battle});
 })();
