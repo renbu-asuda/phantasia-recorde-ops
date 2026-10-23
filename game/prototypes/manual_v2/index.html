@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PRO・T&amp;D（v2.0）オンラインマニュアル</title>
+<meta name="description" content="ファンタジア・レコード・オプス PRO・T&amp;D（v2.0）のオンラインマニュアル。拠点・タクティカル・ディスパッチの遊び方、戦闘の計算式、T&amp;Dメーカーでの作り方を、初めての人にも分かるように説明します。">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="manual.css">
+</head><body>
+<p class="draft">これは v2.0 公開前の下書きです。内容は変わることがあります。</p>
+<header class="topbar"><nav aria-label="マニュアルの目次"><a class="brand" href="index.html">📖 マニュアル v2.0</a><a class="nav" href="index.html" aria-current="page">目次</a><a class="nav" href="1-start.html">1. はじめに</a><a class="nav" href="2-base.html">2. 拠点</a><a class="nav" href="3-tactical.html">3. タクティカル</a><a class="nav" href="4-dispatch.html">4. ディスパッチ</a><a class="nav" href="5-battle.html">5. 戦闘と計算</a><a class="nav" href="6-growth.html">6. 育成・運用</a><a class="nav" href="7-maker.html">7. メーカー</a><a class="nav" href="8-faq.html">8. 困ったとき</a></nav></header>
+<main>
+<h1>PRO・T&amp;D（v2.0）オンラインマニュアル</h1>
+
+<p class="lead">ファンタジア・レコード・オプス v2.0「PRO・T&amp;D（タクティカル＆ディスパッチ）」の遊び方、戦いの計算のしくみ、自分だけのデータの作り方を、ゲームやプログラミングに触れたことがない人にも分かるように説明するマニュアルです。</p>
+
+<div class="box tip"><b>まずここから</b>
+<p>「とにかく遊びたい」なら<a href="1-start.html">1. はじめに</a>を読んで、内蔵のチュートリアル「第零機甲教導隊」を始めてください。ゲームの中で案内役が順番に説明してくれます。分からない画面が出てきたら、そのとき<a href="2-base.html">2. 拠点</a>や<a href="3-tactical.html">3. タクティカル</a>を開けば大丈夫です。「自分で作りたい」なら<a href="7-maker.html">7. メーカー</a>へ。</p></div>
+
+<h2 id="sec1">このゲームはどんなゲーム？</h2>
+<p>あなたは部隊の指揮官です。仲間（ユニット）を部隊にまとめ、「作戦」に送り出します。v2.0 では、戦い方が2種類になりました。</p>
+<div class="tablewrap"><table>
+<tr><th>戦い方</th><th>どんな戦い？</th><th>あなたがやること</th></tr>
+<tr><td><span class="k">タクティカル</span></td><td>マス目のマップの上で、部隊を1つずつ動かして戦うシミュレーションRPG。新しく加わった戦い方です。</td><td>部隊を動かす、攻撃する相手を選ぶ、施設を占領する、生産する……をターンごとに指示します。</td></tr>
+<tr><td><span class="k">ディスパッチ</span></td><td>これまで（1.x）と同じ、自動で進む派遣戦。マップはありません。</td><td>出撃メンバーを選んで送り出すだけ。戦闘は自動です。</td></tr>
+</table></div>
+<p>どちらの戦いでも、勝つとお金・経験値・アイテムが手に入ります。それを使って<span class="k">拠点</span>で仲間を強くし、次の作戦に備えます。</p>
+<ol class="step">
+<li><b>拠点で準備する</b>：仲間を雇う・装備を付ける・パイロットを乗せる・研究する。</li>
+<li><b>作戦を選ぶ</b>：タクティカル作戦かディスパッチ作戦を選びます。勝つ条件や地形を確かめます。</li>
+<li><b>出撃する</b>：タクティカルなら部隊を編成してマップへ。ディスパッチならメンバーを選んで自動戦闘へ。</li>
+<li><b>結果を受け取る</b>：報酬・経験値・★評価。仲間が増えたり、拠点の機能が増えたりします。</li>
+</ol>
+<p>データ（ユニット・作戦・アイテムなど）は、<span class="k">T&amp;Dメーカー</span>でプログラミングなしに自分で作れます。作ったデータは「パック」というファイルにして、ゲームに読み込むと遊べます。</p>
+
+<h2 id="sec2">目次</h2>
+<div class="cards">
+<a class="card" href="1-start.html"><b>1. はじめに</b><span>v2.0 の全体像、よく出る言葉、画面の見かた、最初の流れ、チュートリアル、セーブとパック。</span></a>
+<a class="card" href="2-base.html"><b>2. 拠点の使い方</b><span>拠点の各メニュー（ユニット・研究・倉庫・ショップ・記録・設定）と、作戦の選び方。</span></a>
+<a class="card" href="3-tactical.html"><b>3. タクティカル（マップの戦い）</b><span>出撃準備、マップの操作、コマンド、地形と領域、施設、母艦、変形、鹵獲、勝敗と★。</span></a>
+<a class="card" href="4-dispatch.html"><b>4. ディスパッチ（自動の派遣戦）</b><span>メンバーの選び方、おまかせ編成、推定勝率、隊列、補給、結果。</span></a>
+<a class="card" href="5-battle.html"><b>5. 戦闘のしくみと計算式</b><span>局地戦の進み方、命中・ダメージ、気力、味方支援、作戦コマンドを具体例つきで。</span></a>
+<a class="card" href="6-growth.html"><b>6. 育成・運用</b><span>お金、経験値とレベル、スキルツリー、パイロット、装備、研究、生産・雇用、進化・合成、撃破と修理。</span></a>
+<a class="card" href="7-maker.html"><b>7. T&amp;Dメーカーの使い方</b><span>ユニットやタクティカル作戦を作り、試しプレイして、パックにして遊ぶまでの手順。</span></a>
+<a class="card" href="8-faq.html"><b>8. 困ったとき</b><span>よくある質問、出撃できない理由、セーブの容量、1.x からの変更点、用語集。</span></a>
+</div>
+
+<h2 id="sec3">このマニュアルの読み方</h2>
+<ul>
+<li><span class="k">緑の枠</span>：知っておくと得するポイントです。</li>
+<li><span class="k">黄色の枠</span>：具体的な数字で計算してみる例です。例には、内蔵チュートリアルのユニットを使っています。</li>
+<li><span class="k">赤の枠</span>：間違えやすいところ・注意です。</li>
+<li>「もっと詳しく」の折りたたみは、気になったときだけ開いてください。読み飛ばしても遊べます。</li>
+<li>画面の名前やボタンは、ゲームの表示どおり「」で書いています。</li>
+</ul>
+<div class="box warn"><b>1.x のマニュアルとの関係</b><p>ディスパッチの戦闘の計算は 1.x と同じしくみです。このマニュアルは v2.0 だけで分かるように、必要なことをすべて書き直しています。1.x との違いは<a href="8-faq.html#diff">8. 困ったとき</a>にまとめています。</p></div>
+
+<div class="pager"><span></span><span><a href="1-start.html">1. はじめに →</a></span></div>
+</main>
+<footer><p>ファンタジア・レコード・オプス PRO・T&amp;D（v2.0）対応（下書き）。<a href="../tactical_hub.html">ゲームを遊ぶ</a> ／ <a href="../maker_td.html">T&amp;Dメーカーを開く</a> ／ <a href="../../../manual/">現在のマニュアル（1.x）</a></p><p>このマニュアルはオンラインで公開します（ZIPには入りません）。内容は今後のアップデートで更新されます。</p></footer>
+</body></html>
