@@ -215,7 +215,9 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
     const defenseMods=triggerSkills(ctx,target,'when_targeted',{attacker,weapon,allies:ctx.allies,enemies:ctx.enemies,opponent:attacker});
     if(!attacker.alive)break;if(!target.alive)continue;
     // Per-side terrain: the target's square sets the hit modifier (cover).
-    const hitTerrain=ctx.sideTerrain?((weapon.attackType==='melee'?ctx.sideTerrain[target.side]?.meleeHitPt:ctx.sideTerrain[target.side]?.rangedHitPt)||0):terrainHit;
+    // Optional (T&D prototype, map weapons): targetTerrain(target, weapon) gives each target its own square's modifier.
+    const ownTerrain=H.targetTerrain?.(target,weapon);
+    const hitTerrain=ownTerrain!=null?ownTerrain:ctx.sideTerrain?((weapon.attackType==='melee'?ctx.sideTerrain[target.side]?.meleeHitPt:ctx.sideTerrain[target.side]?.rangedHitPt)||0):terrainHit;
     // Optional (T&D prototype): tension (気力) modifiers {dmg, hit, crit} of this attacker against this target.
     const tm=H.tensionMods?.(attacker,target)||{dmg:1,hit:0,crit:0};
     const baseHit=tm.sure?1:clamp(baseHitRate(eff(ctx,attacker,'acc'),eff(ctx,target,'mob'),weapon.accuracyPt+hitTerrain)+attackMods.hitAdd+defenseMods.incomingHitAdd+tm.hit,.05,.95);

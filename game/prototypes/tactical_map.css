@@ -116,3 +116,6 @@ html.fixed-page .shell>footer{padding:8px 0}
 .unit-row .tension-gauge{flex-basis:100%}
 /* 味方支援 reach of the selected squad: a dashed gold frame inside the square (separate from the blue move frame). */
 .field-tile.support-zone{position:relative}.field-tile.support-zone::after{content:'';position:absolute;inset:5px;border:2px dashed #ffd84acc;border-radius:3px;pointer-events:none}
+/* マップ兵器: the area that would be hit (orange cross-hatch over the tile). */
+.field-tile.mapw-area{position:relative;background-image:repeating-linear-gradient(45deg,#ff9b3d55 0 6px,transparent 6px 12px)}.field-tile.mapw-area::before{content:'';position:absolute;inset:2px;border:2px solid #ff9b3d;border-radius:3px;pointer-events:none}
+#fieldMapwBar{display:flex;flex-wrap:wrap;gap:6px}#fieldMapwBar[hidden]{display:none}#fieldMapwBar button{flex:1 1 30%}#fieldMapwBar button[aria-pressed="true"]{outline:2px solid #ff9b3d}
