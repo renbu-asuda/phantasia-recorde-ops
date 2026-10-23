@@ -28,7 +28,7 @@ try{
  // #289 / #290: a field item's varOps run; a mixed item (heal + SP) is refused and kept.
  {const w=open(pack({vars:[{id:'v',name:'v',initial:0}],items:[{id:'kit',name:'Kit',effects:[{type:'heal_hp_flat',value:500}],varOps:[{varId:'v',op:'add',value:1}],price:1},{id:'mix',name:'Mix',effects:[{type:'heal_hp_flat',value:500},{type:'skill_point',value:1}],price:1}],startItems:{kit:1,mix:1}}));const L=w.PROUnitLab,F=w.PROField,D=w.PROTacticalData;const s=deploy(w,['a']),g=G(w,'g0');g.members[0].currentHp=1000;
   F._t.useField(g,D.item('mix'),[g.members[0].uid]);assert.equal(G(w,'g0').members[0].currentHp,1000,'mixed item refused (#290)');assert.equal(L.items().mix,1,'not consumed');
-  F._t.useField(G(w,'g0'),D.item('kit'),[g.members[0].uid]);assert.equal(G(w,'g0').members[0].currentHp,1500);assert.equal(L.vars().v,1,'varOps applied (#289)');}
+  F._t.useField(G(w,'g0'),D.item('kit'),[g.members[0].uid]);assert.equal(G(w,'g0').members[0].currentHp,1500);assert.equal(JSON.stringify(s.varOps),JSON.stringify([{varId:'v',op:'add',value:1}]),'varOps queued with the mission\'s own (#289 / #324)');}
  // #287 / #288: revival checks the squad's square (domain / terrain) and the size limit with the revived members.
  {const rev={id:'rv',name:'Rev',effects:[{type:'revive_hp_pct',value:50}],price:1};
   const w=open(pack({items:[rev],startItems:{rv:3},units:[unit('a'),unit('b',{movementAptitude:apt({water:'B'})}),unit('c',{size:'3XL'}),unit('e',{deploy:{enemy:true}})]}));const F=w.PROField,D=w.PROTacticalData,L=w.PROUnitLab;const s=deploy(w,['a']),g=G(w,'g0');

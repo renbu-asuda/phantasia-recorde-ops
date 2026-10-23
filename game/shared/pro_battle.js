@@ -77,7 +77,7 @@ function skillTargets(ctx,u,sk,info){
   case 'enemies':return opp;
   case 'random_enemy':{const t=pickRandom(ctx,opp);return t?[t]:[];}
   case 'targets':return (info.targets||[]).filter(alive);
-  case 'opponent':{const o=info.opponent;if(o&&o.alive&&o.side!==u.side)return [o];if(o&&o.alive&&!hostile)return [o];const t=hostile?pickRandom(ctx,opp):null;return t?[t]:[];}}
+  case 'opponent':{const o=info.opponent;if(o&&o.alive&&o.side!==u.side)return [o];if(o&&o.alive&&!hostile)return [o];if(ctx.tdRules&&o)return [];/* T&D: a named opponent that is gone → no target (not someone else) */const t=hostile?pickRandom(ctx,opp):null;return t?[t]:[];}}
   return [];
 }
 const names=list=>list.map(x=>x.name).join('・');
@@ -89,7 +89,7 @@ function applyEvent(ctx,u,sk,info){
   if(e==='taunt'){const ts=skillTargets(ctx,u,sk,info);if(!ts.length)return '';for(const t of ts)t.status.taunt={pct:Math.max(0,sk.value),turns:dur};return `${names(ts)} が挑発（${dur}TURN）`;}
   if(BUFF_STAT[e]){const [stat,sign]=BUFF_STAT[e],ts=skillTargets(ctx,u,sk,info);if(!ts.length)return '';for(const t of ts){t.status.buffs=t.status.buffs.filter(b=>b.src!==u.combatId+':'+sk.id);t.status.buffs.push({stat,pct:sign*Math.abs(sk.value),turns:dur,src:u.combatId+':'+sk.id});}return `${names(ts)} の${stat.toUpperCase()} ${sign>0?'+':'-'}${Math.abs(sk.value)}%（${dur}TURN）`;}
   if(e==='stun'){const ts=skillTargets(ctx,u,sk,info);if(!ts.length)return '';for(const t of ts)t.status.stun=Math.max(t.status.stun||0,dur);return `${names(ts)} をスタン（${dur}回行動不能）`;}
-  if(e==='burn'){const ts=skillTargets(ctx,u,sk,info);if(!ts.length||sk.value<=0)return '';for(const t of ts)t.status.burn={dmg:Math.round(sk.value),turns:dur};return `${names(ts)} が炎上（毎TURN ${Math.round(sk.value)}・${dur}TURN）`;}
+  if(e==='burn'){const ts=skillTargets(ctx,u,sk,info);if(!ts.length||sk.value<=0)return '';for(const t of ts)t.status.burn={dmg:Math.round(sk.value),turns:dur,...(ctx.tdRules&&t.side!==u.side?{by:u.combatId}:{})};/* by (T&D): who set it, the killer if it burns down */return `${names(ts)} が炎上（毎TURN ${Math.round(sk.value)}・${dur}TURN）`;}
   return '';
 }
 function triggerSkills(ctx,u,trigger,info={}){
@@ -122,7 +122,8 @@ function triggerSkills(ctx,u,trigger,info={}){
     }else{detail=applyEvent(ctx,u,sk,info);applied=!!detail;}
     if(applied){groupApplied=true;ctx.hooks.logSkill(u,group,detail);}
     }
-    if(!groupApplied)u.skillUses[group.id]--;
+    // Optional (T&D: ctx.tdRules): a skill that did nothing gives its EN back too. Absent → only the use is returned.
+    if(!groupApplied){u.skillUses[group.id]--;if(ctx.tdRules&&group.enCost>0&&u.en!=null)u.en+=group.enCost;}
   }
   return result;
 }
@@ -201,7 +202,10 @@ function handleDeath(ctx,u,killer){
   // Optional (T&D prototype only): a destroyed unit may come back as another unit in place (脱出). Absent → unchanged.
   const rep=ctx.hooks.replaceOnDeath?.(u,killer);
   if(killer)ctx.hooks.tensionEvent?.('kill',killer,u);
-  if(rep?.def){ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,replaced:true,exp:killExpOf(u)});if(killer)statFor(ctx,killer).kills++;replaceCombatant(u,rep.def,rep.extra);if(rep.text)ctx.hooks.log(`<span class="skill">${esc(rep.text)}</span>`);ctx.hooks.died?.(u);ctx.hooks.render();return true;}
+  if(rep?.def){ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,replaced:true,exp:killExpOf(u)});if(killer)statFor(ctx,killer).kills++;replaceCombatant(u,rep.def,rep.extra);if(rep.text)ctx.hooks.log(`<span class="skill">${esc(rep.text)}</span>`);
+    // T&D (ctx.tdRules): the machine is lost when only its pilot gets out, so its squadmates' ally_down fires.
+    if(ctx.tdRules&&rep.extra?.escapedFrom)for(const x of sideOf(ctx,u))if(x!==u&&x.alive)triggerSkills(ctx,x,'ally_down',{opponent:killer});
+    ctx.hooks.died?.(u);ctx.hooks.render();return true;}
   u.currentHp=0;u.alive=false;
   ctx.killLog.push({killer:killer?.combatId||null,killerSide:killer?.side||null,victim:u.combatId,victimKey:u.key||u.id,victimName:u.name,victimSide:u.side,turn:ctx.turn,exp:killExpOf(u)});
   if(killer)statFor(ctx,killer).kills++;
@@ -254,7 +258,7 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
       let dmg=Math.max(0,Math.round(raw));
       if(target.status?.shield>0){const ab=Math.min(target.status.shield,dmg);target.status.shield-=ab;dmg-=ab;absorbed+=ab;}
       target.currentHp-=dmg;targetHits++;targetDmg+=dmg;actionHits++;actionDmg+=dmg;attackerStat.hits++;attackerStat.damage+=dmg;statFor(ctx,target).damageTaken+=dmg;
-      if(target.currentHp<=0&&target.alive){if(handleDeath(ctx,target,attacker)){killCount++;lastKilled=target;break;}}
+      if(target.currentHp<=0&&target.alive){const was=ctx.tdRules?{...target,tags:[...(target.tags||[])],alive:false,currentHp:0}:null;/* T&D: on_kill sees the unit as it was destroyed, not what it became (脱出) */if(handleDeath(ctx,target,attacker)){killCount++;lastKilled=was||target;break;}}
     }
     if(targetHits>0)H.tensionEvent?.('hit',target,attacker);else if(target.alive)H.tensionEvent?.('evade',target,attacker);
     if(targetHits>0){H.popDamage(target,targetDmg,targetCrits>0,targetHits,weapon);if(target.alive)triggerSkills(ctx,target,'after_damaged',{attacker,weapon,damage:targetDmg,opponent:attacker,counter:opts.counter});}
@@ -278,7 +282,7 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
   return {hits:actionHits,damage:actionDmg,kills:killCount,crits:actionCrits};
 }
 async function processPending(ctx){
-  while(ctx.pending.length){const p=ctx.pending.shift();if(!p.unit.alive||!p.target.alive)continue;if(ctx.hooks.canAttack&&!ctx.hooks.canAttack(p.unit))continue;const w=ctx.localDistance!==undefined?chooseWeapon(ctx,p.unit):(p.unit.weapons||[])[0]||BASIC_WEAPON;if(!w)continue;await resolveWeapon(ctx,p.unit,w,[p.target],{counter:true,scale:p.scale});}
+  while(ctx.pending.length){const p=ctx.pending.shift();if(!p.unit.alive||!p.target.alive)continue;if(ctx.hooks.canAttack&&!ctx.hooks.canAttack(p.unit))continue;const ws=p.unit.weapons||[],w=ctx.localDistance!==undefined?chooseWeapon(ctx,p.unit):ctx.tdRules?ws.find(x=>weaponReady(ctx,p.unit,x))||(ws.length?BASIC_WEAPON:{...BASIC_WEAPON,name:'標準攻撃'}):ws[0]||BASIC_WEAPON;/* T&D: a counter uses a weapon that is ready */if(!w)continue;await resolveWeapon(ctx,p.unit,w,[p.target],{counter:true,scale:p.scale});}
 }
 async function attack(ctx,attacker){
   if(!attacker.alive)return;
@@ -302,7 +306,7 @@ function tickStatuses(ctx){
   for(const u of [...ctx.allies,...ctx.enemies]){if(!u.status)continue;u.status.buffs=u.status.buffs.filter(b=>--b.turns>0);if(u.status.taunt&&--u.status.taunt.turns<=0)u.status.taunt=null;if(u.status.burn&&--u.status.burn.turns<=0)u.status.burn=null;}
 }
 function burnTick(ctx){
-  for(const u of [...ctx.allies,...ctx.enemies]){if(!u.alive||!u.status?.burn)continue;const dmg=u.status.burn.dmg;u.currentHp-=dmg;statFor(ctx,u).damageTaken+=dmg;ctx.hooks.log(`<span class="skill">[炎上]</span> ${esc(u.name)} に ${dmg} DMG`,'hit');if(u.currentHp<=0)handleDeath(ctx,u,null);}
+  for(const u of [...ctx.allies,...ctx.enemies]){if(!u.alive||!u.status?.burn)continue;const dmg=u.status.burn.dmg;u.currentHp-=dmg;statFor(ctx,u).damageTaken+=dmg;ctx.hooks.log(`<span class="skill">[炎上]</span> ${esc(u.name)} に ${dmg} DMG`,'hit');if(u.currentHp<=0){const by=u.status.burn.by,k=by!=null?[...ctx.allies,...ctx.enemies].find(x=>x.combatId===by&&x.side!==u.side)||null:null;if(handleDeath(ctx,u,k)&&k?.alive)triggerSkills(ctx,k,'on_kill',{kills:1,opponent:u});}}
 }
 function battleRules(m){const rules=(m?.rules||[]).filter(r=>r&&typeof r==='object');return {limit:rules.find(r=>r.type==='turn_limit')?.value||0,reinforce:rules.filter(r=>r.type==='reinforce')};}
 const DRAW_TURNS=300;
@@ -405,7 +409,7 @@ async function phaseCheck(ctx){
   const say=(title,lines)=>sayLines(ctx,title,lines);
   for(const u of [...ctx.allies,...ctx.enemies]){if(!u.alive)continue;u.phaseUses||={};
     const p=(u.phases||[]).find(p=>!u.phaseUses[p.id]&&condOk(ctx,u,{cond:p.cond},{}));if(!p)continue;
-    u.phaseUses[p.id]=true;const oldMax=u.maxHp,oldHp=u.currentHp;u._persistentMaxHp??=oldMax;
+    u.phaseUses[p.id]=ctx.tdRules?Object.keys(u.phaseUses).length+1:true;/* T&D: the order they came in */const oldMax=u.maxHp,oldHp=u.currentHp;u._persistentMaxHp??=oldMax;
     for(const [k,v] of Object.entries(p.stats||{})){u[k]=v;if(k==='hp')u.maxHp=Math.max(1,v);}
     u.currentHp=clamp(p.hpMode==='value'?p.hpValue:p.hpMode==='keep'?oldHp:oldHp/oldMax*u.maxHp,1,u.maxHp);
     if(p.weapons!==undefined){u.weapons=C.clone(p.weapons);u.weaponState={};}if(p.skills!==undefined)u.skills=C.clone(p.skills);if(p.ai)u.ai=C.clone(p.ai);

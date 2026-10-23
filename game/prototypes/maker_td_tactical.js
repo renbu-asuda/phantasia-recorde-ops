@@ -82,9 +82,10 @@ const STD_SCALES=[{id:'infantry',name:'歩兵',ratio:1},{id:'vehicle',name:'車�
 const allScales=()=>[...STD_SCALES,...(data().mapScales||[]).filter(x=>x.id&&!STD_SCALES.some(y=>y.id===x.id))];
 const scaleText=id=>{const x=allScales().find(s=>s.id===(id||'infantry'));return x?x.name+'（×'+x.ratio+'）':'⚠ '+id;};
 X.registerType('tscale',{display:v=>scaleText(v)+(v?'':'・既定'),edit:(f,x)=>pick('縮尺',Object.fromEntries(allScales().map(s=>[s.id,s.name+'（1マスの広さ ×'+s.ratio+'）'])),x[f.key]||'infantry',k=>{commit(o=>{if(k==='infantry')delete o[f.key];else o[f.key]=k;});closeWin();},closeWin)});
-function scalesWindow(){const list=clone(data().mapScales||[]);const one=i=>{const x=list[i],bk=()=>one(i);rowsWin(x.name,'',[['名前',x.name,()=>textPrompt('縮尺の名前',x.name,v=>{if(v)x.name=v;bk();},bk,12),'name'],['倍率',String(x.ratio),()=>numberPrompt('倍率（1マスの広さ・歩兵＝1）',x.ratio,1,1000,v=>{if(v)x.ratio=v;bk();},bk),'ratio']],[['この縮尺を消す',()=>{list.splice(i,1);draw();}],['一覧へ戻る',()=>draw()]]);};const draw=()=>rowsWin('独自の縮尺','標準（歩兵1・車両2・航空4・艦隊8）に加えて、このパックだけの縮尺の段階を作れます。倍率は1マスの広さ（歩兵＝1）。',[
+// A removed scale's links (unit 縮尺, mission 縮尺) go back to the default; a new scale never takes an ID in use or just removed.
+function scalesWindow(){const list=clone(data().mapScales||[]),orig=list.map(x=>x.id),used=new Set([...orig,...(data().units||[]).map(u=>u.moveScale),...(data().tmissions||[]).map(m=>m.scale)].filter(Boolean));const one=i=>{const x=list[i],bk=()=>one(i);rowsWin(x.name,'',[['名前',x.name,()=>textPrompt('縮尺の名前',x.name,v=>{if(v)x.name=v;bk();},bk,12),'name'],['倍率',String(x.ratio),()=>numberPrompt('倍率（1マスの広さ・歩兵＝1）',x.ratio,1,1000,v=>{if(v)x.ratio=v;bk();},bk),'ratio']],[['この縮尺を消す',()=>{list.splice(i,1);draw();}],['一覧へ戻る',()=>draw()]]);};const draw=()=>rowsWin('独自の縮尺','標準（歩兵1・車両2・航空4・艦隊8）に加えて、このパックだけの縮尺の段階を作れます。倍率は1マスの広さ（歩兵＝1）。',[
   ...list.map((x,i)=>[x.name+'（×'+x.ratio+'）',x.id,()=>one(i),'scale'+i])],
-  [['＋ 縮尺を追加',()=>{if(list.length>=12)return;let n=1;while(list.some(x=>x.id==='scale-'+n))n++;list.push({id:'scale-'+n,name:'縮尺'+n,ratio:16});draw();}],['決定',()=>{commit(o=>{if(list.length)o.mapScales=list;else delete o.mapScales;});closeWin();}],['戻る',closeWin]]);draw();}
+  [['＋ 縮尺を追加',()=>{if(list.length>=12)return;let n=1;while(list.some(x=>x.id==='scale-'+n)||used.has('scale-'+n))n++;list.push({id:'scale-'+n,name:'縮尺'+n,ratio:16});draw();}],['決定',()=>{const gone=new Set(orig.filter(id=>!list.some(x=>x.id===id)));commit(o=>{if(list.length)o.mapScales=list;else delete o.mapScales;for(const u of o.units||[])if(gone.has(u.moveScale))delete u.moveScale;for(const m of o.tmissions||[])if(gone.has(m.scale))delete m.scale;});closeWin();}],['戻る',closeWin]]);draw();}
 X.registerType('tscales',{display:v=>(v||[]).length?(v||[]).map(x=>x.name+'×'+x.ratio).join('・'):'なし（標準だけ）',edit:()=>scalesWindow()});
 /* ---------- map editor ---------- */
 // Map editor: paint tools (1 square / row / rectangle / fill), placements, facility owners and tags, the starting view
@@ -329,14 +330,16 @@ const MOVE_ACTS=['wait','move','defend','capture','assault','ambush','retreat','
 // (PRO_TACTICAL_*) is snapshotted first and put back when the hub returns here, so nothing from the test play is kept.
 let trialParty='save',trialUnits=[];
 function trial(m){const iss=checks(m);if(iss.length){message('試しプレイできません',iss);return;}
- const names=()=>trialUnits.map(id=>find('units',id)?.name||'⚠'+id),go=()=>{if(trialParty==='maker'&&!trialUnits.length)return;let snapshot={},ok=false;
+ const names=()=>trialUnits.map(id=>find('units',id)?.name||'⚠'+id),go=()=>{if(trialParty==='maker'&&!trialUnits.length)return;
+   // The hub reads the saved draft: without it the test would run the old content.
+   if(!X.save()){message('試しプレイを始められません',['下書きを保存できませんでした（ブラウザの保存領域がいっぱいの可能性があります）。編集内容はこの画面に残っています。']);return;}let snapshot={},ok=false;
    // The way back (the snapshot) is written first and must succeed; on any failure the source settings are put back
    // and the hub isn't opened. An unfinished earlier test play keeps its original snapshot.
    try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('PRO_TACTICAL_'))snapshot[k]=localStorage.getItem(k);}let prev=null;try{prev=JSON.parse(snapshot.PRO_TACTICAL_TESTPLAY||'null');}catch(e){}if(prev?.snapshot)snapshot=prev.snapshot;delete snapshot.PRO_TACTICAL_TESTPLAY;
     let l={};try{l=JSON.parse(snapshot.PRO_TACTICAL_LOAD||'null')||{};}catch(e){}const src=snapshot.PRO_TACTICAL_SOURCE;
     localStorage.setItem('PRO_TACTICAL_TESTPLAY',JSON.stringify({missionId:m.id,party:trialParty,units:trialParty==='maker'?trialUnits:[],snapshot}));localStorage.setItem('PRO_TACTICAL_LOAD',JSON.stringify({sample:!!l.sample||src==='sample'||src==='builtin',maker:true,packs:Array.isArray(l.packs)?l.packs:[]}));localStorage.removeItem('PRO_TACTICAL_SOURCE');ok=true;}
    catch(e){try{for(const k of ['PRO_TACTICAL_LOAD','PRO_TACTICAL_SOURCE'])if(k in snapshot)localStorage.setItem(k,snapshot[k]);else localStorage.removeItem(k);localStorage.removeItem('PRO_TACTICAL_TESTPLAY');}catch(e2){}}
-   if(!ok){message('試しプレイを始められません',['ブラウザの保存領域に書き込めませんでした（いっぱいの可能性があります）。いまのセーブはそのままです。']);return;}X.save();location.href='tactical_hub.html?trial='+encodeURIComponent(m.id)+(trialParty==='maker'?'#map':'#missions');};
+   if(!ok){message('試しプレイを始められません',['ブラウザの保存領域に書き込めませんでした（いっぱいの可能性があります）。いまのセーブはそのままです。']);return;}location.href='tactical_hub.html?trial='+encodeURIComponent(m.id)+(trialParty==='maker'?'#map':'#missions');};
  const draw=()=>rowsWin('試しプレイ','タクティカルの画面で作戦を試します。終わったら「メーカーへ戻る」で戻ります。試しプレイ中の資金・ユニット・経験値・セーブはすべて元に戻ります。',[
    ['自分の部隊',trialParty==='maker'?'メーカーで組む試し部隊':'今のセーブの部隊（出撃準備から）',()=>{trialParty=trialParty==='maker'?'save':'maker';draw();},'party'],
    ...(trialParty==='maker'?[['＋ ユニットを足す（'+trialUnits.length+'/8）',names().join('・')||'まだいません',()=>{if(trialUnits.length>=8)return draw();pick('試し部隊に足すユニット',Object.fromEntries(data().units.map(u=>[u.id,u.name])),null,k=>{trialUnits.push(k);draw();},draw);},'addunit'],...trialUnits.map((id,i)=>['外す：'+names()[i],'',()=>{trialUnits.splice(i,1);draw();},'unit'+i])]:[])],
