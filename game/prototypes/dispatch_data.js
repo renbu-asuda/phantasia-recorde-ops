@@ -13,7 +13,8 @@ const skills=C.skillList(U.skills),units=C.pilotsToUnits(U.units,U.pilots).units
 const defs=Object.fromEntries(units.map(u=>[u.id,u])),names=Object.fromEntries(units.map(u=>[u.id,u.name]));
 const missions=[];let ready=false;
 // Pack units (Tactical format: weapons / skills already objects) as PRO・D battle units.
-const packUnit=u=>({...u,weapons:(u.weapons||[]).length?u.weapons:[C.weapon({name:'標準攻撃'})],deploy:{player:true,enemy:true}});
+// Map weapons (マップ兵器) are tactical only: PRO・D leaves them out.
+const packUnit=u=>{const ws=window.PROMapWeapon?window.PROMapWeapon.normal(u.weapons):(u.weapons||[]);return {...u,weapons:ws.length?ws:[C.weapon({name:'標準攻撃'})],deploy:{player:true,enemy:true}};};
 function ensure(){if(ready)return;const D=window.PROTacticalData;if(!D)return;ready=true;if(D.legacySample)missions.push(...M.missions.map(m=>({...battleMission(m),origin:{id:'sample',name:'内蔵パック（サンプル）'}})));
  for(const m of D.dispatchMissions?.()||[])missions.push(battleMission(m));
  for(const id of D.packUnitIds?.()||[])if(!defs[id])try{defs[id]=packUnit(D.unit(id));names[id]=defs[id].name;}catch(err){}}
