@@ -188,7 +188,8 @@ function openStorage(id){const it=D.item(id),eq=equipped(id),why=usable(it)?useB
 /* ---------- item use / equipment ---------- */
 // Effects that work at the base. HP / revive / next-sortie effects need a battle and are not usable here.
 const BASE_EFFECTS=['stat_up_flat','stat_up_pct','all_stats_up_flat','exp_gain','skill_point','credits_gain','add_skill','remove_skill','add_weapon','remove_weapon','add_tag','remove_tag','recruit_unit','equip_slot','loot_box'];
-const usable=it=>(it.effects||[]).length>0&&it.effects.every(e=>BASE_EFFECTS.includes(e.type));
+// An item with only variable changes (varOps) is usable at the base too.
+const usable=it=>((it.effects||[]).length>0||(it.varOps||[]).length>0)&&(it.effects||[]).every(e=>BASE_EFFECTS.includes(e.type));
 const needsUnit=it=>it.scope!=='party'&&(it.effects||[]).some(e=>!['credits_gain','recruit_unit','loot_box'].includes(e.type));
 // Tag requirements (requires.allTags / anyTags / noneTags) gate using and equipping an item on a unit.
 const tagBlock=(it,o)=>{if(!it?.requires||!o)return '';try{const r=C.checkRequirements(it.requires,unitOf(o));return r.ok?'':r.reason;}catch(e){return '';}};
@@ -209,6 +210,7 @@ function applyGlobal(e,notes){switch(e.type){case 'credits_gain':credits+=e.valu
 // useItem(itemId, uid?) → notes, or a reason string when it can't be used. party scope applies to every owned unit.
 function useItem(id,uid){const it=D.item(id);if(!it)return '不明なアイテムです';const target=uid?owned.find(o=>o.uid===uid):null;if(needsUnit(it)&&it.scope!=='party'&&!target)return 'ユニットを選んでください';const why=useBlock(it,target);if(why)return why;
  const notes=[],targets=it.scope==='party'?owned:target?[target]:[];for(const e of it.effects||[]){if(['credits_gain','recruit_unit','loot_box'].includes(e.type))applyGlobal(e,notes);else for(const o of targets)applyEffect(e,o,notes);}
+ if((it.varOps||[]).length){Object.assign(vars,applyVarOps(it.varOps));notes.push('変数が変わった');}
  items[id]-=1;for(const o of targets){o.used=o.used||{};o.used[id]=(o.used[id]||0)+1;}save();return notes;}
 // equip(uid, slot, itemId|null): an item can be equipped only while a free copy remains.
 function equip(uid,slot,id){const o=owned.find(x=>x.uid===uid);if(!o||slot<0||slot>=slotsOf(o))return false;const cur=(o.equip||[])[slot]||null;if(id&&id!==cur){const it=D.item(id);if(!it?.equip||free(id)<1||tagBlock(it,o))return false;}o.equip=Array.from({length:slotsOf(o)},(_,i)=>(o.equip||[])[i]||null);o.equip[slot]=id||null;save();return true;}
