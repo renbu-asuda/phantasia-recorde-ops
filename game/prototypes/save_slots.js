@@ -10,7 +10,7 @@ const get=k=>{try{return localStorage.getItem(k);}catch(e){return null;}},put=(k
 const parse=t=>{try{return JSON.parse(t);}catch(e){return null;}};
 // The current progress as a save bundle.
 // Made from the progress in memory (not what the browser storage still holds: a failed save must not export old data).
-function snapshot(){const L=window.PROUnitLab;L?.flush();const hq=L?.hqData?.()||parse(get(KEYS.hq))||{};return {format:FORMAT,version:1,savedAt:new Date().toISOString(),source:window.PROTacticalData?.source||'none',load:window.PROTacticalData?.load?.()||null,summary:{day:hq.day||1,credits:hq.credits??null,units:(hq.owned||[]).length,wins:hq.wins||0},hq,seen:window.PROUnitsSeen?.data?.()||parse(get(KEYS.seen))||{}};}
+function snapshot(){const L=window.PROUnitLab;L?.flush();const hq=L?.hqData?.()||parse(get(KEYS.hq))||{};return {format:FORMAT,version:1,savedAt:new Date().toISOString(),source:window.PROTacticalData?.source||'none',load:window.PROTacticalData?.load?.()||null,...(window.PROTacticalData?.load?.()?.maker||window.PROTacticalData?.source==='maker'?{makerPack:window.PROTacticalData?.makerPackId?.()??null}:{}),summary:{day:hq.day||1,credits:hq.credits??null,units:(hq.owned||[]).length,wins:hq.wins||0},hq,seen:window.PROUnitsSeen?.data?.()||parse(get(KEYS.seen))||{}};}
 function valid(s){return !!s&&s.format===FORMAT&&s.version===1&&s.hq&&typeof s.hq==='object'&&Array.isArray(s.hq.owned)&&typeof s.seen==='object';}
 const read=i=>{const s=parse(get(slotKey(i)));return valid(s)?s:null;};
 function describe(s,withTime=true){if(!s)return '空き';const d=new Date(s.savedAt),t=isNaN(d)?'':d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});return ({maker:'［メーカー］',pack:'［パック］',sample:'［内蔵パック］'}[s.source]||(String(s.source).includes('+')?'［複数パック］':''))+s.summary.day+'日目 ・ 資金 '+(s.summary.credits??0).toLocaleString()+' Cr ・ '+s.summary.units+'体 ・ 勝利'+s.summary.wins+(t&&withTime?'（'+t+'）':'');}
@@ -23,6 +23,8 @@ const suspended=()=>!!get(SUSPEND);
 // apply(save): write progress back (switching the data source if needed) and reload. Returns a reason when refused.
 function apply(s,{reload=true}={}){if(!valid(s))return 'セーブデータの形式が違います';
  if(s.source==='maker'&&!window.PROTacticalData?.hasMakerDraft?.())return 'メーカーの下書きがないため、メーカーのデータで作ったセーブは読み込めません';
+ // Made with a maker draft: the draft here must be the same pack (pack ID), or its units would be dropped.
+ if((s.load?.maker||s.source==='maker')&&s.makerPack!=null&&window.PROTacticalData?.makerPackId?.()!==s.makerPack)return 'このセーブはメーカーの別の下書き（パックID：'+s.makerPack+'）で作られたため、いまの下書きでは読み込めません';
  if(s.source==='pack'&&!s.load&&!window.PROTacticalData?.hasPack?.())return 'パックファイルが読み込まれていないため、パックのデータで作ったセーブは読み込めません';
  // Saves made with several sources restore the same combination (every pack must still be stored here).
  if(s.load){const have=(window.PROTacticalData?.packs?.()||[]).map(p=>p.packId),miss=(s.load.packs||[]).filter(id=>!have.includes(id));if(miss.length)return 'このセーブに使われたパック（'+miss.join('・')+'）が読み込まれていないため読み込めません';if(s.load.maker&&!window.PROTacticalData?.hasMakerDraft?.())return 'メーカーの下書きがないため、このセーブは読み込めません';}
