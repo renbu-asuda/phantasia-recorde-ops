@@ -339,7 +339,7 @@ const baseOf=u=>u.baseId||u.id,isUnit=(x,id)=>x.unit.id===id||x.unit.baseId===id
 const FORM_KEY={transform:'transformTo',swap:'swapTo'};
 const formSkill=(u,kind)=>{for(const id of [u.id,...P.formGroup(u.id,FORM_KEY[kind])]){let d=null;try{d=id===u.id?u:P.unit(id);}catch(e){}const k=(d?.skills||[]).find(s=>s.tactical?.[kind]?.on);if(k)return k.tactical[kind];}return null;};
 const formsOf=(u,kind='transform')=>formSkill(u,kind)?P.formGroup(u.id,FORM_KEY[kind]):[];
-const isOwnedUid=uid=>!!window.PROUnitLab?.owned().some(o=>o.uid===uid);
+const isOwnedUid=uid=>!!window.PROUnitLab?.isOwned(uid);
 function formUnit(m,toId){let u=isOwnedUid(m.uid)?window.PROUnitLab.formUnit(m.uid,toId):null;if(!u){const p=m.unit.pilot;u=P.withPilot(P.unit(toId),p?.unitId?{unit:p.unitId,lv:p.lv}:null);}u=copy(u);const base=baseOf(m.unit);if(toId!==base)u.baseId=base;else delete u.baseId;return u;}
 // Copy of the group with member uid in form toId, or {why} when it can't change there.
 function changeForm(g,uid,toId,hpMode='ratio',stack){const out=copy(g);let mm=out.members.find(x=>x.uid===uid),car=null;if(!mm)for(const c of out.members){const x=cargoOf(c).find(y=>y.uid===uid);if(x){mm=x;car=c;break;}}if(!mm)return {why:'見つかりません'};const old=mm.unit,nu=formUnit(mm,toId),st=stack!==undefined?stack:old.purgeStack;if(st?.length)nu.purgeStack=[...st];else delete nu.purgeStack;const oldMax=old.hp||1200,newMax=nu.hp||1200,cur=mm.currentHp??oldMax;
@@ -362,7 +362,7 @@ function openTransform(){const g=current();if(!g||!transformShown(g))return;choi
    used. Lasting effects sit on the target members (m.cmdFx): 'battle' ones go after their next local battle, 'turn'
    ones at the start of their side's next turn; their numbers join 味方支援 (supportOf). ---------- */
 const CM=()=>window.PROCommands;
-function cmdHolder(m){const p=m.unit.pilot,L=window.PROUnitLab;if(p?.uid){const o=L?.owned().find(x=>x.uid===p.uid);if(o)return {def:o,uid:p.uid,level:o.level||1};}if(p?.unitId){try{return {def:P.unit(p.unitId),level:p.lv||1};}catch(e){}}const o=isOwnedUid(m.uid)?L.owned().find(x=>x.uid===m.uid):null;return {def:o||m.unit,uid:o?m.uid:null,level:o?.level||m.unit.level||1};}
+function cmdHolder(m){const p=m.unit.pilot,L=window.PROUnitLab;if(p?.uid){const o=L?.ownedOne(p.uid);if(o)return {def:o,uid:p.uid,level:o.level||1};}if(p?.unitId){try{return {def:P.unit(p.unitId),level:p.lv||1};}catch(e){}}const o=isOwnedUid(m.uid)?L.ownedOne(m.uid):null;return {def:o||m.unit,uid:o?m.uid:null,level:o?.level||m.unit.level||1};}
 const cmdsOf=m=>CM()?CM().known(cmdHolder(m).def,m.unit.skills,cmdHolder(m).level):[];
 function spLeft(m){if(m.cmdSp!=null)return m.cmdSp;const h=cmdHolder(m);return h.uid?(window.PROUnitLab?.spTotal(h.uid)||0):Math.max(0,Number(h.def.cmdSp)||0);}
 const cmdUsers=g=>T.living(g).filter(m=>cmdsOf(m).length);
