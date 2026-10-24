@@ -283,6 +283,8 @@ async function resolveWeapon(ctx,attacker,weapon,targets,opts={}){
     if(killCount>0)triggerSkills(ctx,attacker,'on_kill',{kills:killCount,weapon,opponent:lastKilled});
     if(actionCrits>0)triggerSkills(ctx,attacker,'on_crit',{weapon,opponent:lastCritTarget});
   }
+  // T&D: a kill made by a counter is a kill too (on_kill only; the counter's other triggers stay off).
+  else if(killCount>0)triggerSkills(ctx,attacker,'on_kill',{kills:killCount,weapon,opponent:lastKilled,counter:true});
   if(attacker.alive)H.tensionEvent?.('attack',attacker);
   await H.actionEnd(attacker,weapon,targets,summary);
   return {hits:actionHits,damage:actionDmg,kills:killCount,crits:actionCrits};
