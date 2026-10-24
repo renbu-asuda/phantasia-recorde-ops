@@ -13,7 +13,7 @@ function open(weapon=MAPW,{support=false}={}){const w=new Window({url:'http://lo
    // 味方支援 for #192: range 2, ATK +20%, weapon range +2 (held by infantry U2).
    if(support){p.skills.push({id:'zz-sup',name:'テスト支援',tacticalOnly:true,tactical:{support:{on:true,range:2,atk:20,rangeAdd:2}}});p.units.find(u=>u.id===U(2)).skillIds.push('zz-sup');}}
   // Every local / map battle context is kept in window.__ctx.
-  if(src&&src[1]==='../shared/pro_battle.js')w.eval("window.__ctx=[];{const orig=window.PROBattle.createContext;window.PROBattle=Object.freeze({...window.PROBattle,createContext:o=>{const c=orig(o);window.__ctx.push(c);return c;}});}");}return w;}
+  if(src&&src[1]==='td_battle.js')w.eval("window.__ctx=[];{const orig=window.PROBattle.createContext;window.PROBattle=Object.freeze({...window.PROBattle,createContext:o=>{const c=orig(o);window.__ctx.push(c);return c;}});}");}return w;}
 const id=(code,n)=>'sample-'+code+'-'+String(n).padStart(6,'0'),U=n=>id('U',n),TM=n=>id('TM',n);
 const tick=()=>new Promise(r=>setTimeout(r,0));
 const hpSum=g=>g.members.reduce((n,m)=>n+(m.currentHp??m.unit.hp),0);

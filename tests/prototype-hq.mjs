@@ -44,9 +44,9 @@ w=open({});{const L=w.PROUnitLab,d=w.document,two=(g,id)=>{const t=d.querySelect
  L.reset();L.spend(-14800);L.renderFusion();two('fusionGrid',(SX('scout')));d.querySelector(('#fusionGrid [data-unit='+SX('tank')+']')).click();assert(d.querySelector('#labWinBody').textContent.includes('生産・雇用リストに エース偵察車'));assert(d.querySelector('#labWinBody').textContent.includes('ユニットは増えません'));run();closeW();assert.equal(L.owned().length,12);assert(L.registered().includes((SX('scout_ace'))));assert.equal(L.credits(),22800);
  L.gainExp([{key:(SX('robot')),amount:1000}]);L.renderFusion();two('fusionGrid',(SX('robot')));d.querySelector(('#fusionGrid [data-unit='+SX('fighter')+']')).click();run();closeW();const cm=L.owned().find(u=>u.id===(SX('commander')));assert.equal(cm.level,5);assert(!L.registered().includes((SX('commander'))));
  L.renderFusion();two('fusionGrid',(SX('infantry')));d.querySelector(('#fusionGrid [data-unit='+SX('medic')+']')).click();run();closeW();assert.equal(L.owned().find(u=>u.id===(SX('ranger'))).level,1);assert(L.registered().includes((SX('ranger'))));
- // PRO・D EXP: kept per unit id in the same test save.
- const got=L.gainDispatchExp([{key:'core-u-jackal',amount:250}],{'core-u-jackal':'ジャッカル'});assert.equal(got[0].lv,2);assert.equal(L.dispatchLevel('core-u-jackal').lv,2);saved=dump(w);}
-w.close();w=open(saved);assert.equal(w.PROUnitLab.dispatchLevel('core-u-jackal').exp,150);assert(w.PROUnitLab.registered().includes((SX('ranger'))));w.PROUnitLab.renderProduction();assert(w.document.querySelector('#productionGrid [data-uid="'+'reg-'+SX('ranger')+'"]'));w.location.hash='#facility';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,50));assert(!w.document.querySelector('#facilityRegistered'));assert(w.document.querySelector('#facilityResearch'));w.close();
+ // PRO・D EXP goes to the owned units (the same units and levels as Tactical).
+ {const o=L.owned()[0];const got=L.gainExp([{key:o.uid,amount:100*(o.level||1)+50}]);assert.equal(got[0].lv,(o.level||1)+1);globalThis.__dU=o.uid;globalThis.__dLv=got[0].lv;}saved=dump(w);}
+w.close();w=open(saved);assert.equal(w.PROUnitLab.owned().find(u=>u.uid===globalThis.__dU).level,globalThis.__dLv);assert(w.PROUnitLab.registered().includes((SX('ranger'))));w.PROUnitLab.renderProduction();assert(w.document.querySelector('#productionGrid [data-uid="'+'reg-'+SX('ranger')+'"]'));w.location.hash='#facility';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,50));assert(!w.document.querySelector('#facilityRegistered'));assert(w.document.querySelector('#facilityResearch'));w.close();
 // Production / hire: entries with cost, limit, required missions, hidden conditions and registered units.
 w=open({});{const L=w.PROUnitLab,d=w.document,tile=id=>d.querySelector('#productionGrid [data-uid="'+id+'"]'),two=id=>{tile(id).click();tile(id).click();},body=()=>d.querySelector('#labWinBody').textContent,run=()=>d.querySelector('#labWinActions [data-lab=run]'),closeW=()=>[...d.querySelectorAll('#labWinActions button')].find(b=>b.textContent==='閉じる').click();
  L.renderProduction();assert(tile((SX('hire-infantry'))));assert(!tile((SX('hire-marine'))));assert(tile((SX('hire-tank'))).classList.contains('blocked'));assert(tile((SX('hire-tank'))).getAttribute('aria-label').includes('機動訓練'));assert(tile((SX('hire-scout'))).textContent.includes('1,500Cr'));
@@ -128,10 +128,11 @@ w=open({});{const L=w.PROUnitLab,DD=w.PRODispatchData,X=w.PRODispatch,d=w.docume
  d.querySelector('#fieldBattleClose').click();let fin=false;p.then(()=>{fin=true;});for(let i=0;i<200&&!fin;i++){if(d.querySelector('#storyWindow').open)d.querySelector('#storySkip').click();await new Promise(r=>setTimeout(r,20));}await p;assert.equal(L.items()[SX('stim')],1);assert.equal(JSON.stringify(X.supply()),'{}');
  // Choices: a choice whose display condition fails is left out; the picked choice's flags are saved.
  L.setFlag('f-test',false);const cp=L.pickChoice('テスト',[{text:'A',flags:{a:true}},{text:'B',conds:{mode:'all',list:[{type:'flag',flagId:'f-test',on:true}]}}]);assert.equal(d.querySelectorAll('#labWinActions button').length,1);d.querySelector('#labWinActions [data-lab=choice0]').click();assert.equal((await cp).text,'A');assert.equal(L.flags().a,true);
- // Tactical presets and supply.
+ // Tactical presets and supply (a fresh save: the PRO・D battle above uses and may lose the same owned units).
+}w.close();w=open({});{const L=w.PROUnitLab,DD=w.PRODispatchData,X=w.PRODispatch,d=w.document;
  const P=w.PROPreparation;w.location.hash='#prepare';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,400));P.addUnit((SX('infantry')));P.addUnit((SX('scout')));d.querySelector('#prepPresets').click();[...d.querySelectorAll('#prepChoices button')].find(b=>b.textContent.startsWith('保存 2')).click();
  d.querySelector(('[data-uid='+SX('infantry')+'] [data-supply='+SX('infantry')+']')).click();[...d.querySelectorAll('#prepChoices button')].find(b=>b.textContent.startsWith('戦闘糧食')).click();const atk=L.owned().find(u=>u.uid===(SX('infantry'))).atk;d.querySelector('#prepConfirm').click();
- const dep=w.PROField._live().groups.find(g=>g.faction==='player').members.find(m=>m.uid===(SX('infantry')));assert.equal(dep.unit.atk,Math.round(atk*1.2));assert.equal(L.items()[SX('stim')]||0,0);
+ const dep=w.PROField._live().groups.find(g=>g.faction==='player').members.find(m=>m.uid===(SX('infantry')));assert.equal(dep.unit.atk,Math.round(atk*1.2));assert.equal(L.items()[SX('stim')]||0,1,'one of the two start items used (fresh save)');
  assert.equal(L.getPreset('tactical',1).groups[0].members.length,2);}
 w.close();
 // Defeat: ordinary units are lost, key units (noFire, not hireable) are wrecked and can't sortie until repaired
@@ -148,9 +149,9 @@ w=open({});{const L=w.PROUnitLab,d=w.document,F=w.PROField,u=id=>L.owned().find(
  // Dismissal: hire → 解雇, produce → 解体; key units can't be dismissed; equipment goes back.
  L.renderFire();assert(d.querySelector(('#fireGrid [data-uid='+SX('robot')+']')).classList.contains('blocked'));const f=d.querySelector(('#fireGrid [data-uid='+SX('tank')+']'));f.click();d.querySelector(('#fireGrid [data-uid='+SX('tank')+']')).click();assert(act('fire').textContent.includes('解体'));act('fire').click();closeW();assert(!u((SX('tank'))));
  assert(L.dismiss((SX('robot'))).includes('できません'));L.buy((SX('scope')));L.equip((SX('medic')),0,(SX('scope')));assert.equal(L.free((SX('scope'))),0);assert.equal(L.dismiss((SX('medic'))),'');assert.equal(L.free((SX('scope'))),1);
- // PRO・D: a lost unit leaves the sortie list; a noFire unit is badly injured / wrecked.
- const DD=w.PRODispatchData,key=Object.values(DD.defs).find(x=>x.noFire&&x.deploy?.player),plain=DD.players().find(x=>!x.noFire&&!x.recruit?.locked);const out=L.handleDispatchLosses([plain,...(key?[key]:[])]);assert.equal(out[0].result,'lost');assert.equal(L.dispatchState(plain.id),'lost');
- w.PRODispatch.show(DD.listing()[0].id);assert(!d.querySelector('[data-pick="'+plain.id+'"]'));if(key){assert.equal(out[1].result,'down');L.renderCare();assert(d.querySelector('#careGrid [data-uid="d:'+key.id+'"]'));}saved=dump(w);}
+ // PRO・D: the owned units' losses (as in Tactical): a lost unit leaves the PRO・D list; a key unit is wrecked / injured.
+ const DD=w.PRODispatchData,own=L.owned(),key=own.find(x=>x.noFire),plain=own.find(x=>!x.noFire&&!x.pilot&&!x.riding);const out=L.handleLosses([plain.uid,...(key?[key.uid]:[])]);assert.equal(out[0].result,'lost');assert(!L.owned().some(u=>u.uid===plain.uid));
+ w.PRODispatch.show(DD.listing()[0].id);assert(!d.querySelector('[data-pick="'+plain.uid+'"]'));if(key){assert.equal(out[1].result,'down');L.renderCare();assert(d.querySelector('#careGrid [data-uid="'+key.uid+'"]'));assert(d.querySelector('[data-pick="'+key.uid+'"]').disabled,'wrecked: no sortie');}saved=dump(w);}
 w.close();w=open(saved);assert(!w.PROUnitLab.owned().some(x=>x.uid===(SX('scout'))));w.close();
 // Skill tree: learn with SP (level and prerequisites), skills apply, reset refunds; PRO・D units too.
 w=open({});{const L=w.PROUnitLab,d=w.document,u=id=>L.owned().find(x=>x.uid===id),act=k=>d.querySelector('#labWinActions [data-lab="'+k+'"]');
@@ -158,7 +159,8 @@ w=open({});{const L=w.PROUnitLab,d=w.document,u=id=>L.owned().find(x=>x.uid===id
  L.renderTree();const t=d.querySelector(('#treeGrid [data-uid='+SX('infantry')+']'));t.click();d.querySelector(('#treeGrid [data-uid='+SX('infantry')+']')).click();assert(act('node-inf-charge').disabled);act('node-inf-aim').click();assert(u((SX('infantry'))).skills.some(k=>k.name==='狙いを定める'));
  act('node-inf-charge').click();assert.equal(u((SX('infantry'))).sp,0);assert(act('node-inf-rally').disabled);assert(act('node-inf-rally').textContent.includes('Lv5'));
  act('resetask').click();act('reset').click();assert.equal(u((SX('infantry'))).sp,3);assert(!u((SX('infantry'))).skills.some(k=>k.name==='狙いを定める'));
- const jk=Object.values(w.PRODispatchData.defs).find(x=>(x.skillTree||[]).length&&x.deploy?.player&&!x.recruit?.locked);L.gainDispatchExp([{key:jk.id,amount:100}]);const n0=jk.skillTree[0];assert.equal(L.learn('d:'+jk.id,n0.id),'');assert.equal(L.dispatchTreeSkills(jk.id).length,1);assert.equal(L.dispatchLevel(jk.id).sp,1-(n0.cost??1));saved=dump(w);}
+ // PRO・D fights with the same owned unit: level, skills (tree included) as Tactical has them.
+ {const ou=L.ownedOne(SX('infantry')),ad=w.PRODispatch.allyDefs([SX('infantry')])[0];assert.equal(ad.uid,SX('infantry'));assert.equal(ad.level,ou.level);assert.equal(ad.skills.map(k=>k.name).join(),ou.skills.map(k=>k.name).join());assert.equal(ad.atk,ou.atk);}saved=dump(w);}
 w.close();w=open(saved);assert.equal(w.PROUnitLab.owned().find(x=>x.uid===(SX('infantry'))).sp,3);w.close();
 // Boarding: pilot bonus, skills and aptitude; riding pilots and pilot-required machines can't sortie alone;
 // shared EXP and shared fate; PRO・D boarding in the battle.
@@ -171,8 +173,8 @@ w=open({});{const L=w.PROUnitLab,d=w.document,u=id=>L.owned().find(x=>x.uid===id
  L.gainExp([{key:(SX('robot')),amount:250}]);assert.equal(u(aoi).level,2);assert.equal(u((SX('robot'))).level,2);
  // Pilot-required machine (fusion result) and shared fate (robot is a key unit → wrecked; the pilot is lost).
  assert.equal(L.crewProblem('nope'),'');L.handleLosses([(SX('robot'))]);assert.equal(u((SX('robot'))).down,'wrecked');assert(!L.owned().some(x=>x.uid===aoi));assert.equal(JSON.stringify(L.boards()),'{}');
- // PRO・D: a pilot unit boards a crew-required machine; the machine can then sortie.
- const DD=w.PRODispatchData,mech=DD.players().find(x=>x.crew==='required'),pil=DD.players().find(x=>x.pilotProfile&&!x.recruit?.locked);if(mech&&pil){assert(L.crewProblem('d:'+mech.id).includes('パイロットが必要'));assert.equal(L.board('d:'+mech.id,'d:'+pil.id),'');assert.equal(L.crewProblem('d:'+mech.id),'');assert(L.crewProblem('d:'+pil.id).includes('搭乗中'));assert.equal(L.dispatchPilot(mech.id).def.id,pil.id);}
+  // PRO・D: the owned boarding (the same as Tactical): a crew-required machine can sortie once a pilot rides it.
+ {const own=L.owned(),mech=own.find(x=>x.crew==='required'&&!x.pilot),pil=own.find(x=>x.pilotProfile&&!x.riding);if(mech&&pil){assert(L.crewProblem(mech.uid).includes('パイロットが必要'));assert.equal(L.board(mech.uid,pil.uid),'');assert.equal(L.crewProblem(mech.uid),'');assert(L.crewProblem(pil.uid).includes('搭乗中'));assert.equal(w.PRODispatch.allyDefs([mech.uid])[0].pilot.uid,pil.uid,'the owned pilot rides in PRO・D too');}}
  saved=dump(w);}
 w.close();
 // Tags: terrain blockTags stop a group with a tagged member; item requires gate equip and use; grid search by name / #tag.
@@ -440,13 +442,13 @@ assert(w.document.querySelector('#dataSourceText').textContent.includes('テス�
    assert(F.opLog().some(e=>e.s.includes('試作機が撃破され、脱出ポッドで脱出')));assert(F.opLog().some(e=>e.s.includes('量産機が撃破され、パイロットエースパイロットが脱出')));
    s.groups=s.groups.filter(g=>g.faction==='player');s.outcome='victory';s.talkQueue=[];F.showResult();
    assert(!L.owned().some(o=>o.uid===um),'the machine is lost');assert(L.owned().some(o=>o.uid===up),'the pilot survives');assert.equal(L.owned().find(o=>o.uid===ua).id,'td-es-a','back to the original unit');w.close();
-   // PRO・D: the same units in a dispatch battle (pilot boarded with the PRO・D boarding).
+   // PRO・D: the same owned units in a dispatch battle (the pilot boarded as in Tactical).
    w=open({PRO_TACTICAL_LOAD:JSON.stringify({sample:false,maker:true,packs:[]}),PRO_TD_MAKER_DRAFT:JSON.stringify(d7)});const DD=w.PRODispatchData,d=w.document,q=sel=>d.querySelector(sel),L2=w.PROUnitLab;
-   assert.equal(L2.board('d:td-es-m','d:td-es-p'),'');w.location.hash='#missions';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,300));q('[data-filter=dispatch]').click();q('[aria-label="脱出試験"]').click();q('#deploy').click();w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,300));
+   assert.equal(L2.board('td-es-m','td-es-p'),'');w.location.hash='#missions';w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,300));q('[data-filter=dispatch]').click();q('[aria-label="脱出試験"]').click();q('#deploy').click();w.dispatchEvent(new w.Event('hashchange'));await new Promise(r=>setTimeout(r,300));
    for(const id of ['td-es-a','td-es-m','td-es-pu'])q('[data-pick="'+id+'"]').click();w.Date.now=()=>424242;const dp=w.PRODispatch.start({watch:false});await new Promise(r=>setTimeout(r,30));if(q('#storyWindow').open)q('#storySkip').click();for(let i=0;i<300&&(!q('#fieldBattle').open||q('#fieldBattleClose').disabled);i++)await new Promise(r=>setTimeout(r,20));
    const blog=[...q('#fieldBattleLog').children].map(x=>x.textContent).join('\n');q('#fieldBattleClose').click();await new Promise(r=>setTimeout(r,30));if(q('#storyWindow').open)q('#storySkip').click();const res=await dp;
    assert(blog.includes('重装機がパージ：脱出ポッドに'),blog.slice(0,600));assert(blog.includes('試作機が撃破された！ 脱出ポッドで脱出'),blog.slice(0,800));assert(blog.includes('量産機が撃破された！ パイロットエースパイロットが脱出'));assert.equal(res.outcome,'win');
-   assert.equal(L2.dispatchState('td-es-m'),'lost','the machine is lost');assert.equal(L2.dispatchState('td-es-p'),null,'the pilot survives');assert.equal(L2.dispatchState('td-es-a'),null);w.close();}
+   const has=uid=>L2.owned().find(u=>u.uid===uid);assert(!has('td-es-m'),'the machine is lost');assert(has('td-es-p')&&!has('td-es-p').down,'the pilot survives');assert(has('td-es-a')&&!has('td-es-a').down);w.close();}
   // Facility storage ⑤: store a whole squad (action ends), production into a new / existing stored squad, stored squads
   // count for win / lose, are repaired on their side's turn, AI release when a foe is near, capture takes the squads inside.
   {const hangar={id:'td-t-hangar',name:'格納庫',tactical:{kind:'facility',costs:{ground:1,air:1},facility:{durability:20,functions:{storage:{count:16,size:16},repair:{pct:50},produce:{list:[{unitId:'td-u-b',cost:100}]}}}}};

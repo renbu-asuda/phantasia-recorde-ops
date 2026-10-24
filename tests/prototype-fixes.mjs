@@ -62,9 +62,9 @@ const mid=SX('training-01');
 // #166: おまかせ, presets and the start skip / refuse wrecked and injured PRO・D units; manual add is refused too.
 {const w=open();const L=w.PROUnitLab,DD=w.PRODispatchData,X=w.PRODispatch,d=w.document;const mid2=DD.listing()[0].id;X.show(mid2);X.auto();const picked=X.chosen();assert(picked.length>0);
  d.querySelector('#dispatchPresets').click();d.querySelector('#labWinActions [data-preset=save0]').click();
- const key=Object.values(DD.defs).find(x=>x.noFire&&x.deploy?.player&&picked.includes(x.id))||Object.values(DD.defs).find(x=>x.noFire&&x.deploy?.player);assert(key,'a key unit');
- if(!picked.includes(key.id)){X.choose([...picked.slice(0,0),key.id]);}const lineup=X.chosen();
- L.handleDispatchLosses([key]);assert(L.dispatchState(key.id),'wrecked or injured');
+ const own=L.owned(),key=own.find(x=>x.noFire&&picked.includes(x.uid))||own.find(x=>x.noFire);assert(key,'a key unit');key.id=key.uid;/* PRO・D picks owned units by uid */
+ if(!picked.includes(key.uid)){X.choose([key.uid]);}const lineup=X.chosen();
+ L.handleLosses([key.uid]);assert(L.owned().find(x=>x.uid===key.uid)?.down,'wrecked or injured');
  X.auto();assert(!X.chosen().includes(key.id),'おまかせ skips it');X.choose([]);d.querySelector('#dispatchPresets').click();d.querySelector('#labWinActions [data-preset=load0]').click();assert(!X.chosen().includes(key.id),'presets skip it');
  X.choose([key.id]);const day=L.day(),r=await X.start({watch:false});assert.equal(r,null,'the start refuses it');assert.equal(L.day(),day);assert(d.querySelector('#dispatchSummary').textContent.includes('出撃できません'));
  X.choose([]);assert(d.querySelector('[data-pick="'+key.id+'"]').disabled,'manual add refused');}
