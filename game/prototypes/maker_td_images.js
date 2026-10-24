@@ -48,6 +48,7 @@ X.registerKind('images',{label:'画像（ドット絵）',en:'PIXEL IMAGES',pref
  {display:{pixedit:(v,x)=>imageText(x),imgref:v=>{const x=v&&data().images.find(i=>i.id===v);return x?x.name+'（'+imageText(x)+'）':v?'⚠ '+v:'なし';}},
   edit:{pixedit:(f,x)=>editor(x),imgref:(f,x)=>pick('画像',{'':'なし',...Object.fromEntries(data().images.filter(i=>!PX.isBanner(i)).map(i=>[i.id,i.name]))},x.imageId||'',k=>{commit(o=>{if(k)o.imageId=k;else delete o.imageId;});closeWin();},closeWin)},
   issues:x=>PX.issues(x),
+  refsFor:{units:o=>o.imageId?[['images',o.imageId]]:[],terrains:o=>o.imageId?[['images',o.imageId]]:[],tmissions:o=>o.mapImageId?[['images',o.mapImageId]]:[]},
   mapRefs:(k,fn)=>{if(k!=='images')return;for(const kk of ['units','terrains'])for(const o of data()[kk]||[])if(o.imageId){const n=fn(o.imageId);if(n)o.imageId=n;else delete o.imageId;}for(const m of data().tmissions||[])if(m.mapImageId){const n=fn(m.mapImageId);if(n)m.mapImageId=n;else delete m.mapImageId;}const L=data().terrainLooks;if(L)for(const [t,v] of Object.entries(L)){const n=fn(v.imageId);if(n)v.imageId=n;else delete L[t];}}});
 // Pack setting: pixel images replacing the look of standard (built-in, one-letter) terrains: terrainLooks {key:{imageId}}.
 const BUILTIN=window.PROTacticalTerrains||{};

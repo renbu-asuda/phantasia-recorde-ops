@@ -26,9 +26,9 @@ const id=(code,n)=>'sample-'+code+'-'+String(n).padStart(6,'0'),U=n=>id('U',n),T
  s2.groups=s2.groups.filter(g=>g.id!=='g0');await F2.endTurn();assert.equal(F2._live().objectives.A,'failed','a destroyed squad is a loss');}
 
 // #183: the estimate and the battle get the same allies (pilot aboard, skills) and the same rules (気力, 味方支援).
-{let sim=null,run=null;const w=open((src,w)=>{if(src.endsWith('shared/pro_battle.js'))w.eval("window.PROBattle=Object.freeze({...window.PROBattle,simulate:async o=>{window.__sim=o;return {winRate:0.5}},runBattle:async ctx=>{window.__run=ctx;return {outcome:'lose',turns:1}}})");});
+{let sim=null,run=null;const w=open((src,w)=>{if(src.endsWith('td_battle.js'))w.eval("window.PROBattle=Object.freeze({...window.PROBattle,simulate:async o=>{window.__sim=o;return {winRate:0.5}},runBattle:async ctx=>{window.__run=ctx;return {outcome:'lose',turns:1}}})");});
  const L=w.PROUnitLab,X=w.PRODispatch,DD=w.PRODispatchData,d=w.document,B=w.PROBattle;for(let n=1;n<=7;n++)L.finishMission(w.PROTacticalData.mission(TM(n)),{outcome:'win',turns:3});
- assert.equal(L.board('d:'+U(1),'d:'+U(30)),'','the captain boards the Valkis (PRO・D)');X.show(id('DM',2));X.choose([U(1),U(9),U(4)]);await X.estimate();sim=w.__sim;assert(sim,'estimate ran');
+ const ou=uid=>L.owned().find(u=>u.id===uid)?.uid;assert.equal(L.board(ou(U(1)),ou(U(30))),'','the captain boards the Valkis (the owned boarding, also PRO・D)');X.show(id('DM',2));X.choose([U(1),U(9),U(4)].map(ou));await X.estimate();sim=w.__sim;assert(sim,'estimate ran');
  const est=B.buildBattle(sim,B.mulberry32(7));sim.prepare(est);
  const p=X.start({watch:false});for(let i=0;i<300&&!w.__run;i++){if(d.querySelector('#storyWindow').open)d.querySelector('#storySkip').click();if(d.querySelector('#dispatchAsk')?.open)d.querySelector('#dispatchSkip').click();await new Promise(r=>setTimeout(r,20));}run=w.__run;assert(run,'battle ran');
  for(let i=0;i<300;i++){if(d.querySelector('#storyWindow').open)d.querySelector('#storySkip').click();if(d.querySelector('#fieldBattle').open&&!d.querySelector('#fieldBattleClose').disabled)d.querySelector('#fieldBattleClose').click();await new Promise(r=>setTimeout(r,20));if(d.querySelector('#fieldResult').open)break;}

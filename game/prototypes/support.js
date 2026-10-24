@@ -33,6 +33,8 @@ function battle(ctx,{skillsOf=u=>u.skills||[],enMax=()=>0}={}){const S=window.PR
  const sp=ctx.hooks.spawned;ctx.hooks.spawned=made=>{apply();return sp(made);};
  // A supporter destroyed or replaced (脱出) mid-turn: its support ends at once.
  const dd=ctx.hooks.died;ctx.hooks.died=u=>{apply();dd?.(u);};
+ // A unit replaced in place (automatic パージ): the support is applied to its new values.
+ const rp=ctx.hooks.replaced;ctx.hooks.replaced=u=>{apply();rp?.(u);};
  // A 段階変化 sets new base values (even one equal to the supported value).
  const ph=ctx.hooks.phased;ctx.hooks.phased=(u,p)=>{for(const k of Object.keys(p.stats||{}))if(u._st&&k in u._st){u._st[k]=u[k];if(u._set)delete u._set[k];}apply();ph?.(u,p);};}
 window.PROSupport=Object.freeze({KEYS,LABEL,empty,partsOf,add,any,text,boost,mods,wrap,tensionConfig,battle});

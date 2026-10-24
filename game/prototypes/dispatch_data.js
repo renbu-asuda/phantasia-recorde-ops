@@ -8,9 +8,16 @@ if(!U||!M)throw Error('PRO・D base data missing');
 // prototype does not load the maker UI.
 function battleUnit(u,masters,skills){u=C.resolveUnitData(u,masters,skills);const s=x=>{try{return C.skill(x);}catch(e){return null;}},w=x=>{try{return C.weapon(x);}catch(e){return null;}};let tags=[];try{tags=C.unitTags(u);}catch(e){}let ext={};try{ext=C.unitExt(u);}catch(e){}
  const weapons=(u.weapons||[]).map(w).filter(Boolean);return {...u,...ext,tags,hp:Math.max(1,Math.floor(Number(u.hp)||3000)),atk:Number(u.atk)||0,def:Number(u.def)||0,mob:Number(u.mob)||0,acc:Number(u.acc)||0,skills:(u.skills||[]).map(s).filter(Boolean),weapons:weapons.length?weapons:[C.weapon({name:'標準攻撃'})],deploy:{player:u.deploy?.player!==false,enemy:!!u.deploy?.enemy}};}
-function battleMission(m){let ext={};try{ext=C.missionExt(m);}catch(e){}const rules=(m.rules||[]).map(r=>{try{return C.rule(r,m.id);}catch(e){return null;}}).filter(Boolean);if(ext.events)ext.events=ext.events.map(e=>{const src=(m.events||[]).find(x=>x.id===e.id);return {...e,...(src?.conds?{conds:C.clone(src.conds)}:{})};});
+function battleMission(m){let ext={};try{ext=C.missionExt(m);}catch(e){}
+ // Normalized lists keep their order (invalid entries dropped): each one is matched to the next source entry that fits,
+ // so two entries alike (the same text, the same item) each get their own extras.
+ const used=new Map(),nextSrc=(list,ok)=>{list=list||[];let at=used.get(list)||0;while(at<list.length&&!ok(list[at]))at++;used.set(list,at+1);return list[at]||{};};
+ // T&D extras the core normalization drops: the research a mission needs (kept beside a minimum level) and drop conditions.
+ if(ext.requires&&m.requires&&typeof m.requires==='object')ext.requires={...C.clone(m.requires),...ext.requires};
+ if(Array.isArray(ext.drops))ext.drops=ext.drops.map(d=>{const src=nextSrc(m.drops,x=>x?.itemId===d.itemId);return src.conds?{...d,conds:C.clone(src.conds)}:d;});
+ const rules=(m.rules||[]).map(r=>{try{return C.rule(r,m.id);}catch(e){return null;}}).filter(Boolean);if(ext.events)ext.events=ext.events.map(e=>{const src=(m.events||[]).find(x=>x.id===e.id);return {...e,...(src?.conds?{conds:C.clone(src.conds)}:{})};});
  // Story choices keep their display conditions and variable changes (T&D extras dropped by the core normalization).
- if(ext.story?.choices)ext.story={...ext.story,choices:ext.story.choices.map((c,i)=>{const all=m.story?.choices||[],src=all.find(x=>x?.text===c.text)||all[i]||{};return {...c,...(src.conds?{conds:C.clone(src.conds)}:{}),...((src.vars||[]).length?{vars:C.clone(src.vars)}:{})};})};return {...m,...ext,rules,enemies:(m.enemies||[]).filter(Boolean),maxDeploy:Math.max(1,Math.min(8,Math.floor(Number(m.maxDeploy)||8)))};}
+ if(ext.story?.choices)ext.story={...ext.story,choices:ext.story.choices.map(c=>{const src=nextSrc(m.story?.choices,x=>x?.text===c.text);return {...c,...(src.conds?{conds:C.clone(src.conds)}:{}),...((src.vars||[]).length?{vars:C.clone(src.vars)}:{})};})};return {...m,...ext,rules,enemies:(m.enemies||[]).filter(Boolean),maxDeploy:Math.max(1,Math.min(8,Math.floor(Number(m.maxDeploy)||8)))};}
 const skills=C.skillList(U.skills),units=C.pilotsToUnits(U.units,U.pilots).units.map(u=>battleUnit(u,U.weapons||[],skills));
 const defs=Object.fromEntries(units.map(u=>[u.id,u])),names=Object.fromEntries(units.map(u=>[u.id,u.name]));
 const missions=[];let ready=false;
